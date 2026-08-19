@@ -1,13 +1,22 @@
-FROM node:20-alpine
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
+RUN if [ -f package-lock.json ]; then \
+			npm ci --omit=dev --no-audit --no-fund; \
+		else \
+			npm install --omit=dev --no-audit --no-fund; \
+		fi && npm cache clean --force
 
+FROM gcr.io/distroless/nodejs22-debian12:nonroot
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY index.html styles.css script.js ./
 COPY server.js ./
 COPY posts ./posts
 
 EXPOSE 8080
-CMD ["node", "server.js"]
+CMD ["server.js"]
