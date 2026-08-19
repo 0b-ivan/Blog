@@ -193,6 +193,11 @@ function setupTerminalFocusMode() {
         return;
       }
 
+      if (action === 'overview') {
+        window.location.href = '/#posts';
+        return;
+      }
+
       if (action === 'minimize') {
         setState('minimized');
         return;
