@@ -151,6 +151,20 @@ async function readPosts(explicitPostsDir) {
   return posts;
 }
 
+function resolvePostBySlug(posts, requestedSlug) {
+  const normalized = String(requestedSlug || '').trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  const exact = posts.find((item) => String(item.slug).toLowerCase() === normalized);
+  if (exact) {
+    return exact;
+  }
+
+  return posts.find((item) => String(item.slug).toLowerCase().endsWith(`-${normalized}`)) || null;
+}
+
 function renderPostPage(post) {
   const meta = `${post.category} · ${post.date}`;
   const tagsHtml = (post.tags || [])
@@ -247,7 +261,7 @@ function createApp(options = {}) {
   app.get('/posts/:slug', async (req, res) => {
     try {
       const posts = await readPosts(postsDir);
-      const post = posts.find((item) => item.slug === req.params.slug);
+      const post = resolvePostBySlug(posts, req.params.slug);
 
       if (!post) {
         res.status(404).send('Post not found');
@@ -293,6 +307,7 @@ module.exports = {
   normalizeTags,
   slugFromWikiName,
   inferDateFromSlug,
+  resolvePostBySlug,
   readPosts,
   renderPostPage
 };

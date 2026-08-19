@@ -11,6 +11,7 @@ const {
   normalizeTags,
   slugFromWikiName,
   inferDateFromSlug,
+  resolvePostBySlug,
   readPosts,
   renderPostPage
 } = require('../server');
@@ -120,6 +121,31 @@ describe('blog server', () => {
 
     const notFound = await request(app).get('/posts/does-not-exist');
     expect(notFound.status).toBe(404);
+  });
+
+  it('post detail route resolves slug without date prefix', async () => {
+    await writePost(
+      tmpDir,
+      '2026-08-04-systemd-timer-statt-cron.md',
+      '---\ntitle: Timer\ndate: 2026-08-04\ncategory: Linux\n---\nBody'
+    );
+
+    const app = createApp({ postsDir: tmpDir });
+    const res = await request(app).get('/posts/systemd-timer-statt-cron');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Timer | Kernel Notes');
+  });
+
+  it('resolvePostBySlug matches exact and suffix slugs', () => {
+    const posts = [
+      { slug: '2026-08-04-systemd-timer-statt-cron' },
+      { slug: '2026-08-18-zero-downtime-mit-compose' }
+    ];
+
+    expect(resolvePostBySlug(posts, '2026-08-18-zero-downtime-mit-compose')).toEqual(posts[1]);
+    expect(resolvePostBySlug(posts, 'systemd-timer-statt-cron')).toEqual(posts[0]);
+    expect(resolvePostBySlug(posts, 'unknown')).toBeNull();
   });
 
   it('health endpoint returns ok', async () => {
