@@ -1,14 +1,14 @@
 .terminal-content .post-figure {
   max-width: 100%;
-  margin: 1.4rem auto 1.6rem;
-  scroll-margin-top: 1.5rem;
+  margin: 1.5rem auto 1.85rem;
+  scroll-margin-top: 5rem;
 }
 
 .terminal-content .post-figure img {
   display: block;
   max-width: 100%;
   height: auto;
-  margin: 0 auto 0.65rem;
+  margin: 0 auto 0.7rem;
   border: 1px solid rgba(154, 200, 255, 0.35);
   border-radius: 10px;
   background: #0b131f;
@@ -17,28 +17,39 @@
 }
 
 .terminal-content .post-figure figcaption {
-  max-width: 90ch;
+  max-width: 76ch;
   margin: 0 auto;
-  color: #aab8c8;
-  font-size: 0.86rem;
+  color: #8f9cad;
+  font-size: 0.82rem;
+  font-style: normal;
   line-height: 1.5;
   text-align: center;
 }
 
 .terminal-content .figure-anchor {
-  color: #9ac8ff;
-  font-weight: 700;
+  color: #9fb0c2;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   text-decoration: none;
 }
 
-.terminal-content .figure-anchor:hover {
+.terminal-content .figure-anchor:hover,
+.terminal-content .figure-anchor:focus-visible {
+  color: #c6d5e5;
   text-decoration: underline;
 }
 
 .terminal-content .post-figure:target {
-  outline: 2px solid rgba(154, 200, 255, 0.5);
+  outline: 2px solid rgba(154, 200, 255, 0.45);
   outline-offset: 8px;
   border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 .medium-zoom-overlay {
