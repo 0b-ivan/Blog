@@ -1,6 +1,6 @@
 ---
 id: 2026-08-19-dependabot-im-einsatz
-version: 1
+version: 2
 title: "Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?"
 date: 2026-08-19
 created_at: 2026-08-19
@@ -22,7 +22,7 @@ Wichtig ist aber: Dependabot ist kein „Merge alles automatisch“-Bot. Ich seh
 
 Der Dependency Graph bildet direkte und transitive Abhängigkeiten aus Manifest- und Lock-Dateien ab. Bei npm sind das zum Beispiel `package.json` und `package-lock.json`.
 
-In meinem Blog-Repository zeigt der Dependency Graph zum Zeitpunkt dieses Beitrags **288 Dependencies**.
+In meinem Blog-Repository zeigt der [Dependency Graph](#fig-dependency-graph) zum Zeitpunkt dieses Beitrags **288 Dependencies**.
 
 ![GitHub Dependency Graph mit direkten und transitiven Abhängigkeiten](/assets/posts/dependabot/03-dependency-graph.svg)
 
@@ -40,7 +40,7 @@ Das ist für die Bewertung wichtig. Eine kritische Schwachstelle in einer Develo
 
 Dependabot Alerts entstehen, wenn GitHub eine bekannte Schwachstelle für eine Dependency im Dependency Graph erkennt.
 
-In meinem Repository waren zum Zeitpunkt der Screenshots **fünf offene Alerts** sichtbar.
+In meinem Repository waren zum Zeitpunkt der Screenshots [fünf offene Alerts](#fig-alerts) sichtbar.
 
 ![Dependabot Alerts mit Critical, High und Moderate Findings](/assets/posts/dependabot/02-alerts.svg)
 
@@ -68,7 +68,7 @@ Ein Alert ist damit nicht automatisch „Produktionssystem kompromittiert“, ab
 
 Neben Alerts kann Dependabot Pull Requests für Dependency-Updates öffnen.
 
-Im Repository waren zum Zeitpunkt des Screenshots vier offene Dependabot-PRs vorhanden, unter anderem für `vitest`, `vite`, `esbuild` und `express`.
+Im Repository waren zum Zeitpunkt des Screenshots [vier offene Dependabot-PRs](#fig-pull-requests) vorhanden, unter anderem für `vitest`, `vite`, `esbuild` und `express`.
 
 ![Von Dependabot geöffnete Pull Requests](/assets/posts/dependabot/01-pull-requests.svg)
 
@@ -140,7 +140,7 @@ Damit prüft Dependabot bei mir wöchentlich:
 
 ## Wo aktiviere ich Dependabot?
 
-Im Repository findest du die Security-Funktionen unter **Security and quality** bzw. in den Repository Settings unter den Security-Einstellungen.
+Im Repository findest du die [Security-Funktionen](#fig-security-overview) unter **Security and quality** bzw. in den Repository Settings unter den Security-Einstellungen.
 
 ![GitHub Security and quality Übersicht](/assets/posts/dependabot/04-security-overview.svg)
 

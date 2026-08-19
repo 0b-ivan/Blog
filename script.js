@@ -256,8 +256,73 @@ async function loadPosts() {
   }
 }
 
+function figureIdFromImage(image, fallbackIndex) {
+  const src = image.getAttribute('src') || '';
+  const fileName = src.split('/').pop()?.split(/[?#]/)[0] || `image-${fallbackIndex}`;
+  const baseName = fileName
+    .replace(/\.[^.]+$/, '')
+    .replace(/^\d+[-_]/, '');
+  const slug = baseName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  return `fig-${slug || fallbackIndex}`;
+}
+
+function setupPostFigures() {
+  const images = [...document.querySelectorAll('.terminal-content img')];
+  const usedIds = new Set();
+
+  images.forEach((image, index) => {
+    const imageParagraph = image.parentElement?.tagName === 'P' ? image.parentElement : null;
+    if (!imageParagraph || imageParagraph.children.length !== 1) {
+      return;
+    }
+
+    const nextParagraph = imageParagraph.nextElementSibling;
+    let caption = image.getAttribute('title') || image.getAttribute('alt') || `Abbildung ${index + 1}`;
+
+    if (
+      nextParagraph?.tagName === 'P' &&
+      nextParagraph.children.length === 1 &&
+      nextParagraph.firstElementChild?.tagName === 'EM'
+    ) {
+      caption = nextParagraph.textContent?.trim() || caption;
+      nextParagraph.remove();
+    }
+
+    let figureId = figureIdFromImage(image, index + 1);
+    let suffix = 2;
+    while (usedIds.has(figureId)) {
+      figureId = `${figureIdFromImage(image, index + 1)}-${suffix}`;
+      suffix += 1;
+    }
+    usedIds.add(figureId);
+
+    const figure = document.createElement('figure');
+    figure.className = 'post-figure';
+    figure.id = figureId;
+
+    const figcaption = document.createElement('figcaption');
+    figcaption.id = `${figureId}-caption`;
+
+    const anchor = document.createElement('a');
+    anchor.className = 'figure-anchor';
+    anchor.href = `#${figureId}`;
+    anchor.textContent = `Abbildung ${index + 1}`;
+
+    figcaption.append(anchor, document.createTextNode(`: ${caption}`));
+    image.setAttribute('aria-describedby', figcaption.id);
+
+    imageParagraph.replaceWith(figure);
+    figure.append(image, figcaption);
+  });
+}
+
 observeRevealItems();
 loadPosts();
+setupPostFigures();
 
 function setupTerminalFocusMode() {
   const terminal = document.querySelector('.terminal-post');
