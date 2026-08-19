@@ -14,7 +14,8 @@ FROM gcr.io/distroless/nodejs22-debian12:nonroot
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY index.html styles.css script.js ./
+COPY index.html impressum.html styles.css script.js ./
+COPY assets ./assets
 COPY server.js ./
 COPY posts ./posts
 
