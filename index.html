@@ -114,7 +114,10 @@
     </main>
 
     <footer class="site-footer reveal" data-delay="120">
-      <p>© 2026 Kernel Notes</p>
+      <p>
+        © 2026 Kernel Notes
+        <span id="build-info" aria-live="polite">· v1.0.0 · Letztes Release: lokal</span>
+      </p>
       <div class="footer-links">
         <a href="impressum.html">Impressum</a>
         <a href="#">RSS</a>
@@ -122,5 +125,34 @@
     </footer>
 
     <script src="script.js"></script>
+    <script>
+      (async () => {
+        const target = document.getElementById('build-info');
+        if (!target) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/build-info.json', { cache: 'no-store' });
+          if (!response.ok) {
+            return;
+          }
+
+          const info = await response.json();
+          const version = info.version ? `v${info.version}` : 'Version unbekannt';
+          const releaseDate = new Date(info.release);
+          const release = Number.isNaN(releaseDate.getTime())
+            ? info.release || 'unbekannt'
+            : new Intl.DateTimeFormat('de-DE', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+              }).format(releaseDate);
+
+          target.textContent = `· ${version} · Letztes Release: ${release}`;
+        } catch (_error) {
+          // Local development without build-info.json keeps the fallback text.
+        }
+      })();
+    </script>
   </body>
 </html>
