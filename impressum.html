@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="bg-grid" aria-hidden="true"></div>
@@ -19,12 +19,12 @@
     <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
 
     <header class="site-header">
-      <a class="logo" href="/">Kernel Notes</a>
+      <a class="logo" href="index.html">Kernel Notes</a>
       <nav class="main-nav" aria-label="Hauptnavigation">
-        <a href="/#posts">Artikel</a>
-        <a href="/#topics">Themen</a>
-        <a href="/#about">About</a>
-        <a href="/impressum">Impressum</a>
+        <a href="index.html#posts">Artikel</a>
+        <a href="index.html#topics">Themen</a>
+        <a href="index.html#about">About</a>
+        <a href="impressum.html">Impressum</a>
       </nav>
     </header>
 
@@ -35,9 +35,9 @@
         <section class="operator-card" aria-label="Betreiber der Website">
           <img
             class="profile-photo"
-            src="/assets/profile-obivan.PNG"
+            src="assets/profile-obivan.PNG"
             alt="Profilfoto von Ivan Babayev"
-            onerror="this.onerror=null;this.src='/assets/profile-obivan.svg';"
+            onerror="this.onerror=null;this.src='assets/profile-obivan.svg';"
             width="180"
             height="180"
           />
@@ -97,13 +97,13 @@
     <footer class="site-footer">
       <p>© 2026 Kernel Notes</p>
       <div class="footer-links">
-        <a href="/">Startseite</a>
+        <a href="index.html">Startseite</a>
       </div>
     </footer>
     <script>
       (async function hydrateLegalInfo() {
         try {
-          const response = await fetch('/api/legal-info');
+          const response = await fetch('api/legal-info');
           if (!response.ok) {
             return;
           }
