@@ -143,7 +143,7 @@ function getTopics(posts) {
   return ['all', ...[...unique].sort((a, b) => topicLabel(a).localeCompare(topicLabel(b), 'de'))];
 }
 
-function renderTopics(posts, activeTopic) {
+function renderTopics(posts, selectedTopics) {
   const list = document.getElementById('topics-list');
   if (!list) {
     return;
@@ -159,13 +159,14 @@ function renderTopics(posts, activeTopic) {
   list.innerHTML = topics
     .map((name, index) => {
       const delay = 180 + index * 40;
-      const isActive = name === activeTopic;
+      const isActive = name === 'all' ? selectedTopics.size === 0 : selectedTopics.has(name);
       const label = topicLabel(name);
       return `
         <button
           class="topic reveal ${isActive ? 'is-active' : ''}"
           data-delay="${delay}"
           data-topic="${name}"
+          aria-pressed="${isActive ? 'true' : 'false'}"
           type="button"
         >${label}</button>
       `;
@@ -175,25 +176,44 @@ function renderTopics(posts, activeTopic) {
   observeRevealItems(list);
 }
 
-function filterPostsByTopic(posts, activeTopic) {
-  if (!activeTopic || activeTopic === 'all') {
+function filterPostsByTopics(posts, selectedTopics) {
+  if (!selectedTopics || selectedTopics.size === 0) {
     return posts;
   }
 
-  if (activeTopic.startsWith('tag:')) {
-    const wantedTag = activeTopic.slice(4).trim().toLowerCase();
-    return posts.filter((post) => {
-      const tags = sanitizeTags(post.tags);
-      return tags.some((tag) => String(tag).trim().toLowerCase() === wantedTag);
+  const selected = [...selectedTopics];
+
+  return posts.filter((post) => {
+    const category = (post.category || 'IT').trim();
+    const tags = sanitizeTags(post.tags).map((tag) => tag.toLowerCase());
+
+    return selected.some((topic) => {
+      if (topic.startsWith('tag:')) {
+        const wantedTag = topic.slice(4).trim().toLowerCase();
+        return tags.includes(wantedTag);
+      }
+
+      if (topic.startsWith('category:')) {
+        return category === topic.slice(9);
+      }
+
+      return false;
     });
+  });
+}
+
+function toggleTopic(selectedTopics, topic) {
+  if (!topic || topic === 'all') {
+    selectedTopics.clear();
+    return;
   }
 
-  if (activeTopic.startsWith('category:')) {
-    const wantedCategory = activeTopic.slice(9);
-    return posts.filter((post) => (post.category || 'IT').trim() === wantedCategory);
+  if (selectedTopics.has(topic)) {
+    selectedTopics.delete(topic);
+    return;
   }
 
-  return posts;
+  selectedTopics.add(topic);
 }
 
 async function loadPosts() {
@@ -210,12 +230,12 @@ async function loadPosts() {
     }
 
     const posts = await response.json();
-    let activeTopic = 'all';
+    const selectedTopics = new Set();
 
     const applyView = () => {
-      const visiblePosts = filterPostsByTopic(posts, activeTopic);
+      const visiblePosts = filterPostsByTopics(posts, selectedTopics);
       renderPosts(visiblePosts);
-      renderTopics(posts, activeTopic);
+      renderTopics(posts, selectedTopics);
     };
 
     topicsList.addEventListener('click', (event) => {
@@ -224,7 +244,8 @@ async function loadPosts() {
         return;
       }
 
-      activeTopic = button.dataset.topic || 'Alle';
+      const topic = button.dataset.topic || 'all';
+      toggleTopic(selectedTopics, topic);
       applyView();
     });
 
