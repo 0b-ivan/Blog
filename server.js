@@ -100,19 +100,17 @@ function renderPostPage(post) {
         <h1>${post.title}</h1>
         <section class="terminal-post" aria-label="Terminal article view">
           <div class="terminal-chrome">
-            <span class="terminal-dot terminal-dot-red" aria-hidden="true"></span>
-            <span class="terminal-dot terminal-dot-yellow" aria-hidden="true"></span>
-            <span class="terminal-dot terminal-dot-green" aria-hidden="true"></span>
+            <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="minimize" aria-label="Terminal minimieren"></button>
+            <button class="terminal-dot terminal-dot-yellow" type="button" data-terminal-action="restore" aria-label="Terminal wiederherstellen"></button>
+            <button class="terminal-dot terminal-dot-green" type="button" data-terminal-action="maximize" aria-label="Terminal maximieren"></button>
             <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
-            <button class="terminal-max-btn" type="button" data-terminal-toggle aria-pressed="false" aria-label="Terminal maximieren">
-              Maximize
-            </button>
           </div>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
         <p><a class="read-more" href="/">Zurueck zur Startseite</a></p>
       </article>
     </main>
+    <script src="/script.js"></script>
   </body>
 </html>`;
 }

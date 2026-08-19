@@ -159,30 +159,56 @@ observeRevealItems();
 loadPosts();
 
 function setupTerminalFocusMode() {
-  const toggleButton = document.querySelector('[data-terminal-toggle]');
   const terminal = document.querySelector('.terminal-post');
+  const actionButtons = document.querySelectorAll('[data-terminal-action]');
 
-  if (!toggleButton || !terminal) {
+  if (!terminal || !actionButtons.length) {
     return;
   }
 
-  const setState = (isMaximized) => {
+  const setState = (mode) => {
+    const isMaximized = mode === 'maximized';
+    const isMinimized = mode === 'minimized';
+
     terminal.classList.toggle('is-maximized', isMaximized);
+    terminal.classList.toggle('is-minimized', isMinimized);
     document.body.classList.toggle('terminal-focus', isMaximized);
-    toggleButton.setAttribute('aria-pressed', String(isMaximized));
-    toggleButton.textContent = isMaximized ? 'Exit focus' : 'Maximize';
+
+    actionButtons.forEach((button) => {
+      const action = button.dataset.terminalAction;
+      button.setAttribute('aria-pressed', String(
+        (action === 'maximize' && isMaximized) ||
+          (action === 'minimize' && isMinimized) ||
+          (action === 'restore' && !isMaximized && !isMinimized)
+      ));
+    });
   };
 
-  toggleButton.addEventListener('click', () => {
-    const isMaximized = terminal.classList.contains('is-maximized');
-    setState(!isMaximized);
+  actionButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.terminalAction;
+
+      if (action === 'maximize') {
+        setState('maximized');
+        return;
+      }
+
+      if (action === 'minimize') {
+        setState('minimized');
+        return;
+      }
+
+      setState('restored');
+    });
   });
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && terminal.classList.contains('is-maximized')) {
-      setState(false);
+      setState('restored');
     }
   });
+
+  setState('restored');
 }
 
 setupTerminalFocusMode();

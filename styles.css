@@ -306,8 +306,8 @@ h1 {
   border: 1px solid #1a2632;
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(9, 14, 20, 0.55);
-  backdrop-filter: blur(2px);
+  background: rgba(10, 15, 22, 0.5);
+  backdrop-filter: blur(1.5px);
   box-shadow: 0 18px 36px rgba(9, 16, 24, 0.22);
 }
 
@@ -324,7 +324,7 @@ h1 {
     transparent 4px
   );
   mix-blend-mode: screen;
-  opacity: 0.16;
+  opacity: 0.08;
   animation: scanlineShift 9s linear infinite;
 }
 
@@ -343,6 +343,19 @@ h1 {
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
+}
+
+.terminal-dot:hover {
+  filter: brightness(1.07);
+}
+
+.terminal-dot[aria-pressed="true"] {
+  outline: 2px solid rgba(255, 255, 255, 0.65);
+  outline-offset: 1px;
 }
 
 .terminal-dot-red {
@@ -359,7 +372,7 @@ h1 {
 
 .terminal-title {
   margin: 0 0 0 0.2rem;
-  color: #b8c6d1;
+  color: #d8e1ea;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.77rem;
   white-space: nowrap;
@@ -367,72 +380,44 @@ h1 {
   text-overflow: ellipsis;
 }
 
-.terminal-max-btn {
-  margin-left: auto;
-  border: 1px solid #4c6176;
-  background: rgba(9, 14, 21, 0.45);
-  color: #d0deea;
-  border-radius: 7px;
-  padding: 0.35rem 0.6rem;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.72rem;
-  cursor: pointer;
-}
-
-.terminal-max-btn:hover {
-  border-color: #88c8ff;
-  color: #eef8ff;
-}
-
 .terminal-content {
   margin-top: 0;
   max-width: none;
   padding: 1.35rem 1.3rem 1.55rem;
-  background: radial-gradient(circle at 84% 0%, rgba(41, 255, 149, 0.08), transparent 34%),
-    rgba(12, 19, 27, 0.78);
-  color: #e6fff2;
+  background: radial-gradient(circle at 84% 0%, rgba(70, 140, 255, 0.08), transparent 34%),
+    rgba(15, 21, 30, 0.76);
+  color: #f2f7ff;
   font-family: "IBM Plex Mono", monospace;
   font-size: 1.06rem;
-  line-height: 1.74;
-}
-
-.terminal-content p::before {
-  content: "ivan@kernel:~$ ";
-  color: #9ff8cc;
-  opacity: 0.85;
-}
-
-.terminal-content li::before {
-  content: "➜  ";
-  color: #78f0b5;
+  line-height: 1.78;
 }
 
 .terminal-content h2,
 .terminal-content h3 {
-  color: #9ff8cc;
+  color: #b8d5ff;
 }
 
 .terminal-content p,
 .terminal-content li {
-  color: #e6fff2;
+  color: #f2f7ff;
 }
 
 .terminal-content a {
-  color: #88c8ff;
+  color: #9ac8ff;
 }
 
 .terminal-content code {
-  color: #8cffbf;
-  background: rgba(140, 255, 191, 0.1);
-  border: 1px solid rgba(140, 255, 191, 0.22);
+  color: #d0e4ff;
+  background: rgba(120, 170, 255, 0.16);
+  border: 1px solid rgba(154, 200, 255, 0.32);
   border-radius: 4px;
   padding: 0.08rem 0.3rem;
 }
 
 .terminal-content pre {
   overflow-x: auto;
-  background: #0b1219;
-  border: 1px solid #1f3a4e;
+  background: rgba(7, 11, 17, 0.92);
+  border: 1px solid rgba(122, 154, 194, 0.5);
   border-radius: 8px;
   padding: 0.9rem;
 }
@@ -443,6 +428,10 @@ h1 {
   margin-top: 0.6rem;
   color: #8cffbf;
   animation: terminalCursorBlink 1s steps(1, end) infinite;
+}
+
+.terminal-post.is-minimized .terminal-content {
+  display: none;
 }
 
 .terminal-focus {
@@ -517,6 +506,11 @@ h1 {
 .post-content p,
 .post-content li {
   color: #2a3036;
+}
+
+.terminal-content p,
+.terminal-content li {
+  color: #f2f7ff;
 }
 
 .post-content pre {
