@@ -8,7 +8,9 @@
     "start": "node server.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "posts:sync-meta": "node scripts/sync-post-metadata.js",
+    "posts:validate-meta": "node scripts/validate-post-frontmatter.js"
   },
   "dependencies": {
     "express": "^4.21.2",

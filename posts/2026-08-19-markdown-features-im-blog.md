@@ -1,6 +1,12 @@
 ---
+id: 2026-08-19-markdown-features-im-blog
+version: 1
 title: Markdown-Features im Blog nutzen
 date: 2026-08-19
+created_at: 2026-08-19
+updated_at: 2026-08-19
+author: obivan
+reviewed_by: pending
 category: Engineering
 excerpt: So nutzt du Tags, Wiki-Links, Footnotes, Admonitions und Mermaid in deinen Blogposts.
 tags: Markdown, Docs, Mermaid, DevEx

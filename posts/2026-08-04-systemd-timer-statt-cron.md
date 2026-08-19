@@ -1,6 +1,12 @@
 ---
+id: 2026-08-04-systemd-timer-statt-cron
+version: 1
 title: Systemd-Timer als bessere Cronjobs
 date: 2026-08-04
+created_at: 2026-08-04
+updated_at: 2026-08-04
+author: obivan
+reviewed_by: pending
 category: Linux
 excerpt: Warum Systemd-Timer oft die bessere Wahl sind: saubere Logs, Abhaengigkeiten und bessere Fehlerbehandlung.
 ---

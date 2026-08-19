@@ -17,6 +17,11 @@ function slugify(fileName) {
   return fileName.replace(/\.md$/i, '');
 }
 
+function inferDateFromSlug(slug) {
+  const match = String(slug || '').match(/^(\d{4}-\d{2}-\d{2})-/);
+  return match ? match[1] : '';
+}
+
 function excerptFromBody(content) {
   const plain = content.replace(/[#>*_`()[\]-]/g, ' ').replace(/\s+/g, ' ').trim();
   return plain.slice(0, 180) + (plain.length > 180 ? '...' : '');
@@ -123,7 +128,8 @@ async function readPosts(explicitPostsDir) {
       const parsed = matter(raw);
       const slug = slugify(file.name);
       const title = parsed.data.title || slug;
-      const date = parsed.data.date || '1970-01-01';
+      const inferredDate = inferDateFromSlug(slug);
+      const date = parsed.data.date || parsed.data.created_at || inferredDate || '1970-01-01';
       const category = parsed.data.category || 'IT';
       const tags = normalizeTags(parsed.data.tags);
       const excerpt = parsed.data.excerpt || excerptFromBody(parsed.content);
@@ -286,6 +292,7 @@ module.exports = {
   parseDate,
   normalizeTags,
   slugFromWikiName,
+  inferDateFromSlug,
   readPosts,
   renderPostPage
 };

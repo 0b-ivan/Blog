@@ -27,6 +27,9 @@ jobs:
             npm install
           fi
 
+      - name: Validate post frontmatter metadata
+        run: npm run posts:validate-meta
+
       - name: Lint
         run: npm run lint
 

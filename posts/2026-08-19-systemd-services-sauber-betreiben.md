@@ -1,6 +1,12 @@
 ---
+id: 2026-08-19-systemd-services-sauber-betreiben
+version: 1
 title: systemd Services sauber betreiben
 date: 2026-08-19
+created_at: 2026-08-19
+updated_at: 2026-08-19
+author: obivan
+reviewed_by: pending
 category: Linux
 excerpt: Ein praktischer Leitfaden fuer robuste systemd-Services mit Restart-Strategie, Healthchecks und klaren Logs.
 tags: Linux, systemd, Operations, Reliability

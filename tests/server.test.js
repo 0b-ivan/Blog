@@ -10,6 +10,7 @@ const {
   parseDate,
   normalizeTags,
   slugFromWikiName,
+  inferDateFromSlug,
   readPosts,
   renderPostPage
 } = require('../server');
@@ -46,6 +47,11 @@ describe('blog server', () => {
 
   it('slugFromWikiName creates clean post slug', () => {
     expect(slugFromWikiName('Zero Downtime Deployments')).toBe('zero-downtime-deployments');
+  });
+
+  it('inferDateFromSlug extracts YYYY-MM-DD prefix', () => {
+    expect(inferDateFromSlug('2026-08-19-example-post')).toBe('2026-08-19');
+    expect(inferDateFromSlug('example-post')).toBe('');
   });
 
   it('excerptFromBody strips markdown chars and truncates long text', () => {

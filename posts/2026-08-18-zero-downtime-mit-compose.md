@@ -1,6 +1,12 @@
 ---
+id: 2026-08-18-zero-downtime-mit-compose
+version: 1
 title: Zero-Downtime Deployments mit Docker Compose
 date: 2026-08-18
+created_at: 2026-08-18
+updated_at: 2026-08-18
+author: obivan
+reviewed_by: pending
 category: DevOps
 excerpt: Rolling Updates ohne Kubernetes. So baust du einen stabilen Deployment-Flow mit Healthchecks, Reverse Proxy und sauberem Cutover.
 ---

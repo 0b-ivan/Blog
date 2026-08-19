@@ -1,6 +1,12 @@
 ---
+id: 2026-08-19-fail2ban-ssh-hardening
+version: 1
 title: SSH absichern mit Fail2ban und sauberen Defaults
 date: 2026-08-19
+created_at: 2026-08-19
+updated_at: 2026-08-19
+author: obivan
+reviewed_by: pending
 category: Security
 excerpt: Ein pragmatisches Hardening-Setup fuer SSH mit Fail2ban, Key-Only Login und minimalen Firewall-Regeln.
 tags: Security, Linux, SSH, Hardening
