@@ -148,7 +148,8 @@ async function readPosts(explicitPostsDir) {
 function renderPostPage(post) {
   const meta = `${post.category} · ${post.date}`;
   const tagsHtml = (post.tags || [])
-    .map((tag) => `<span class="tag-chip">#${tag}</span>`)
+    .slice(0, 2)
+    .map((tag) => `<span class="tag-chip">${tag}</span>`)
     .join('');
 
   return `<!doctype html>

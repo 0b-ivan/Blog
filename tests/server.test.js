@@ -141,7 +141,7 @@ describe('blog server', () => {
 
     expect(html).toContain('Meta Test | Kernel Notes');
     expect(html).toContain('Node · 2026-03-03');
-    expect(html).toContain('#Linux');
+    expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');
   });
 

@@ -38,6 +38,34 @@ function formatDate(dateInput) {
   }).format(date);
 }
 
+const MAX_VISIBLE_TAGS = 2;
+
+function sanitizeTags(tags) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return tags
+    .map((tag) => String(tag).trim())
+    .filter(Boolean);
+}
+
+function visibleTags(tags) {
+  return sanitizeTags(tags).slice(0, MAX_VISIBLE_TAGS);
+}
+
+function topicLabel(topic) {
+  if (topic.startsWith('tag:')) {
+    return topic.slice(4);
+  }
+
+  if (topic.startsWith('category:')) {
+    return topic.slice(9);
+  }
+
+  return 'Alle';
+}
+
 function renderPosts(posts) {
   const list = document.getElementById('posts-list');
   if (!list) {
@@ -53,9 +81,9 @@ function renderPosts(posts) {
     .map((post, index) => {
       const delay = 240 + index * 60;
       const meta = `${post.category} · ${formatDate(post.date)}`;
-      const tags = Array.isArray(post.tags) ? post.tags : [];
+      const tags = visibleTags(post.tags);
       const tagsHtml = tags.length
-        ? `<div class="post-tags">${tags.map((tag) => `<span class="tag-chip">#${tag}</span>`).join('')}</div>`
+        ? `<div class="post-tags">${tags.map((tag) => `<span class="tag-chip">${tag}</span>`).join('')}</div>`
         : '';
       return `
         <article class="post-card reveal" data-delay="${delay}">
@@ -78,19 +106,16 @@ function getTopics(posts) {
   posts.forEach((post) => {
     const category = (post.category || 'IT').trim();
     if (category) {
-      unique.add(category);
+      unique.add(`category:${category}`);
     }
 
-    const tags = Array.isArray(post.tags) ? post.tags : [];
+    const tags = sanitizeTags(post.tags);
     tags.forEach((tag) => {
-      const normalized = String(tag).trim();
-      if (normalized) {
-        unique.add(`#${normalized}`);
-      }
+      unique.add(`tag:${tag}`);
     });
   });
 
-  return ['Alle', ...[...unique].sort((a, b) => a.localeCompare(b, 'de'))];
+  return ['all', ...[...unique].sort((a, b) => topicLabel(a).localeCompare(topicLabel(b), 'de'))];
 }
 
 function renderTopics(posts, activeTopic) {
@@ -110,13 +135,14 @@ function renderTopics(posts, activeTopic) {
     .map((name, index) => {
       const delay = 180 + index * 40;
       const isActive = name === activeTopic;
+      const label = topicLabel(name);
       return `
         <button
           class="topic reveal ${isActive ? 'is-active' : ''}"
           data-delay="${delay}"
           data-topic="${name}"
           type="button"
-        >${name}</button>
+        >${label}</button>
       `;
     })
     .join('');
@@ -125,19 +151,24 @@ function renderTopics(posts, activeTopic) {
 }
 
 function filterPostsByTopic(posts, activeTopic) {
-  if (!activeTopic || activeTopic === 'Alle') {
+  if (!activeTopic || activeTopic === 'all') {
     return posts;
   }
 
-  if (activeTopic.startsWith('#')) {
-    const wantedTag = activeTopic.slice(1).trim().toLowerCase();
+  if (activeTopic.startsWith('tag:')) {
+    const wantedTag = activeTopic.slice(4).trim().toLowerCase();
     return posts.filter((post) => {
-      const tags = Array.isArray(post.tags) ? post.tags : [];
+      const tags = sanitizeTags(post.tags);
       return tags.some((tag) => String(tag).trim().toLowerCase() === wantedTag);
     });
   }
 
-  return posts.filter((post) => (post.category || 'IT').trim() === activeTopic);
+  if (activeTopic.startsWith('category:')) {
+    const wantedCategory = activeTopic.slice(9);
+    return posts.filter((post) => (post.category || 'IT').trim() === wantedCategory);
+  }
+
+  return posts;
 }
 
 async function loadPosts() {
@@ -154,7 +185,7 @@ async function loadPosts() {
     }
 
     const posts = await response.json();
-    let activeTopic = 'Alle';
+    let activeTopic = 'all';
 
     const applyView = () => {
       const visiblePosts = filterPostsByTopic(posts, activeTopic);
