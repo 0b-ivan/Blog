@@ -53,11 +53,16 @@ function renderPosts(posts) {
     .map((post, index) => {
       const delay = 240 + index * 60;
       const meta = `${post.category} · ${formatDate(post.date)}`;
+      const tags = Array.isArray(post.tags) ? post.tags : [];
+      const tagsHtml = tags.length
+        ? `<div class="post-tags">${tags.map((tag) => `<span class="tag-chip">#${tag}</span>`).join('')}</div>`
+        : '';
       return `
         <article class="post-card reveal" data-delay="${delay}">
           <p class="meta">${meta}</p>
           <h3>${post.title}</h3>
           <p>${post.excerpt}</p>
+          ${tagsHtml}
           <a href="/posts/${post.slug}" class="read-more">Artikel lesen</a>
         </article>
       `;
@@ -68,11 +73,22 @@ function renderPosts(posts) {
 }
 
 function getTopics(posts) {
-  const unique = new Set(
-    posts
-      .map((post) => (post.category || 'IT').trim())
-      .filter(Boolean)
-  );
+  const unique = new Set();
+
+  posts.forEach((post) => {
+    const category = (post.category || 'IT').trim();
+    if (category) {
+      unique.add(category);
+    }
+
+    const tags = Array.isArray(post.tags) ? post.tags : [];
+    tags.forEach((tag) => {
+      const normalized = String(tag).trim();
+      if (normalized) {
+        unique.add(`#${normalized}`);
+      }
+    });
+  });
 
   return ['Alle', ...[...unique].sort((a, b) => a.localeCompare(b, 'de'))];
 }
@@ -111,6 +127,14 @@ function renderTopics(posts, activeTopic) {
 function filterPostsByTopic(posts, activeTopic) {
   if (!activeTopic || activeTopic === 'Alle') {
     return posts;
+  }
+
+  if (activeTopic.startsWith('#')) {
+    const wantedTag = activeTopic.slice(1).trim().toLowerCase();
+    return posts.filter((post) => {
+      const tags = Array.isArray(post.tags) ? post.tags : [];
+      return tags.some((tag) => String(tag).trim().toLowerCase() === wantedTag);
+    });
   }
 
   return posts.filter((post) => (post.category || 'IT').trim() === activeTopic);

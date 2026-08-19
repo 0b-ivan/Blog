@@ -8,6 +8,8 @@ const {
   slugify,
   excerptFromBody,
   parseDate,
+  normalizeTags,
+  slugFromWikiName,
   readPosts,
   renderPostPage
 } = require('../server');
@@ -37,6 +39,15 @@ describe('blog server', () => {
     expect(parseDate('not-a-date')).toBe(0);
   });
 
+  it('normalizeTags handles array and comma-separated string', () => {
+    expect(normalizeTags(['DevOps', ' Security '])).toEqual(['DevOps', 'Security']);
+    expect(normalizeTags('Linux, Security , CI/CD')).toEqual(['Linux', 'Security', 'CI/CD']);
+  });
+
+  it('slugFromWikiName creates clean post slug', () => {
+    expect(slugFromWikiName('Zero Downtime Deployments')).toBe('zero-downtime-deployments');
+  });
+
   it('excerptFromBody strips markdown chars and truncates long text', () => {
     const text = '# Title **bold** (note) [link](x) ' + 'x'.repeat(220);
     const excerpt = excerptFromBody(text);
@@ -54,7 +65,7 @@ describe('blog server', () => {
     await writePost(
       tmpDir,
       '2026-02-01-new.md',
-      '---\ntitle: New\ndate: 2026-02-01\ncategory: DevOps\n---\nNew content'
+      '---\ntitle: New\ndate: 2026-02-01\ncategory: DevOps\ntags:\n  - Linux\n  - Docker\n---\nNew content'
     );
 
     const posts = await readPosts(tmpDir);
@@ -62,13 +73,14 @@ describe('blog server', () => {
     expect(posts[0].title).toBe('New');
     expect(posts[1].title).toBe('Old');
     expect(posts[0].html).toContain('<p>New content</p>');
+    expect(posts[0].tags).toEqual(['Linux', 'Docker']);
   });
 
   it('api returns post list dto', async () => {
     await writePost(
       tmpDir,
       'sample.md',
-      '---\ntitle: Sample\ndate: 2026-04-01\ncategory: Security\nexcerpt: Custom excerpt\n---\nBody'
+      '---\ntitle: Sample\ndate: 2026-04-01\ncategory: Security\nexcerpt: Custom excerpt\ntags: Linux,Security\n---\nBody'
     );
 
     const app = createApp({ postsDir: tmpDir });
@@ -80,6 +92,7 @@ describe('blog server', () => {
       slug: 'sample',
       title: 'Sample',
       category: 'Security',
+      tags: ['Linux', 'Security'],
       excerpt: 'Custom excerpt'
     });
     expect(res.body[0].html).toBeUndefined();
@@ -121,12 +134,29 @@ describe('blog server', () => {
       title: 'Meta Test',
       date: '2026-03-03',
       category: 'Node',
+      tags: ['Linux'],
       excerpt: 'Excerpt',
       html: '<p>Rendered</p>'
     });
 
     expect(html).toContain('Meta Test | Kernel Notes');
     expect(html).toContain('Node · 2026-03-03');
+    expect(html).toContain('#Linux');
     expect(html).toContain('<p>Rendered</p>');
+  });
+
+  it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {
+    await writePost(
+      tmpDir,
+      'features.md',
+      '---\ntitle: Features\ndate: 2026-07-01\ncategory: Docs\n---\n[[Systemd Timer Statt Cron]]\n\nText mit Fussnote.[^1]\n\n[^1]: Hinweis\n\n::: warning Achtung\nBitte sichern.\n:::\n\n```mermaid\nflowchart TD\nA-->B\n```'
+    );
+
+    const posts = await readPosts(tmpDir);
+    const html = posts[0].html;
+    expect(html).toContain('/posts/systemd-timer-statt-cron');
+    expect(html).toContain('footnote-ref');
+    expect(html).toContain('admonition-warning');
+    expect(html).toContain('<pre class="mermaid">');
   });
 });

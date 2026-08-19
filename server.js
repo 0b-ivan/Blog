@@ -2,7 +2,9 @@ const express = require('express');
 const fs = require('node:fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
-const { marked } = require('marked');
+const MarkdownIt = require('markdown-it');
+const mdFootnote = require('markdown-it-footnote');
+const mdContainer = require('markdown-it-container');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -24,6 +26,81 @@ function parseDate(value) {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 }
+
+function normalizeTags(value) {
+  if (Array.isArray(value)) {
+    return value.map((tag) => String(tag).trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+function slugFromWikiName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  typographer: true
+});
+
+md.use(mdFootnote);
+
+function transformWikiLinks(content) {
+  return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match, target, label) => {
+    const cleanTarget = String(target || '').trim();
+    const cleanLabel = String(label || cleanTarget).trim();
+    const slug = slugFromWikiName(cleanTarget);
+
+    if (!slug) {
+      return cleanLabel;
+    }
+
+    return `[${cleanLabel}](/posts/${slug})`;
+  });
+}
+
+['note', 'tip', 'warning'].forEach((type) => {
+  md.use(mdContainer, type, {
+    render(tokens, idx) {
+      const token = tokens[idx];
+      const titleText = token.info.slice(type.length).trim();
+      const title = titleText || type.charAt(0).toUpperCase() + type.slice(1);
+
+      if (token.nesting === 1) {
+        return `<div class="admonition admonition-${type}"><p class="admonition-title">${md.utils.escapeHtml(title)}</p>\n`;
+      }
+
+      return '</div>\n';
+    }
+  });
+});
+
+const defaultFenceRule = md.renderer.rules.fence || ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+  const token = tokens[idx];
+  const info = (token.info || '').trim();
+
+  if (info === 'mermaid') {
+    return `<pre class="mermaid">${md.utils.escapeHtml(token.content)}</pre>`;
+  }
+
+  return defaultFenceRule(tokens, idx, options, env, self);
+};
 
 async function readPosts(explicitPostsDir) {
   const postsDir = getPostsDir(explicitPostsDir);
@@ -48,15 +125,18 @@ async function readPosts(explicitPostsDir) {
       const title = parsed.data.title || slug;
       const date = parsed.data.date || '1970-01-01';
       const category = parsed.data.category || 'IT';
+      const tags = normalizeTags(parsed.data.tags);
       const excerpt = parsed.data.excerpt || excerptFromBody(parsed.content);
+      const markdownContent = transformWikiLinks(parsed.content);
 
       return {
         slug,
         title,
         date,
         category,
+        tags,
         excerpt,
-        html: marked.parse(parsed.content)
+        html: md.render(markdownContent)
       };
     })
   );
@@ -67,6 +147,9 @@ async function readPosts(explicitPostsDir) {
 
 function renderPostPage(post) {
   const meta = `${post.category} · ${post.date}`;
+  const tagsHtml = (post.tags || [])
+    .map((tag) => `<span class="tag-chip">#${tag}</span>`)
+    .join('');
 
   return `<!doctype html>
 <html lang="de">
@@ -98,6 +181,7 @@ function renderPostPage(post) {
       <article class="post-page">
         <p class="meta">${meta}</p>
         <h1>${post.title}</h1>
+        ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
         <section class="terminal-post" aria-label="Terminal article view">
           <div class="terminal-chrome">
             <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="overview" aria-label="Zurueck zur Uebersicht"></button>
@@ -111,6 +195,19 @@ function renderPostPage(post) {
       </article>
     </main>
     <script src="/script.js"></script>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+      const mermaidBlocks = document.querySelectorAll('.mermaid');
+      if (mermaidBlocks.length) {
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'strict',
+          theme: 'dark'
+        });
+        mermaid.run({ nodes: mermaidBlocks });
+      }
+    </script>
   </body>
 </html>`;
 }
@@ -125,11 +222,12 @@ function createApp(options = {}) {
   app.get('/api/posts', async (_req, res) => {
     try {
       const posts = await readPosts(postsDir);
-      const dto = posts.map(({ slug, title, date, category, excerpt }) => ({
+      const dto = posts.map(({ slug, title, date, category, tags, excerpt }) => ({
         slug,
         title,
         date,
         category,
+        tags,
         excerpt
       }));
       res.json(dto);
@@ -185,6 +283,8 @@ module.exports = {
   slugify,
   excerptFromBody,
   parseDate,
+  normalizeTags,
+  slugFromWikiName,
   readPosts,
   renderPostPage
 };
