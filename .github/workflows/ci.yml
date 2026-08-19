@@ -39,6 +39,11 @@ jobs:
       - name: Validate Docker Compose
         run: docker compose config
 
+      - name: Validate production Docker Compose
+        env:
+          BLOG_IMAGE: ghcr.io/0b-ivan/kernel-notes-blog:ci
+        run: docker compose -f docker-compose.prod.yml config
+
       - name: Build local blog image
         run: docker build -t kernel-notes-blog:ci .
 
