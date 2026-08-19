@@ -405,8 +405,8 @@ h1 {
   max-width: none;
   padding: 1.35rem 1.3rem 1.55rem;
   background: radial-gradient(circle at 84% 0%, rgba(70, 140, 255, 0.08), transparent 34%),
-    rgba(15, 21, 30, 0.76);
-  color: #f2f7ff;
+    rgba(12, 18, 27, 0.94);
+  color: #eaf2ff;
   font-family: "IBM Plex Mono", monospace;
   font-size: 1.06rem;
   line-height: 1.78;
@@ -419,7 +419,7 @@ h1 {
 
 .terminal-content p,
 .terminal-content li {
-  color: #f2f7ff;
+  color: #eaf2ff;
 }
 
 .terminal-content a {
@@ -431,19 +431,27 @@ h1 {
 }
 
 .terminal-content code {
-  color: #d0e4ff;
-  background: rgba(120, 170, 255, 0.16);
-  border: 1px solid rgba(154, 200, 255, 0.32);
+  color: #d5e6ff;
+  background: rgba(59, 102, 163, 0.3);
+  border: 1px solid rgba(137, 180, 238, 0.42);
   border-radius: 4px;
   padding: 0.08rem 0.3rem;
 }
 
 .terminal-content pre {
   overflow-x: auto;
-  background: rgba(7, 11, 17, 0.92);
-  border: 1px solid rgba(122, 154, 194, 0.5);
+  background: #0b131f;
+  color: #dce9ff;
+  border: 1px solid rgba(122, 154, 194, 0.62);
   border-radius: 8px;
   padding: 0.9rem;
+}
+
+.terminal-content pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
 }
 
 .terminal-content .mermaid {
@@ -583,7 +591,7 @@ h1 {
   color: #f2f7ff;
 }
 
-.post-content pre {
+.post-content:not(.terminal-content) pre {
   overflow-x: auto;
   background: #ece6d8;
   border: 1px solid #d8d2c4;
