@@ -11,6 +11,7 @@ const {
   normalizeTags,
   slugFromWikiName,
   inferDateFromSlug,
+  recoverMetadata,
   resolvePostBySlug,
   readPosts,
   renderPostPage
@@ -146,6 +147,29 @@ describe('blog server', () => {
     expect(resolvePostBySlug(posts, '2026-08-18-zero-downtime-mit-compose')).toEqual(posts[1]);
     expect(resolvePostBySlug(posts, 'systemd-timer-statt-cron')).toEqual(posts[0]);
     expect(resolvePostBySlug(posts, 'unknown')).toBeNull();
+  });
+
+  it('recoverMetadata parses plain key/value header when parser metadata is empty', () => {
+    const raw = 'title: Header Title\ncategory: Security\ntags: Linux, Ops\n\nBody line';
+    const recovered = recoverMetadata(raw, { data: {}, content: raw });
+
+    expect(recovered.data.title).toBe('Header Title');
+    expect(recovered.data.category).toBe('Security');
+    expect(recovered.content).toContain('Body line');
+    expect(recovered.content).not.toContain('title: Header Title');
+  });
+
+  it('readPosts does not render metadata header inside article content', async () => {
+    await writePost(
+      tmpDir,
+      '2026-08-20-metadata-leak.md',
+      'title: Leak Test\ncategory: IT\n\nThis is content.'
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts[0].title).toBe('Leak Test');
+    expect(posts[0].html).toContain('<p>This is content.</p>');
+    expect(posts[0].html).not.toContain('title: Leak Test');
   });
 
   it('health endpoint returns ok', async () => {

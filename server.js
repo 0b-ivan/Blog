@@ -57,6 +57,84 @@ function slugFromWikiName(name) {
     .replace(/^-|-$/g, '');
 }
 
+function parseMetadataLine(line) {
+  const match = String(line || '').match(/^([a-zA-Z_][a-zA-Z0-9_]*):\s*(.*)$/);
+  if (!match) {
+    return null;
+  }
+
+  return {
+    key: match[1],
+    value: match[2].trim()
+  };
+}
+
+function recoverMetadata(raw, parsed) {
+  const fallbackData = {};
+  const knownKeys = new Set(['id', 'version', 'title', 'date', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags']);
+
+  const hasParsedData = parsed && parsed.data && Object.keys(parsed.data).length > 0;
+  if (hasParsedData) {
+    return {
+      data: parsed.data,
+      content: parsed.content
+    };
+  }
+
+  const text = String(raw || '');
+  const lines = text.split(/\r?\n/);
+
+  // Fallback 1: recover YAML block delimited by --- ... --- when gray-matter returns empty data.
+  if (lines[0] === '---') {
+    const closingIdx = lines.findIndex((line, idx) => idx > 0 && line === '---');
+    if (closingIdx > 0) {
+      for (const line of lines.slice(1, closingIdx)) {
+        const parsedLine = parseMetadataLine(line);
+        if (!parsedLine || !knownKeys.has(parsedLine.key)) {
+          continue;
+        }
+        fallbackData[parsedLine.key] = parsedLine.value;
+      }
+
+      if (Object.keys(fallbackData).length > 0) {
+        return {
+          data: fallbackData,
+          content: lines.slice(closingIdx + 1).join('\n').replace(/^\n+/, '')
+        };
+      }
+    }
+  }
+
+  // Fallback 2: recover plain key/value metadata header at the top, followed by a blank line.
+  let cursor = 0;
+  while (cursor < lines.length) {
+    const line = lines[cursor];
+    if (!line.trim()) {
+      break;
+    }
+
+    const parsedLine = parseMetadataLine(line);
+    if (!parsedLine || !knownKeys.has(parsedLine.key)) {
+      break;
+    }
+
+    fallbackData[parsedLine.key] = parsedLine.value;
+    cursor += 1;
+  }
+
+  if (Object.keys(fallbackData).length > 0 && cursor < lines.length && !lines[cursor].trim()) {
+    return {
+      data: fallbackData,
+      content: lines.slice(cursor + 1).join('\n')
+    };
+  }
+
+  return {
+    data: {},
+    content: parsed.content || text
+  };
+}
+
 const md = new MarkdownIt({
   html: false,
   linkify: true,
@@ -126,14 +204,15 @@ async function readPosts(explicitPostsDir) {
       const fullPath = path.join(postsDir, file.name);
       const raw = await fs.readFile(fullPath, 'utf-8');
       const parsed = matter(raw);
+      const recovered = recoverMetadata(raw, parsed);
       const slug = slugify(file.name);
-      const title = parsed.data.title || slug;
+      const title = recovered.data.title || slug;
       const inferredDate = inferDateFromSlug(slug);
-      const date = parsed.data.date || parsed.data.created_at || inferredDate || '1970-01-01';
-      const category = parsed.data.category || 'IT';
-      const tags = normalizeTags(parsed.data.tags);
-      const excerpt = parsed.data.excerpt || excerptFromBody(parsed.content);
-      const markdownContent = transformWikiLinks(parsed.content);
+      const date = recovered.data.date || recovered.data.created_at || inferredDate || '1970-01-01';
+      const category = recovered.data.category || 'IT';
+      const tags = normalizeTags(recovered.data.tags);
+      const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const markdownContent = transformWikiLinks(recovered.content);
 
       return {
         slug,
@@ -307,6 +386,7 @@ module.exports = {
   normalizeTags,
   slugFromWikiName,
   inferDateFromSlug,
+  recoverMetadata,
   resolvePostBySlug,
   readPosts,
   renderPostPage
