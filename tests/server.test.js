@@ -49,6 +49,9 @@ describe('blog server', () => {
 
   it('slugFromWikiName creates clean post slug', () => {
     expect(slugFromWikiName('Zero Downtime Deployments')).toBe('zero-downtime-deployments');
+    expect(slugFromWikiName('Cloudflare Tunnel haerten')).toBe('cloudflare-tunnel-haerten');
+    expect(slugFromWikiName('Schroeder & Soehne: Uebergroesse')).toBe('schroeder-soehne-uebergroesse');
+    expect(slugFromWikiName('Sicherheit für Öl und Straße')).toBe('sicherheit-fuer-oel-und-strasse');
   });
 
   it('inferDateFromSlug extracts YYYY-MM-DD prefix', () => {
@@ -147,6 +150,12 @@ describe('blog server', () => {
     expect(resolvePostBySlug(posts, '2026-08-18-zero-downtime-mit-compose')).toEqual(posts[1]);
     expect(resolvePostBySlug(posts, 'systemd-timer-statt-cron')).toEqual(posts[0]);
     expect(resolvePostBySlug(posts, 'unknown')).toBeNull();
+  });
+
+  it('resolvePostBySlug matches umlaut and ascii variants', () => {
+    const posts = [{ slug: '2026-08-12-cloudflare-tunnel-haerten' }];
+    expect(resolvePostBySlug(posts, 'cloudflare-tunnel-härten')).toEqual(posts[0]);
+    expect(resolvePostBySlug(posts, 'cloudflare-tunnel-haerten')).toEqual(posts[0]);
   });
 
   it('recoverMetadata parses plain key/value header when parser metadata is empty', () => {

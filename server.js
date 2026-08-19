@@ -51,6 +51,12 @@ function slugFromWikiName(name) {
   return String(name || '')
     .trim()
     .toLowerCase()
+    .replace(/\u00e4/g, 'ae')
+    .replace(/\u00f6/g, 'oe')
+    .replace(/\u00fc/g, 'ue')
+    .replace(/\u00df/g, 'ss')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .replace(/-+/g, '-')
@@ -231,17 +237,17 @@ async function readPosts(explicitPostsDir) {
 }
 
 function resolvePostBySlug(posts, requestedSlug) {
-  const normalized = String(requestedSlug || '').trim().toLowerCase();
+  const normalized = slugFromWikiName(requestedSlug || '');
   if (!normalized) {
     return null;
   }
 
-  const exact = posts.find((item) => String(item.slug).toLowerCase() === normalized);
+  const exact = posts.find((item) => slugFromWikiName(item.slug) === normalized);
   if (exact) {
     return exact;
   }
 
-  return posts.find((item) => String(item.slug).toLowerCase().endsWith(`-${normalized}`)) || null;
+  return posts.find((item) => slugFromWikiName(item.slug).endsWith(`-${normalized}`)) || null;
 }
 
 function renderPostPage(post) {
