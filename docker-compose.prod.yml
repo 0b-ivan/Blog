@@ -3,5 +3,5 @@ services:
     image: ${BLOG_IMAGE:?BLOG_IMAGE must be set}
     container_name: kernel-notes-blog
     ports:
-      - "8080:8080"
+      - "18888:8080"
     restart: unless-stopped
