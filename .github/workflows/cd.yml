@@ -49,19 +49,26 @@ jobs:
     needs: verify-main-origin
     outputs:
       blog_image: ${{ steps.meta.outputs.blog_image }}
+      blog_version: ${{ steps.meta.outputs.blog_version }}
       function_image: ${{ steps.meta.outputs.function_image }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set image names
+      - name: Set image names and deployment version
         id: meta
         run: |
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          VERSION_PREFIX="${BASE_VERSION%.*}"
+          BLOG_VERSION="${VERSION_PREFIX}.${GITHUB_RUN_NUMBER}"
+
           echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
+          echo "blog_version=${BLOG_VERSION}" >> "$GITHUB_OUTPUT"
           echo "function_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.FUNCTION_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
           echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "Deployment version: ${BLOG_VERSION}"
 
       - name: Login to GHCR
         uses: docker/login-action@v4
@@ -76,8 +83,11 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          build-args: |
+            BUILD_VERSION=${{ steps.meta.outputs.blog_version }}
           tags: |
             ${{ steps.meta.outputs.blog_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:${{ steps.meta.outputs.blog_version }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:latest
 
       - name: Build and push function image

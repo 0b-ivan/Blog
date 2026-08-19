@@ -9,7 +9,9 @@ RUN if [ -f package-lock.json ]; then \
 			npm install --omit=dev --no-audit --no-fund; \
 		fi && npm cache clean --force
 
-RUN VERSION="$(node -p "require('./package.json').version")" && \
+ARG BUILD_VERSION
+RUN PACKAGE_VERSION="$(node -p "require('./package.json').version")" && \
+		VERSION="${BUILD_VERSION:-$PACKAGE_VERSION}" && \
 		RELEASE_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
 		printf '{"version":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_DATE" > /app/build-info.json
 
