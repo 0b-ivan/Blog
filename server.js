@@ -280,6 +280,7 @@ function renderPostPage(post) {
         <a href="/#posts">Artikel</a>
         <a href="/#topics">Themen</a>
         <a href="/#about">About</a>
+        <a href="/impressum">Impressum</a>
       </nav>
     </header>
 
@@ -298,6 +299,7 @@ function renderPostPage(post) {
           <div class="post-content terminal-content">${post.html}</div>
         </section>
         <p><a class="read-more" href="/">Zurueck zur Startseite</a></p>
+        <p><a class="read-more" href="/impressum">Zum Impressum</a></p>
       </article>
     </main>
     <script src="/script.js"></script>

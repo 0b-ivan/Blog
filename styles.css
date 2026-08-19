@@ -295,6 +295,40 @@ h1 {
   color: #2a3036;
 }
 
+.about-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 1rem 1.2rem;
+  align-items: start;
+}
+
+.profile-photo {
+  width: 180px;
+  height: 180px;
+  border-radius: 16px;
+  border: 1px solid #cabda7;
+  background: #eef3f9;
+  object-fit: cover;
+  box-shadow: 0 8px 20px rgba(22, 25, 28, 0.12);
+}
+
+.about-copy p {
+  margin-top: 0.2rem;
+}
+
+.steckbrief {
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  color: #222b33;
+}
+
+.steckbrief li strong {
+  color: #163650;
+}
+
 .site-footer {
   padding: 2rem 0 3rem;
   display: flex;
@@ -303,6 +337,57 @@ h1 {
   color: #2d343b;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.88rem;
+}
+
+.footer-links {
+  display: inline-flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.legal-main {
+  width: min(860px, 92vw);
+  margin-inline: auto;
+  padding: 2.2rem 0 3.2rem;
+}
+
+.legal-card {
+  border: 1px solid #ccbfa9;
+  border-radius: 14px;
+  background: #fffaf1;
+  padding: 1.2rem;
+  box-shadow: 0 10px 22px rgba(20, 25, 30, 0.08);
+}
+
+.legal-card h1 {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  max-width: none;
+}
+
+.legal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.legal-grid section {
+  border: 1px solid #dfd3bf;
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  background: #fffef9;
+}
+
+.legal-grid h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.08rem;
+}
+
+.legal-note {
+  margin-top: 0.9rem;
+  font-size: 0.92rem;
+  color: #505862;
 }
 
 .post-page {
@@ -664,9 +749,22 @@ h1 {
     grid-template-columns: 1fr;
   }
 
+  .about-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-photo {
+    width: 140px;
+    height: 140px;
+  }
+
   .site-footer {
     flex-direction: column;
     gap: 0.6rem;
     align-items: flex-start;
+  }
+
+  .footer-links {
+    gap: 0.7rem;
   }
 }

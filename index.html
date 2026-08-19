@@ -27,6 +27,7 @@
         <a href="#posts">Artikel</a>
         <a href="#topics">Themen</a>
         <a href="#about">About</a>
+        <a href="/impressum">Impressum</a>
       </nav>
     </header>
 
@@ -59,17 +60,37 @@
 
       <section class="about reveal" id="about" data-delay="120">
         <h2>About</h2>
-        <p>
-          Ich bin Infrastruktur-Nerd und schreibe diesen Blog, um komplexe Themen
-          in klare, lauffaehige Schritte zu zerlegen. Kein Theorie-Overload,
-          sondern Entscheidungen, Trade-offs und sofort nutzbare Beispiele.
-        </p>
+        <div class="about-layout">
+          <img
+            class="profile-photo"
+            src="/assets/profile-obivan.svg"
+            alt="Profilfoto von obivan"
+            width="180"
+            height="180"
+          />
+          <div class="about-copy">
+            <p>
+              Ich bin Infrastruktur-Nerd und schreibe diesen Blog, um komplexe Themen
+              in klare, lauffaehige Schritte zu zerlegen. Kein Theorie-Overload,
+              sondern Entscheidungen, Trade-offs und sofort nutzbare Beispiele.
+            </p>
+            <ul class="steckbrief" aria-label="Steckbrief">
+              <li><strong>Name:</strong> Ivan</li>
+              <li><strong>Rolle:</strong> Platform / DevOps Engineer</li>
+              <li><strong>Schwerpunkte:</strong> Linux, Cloudflare, Security, Automation</li>
+              <li><strong>Arbeitsweise:</strong> Pragmatisch, messbar, dokumentiert</li>
+            </ul>
+          </div>
+        </div>
       </section>
     </main>
 
     <footer class="site-footer reveal" data-delay="120">
       <p>© 2026 Kernel Notes</p>
-      <a href="#">RSS</a>
+      <div class="footer-links">
+        <a href="/impressum">Impressum</a>
+        <a href="#">RSS</a>
+      </div>
     </footer>
 
     <script src="script.js"></script>
