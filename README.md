@@ -1,23 +1,24 @@
-# Kernel Notes - Docker Compose + faasd
+# Kernel Notes
 
-Dieses Projekt hat jetzt **zwei Betriebsarten**:
+Persoenlicher IT-Blog mit Node.js/Express, Markdown-Posts, Docker und GitHub Actions.
 
-1. **Lokal mit Docker Compose** (schneller Preview-Run)
-2. **Deployment als OpenFaaS Function auf faasd**
+Der Blog wird lokal per Docker Compose entwickelt und in Production als fertiges Docker-Image aus GHCR auf einem Hetzner-Host betrieben. Zusaetzlich existiert weiterhin eine OpenFaaS/faasd-Variante.
 
-Wichtig: `faasd` ist kein normaler Docker-Compose-Container. Es laeuft auf Linux mit `containerd`, CNI und `systemd`.
+## Betriebsarten
 
-## 1) Lokal per Docker Compose starten
+### Lokal mit Docker Compose
 
-Voraussetzung: Docker Engine + Docker Compose Plugin
+Voraussetzung: Docker Engine + Docker Compose Plugin.
 
 ```bash
 docker compose up -d --build
 ```
 
-Dann im Browser:
+Der Blog ist danach erreichbar unter:
 
-- http://localhost:8080
+```text
+http://localhost:8080
+```
 
 Stoppen:
 
@@ -25,59 +26,173 @@ Stoppen:
 docker compose down
 ```
 
-## 2) faasd auf einem Linux-Host installieren
+### Production auf Hetzner
 
-Nimm dafuer idealerweise einen dedizierten Host/VM (ohne Docker-Workloads auf derselben Maschine).
+Production baut nicht mehr auf dem Hetzner-Server selbst.
 
-```bash
-chmod +x faasd/install-faasd.sh
-./faasd/install-faasd.sh
+Nach einem Merge nach `main` baut die CD-Pipeline ein unveraenderliches Docker-Image und pushed es nach GHCR:
+
+```text
+ghcr.io/0b-ivan/kernel-notes-blog:<commit-sha>
 ```
 
-Nach Installation:
+Anschliessend wird genau dieses SHA-Image per SSH auf den Hetzner-Host deployed.
 
-```bash
-sudo cat /var/lib/faasd/secrets/basic-auth-password
+Das Production-Compose liegt in:
+
+```text
+docker-compose.prod.yml
 ```
 
-## 3) Blog als Function zu faasd deployen
+Port-Mapping in Production:
 
-In [faasd/stack.yml](faasd/stack.yml) musst du den Image-Namen anpassen:
-
-- `ghcr.io/your-user/kernel-notes-function:latest` -> dein Registry-Pfad
-
-Dann:
-
-```bash
-cd faasd
-faas-cli up -f stack.yml
+```text
+Host 1888 -> Container 8080
 ```
 
-Falls noetig vorher einloggen:
+Der Node-Prozess selbst lauscht im Container weiterhin auf Port `8080`.
 
-```bash
-export OPENFAAS_URL=http://<FAASD_HOST>:8080
-echo "<PASSWORT>" | faas-cli login --username admin --password-stdin
+Der Deployment-Healthcheck liest den tatsaechlich von Docker veroeffentlichten Host-Port aus und erwartet `1888`. Geprueft wird dann:
+
+```text
+http://127.0.0.1:1888/healthz
 ```
 
-Aufruf danach:
+Wenn das Port-Mapping nicht `1888 -> 8080` entspricht oder `/healthz` nicht erfolgreich antwortet, gilt das Deployment als fehlgeschlagen und der Workflow versucht ein Rollback auf das vorherige Image.
 
-- http://<FAASD_HOST>:8080/function/kernel-notes
+### faasd / OpenFaaS
 
-## Struktur
+Die bestehende faasd-Variante bleibt erhalten.
 
-- `docker-compose.yml`: lokale Compose-Umgebung fuer den Blog
-- `Dockerfile`: Image fuer lokalen Blog-Container
-- `faasd/stack.yml`: OpenFaaS-Stack fuer faasd
-- `faasd/function-blog/`: Function-Image mit gleicher Blog-UI
+Relevante Dateien:
 
-## 3b) Blogposts pragmatisch als Markdown
+- `faasd/stack.yml`
+- `faasd/function-blog/`
+- `faasd/install-faasd.sh`
 
-Du schreibst neue Artikel als `.md` Datei im Ordner `posts/`.
+`faasd` ist kein normaler Docker-Compose-Container. Es laeuft auf Linux mit `containerd`, CNI und `systemd`.
 
-Beispiel-Dateiname:
+## Deployment-User auf Hetzner
 
-- `posts/2026-08-19-mein-artikel.md`
+GitHub Actions verwendet fuer Production einen eigenen SSH-Account:
+
+```text
+blog-deploy
+```
+
+Der Account verwendet einen dedizierten SSH-Key und ist fuer die Docker-Deployments Mitglied der Gruppe `docker`.
+
+Das Deployment-Verzeichnis ist:
+
+```text
+/opt/Blog
+```
+
+Weitere Hinweise stehen unter:
+
+```text
+ops/hetzner/README.md
+```
+
+## GitHub Environment `production`
+
+Die Zugangsdaten fuer Hetzner liegen als Environment Secrets im GitHub Environment `production`.
+
+Erforderlich:
+
+```text
+HETZNER_HOST
+HETZNER_PORT
+HETZNER_USER
+HETZNER_SSH_KEY
+HETZNER_KNOWN_HOSTS
+```
+
+Aktuell wird SSH auf Port `2222` verwendet und `HETZNER_USER` ist `blog-deploy`.
+
+Das `production`-Environment sollte nur Deployments vom Branch `main` erlauben.
+
+## CI/CD
+
+Es gibt zwei zentrale GitHub-Actions-Workflows:
+
+```text
+.github/workflows/ci.yml
+.github/workflows/cd.yml
+```
+
+### CI
+
+Die CI laeuft fuer Pull Requests und prueft unter anderem:
+
+- Linting
+- Unit- und API-Tests mit Coverage
+- Post-Frontmatter
+- Docker Compose
+- Production Compose
+- Blog-Image
+- OpenFaaS-Function-Image
+- Smoke-Test und `/healthz`
+- Trivy Security Scan
+
+Lokal:
+
+```bash
+npm install
+npm run lint
+npm run test:coverage
+```
+
+### CD
+
+Die CD startet nach einem Merge nach `main`.
+
+Ablauf:
+
+```text
+Pull Request
+    -> CI + Trivy
+    -> Merge nach main
+    -> Docker-Image bauen
+    -> Push nach GHCR
+    -> SSH auf Hetzner
+    -> docker compose pull
+    -> docker compose up -d
+    -> Port-Mapping pruefen
+    -> Healthcheck auf :1888/healthz
+```
+
+Das Deployment verwendet bewusst den Commit-SHA als Image-Tag und nicht nur `latest`. Dadurch ist nachvollziehbar, welcher Stand gerade laeuft und ein Rollback kann auf das vorherige Image erfolgen.
+
+## Schutz von `main`
+
+`main` soll nicht direkt beschrieben werden. Aenderungen gehen ueber Pull Requests.
+
+Das Repository-Ruleset fuer `main` sollte mindestens erzwingen:
+
+- Pull Request vor Merge
+- erfolgreiche Status Checks
+- `validate-and-smoke-test`
+- `security-trivy`
+- Branch muss vor Merge aktuell sein
+- keine Force Pushes
+- Branch darf nicht geloescht werden
+
+Damit ist der normale Weg:
+
+```text
+Feature Branch -> Pull Request -> CI gruen -> Merge -> automatisches Production Deployment
+```
+
+## Blogposts
+
+Neue Artikel liegen als Markdown-Dateien im Ordner `posts/`.
+
+Beispiel:
+
+```text
+posts/2026-08-19-mein-artikel.md
+```
 
 Empfohlenes Frontmatter:
 
@@ -87,58 +202,43 @@ title: Mein Artikel
 date: 2026-08-19
 category: DevOps
 excerpt: Kurze Zusammenfassung fuer die Startseite.
+tags:
+  - Docker
+  - CI/CD
 ---
 ```
 
-Danach einfach normal committen/pushen.
+Die Startseite laedt Artikel ueber:
 
-Die Startseite laedt Artikel automatisch ueber `GET /api/posts` und jede Datei ist unter `GET /posts/<slug>` erreichbar.
-
-## 3c) Spaeter eigenes CMS
-
-Der Wechsel auf ein CMS ist vorbereitet, weil das Frontend bereits ueber API-Daten rendert.
-
-Spaeter kannst du `GET /api/posts` und `GET /posts/:slug` intern auf CMS-Daten umstellen, ohne die Startseiten-UI neu zu bauen.
-
-## 4) CI/CD mit GitHub Actions
-
-Es gibt zwei Workflows:
-
-- `.github/workflows/ci.yml`
-- `.github/workflows/cd.yml`
-
-### CI (bei Push + PR)
-
-- installiert Node-Abhaengigkeiten (`npm ci` mit Lockfile)
-- fuehrt Linting aus (`npm run lint`)
-- fuehrt Unit- und API-Tests mit Coverage aus (`npm run test:coverage`)
-- validiert `docker compose config`
-- baut beide Images (Blog + Function)
-- startet den Stack und prueft `http://127.0.0.1:8080/healthz`
-
-### Lokal testen
-
-```bash
-npm install
-npm run lint
-npm run test:coverage
+```text
+GET /api/posts
 ```
 
-### CD (bei Push auf `main` + manuell)
+Ein Artikel ist erreichbar unter:
 
-- baut und pushed Images nach GHCR:
-	- `ghcr.io/<owner>/kernel-notes-blog:<sha>` + `latest`
-	- `ghcr.io/<owner>/kernel-notes-function:<sha>` + `latest`
-- deployed die Function `kernel-notes` automatisch nach faasd
+```text
+GET /posts/<slug>
+```
 
-### GitHub Secrets fuer faasd-Deploy
+## Release-Information im Footer
 
-Lege in deinem Repo unter Settings -> Secrets and variables -> Actions an:
+Das Docker-Image erzeugt beim Build eine `build-info.json`.
 
-- `OPENFAAS_URL` (z. B. `http://dein-host:8080`)
-- `OPENFAAS_USERNAME` (meist `admin`)
-- `OPENFAAS_PASSWORD` (aus `/var/lib/faasd/secrets/basic-auth-password`)
-- optional: `OPENFAAS_INSECURE` = `true` (nur wenn TLS self-signed)
+Darin stehen:
 
-Wenn diese Secrets fehlen, wird nur gebaut/gepusht, aber nicht nach faasd deployed.
-# Blog
+- Version aus `package.json`
+- Build-/Release-Zeitpunkt des Images
+
+Der Footer zeigt dadurch neben `© 2026 Kernel Notes` auch die Version und das letzte Release des aktuell laufenden Images an.
+
+## Wichtige Dateien
+
+- `server.js` - Express-Anwendung und API
+- `posts/` - Markdown-Artikel
+- `docker-compose.yml` - lokale Entwicklung
+- `docker-compose.prod.yml` - Production auf Hetzner
+- `Dockerfile` - Blog-Image
+- `.github/workflows/ci.yml` - CI
+- `.github/workflows/cd.yml` - GHCR + Hetzner Deployment
+- `ops/hetzner/` - Setup des Deployment-Users
+- `faasd/` - optionale OpenFaaS/faasd-Variante
