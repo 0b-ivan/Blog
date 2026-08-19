@@ -157,3 +157,32 @@ async function loadPosts() {
 
 observeRevealItems();
 loadPosts();
+
+function setupTerminalFocusMode() {
+  const toggleButton = document.querySelector('[data-terminal-toggle]');
+  const terminal = document.querySelector('.terminal-post');
+
+  if (!toggleButton || !terminal) {
+    return;
+  }
+
+  const setState = (isMaximized) => {
+    terminal.classList.toggle('is-maximized', isMaximized);
+    document.body.classList.toggle('terminal-focus', isMaximized);
+    toggleButton.setAttribute('aria-pressed', String(isMaximized));
+    toggleButton.textContent = isMaximized ? 'Exit focus' : 'Maximize';
+  };
+
+  toggleButton.addEventListener('click', () => {
+    const isMaximized = terminal.classList.contains('is-maximized');
+    setState(!isMaximized);
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && terminal.classList.contains('is-maximized')) {
+      setState(false);
+    }
+  });
+}
+
+setupTerminalFocusMode();

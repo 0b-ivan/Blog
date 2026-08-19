@@ -80,7 +80,7 @@ function renderPostPage(post) {
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
+  <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
     <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
     <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
@@ -104,6 +104,9 @@ function renderPostPage(post) {
             <span class="terminal-dot terminal-dot-yellow" aria-hidden="true"></span>
             <span class="terminal-dot terminal-dot-green" aria-hidden="true"></span>
             <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
+            <button class="terminal-max-btn" type="button" data-terminal-toggle aria-pressed="false" aria-label="Terminal maximieren">
+              Maximize
+            </button>
           </div>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
