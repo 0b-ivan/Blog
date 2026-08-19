@@ -194,8 +194,8 @@ h1 {
 }
 
 .post-card {
-  background: linear-gradient(180deg, var(--card), #f4f0e7);
-  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #fffdfa, #f7f2e9);
+  border: 1px solid #cfc6b4;
   padding: 1.2rem;
   margin-bottom: 1rem;
   border-radius: 14px;
@@ -204,8 +204,8 @@ h1 {
 
 .post-card:hover {
   transform: translateY(-3px);
-  border-color: #b8b1a2;
-  box-shadow: 0 8px 20px rgba(43, 48, 56, 0.08);
+  border-color: #a79d8a;
+  box-shadow: 0 10px 24px rgba(43, 48, 56, 0.12);
 }
 
 .post-card h3 {
@@ -215,7 +215,7 @@ h1 {
 
 .post-card p {
   margin-top: 0.7rem;
-  color: #2a3036;
+  color: #212830;
 }
 
 .post-tags,
@@ -229,13 +229,19 @@ h1 {
 .tag-chip {
   display: inline-flex;
   align-items: center;
-  border: 1px solid rgba(145, 170, 207, 0.55);
+  border: 1px solid #9db2ca;
   border-radius: 999px;
   padding: 0.18rem 0.55rem;
   font-size: 0.78rem;
+  color: #21486d;
+  background: #e7f0fb;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.terminal-content .tag-chip {
+  border-color: rgba(154, 200, 255, 0.35);
   color: #dbeaff;
   background: rgba(94, 138, 207, 0.18);
-  font-family: "IBM Plex Mono", monospace;
 }
 
 .topics {
