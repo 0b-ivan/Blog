@@ -71,6 +71,35 @@ Aufruf danach:
 - `faasd/stack.yml`: OpenFaaS-Stack fuer faasd
 - `faasd/function-blog/`: Function-Image mit gleicher Blog-UI
 
+## 3b) Blogposts pragmatisch als Markdown
+
+Du schreibst neue Artikel als `.md` Datei im Ordner `posts/`.
+
+Beispiel-Dateiname:
+
+- `posts/2026-08-19-mein-artikel.md`
+
+Empfohlenes Frontmatter:
+
+```md
+---
+title: Mein Artikel
+date: 2026-08-19
+category: DevOps
+excerpt: Kurze Zusammenfassung fuer die Startseite.
+---
+```
+
+Danach einfach normal committen/pushen.
+
+Die Startseite laedt Artikel automatisch ueber `GET /api/posts` und jede Datei ist unter `GET /posts/<slug>` erreichbar.
+
+## 3c) Spaeter eigenes CMS
+
+Der Wechsel auf ein CMS ist vorbereitet, weil das Frontend bereits ueber API-Daten rendert.
+
+Spaeter kannst du `GET /api/posts` und `GET /posts/:slug` intern auf CMS-Daten umstellen, ohne die Startseiten-UI neu zu bauen.
+
 ## 4) CI/CD mit GitHub Actions
 
 Es gibt zwei Workflows:

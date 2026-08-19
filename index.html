@@ -47,38 +47,9 @@
       <section class="posts" id="posts">
         <div class="section-head reveal" data-delay="180">
           <h2>Neu im Blog</h2>
-          <a href="#">Alle Beitraege</a>
+          <a href="#posts">Alle Beitraege</a>
         </div>
-
-        <article class="post-card reveal" data-delay="240">
-          <p class="meta">DevOps · 18 Aug 2026</p>
-          <h3>Zero-Downtime Deployments mit Docker Compose</h3>
-          <p>
-            Rolling Updates ohne Kubernetes: Healthchecks, Reverse Proxy und ein
-            sauberer Cutover fuer kleine bis mittlere Deployments.
-          </p>
-          <a href="#" class="read-more">Artikel lesen</a>
-        </article>
-
-        <article class="post-card reveal" data-delay="300">
-          <p class="meta">Security · 12 Aug 2026</p>
-          <h3>Cloudflare Tunnel haerten: Die 7 wichtigsten Checks</h3>
-          <p>
-            Access Policies, service tokens, mTLS und sinnvolle Logging-Defaults,
-            damit aus einem schnellen Setup eine robuste Kante wird.
-          </p>
-          <a href="#" class="read-more">Artikel lesen</a>
-        </article>
-
-        <article class="post-card reveal" data-delay="360">
-          <p class="meta">Linux · 04 Aug 2026</p>
-          <h3>Systemd-Timer als bessere Cronjobs</h3>
-          <p>
-            Reproduzierbare Jobs mit Journal-Logs, Dependencies und Recovery-Strategie.
-            Mehr Kontrolle, weniger stille Fehler.
-          </p>
-          <a href="#" class="read-more">Artikel lesen</a>
-        </article>
+        <div id="posts-list" aria-live="polite"></div>
       </section>
 
       <section class="topics" id="topics">
