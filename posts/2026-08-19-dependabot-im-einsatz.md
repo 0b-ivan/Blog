@@ -1,7 +1,7 @@
 ---
 id: 2026-08-19-dependabot-im-einsatz
 version: 1
-title: Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?
+title: "Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?"
 date: 2026-08-19
 created_at: 2026-08-19
 updated_at: 2026-08-19
