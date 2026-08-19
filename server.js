@@ -98,7 +98,15 @@ function renderPostPage(post) {
       <article class="post-page">
         <p class="meta">${meta}</p>
         <h1>${post.title}</h1>
-        <div class="post-content">${post.html}</div>
+        <section class="terminal-post" aria-label="Terminal article view">
+          <div class="terminal-chrome">
+            <span class="terminal-dot terminal-dot-red" aria-hidden="true"></span>
+            <span class="terminal-dot terminal-dot-yellow" aria-hidden="true"></span>
+            <span class="terminal-dot terminal-dot-green" aria-hidden="true"></span>
+            <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
+          </div>
+          <div class="post-content terminal-content">${post.html}</div>
+        </section>
         <p><a class="read-more" href="/">Zurueck zur Startseite</a></p>
       </article>
     </main>
