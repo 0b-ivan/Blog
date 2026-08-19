@@ -90,5 +90,16 @@ jobs:
           format: table
           ignore-unfixed: true
           vuln-type: os,library
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Trivy image scan (strict gate on CRITICAL)
+        if: ${{ vars.TRIVY_STRICT == 'true' }}
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: kernel-notes-blog:ci
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
           severity: CRITICAL
           exit-code: '1'
