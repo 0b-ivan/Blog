@@ -6,6 +6,10 @@ const postsDir = path.join(__dirname, '..', 'posts');
 const requiredFields = ['id', 'version', 'created_at', 'updated_at', 'author', 'reviewed_by'];
 
 function isValidDate(value) {
+  if (value instanceof Date) {
+    return !Number.isNaN(value.getTime());
+  }
+
   const text = String(value || '').trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
     return false;
