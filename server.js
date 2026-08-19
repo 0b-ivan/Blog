@@ -283,6 +283,7 @@ function renderPostPage(post) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/image-viewer.css" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -317,6 +318,21 @@ function renderPostPage(post) {
         <p><a class="read-more" href="/impressum">Zum Impressum</a></p>
       </article>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js"></script>
+    <script>
+      document.querySelectorAll('.terminal-content img').forEach((image) => {
+        image.loading = 'lazy';
+        image.decoding = 'async';
+      });
+
+      if (typeof mediumZoom === 'function') {
+        mediumZoom('.terminal-content img', {
+          margin: 24,
+          background: 'rgba(8, 12, 18, 0.94)',
+          scrollOffset: 60
+        });
+      }
+    </script>
     <script src="/script.js"></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
