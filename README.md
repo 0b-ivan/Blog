@@ -30,13 +30,17 @@ docker compose down
 
 Production baut nicht mehr auf dem Hetzner-Server selbst.
 
-Nach einem Merge nach `main` baut die CD-Pipeline ein unveraenderliches Docker-Image und pushed es nach GHCR:
+Nach einem Merge nach `main` baut die CD-Pipeline ein unveraenderliches Docker-Image und pushed es nach GHCR.
+
+Das Blog-Image bekommt drei Tags:
 
 ```text
 ghcr.io/0b-ivan/kernel-notes-blog:<commit-sha>
+ghcr.io/0b-ivan/kernel-notes-blog:<deployment-version>
+ghcr.io/0b-ivan/kernel-notes-blog:latest
 ```
 
-Anschliessend wird genau dieses SHA-Image per SSH auf den Hetzner-Host deployed.
+Anschliessend wird weiterhin genau das SHA-Image per SSH auf den Hetzner-Host deployed.
 
 Das Production-Compose liegt in:
 
@@ -153,6 +157,7 @@ Ablauf:
 Pull Request
     -> CI + Trivy
     -> Merge nach main
+    -> Deployment-Version erzeugen
     -> Docker-Image bauen
     -> Push nach GHCR
     -> SSH auf Hetzner
@@ -162,7 +167,31 @@ Pull Request
     -> Healthcheck auf :1888/healthz
 ```
 
-Das Deployment verwendet bewusst den Commit-SHA als Image-Tag und nicht nur `latest`. Dadurch ist nachvollziehbar, welcher Stand gerade laeuft und ein Rollback kann auf das vorherige Image erfolgen.
+Das Deployment verwendet bewusst den Commit-SHA als eigentliches Deployment-Image und nicht nur `latest`. Dadurch ist nachvollziehbar, welcher Stand gerade laeuft und ein Rollback kann auf das vorherige Image erfolgen.
+
+## Deployment-Version
+
+Bei jedem neuen CD-Workflow-Lauf wird automatisch eine neue Blog-Version erzeugt.
+
+Die Major- und Minor-Version kommen aus `package.json`. Die Patch-Version ist die GitHub-Actions-Run-Nummer.
+
+Bei einer Basisversion von:
+
+```text
+1.0.0
+```
+
+entstehen zum Beispiel:
+
+```text
+1.0.241
+1.0.242
+1.0.243
+```
+
+Damit aendert sich die sichtbare Version bei jedem neuen Deployment, ohne dass `package.json` fuer jeden Deploy committed werden muss.
+
+Die Deployment-Version wird als Docker-Build-Argument in das Blog-Image geschrieben und zusaetzlich als GHCR-Tag veroeffentlicht.
 
 ## Schutz von `main`
 
@@ -226,10 +255,18 @@ Das Docker-Image erzeugt beim Build eine `build-info.json`.
 
 Darin stehen:
 
-- Version aus `package.json`
+- automatisch erzeugte Deployment-Version
 - Build-/Release-Zeitpunkt des Images
 
-Der Footer zeigt dadurch neben `© 2026 Kernel Notes` auch die Version und das letzte Release des aktuell laufenden Images an.
+Der Footer zeigt dadurch neben `© 2026 Kernel Notes` die Version des aktuell laufenden Deployments und den Zeitpunkt des letzten Builds an.
+
+Ein Production-Deploy kann damit zum Beispiel so aussehen:
+
+```text
+© 2026 Kernel Notes · v1.0.242 · Letztes Release: 19.08.2026, 22:40
+```
+
+Lokale Docker-Builds ohne `BUILD_VERSION` verwenden weiterhin die Version aus `package.json` als Fallback.
 
 ## Wichtige Dateien
 
