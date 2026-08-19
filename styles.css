@@ -116,6 +116,53 @@ main,
   padding: 5.5rem 0 4rem;
 }
 
+.hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 1.2rem;
+  align-items: start;
+}
+
+.hero-profile {
+  border: 1px solid #cfc3b0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fffdf9, #f8f2e9);
+  padding: 0.85rem;
+  box-shadow: 0 12px 24px rgba(25, 30, 36, 0.1);
+}
+
+.hero-profile .profile-photo {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.hero-profile-body {
+  margin-top: 0.75rem;
+}
+
+.hero-profile-body h2 {
+  font-size: 1.3rem;
+  margin: 0.2rem 0 0.35rem;
+}
+
+.hero-profile-body p {
+  margin: 0;
+  color: #2d3842;
+}
+
+.hero-profile-body a {
+  display: inline-block;
+  margin-top: 0.55rem;
+  color: #145a78;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero-profile-body a:hover {
+  text-decoration: underline;
+}
+
 .eyebrow,
 .meta {
   font-family: "IBM Plex Mono", monospace;
@@ -370,6 +417,26 @@ h1 {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+.operator-card {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d8cdb8;
+  border-radius: 12px;
+  background: #fffef9;
+  padding: 0.8rem;
+}
+
+.operator-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.12rem;
+}
+
+.operator-card p {
+  margin: 0.35rem 0;
 }
 
 .legal-grid section {
@@ -721,6 +788,14 @@ h1 {
 }
 
 @media (max-width: 860px) {
+  .hero-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-profile {
+    max-width: 380px;
+  }
+
   .topic-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -750,6 +825,10 @@ h1 {
   }
 
   .about-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .operator-card {
     grid-template-columns: 1fr;
   }
 
