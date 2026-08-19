@@ -32,6 +32,7 @@
       <article class="legal-card">
         <p class="eyebrow">Rechtliches</p>
         <h1>Impressum</h1>
+
         <section class="operator-card" aria-label="Betreiber der Website">
           <img
             class="profile-photo"
@@ -43,54 +44,50 @@
           />
           <div>
             <h2>Betreiber der Website</h2>
-            <p><strong id="legal-operator-name">Ivan Babayev</strong><br /><span id="legal-operator-role">AWS Cloud Infrastructure Engineer bei e2n</span></p>
-            <p>Standort: <span id="legal-operator-location">Würzburg, Bayern, Deutschland</span></p>
-            <p>
-              LinkedIn:
-              <a href="https://www.linkedin.com/in/ivan-babayev/?isSelfProfile=false" target="_blank" rel="noopener noreferrer">Profil ansehen</a>
-            </p>
+            <p><strong>Ivan Babayev</strong></p>
+            <p>Kernel Notes – IT-Blog</p>
+            <p>Würzburg, Bayern, Deutschland</p>
           </div>
         </section>
 
         <div class="legal-grid">
           <section>
-            <h2>Angaben gemäß § 5 TMG</h2>
+            <h2>Anbieterkennzeichnung gemäß § 18 Abs. 1 MStV</h2>
             <p>
-              <span id="legal-name">Ivan Babayev</span><br />
-              <span id="legal-street">[Straße und Hausnummer]</span><br />
-              <span id="legal-postal-city">[PLZ Ort]</span><br />
-              <span id="legal-country">Deutschland</span>
+              Ivan Babayev<br />
+              Moscheeweg 24<br />
+              97082 Würzburg<br />
+              Deutschland
             </p>
           </section>
 
           <section>
             <h2>Kontakt</h2>
             <p>
-              E-Mail: <span id="legal-email">[deine-email@example.com]</span><br />
-              Telefon: <span id="legal-phone">[optional]</span>
+              E-Mail:
+              <a href="mailto:hallo@obivan.org">hallo@obivan.org</a>
             </p>
           </section>
 
           <section>
-            <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+            <h2>Verantwortlich für journalistisch-redaktionelle Inhalte gemäß § 18 Abs. 2 MStV</h2>
             <p>
-              <span id="legal-content-responsible">Ivan Babayev</span><br />
-              <span id="legal-content-address">[Anschrift wie oben]</span>
+              Ivan Babayev<br />
+              Moscheeweg 24<br />
+              97082 Würzburg<br />
+              Deutschland
             </p>
           </section>
 
           <section>
-            <h2>Haftungsausschluss</h2>
+            <h2>Haftungshinweis</h2>
             <p>
-              Die Inhalte dieses Blogs wurden mit Sorgfalt erstellt. Für die Richtigkeit,
-              Vollständigkeit und Aktualität der Inhalte wird jedoch keine Gewähr
-              übernommen.
+              Die Inhalte dieses Blogs werden mit Sorgfalt erstellt. Für die Richtigkeit,
+              Vollständigkeit und Aktualität der Inhalte kann jedoch keine Gewähr
+              übernommen werden.
             </p>
           </section>
         </div>
-        <p class="legal-note">
-          Bitte ersetze die Platzhalter in eckigen Klammern durch deine echten Daten.
-        </p>
       </article>
     </main>
 
@@ -100,38 +97,5 @@
         <a href="index.html">Startseite</a>
       </div>
     </footer>
-    <script>
-      (async function hydrateLegalInfo() {
-        try {
-          const response = await fetch('api/legal-info');
-          if (!response.ok) {
-            return;
-          }
-
-          const info = await response.json();
-          const setText = (id, value) => {
-            const node = document.getElementById(id);
-            if (!node) {
-              return;
-            }
-            node.textContent = value;
-          };
-
-          setText('legal-operator-name', info.operatorName);
-          setText('legal-operator-role', info.operatorRole);
-          setText('legal-operator-location', info.operatorLocation);
-          setText('legal-name', info.operatorName);
-          setText('legal-street', info.street);
-          setText('legal-postal-city', info.postalCity);
-          setText('legal-country', info.country);
-          setText('legal-email', info.email);
-          setText('legal-phone', info.phone);
-          setText('legal-content-responsible', info.contentResponsible);
-          setText('legal-content-address', info.contentAddress);
-        } catch (_error) {
-          // Keep static fallback values when API is unavailable.
-        }
-      }());
-    </script>
   </body>
 </html>
