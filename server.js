@@ -8,9 +8,16 @@ const mdContainer = require('markdown-it-container');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
+const DEFAULT_SITE_URL = 'https://blog.obivan.org';
 
 function getPostsDir(explicitPostsDir) {
   return explicitPostsDir || process.env.POSTS_DIR || path.join(root, 'posts');
+}
+
+function getSiteUrl(explicitSiteUrl) {
+  const configured = String(explicitSiteUrl || process.env.SITE_URL || DEFAULT_SITE_URL).trim();
+  const normalized = configured.replace(/\/+$/, '');
+  return normalized || DEFAULT_SITE_URL;
 }
 
 function slugify(fileName) {
@@ -236,6 +243,67 @@ async function readPosts(explicitPostsDir) {
   return posts;
 }
 
+function escapeXml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function escapeCdata(value) {
+  return String(value || '').replace(/]]>/g, ']]]]><![CDATA[>');
+}
+
+function absolutizeHtml(html, explicitSiteUrl) {
+  const siteUrl = getSiteUrl(explicitSiteUrl);
+  return String(html || '')
+    .replace(/\b(href|src)="\/(?!\/)([^"]*)"/g, (_match, attribute, value) => `${attribute}="${siteUrl}/${value}"`)
+    .replace(/\b(href|src)='\/(?!\/)([^']*)'/g, (_match, attribute, value) => `${attribute}='${siteUrl}/${value}'`);
+}
+
+function rssDate(value) {
+  const timestamp = parseDate(value);
+  return timestamp ? new Date(timestamp).toUTCString() : '';
+}
+
+function generateRssFeed(posts, explicitSiteUrl) {
+  const siteUrl = getSiteUrl(explicitSiteUrl);
+  const feedUrl = `${siteUrl}/rss.xml`;
+  const latestDate = posts.map((post) => rssDate(post.date)).find(Boolean);
+  const items = posts
+    .slice(0, 20)
+    .map((post) => {
+      const postUrl = `${siteUrl}/posts/${post.slug}`;
+      const categories = [...new Set([post.category, ...normalizeTags(post.tags)].filter(Boolean))]
+        .map((category) => `      <category>${escapeXml(category)}</category>`)
+        .join('\n');
+      const pubDate = rssDate(post.date);
+      const fullHtml = absolutizeHtml(post.html, siteUrl);
+
+      return `    <item>
+      <title>${escapeXml(post.title)}</title>
+      <link>${escapeXml(postUrl)}</link>
+      <guid isPermaLink="true">${escapeXml(postUrl)}</guid>
+${pubDate ? `      <pubDate>${pubDate}</pubDate>\n` : ''}      <description>${escapeXml(post.excerpt)}</description>
+${categories ? `${categories}\n` : ''}      <content:encoded><![CDATA[${escapeCdata(fullHtml)}]]></content:encoded>
+    </item>`;
+    })
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kernel Notes</title>
+    <link>${escapeXml(`${siteUrl}/`)}</link>
+    <description>IT-Blog über Cloud, Linux, Security und Automation</description>
+    <language>de-de</language>
+    <atom:link href="${escapeXml(feedUrl)}" rel="self" type="application/rss+xml" />
+${latestDate ? `    <lastBuildDate>${latestDate}</lastBuildDate>\n` : ''}${items ? `${items}\n` : ''}  </channel>
+</rss>`;
+}
+
 function resolvePostBySlug(posts, requestedSlug) {
   const normalized = slugFromWikiName(requestedSlug || '');
   if (!normalized) {
@@ -392,6 +460,7 @@ function renderPostPage(post, relatedPosts = []) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${post.title} | Kernel Notes</title>
     <meta name="description" content="${post.excerpt}" />
+    <link rel="alternate" type="application/rss+xml" title="Kernel Notes RSS" href="/rss.xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -469,6 +538,7 @@ function renderPostPage(post, relatedPosts = []) {
 function createApp(options = {}) {
   const app = express();
   const postsDir = options.postsDir;
+  const siteUrl = options.siteUrl;
 
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.use(express.static(root, { extensions: ['html'] }));
@@ -492,6 +562,18 @@ function createApp(options = {}) {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Could not load posts' });
+    }
+  });
+
+  app.get('/rss.xml', async (_req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      res.set('Content-Type', 'application/rss+xml; charset=utf-8');
+      res.set('Cache-Control', 'public, max-age=300');
+      res.status(200).send(generateRssFeed(posts, siteUrl));
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Could not generate RSS feed');
     }
   });
 
@@ -540,6 +622,7 @@ module.exports = {
   createApp,
   startServer,
   getPostsDir,
+  getSiteUrl,
   slugify,
   excerptFromBody,
   parseDate,
@@ -548,6 +631,11 @@ module.exports = {
   inferDateFromSlug,
   recoverMetadata,
   resolvePostBySlug,
+  escapeXml,
+  escapeCdata,
+  absolutizeHtml,
+  rssDate,
+  generateRssFeed,
   relatedPostScore,
   findRelatedPosts,
   renderRelatedPosts,
