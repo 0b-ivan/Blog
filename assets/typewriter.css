@@ -1,0 +1,16 @@
+:root {
+  --typewriter-font: Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--typewriter-font);
+}
+
+body * {
+  font-family: var(--typewriter-font) !important;
+}

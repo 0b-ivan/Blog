@@ -1,3 +1,23 @@
+function ensureKernelBrandAssets() {
+  if (!document.querySelector('link[rel="icon"]')) {
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/svg+xml';
+    favicon.href = '/assets/favicon.svg';
+    document.head.append(favicon);
+  }
+
+  if (!document.querySelector('link[data-kernel-typewriter]')) {
+    const typewriter = document.createElement('link');
+    typewriter.rel = 'stylesheet';
+    typewriter.href = '/assets/typewriter.css';
+    typewriter.dataset.kernelTypewriter = '';
+    document.head.append(typewriter);
+  }
+}
+
+ensureKernelBrandAssets();
+
 const observer = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
