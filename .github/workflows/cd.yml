@@ -176,6 +176,7 @@ jobs:
           COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.prod.yml"
           ENV_FILE="${DEPLOY_DIR}/.env.production"
           CONTAINER_NAME="kernel-notes-blog"
+          EXPECTED_HOST_PORT="1888"
 
           mkdir -p "$DEPLOY_DIR"
           mv /tmp/kernel-notes-compose.yml "$COMPOSE_FILE"
@@ -186,17 +187,27 @@ jobs:
           docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog
           docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
 
+          PUBLISHED="$(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" port blog 8080 2>/dev/null || true)"
+          HEALTH_PORT="${PUBLISHED##*:}"
+
+          echo "Published blog port: ${PUBLISHED:-<none>}"
+
           healthy=false
-          for _ in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:1888/healthz >/dev/null; then
-              healthy=true
-              break
-            fi
-            sleep 2
-          done
+          if [ "$HEALTH_PORT" = "$EXPECTED_HOST_PORT" ]; then
+            for _ in $(seq 1 20); do
+              if curl -fsS "http://127.0.0.1:${HEALTH_PORT}/healthz" >/dev/null; then
+                healthy=true
+                break
+              fi
+              sleep 2
+            done
+          else
+            echo "Unexpected production port: expected ${EXPECTED_HOST_PORT}, got ${HEALTH_PORT:-none}"
+          fi
 
           if [ "$healthy" != "true" ]; then
             echo "Deployment health check failed"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
             docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=100 blog || true
 
             if [ -n "$PREVIOUS_IMAGE" ]; then
@@ -208,7 +219,7 @@ jobs:
             exit 1
           fi
 
-          echo "Deployed $BLOG_IMAGE successfully"
+          echo "Deployed $BLOG_IMAGE successfully on host port $HEALTH_PORT"
           docker image prune -f >/dev/null
           REMOTE
 
