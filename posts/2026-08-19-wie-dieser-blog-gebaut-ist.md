@@ -8,21 +8,21 @@ updated_at: 2026-08-19
 author: obivan
 reviewed_by: pending
 category: Engineering
-excerpt: Architektur, Stack und Entscheidungen hinter diesem IT-Blog. Welche Technologien genutzt werden und warum sie fuer diesen Use Case sinnvoll sind.
+excerpt: Architektur, Stack und Entscheidungen hinter diesem IT-Blog. Welche Technologien genutzt werden und warum sie für diesen Use Case sinnvoll sind.
 tags: Blog, Architecture, DevOps, Node
 ---
 
-Dieser Post ist der technische Einstieg in den Blog selbst: Was laeuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.
+Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.
 
 ## Ziel des Projekts
 
 Der Blog soll:
 
-- schnell Inhalte publizieren koennen
+- schnell Inhalte publizieren können
 - einfach auf einem kleinen Server laufen
-- ohne grosses CMS auskommen
-- sauber containerisierbar und CI/CD-faehig sein
-- fuer Security- und Ops-Themen gut geeignet sein
+- ohne großes CMS auskommen
+- sauber containerisierbar und CI/CD-fähig sein
+- für Security- und Ops-Themen gut geeignet sein
 
 Kurz: pragmatisch, wartbar, nachvollziehbar.
 
@@ -34,9 +34,9 @@ Der Server basiert auf `Node.js` mit `Express`.
 
 Warum:
 
-- sehr leichtgewichtig fuer dieses Routing- und Rendering-Setup
+- sehr leichtgewichtig für dieses Routing- und Rendering-Setup
 - unkompliziertes Deployment im Container
-- gute Erweiterbarkeit fuer spaetere API-Features
+- gute Erweiterbarkeit für spätere API-Features
 
 ### 2) Markdown als Content-Format
 
@@ -44,22 +44,22 @@ Posts liegen als `.md`-Dateien im `posts/`-Ordner.
 
 Genutzt wird:
 
-- `gray-matter` fuer Frontmatter
-- `markdown-it` fuer Rendering
-- `markdown-it-footnote` fuer Fussnoten
-- `markdown-it-container` fuer Admonitions (note/tip/warning)
-- eigener Wiki-Link-Transformer fuer `[[...]]`
-- Mermaid-Rendering fuer Diagramme
+- `gray-matter` für Frontmatter
+- `markdown-it` für Rendering
+- `markdown-it-footnote` für Fußnoten
+- `markdown-it-container` für Admonitions (note/tip/warning)
+- eigener Wiki-Link-Transformer für `[[...]]`
+- Mermaid-Rendering für Diagramme
 
 Warum:
 
 - Schreiben bleibt schnell und editor-freundlich
 - Content ist git-versioniert und reviewbar
-- kein Lock-in in ein proprietaeres CMS
+- kein Lock-in in ein proprietäres CMS
 
 ### 3) Docker + Docker Compose
 
-Die App laeuft containerisiert.
+Die App läuft containerisiert.
 
 Warum:
 
@@ -67,7 +67,7 @@ Warum:
 - einfache Deployments auch ohne Kubernetes
 - klare Trennung von Build und Runtime
 
-Die Runtime ist gehaertet (distroless), um die Angriffsoberflaeche klein zu halten.
+Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche klein zu halten.
 
 ### 4) CI/CD mit GitHub Actions
 
@@ -82,17 +82,17 @@ Automatisiert werden u. a.:
 Warum:
 
 - weniger manuelle Fehler
-- schnelle Rueckmeldung bei Regressionen
-- klare Pipeline fuer Build, Security und Auslieferung
+- schnelle Rückmeldung bei Regressionen
+- klare Pipeline für Build, Security und Auslieferung
 
 ### 5) Security-Automation
 
 - Trivy-Scans in CI
-- Dependabot fuer Dependency-Updates
+- Dependabot für Dependency-Updates
 
 Warum:
 
-- Schwachstellen frueh erkennen
+- Schwachstellen früh erkennen
 - Sicherheitsstand kontinuierlich verbessern
 - Security nicht als Einmalaktion behandeln
 
@@ -112,10 +112,10 @@ Dazu gibt es einen CI-Check, der fehlende Felder blockiert.
 Warum:
 
 - klarer Audit-Trail pro Beitrag
-- konsistente Struktur fuer spaetere Auswertungen
-- bessere Teamfaehigkeit bei mehreren Autoren
+- konsistente Struktur für spätere Auswertungen
+- bessere Teamfähigkeit bei mehreren Autoren
 
-## Warum kein grosses CMS oder Datenbank zuerst?
+## Warum kein großes CMS oder Datenbank zuerst?
 
 Aktuell ist File-basiert + Git die beste Balance aus:
 
@@ -123,12 +123,12 @@ Aktuell ist File-basiert + Git die beste Balance aus:
 - Wartbarkeit
 - Transparenz
 
-Eine zusaetzliche DB ist erst sinnvoll, wenn komplexe Editorial-Workflows, Freigabeprozesse oder umfangreiche Auswertungen dazukommen.
+Eine zusätzliche DB ist erst sinnvoll, wenn komplexe Editorial-Workflows, Freigabeprozesse oder umfangreiche Auswertungen dazukommen.
 
 ## Fazit
 
-Der Stack ist bewusst nicht maximal komplex, sondern maximal nuetzlich.
+Der Stack ist bewusst nicht maximal komplex, sondern maximal nützlich.
 
-Markdown + Node + Docker + CI/CD liefert fuer einen technischen Blog bereits sehr viel: schnelle Iteration, gute Lesbarkeit im Repo, saubere Deployments und nachvollziehbare Aenderungen.
+Markdown + Node + Docker + CI/CD liefert für einen technischen Blog bereits sehr viel: schnelle Iteration, gute Lesbarkeit im Repo, saubere Deployments und nachvollziehbare Änderungen.
 
-Wenn sich Anforderungen aendern, laesst sich diese Basis schrittweise erweitern, ohne alles neu bauen zu muessen.
+Wenn sich Anforderungen ändern, lässt sich diese Basis schrittweise erweitern, ohne alles neu bauen zu müssen.

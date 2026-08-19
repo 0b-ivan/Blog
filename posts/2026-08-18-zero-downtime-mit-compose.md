@@ -13,7 +13,7 @@ excerpt: Rolling Updates ohne Kubernetes. So baust du einen stabilen Deployment-
 
 Viele Teams brauchen keinen kompletten Kubernetes-Stack, um sauber zu deployen.
 
-Mit Docker Compose kannst du bereits einen robusten Ablauf abbilden, wenn du ein paar Regeln einhaeltst:
+Mit Docker Compose kannst du bereits einen robusten Ablauf abbilden, wenn du ein paar Regeln einhältst:
 
 1. Healthchecks sind Pflicht.
 2. Der Reverse Proxy darf erst auf neue Container umschalten, wenn diese wirklich ready sind.
@@ -23,10 +23,10 @@ Mit Docker Compose kannst du bereits einen robusten Ablauf abbilden, wenn du ein
 
 - Neue Version bauen.
 - Neben bestehender Version starten.
-- Healthcheck pruefen.
+- Healthcheck prüfen.
 - Traffic umschalten.
 - Alte Version geordnet entfernen.
 
 ## Fazit
 
-Pragmatisch heisst nicht unsauber. Mit wenigen, klaren Schritten bekommst du sehr viel Stabilitaet ohne Overengineering.
+Pragmatisch heißt nicht unsauber. Mit wenigen, klaren Schritten bekommst du sehr viel Stabilität ohne Overengineering.

@@ -291,14 +291,14 @@ function renderPostPage(post) {
         ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
         <section class="terminal-post" aria-label="Terminal article view">
           <div class="terminal-chrome">
-            <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="overview" aria-label="Zurueck zur Uebersicht"></button>
+            <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="overview" aria-label="Zurück zur Übersicht"></button>
             <button class="terminal-dot terminal-dot-yellow" type="button" data-terminal-action="restore" aria-label="Terminal wiederherstellen"></button>
             <button class="terminal-dot terminal-dot-green" type="button" data-terminal-action="maximize" aria-label="Terminal maximieren"></button>
             <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
           </div>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
-        <p><a class="read-more" href="/">Zurueck zur Startseite</a></p>
+        <p><a class="read-more" href="/">Zurück zur Startseite</a></p>
         <p><a class="read-more" href="/impressum">Zum Impressum</a></p>
       </article>
     </main>

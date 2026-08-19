@@ -14,9 +14,9 @@ tags: Markdown, Docs, Mermaid, DevEx
 
 Wenn du Inhalte schnell schreiben willst, ist Markdown genau richtig.
 
-In diesem Post siehst du die wichtigsten Features, die dein Blog jetzt unterstuetzt.
+In diesem Post siehst du die wichtigsten Features, die dein Blog jetzt unterstützt.
 
-## 1) Wiki-Links fuer interne Verweise
+## 1) Wiki-Links für interne Verweise
 
 Du kannst auf andere Posts mit Wiki-Syntax verlinken:
 
@@ -28,24 +28,24 @@ Das ist praktisch, wenn du beim Schreiben erst mal schnell querverlinken willst.
 ## 2) Hinweise mit Admonitions
 
 ::: note Kontext
-Diese Hinweise sind gut fuer Architektur-Entscheidungen und Trade-offs.
+Diese Hinweise sind gut für Architektur-Entscheidungen und Trade-offs.
 :::
 
 ::: tip Praxis
-Halte jeden Abschnitt kurz und fuege direkt ein lauffaehiges Beispiel ein.
+Halte jeden Abschnitt kurz und füge direkt ein lauffähiges Beispiel ein.
 :::
 
 ::: warning Achtung
 Wenn ein Befehl destruktiv ist, immer explizit davor warnen.
 :::
 
-## 3) Footnotes fuer Zusatzinfos
+## 3) Footnotes für Zusatzinfos
 
-Manche Details stoeren den Lesefluss im Haupttext und passen besser in eine Fussnote.[^secure-defaults]
+Manche Details stören den Lesefluss im Haupttext und passen besser in eine Fußnote.[^secure-defaults]
 
 [^secure-defaults]: "Secure by default" bedeutet hier: wenig offene Ports, least privilege und nachvollziehbare Deploy-Schritte.
 
-## 4) Mermaid fuer schnelle Architektur-Skizzen
+## 4) Mermaid für schnelle Architektur-Skizzen
 
 ```mermaid
 flowchart LR
@@ -54,9 +54,9 @@ flowchart LR
   C --> D[Blog Seite]
 ```
 
-## 5) Tags fuer bessere Navigation
+## 5) Tags für bessere Navigation
 
-Ueber Frontmatter `tags` kannst du Beitraege thematisch markieren.
+Über Frontmatter `tags` kannst du Beiträge thematisch markieren.
 
 Beispiel:
 
@@ -64,7 +64,7 @@ Beispiel:
 tags: Linux, Security, CI
 ```
 
-So werden die Tags im Post angezeigt und koennen auch in der Uebersicht als Filter genutzt werden.
+So werden die Tags im Post angezeigt und können auch in der Übersicht als Filter genutzt werden.
 
 ## Fazit
 
