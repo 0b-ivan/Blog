@@ -41,7 +41,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push blog image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -51,7 +51,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:latest
 
       - name: Build and push function image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./faasd/function-blog
           file: ./faasd/function-blog/Dockerfile
