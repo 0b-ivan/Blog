@@ -236,4 +236,34 @@ describe('blog server', () => {
     expect(html).toContain('admonition-warning');
     expect(html).toContain('<pre class="mermaid">');
   });
+
+  it('api returns 500 when posts path is not a directory', async () => {
+    const invalidPostsPath = path.join(tmpDir, 'not-a-directory');
+    await fs.writeFile(invalidPostsPath, 'not a directory', 'utf-8');
+
+    const app = createApp({ postsDir: invalidPostsPath });
+    const res = await request(app).get('/api/posts');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ message: 'Could not load posts' });
+  });
+
+  it('post detail returns 500 when posts path is not a directory', async () => {
+    const invalidPostsPath = path.join(tmpDir, 'not-a-directory');
+    await fs.writeFile(invalidPostsPath, 'not a directory', 'utf-8');
+
+    const app = createApp({ postsDir: invalidPostsPath });
+    const res = await request(app).get('/posts/example');
+
+    expect(res.status).toBe(500);
+    expect(res.text).toBe('Could not render post');
+  });
+
+  it('fallback route serves the blog index', async () => {
+    const app = createApp({ postsDir: tmpDir });
+    const res = await request(app).get('/route-that-does-not-exist');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('Kernel Notes');
+  });
 });
