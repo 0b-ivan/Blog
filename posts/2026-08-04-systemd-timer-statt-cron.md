@@ -8,7 +8,7 @@ updated_at: 2026-08-04
 author: obivan
 reviewed_by: pending
 category: Linux
-excerpt: Warum Systemd-Timer oft die bessere Wahl sind: saubere Logs, Abhaengigkeiten und bessere Fehlerbehandlung.
+excerpt: "Warum Systemd-Timer oft die bessere Wahl sind: saubere Logs, Abhaengigkeiten und bessere Fehlerbehandlung."
 ---
 
 Cron ist einfach, aber bei produktiven Jobs fehlt oft Observability.

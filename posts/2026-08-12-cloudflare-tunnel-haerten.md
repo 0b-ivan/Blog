@@ -1,7 +1,7 @@
 ---
 id: 2026-08-12-cloudflare-tunnel-haerten
 version: 1
-title: Cloudflare Tunnel haerten: Die 7 wichtigsten Checks
+title: "Cloudflare Tunnel haerten: Die 7 wichtigsten Checks"
 date: 2026-08-12
 created_at: 2026-08-12
 updated_at: 2026-08-12

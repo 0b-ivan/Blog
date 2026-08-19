@@ -28,7 +28,14 @@ async function main() {
   for (const file of files) {
     const fullPath = path.join(postsDir, file.name);
     const raw = await fs.readFile(fullPath, 'utf-8');
-    const parsed = matter(raw);
+    let parsed;
+    try {
+      parsed = matter(raw);
+    } catch (error) {
+      const reason = error && error.reason ? error.reason : String(error);
+      violations.push(`${file.name}: invalid frontmatter YAML (${reason})`);
+      continue;
+    }
     const data = parsed.data || {};
 
     for (const field of requiredFields) {
