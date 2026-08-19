@@ -22,9 +22,7 @@ Wichtig ist aber: Dependabot ist kein „Merge alles automatisch“-Bot. Ich seh
 
 Der Dependency Graph bildet direkte und transitive Abhängigkeiten aus Manifest- und Lock-Dateien ab. Bei npm sind das zum Beispiel `package.json` und `package-lock.json`.
 
-![GitHub Dependency Graph mit direkten und transitiven Dependencies](/assets/posts/dependabot/03-dependency-graph.png)
-
-Im Beispiel sind 288 Dependencies sichtbar. GitHub unterscheidet dabei unter anderem:
+In meinem Blog-Repository zeigt der Dependency Graph zum Zeitpunkt dieses Beitrags **288 Dependencies**. GitHub unterscheidet dabei unter anderem:
 
 - **Direct**: direkt im Projekt definiert
 - **Transitive**: kommt über eine andere Dependency ins Projekt
@@ -36,9 +34,13 @@ Das ist für die Bewertung wichtig. Eine kritische Schwachstelle in einer Develo
 
 Dependabot Alerts entstehen, wenn GitHub eine bekannte Schwachstelle für eine Dependency im Dependency Graph erkennt.
 
-![Offene Dependabot Alerts mit Critical, High und Moderate Findings](/assets/posts/dependabot/02-alerts.png)
+In meinem Repository waren zum Zeitpunkt der Screenshots **fünf offene Alerts** sichtbar, unter anderem für:
 
-In meinem Beispiel sieht man unter anderem Findings für `vitest`, `vite` und `esbuild`. GitHub zeigt dabei Severity, Scope und ob die Dependency direkt oder transitiv eingebunden ist.
+- `vitest` mit **Critical**
+- `vite` mit **High** und **Moderate**
+- `esbuild` mit **Moderate**
+
+GitHub zeigt dabei Severity, Scope und ob die Dependency direkt oder transitiv eingebunden ist.
 
 Für meine Triage schaue ich zuerst auf:
 
@@ -54,14 +56,14 @@ Ein Alert ist damit nicht automatisch „Produktionssystem kompromittiert“, ab
 
 Neben Alerts kann Dependabot Pull Requests für Dependency-Updates öffnen.
 
-![Von Dependabot geöffnete Pull Requests](/assets/posts/dependabot/01-pull-requests.png)
+Im Repository waren zum Zeitpunkt des Screenshots vier offene Dependabot-PRs vorhanden, unter anderem für `vitest`, `vite`, `esbuild` und `express`.
 
 Dabei gibt es zwei wichtige Fälle:
 
 - **Security Updates** aktualisieren eine bekannte verwundbare Dependency auf eine sichere Version.
 - **Version Updates** halten Dependencies generell aktuell, auch wenn aktuell keine bekannte Schwachstelle vorliegt.
 
-Der Pull Request ist für mich aber nur der Startpunkt. Ein grüner Dependency-Name bedeutet noch lange nicht, dass das Update sicher gemerged werden kann.
+Der Pull Request ist für mich aber nur der Startpunkt. Ein neuer Dependency-Stand bedeutet noch lange nicht, dass das Update sicher gemerged werden kann.
 
 Gerade Major-Updates können APIs, Build-Verhalten oder Laufzeitversionen ändern. Deshalb gilt bei mir:
 
@@ -124,7 +126,7 @@ Damit prüft Dependabot bei mir wöchentlich:
 
 Im Repository findest du die Security-Funktionen unter **Security and quality** bzw. in den Repository Settings unter den Security-Einstellungen.
 
-![GitHub Security and quality Übersicht mit aktiviertem Dependabot](/assets/posts/dependabot/04-security-overview.png)
+In meinem Repository sind unter anderem **Dependabot Alerts**, **Security Advisories**, **Private Vulnerability Reporting** und **Secret Scanning Alerts** aktiviert. Code Scanning ist davon getrennt und muss separat eingerichtet werden.
 
 Für Dependabot sind vor allem relevant:
 
@@ -133,7 +135,7 @@ Für Dependabot sind vor allem relevant:
 - Dependabot Security Updates
 - Dependabot Version Updates über `.github/dependabot.yml`
 
-Die anderen GitHub-Security-Funktionen sind davon getrennt. Dependabot ersetzt zum Beispiel **kein Code Scanning und kein Secret Scanning**.
+Dependabot ersetzt also **kein Code Scanning und kein Secret Scanning**.
 
 ## Mein praktischer Workflow
 
