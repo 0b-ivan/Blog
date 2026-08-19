@@ -101,3 +101,4 @@ Lege in deinem Repo unter Settings -> Secrets and variables -> Actions an:
 - optional: `OPENFAAS_INSECURE` = `true` (nur wenn TLS self-signed)
 
 Wenn diese Secrets fehlen, wird nur gebaut/gepusht, aber nicht nach faasd deployed.
+# Blog
