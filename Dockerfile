@@ -7,6 +7,7 @@ RUN npm install --omit=dev
 
 COPY index.html styles.css script.js ./
 COPY server.js ./
+COPY posts ./posts
 
 EXPOSE 8080
 CMD ["node", "server.js"]

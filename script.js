@@ -67,9 +67,45 @@ function renderPosts(posts) {
   observeRevealItems(list);
 }
 
-async function loadPosts() {
-  const list = document.getElementById('posts-list');
+function renderTopics(posts) {
+  const list = document.getElementById('topics-list');
   if (!list) {
+    return;
+  }
+
+  const counts = posts.reduce((acc, post) => {
+    const category = (post.category || 'IT').trim();
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const topics = Object.entries(counts)
+    .sort((a, b) => {
+      if (b[1] !== a[1]) {
+        return b[1] - a[1];
+      }
+      return a[0].localeCompare(b[0], 'de');
+    });
+
+  if (!topics.length) {
+    list.innerHTML = '<p>Noch keine Themen vorhanden.</p>';
+    return;
+  }
+
+  list.innerHTML = topics
+    .map(([name, count], index) => {
+      const delay = 180 + index * 40;
+      return `<div class="topic reveal" data-delay="${delay}">${name} (${count})</div>`;
+    })
+    .join('');
+
+  observeRevealItems(list);
+}
+
+async function loadPosts() {
+  const postsList = document.getElementById('posts-list');
+  const topicsList = document.getElementById('topics-list');
+  if (!postsList || !topicsList) {
     return;
   }
 
@@ -81,8 +117,10 @@ async function loadPosts() {
 
     const posts = await response.json();
     renderPosts(posts);
+    renderTopics(posts);
   } catch (_error) {
-    list.innerHTML = '<p>Artikel konnten gerade nicht geladen werden.</p>';
+    postsList.innerHTML = '<p>Artikel konnten gerade nicht geladen werden.</p>';
+    topicsList.innerHTML = '<p>Themen konnten gerade nicht geladen werden.</p>';
   }
 }
 

@@ -24,7 +24,16 @@ function parseDate(value) {
 }
 
 async function readPosts() {
-  const entries = await fs.readdir(postsDir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fs.readdir(postsDir, { withFileTypes: true });
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+
   const files = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.md'));
 
   const posts = await Promise.all(
