@@ -250,6 +250,118 @@ function resolvePostBySlug(posts, requestedSlug) {
   return posts.find((item) => slugFromWikiName(item.slug).endsWith(`-${normalized}`)) || null;
 }
 
+const RELATED_TITLE_STOP_WORDS = new Set([
+  'aber', 'auch', 'das', 'dem', 'den', 'der', 'die', 'ein', 'eine', 'einer', 'eines',
+  'fuer', 'ist', 'mit', 'nicht', 'oder', 'sich', 'und', 'von', 'was', 'wie', 'zu', 'zum', 'zur'
+]);
+
+function normalizeComparable(value) {
+  return slugFromWikiName(value || '');
+}
+
+function titleTerms(title) {
+  return new Set(
+    normalizeComparable(title)
+      .split('-')
+      .filter((term) => term.length >= 3 && !RELATED_TITLE_STOP_WORDS.has(term))
+  );
+}
+
+function relatedPostScore(currentPost, candidatePost) {
+  if (!currentPost || !candidatePost || currentPost.slug === candidatePost.slug) {
+    return 0;
+  }
+
+  let score = 0;
+  const currentCategory = normalizeComparable(currentPost.category);
+  const candidateCategory = normalizeComparable(candidatePost.category);
+
+  if (currentCategory && currentCategory === candidateCategory) {
+    score += 5;
+  }
+
+  const currentTags = new Set(normalizeTags(currentPost.tags).map(normalizeComparable).filter(Boolean));
+  const candidateTags = new Set(normalizeTags(candidatePost.tags).map(normalizeComparable).filter(Boolean));
+
+  for (const tag of currentTags) {
+    if (candidateTags.has(tag)) {
+      score += 3;
+    }
+  }
+
+  const currentTitleTerms = titleTerms(currentPost.title);
+  const candidateTitleTerms = titleTerms(candidatePost.title);
+
+  for (const term of currentTitleTerms) {
+    if (candidateTitleTerms.has(term)) {
+      score += 1;
+    }
+  }
+
+  return score;
+}
+
+function findRelatedPosts(posts, currentPost, limit = 3) {
+  const maxResults = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 3;
+
+  return posts
+    .filter((candidate) => candidate.slug !== currentPost.slug)
+    .map((candidate) => ({
+      post: candidate,
+      score: relatedPostScore(currentPost, candidate)
+    }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      const dateDelta = parseDate(b.post.date) - parseDate(a.post.date);
+      if (dateDelta !== 0) {
+        return dateDelta;
+      }
+
+      return String(a.post.title || '').localeCompare(String(b.post.title || ''), 'de');
+    })
+    .slice(0, maxResults)
+    .map(({ post }) => post);
+}
+
+function renderRelatedPosts(relatedPosts) {
+  if (!relatedPosts.length) {
+    return '';
+  }
+
+  const cards = relatedPosts
+    .map((relatedPost) => {
+      const title = md.utils.escapeHtml(String(relatedPost.title || relatedPost.slug));
+      const excerpt = md.utils.escapeHtml(String(relatedPost.excerpt || ''));
+      const category = md.utils.escapeHtml(String(relatedPost.category || 'IT'));
+      const date = md.utils.escapeHtml(String(relatedPost.date || ''));
+      const tags = normalizeTags(relatedPost.tags)
+        .slice(0, 2)
+        .map((tag) => `<span class="tag-chip">${md.utils.escapeHtml(tag)}</span>`)
+        .join('');
+
+      return `
+        <a class="related-post-card" href="/posts/${relatedPost.slug}">
+          <p class="meta">${category}${date ? ` · ${date}` : ''}</p>
+          <h3>${title}</h3>
+          ${excerpt ? `<p>${excerpt}</p>` : ''}
+          ${tags ? `<div class="related-post-tags">${tags}</div>` : ''}
+        </a>`;
+    })
+    .join('');
+
+  return `
+        <section class="related-posts" aria-labelledby="related-posts-title">
+          <p class="eyebrow">Weiterlesen</p>
+          <h2 id="related-posts-title">Verwandte Beiträge</h2>
+          <div class="related-post-grid">${cards}
+          </div>
+        </section>`;
+}
+
 function getLegalInfo() {
   return {
     operatorName: process.env.LEGAL_OPERATOR_NAME || 'Ivan Babayev',
@@ -265,12 +377,13 @@ function getLegalInfo() {
   };
 }
 
-function renderPostPage(post) {
+function renderPostPage(post, relatedPosts = []) {
   const meta = `${post.category} · ${post.date}`;
   const tagsHtml = (post.tags || [])
     .slice(0, 2)
     .map((tag) => `<span class="tag-chip">${tag}</span>`)
     .join('');
+  const relatedPostsHtml = renderRelatedPosts(relatedPosts);
 
   return `<!doctype html>
 <html lang="de">
@@ -284,6 +397,7 @@ function renderPostPage(post) {
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css?v=20260819-2" />
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
+    <link rel="stylesheet" href="/assets/related-posts.css" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -314,6 +428,7 @@ function renderPostPage(post) {
           </div>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
+        ${relatedPostsHtml}
         <p><a class="read-more" href="/">Zurück zur Startseite</a></p>
         <p><a class="read-more" href="/impressum">Zum Impressum</a></p>
       </article>
@@ -390,7 +505,8 @@ function createApp(options = {}) {
         return;
       }
 
-      res.type('html').send(renderPostPage(post));
+      const relatedPosts = findRelatedPosts(posts, post, 3);
+      res.type('html').send(renderPostPage(post, relatedPosts));
     } catch (error) {
       console.error(error);
       res.status(500).send('Could not render post');
@@ -432,6 +548,9 @@ module.exports = {
   inferDateFromSlug,
   recoverMetadata,
   resolvePostBySlug,
+  relatedPostScore,
+  findRelatedPosts,
+  renderRelatedPosts,
   getLegalInfo,
   readPosts,
   renderPostPage
