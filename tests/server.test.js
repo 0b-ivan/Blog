@@ -1,0 +1,132 @@
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
+const request = require('supertest');
+
+const {
+  createApp,
+  slugify,
+  excerptFromBody,
+  parseDate,
+  readPosts,
+  renderPostPage
+} = require('../server');
+
+async function writePost(dir, name, content) {
+  await fs.writeFile(path.join(dir, name), content, 'utf-8');
+}
+
+describe('blog server', () => {
+  let tmpDir;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-'));
+  });
+
+  afterEach(async () => {
+    if (tmpDir) {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('slugify removes .md extension', () => {
+    expect(slugify('hello-world.md')).toBe('hello-world');
+  });
+
+  it('parseDate returns 0 for invalid input', () => {
+    expect(parseDate('not-a-date')).toBe(0);
+  });
+
+  it('excerptFromBody strips markdown chars and truncates long text', () => {
+    const text = '# Title **bold** (note) [link](x) ' + 'x'.repeat(220);
+    const excerpt = excerptFromBody(text);
+    expect(excerpt.includes('#')).toBe(false);
+    expect(excerpt.length).toBeLessThanOrEqual(183);
+    expect(excerpt.endsWith('...')).toBe(true);
+  });
+
+  it('readPosts parses and sorts by date descending', async () => {
+    await writePost(
+      tmpDir,
+      '2026-01-01-old.md',
+      '---\ntitle: Old\ndate: 2026-01-01\ncategory: Ops\n---\nOld content'
+    );
+    await writePost(
+      tmpDir,
+      '2026-02-01-new.md',
+      '---\ntitle: New\ndate: 2026-02-01\ncategory: DevOps\n---\nNew content'
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts).toHaveLength(2);
+    expect(posts[0].title).toBe('New');
+    expect(posts[1].title).toBe('Old');
+    expect(posts[0].html).toContain('<p>New content</p>');
+  });
+
+  it('api returns post list dto', async () => {
+    await writePost(
+      tmpDir,
+      'sample.md',
+      '---\ntitle: Sample\ndate: 2026-04-01\ncategory: Security\nexcerpt: Custom excerpt\n---\nBody'
+    );
+
+    const app = createApp({ postsDir: tmpDir });
+    const res = await request(app).get('/api/posts');
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body[0]).toMatchObject({
+      slug: 'sample',
+      title: 'Sample',
+      category: 'Security',
+      excerpt: 'Custom excerpt'
+    });
+    expect(res.body[0].html).toBeUndefined();
+  });
+
+  it('post detail route renders html and 404 for missing slug', async () => {
+    await writePost(
+      tmpDir,
+      'deep-dive.md',
+      '---\ntitle: Deep Dive\ndate: 2026-05-01\ncategory: JS\n---\n# Header\n\nDetails'
+    );
+
+    const app = createApp({ postsDir: tmpDir });
+
+    const ok = await request(app).get('/posts/deep-dive');
+    expect(ok.status).toBe(200);
+    expect(ok.text).toContain('Deep Dive | Kernel Notes');
+    expect(ok.text).toContain('<h1>Header</h1>');
+
+    const notFound = await request(app).get('/posts/does-not-exist');
+    expect(notFound.status).toBe(404);
+  });
+
+  it('health endpoint returns ok', async () => {
+    const app = createApp({ postsDir: tmpDir });
+    const res = await request(app).get('/healthz');
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('ok');
+  });
+
+  it('readPosts returns empty list for missing directory', async () => {
+    const missing = path.join(tmpDir, 'missing-posts');
+    const posts = await readPosts(missing);
+    expect(posts).toEqual([]);
+  });
+
+  it('renderPostPage embeds metadata and html', () => {
+    const html = renderPostPage({
+      title: 'Meta Test',
+      date: '2026-03-03',
+      category: 'Node',
+      excerpt: 'Excerpt',
+      html: '<p>Rendered</p>'
+    });
+
+    expect(html).toContain('Meta Test | Kernel Notes');
+    expect(html).toContain('Node · 2026-03-03');
+    expect(html).toContain('<p>Rendered</p>');
+  });
+});

@@ -109,9 +109,20 @@ Es gibt zwei Workflows:
 
 ### CI (bei Push + PR)
 
+- installiert Node-Abhaengigkeiten (`npm ci` mit Lockfile)
+- fuehrt Linting aus (`npm run lint`)
+- fuehrt Unit- und API-Tests mit Coverage aus (`npm run test:coverage`)
 - validiert `docker compose config`
 - baut beide Images (Blog + Function)
 - startet den Stack und prueft `http://127.0.0.1:8080/healthz`
+
+### Lokal testen
+
+```bash
+npm install
+npm run lint
+npm run test:coverage
+```
 
 ### CD (bei Push auf `main` + manuell)
 

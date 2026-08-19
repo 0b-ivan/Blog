@@ -4,17 +4,19 @@ const path = require('path');
 const matter = require('gray-matter');
 const { marked } = require('marked');
 
-const app = express();
 const port = process.env.PORT || 8080;
 const root = __dirname;
-const postsDir = path.join(root, 'posts');
+
+function getPostsDir(explicitPostsDir) {
+  return explicitPostsDir || process.env.POSTS_DIR || path.join(root, 'posts');
+}
 
 function slugify(fileName) {
   return fileName.replace(/\.md$/i, '');
 }
 
 function excerptFromBody(content) {
-  const plain = content.replace(/[#>*_`\-\[\]()]/g, ' ').replace(/\s+/g, ' ').trim();
+  const plain = content.replace(/[#>*_`()[\]-]/g, ' ').replace(/\s+/g, ' ').trim();
   return plain.slice(0, 180) + (plain.length > 180 ? '...' : '');
 }
 
@@ -23,7 +25,8 @@ function parseDate(value) {
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 }
 
-async function readPosts() {
+async function readPosts(explicitPostsDir) {
+  const postsDir = getPostsDir(explicitPostsDir);
   let entries;
   try {
     entries = await fs.readdir(postsDir, { withFileTypes: true });
@@ -103,51 +106,76 @@ function renderPostPage(post) {
 </html>`;
 }
 
-app.use('/assets', express.static(path.join(root, 'assets')));
-app.use(express.static(root, { extensions: ['html'] }));
+function createApp(options = {}) {
+  const app = express();
+  const postsDir = options.postsDir;
 
-app.get('/api/posts', async (_req, res) => {
-  try {
-    const posts = await readPosts();
-    const dto = posts.map(({ slug, title, date, category, excerpt }) => ({
-      slug,
-      title,
-      date,
-      category,
-      excerpt
-    }));
-    res.json(dto);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Could not load posts' });
-  }
-});
+  app.use('/assets', express.static(path.join(root, 'assets')));
+  app.use(express.static(root, { extensions: ['html'] }));
 
-app.get('/posts/:slug', async (req, res) => {
-  try {
-    const posts = await readPosts();
-    const post = posts.find((item) => item.slug === req.params.slug);
-
-    if (!post) {
-      res.status(404).send('Post not found');
-      return;
+  app.get('/api/posts', async (_req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      const dto = posts.map(({ slug, title, date, category, excerpt }) => ({
+        slug,
+        title,
+        date,
+        category,
+        excerpt
+      }));
+      res.json(dto);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Could not load posts' });
     }
+  });
 
-    res.type('html').send(renderPostPage(post));
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Could not render post');
-  }
-});
+  app.get('/posts/:slug', async (req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      const post = posts.find((item) => item.slug === req.params.slug);
 
-app.get('/healthz', (_req, res) => {
-  res.status(200).send('ok');
-});
+      if (!post) {
+        res.status(404).send('Post not found');
+        return;
+      }
 
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(root, 'index.html'));
-});
+      res.type('html').send(renderPostPage(post));
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Could not render post');
+    }
+  });
 
-app.listen(port, () => {
-  console.log(`kernel-notes listening on :${port}`);
-});
+  app.get('/healthz', (_req, res) => {
+    res.status(200).send('ok');
+  });
+
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(root, 'index.html'));
+  });
+
+  return app;
+}
+
+function startServer() {
+  const app = createApp();
+  return app.listen(port, () => {
+    console.log(`kernel-notes listening on :${port}`);
+  });
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = {
+  createApp,
+  startServer,
+  getPostsDir,
+  slugify,
+  excerptFromBody,
+  parseDate,
+  readPosts,
+  renderPostPage
+};
