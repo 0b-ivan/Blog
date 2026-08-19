@@ -9,11 +9,16 @@ RUN if [ -f package-lock.json ]; then \
 			npm install --omit=dev --no-audit --no-fund; \
 		fi && npm cache clean --force
 
+RUN VERSION="$(node -p "require('./package.json').version")" && \
+		RELEASE_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
+		printf '{"version":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_DATE" > /app/build-info.json
+
 FROM gcr.io/distroless/nodejs22-debian12:nonroot
 
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/build-info.json ./build-info.json
 COPY index.html impressum.html styles.css image-viewer.css script.js ./
 COPY assets ./assets
 COPY server.js ./
