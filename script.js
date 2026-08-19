@@ -67,25 +67,23 @@ function renderPosts(posts) {
   observeRevealItems(list);
 }
 
-function renderTopics(posts) {
+function getTopics(posts) {
+  const unique = new Set(
+    posts
+      .map((post) => (post.category || 'IT').trim())
+      .filter(Boolean)
+  );
+
+  return ['Alle', ...[...unique].sort((a, b) => a.localeCompare(b, 'de'))];
+}
+
+function renderTopics(posts, activeTopic) {
   const list = document.getElementById('topics-list');
   if (!list) {
     return;
   }
 
-  const counts = posts.reduce((acc, post) => {
-    const category = (post.category || 'IT').trim();
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {});
-
-  const topics = Object.entries(counts)
-    .sort((a, b) => {
-      if (b[1] !== a[1]) {
-        return b[1] - a[1];
-      }
-      return a[0].localeCompare(b[0], 'de');
-    });
+  const topics = getTopics(posts);
 
   if (!topics.length) {
     list.innerHTML = '<p>Noch keine Themen vorhanden.</p>';
@@ -93,13 +91,29 @@ function renderTopics(posts) {
   }
 
   list.innerHTML = topics
-    .map(([name, count], index) => {
+    .map((name, index) => {
       const delay = 180 + index * 40;
-      return `<div class="topic reveal" data-delay="${delay}">${name} (${count})</div>`;
+      const isActive = name === activeTopic;
+      return `
+        <button
+          class="topic reveal ${isActive ? 'is-active' : ''}"
+          data-delay="${delay}"
+          data-topic="${name}"
+          type="button"
+        >${name}</button>
+      `;
     })
     .join('');
 
   observeRevealItems(list);
+}
+
+function filterPostsByTopic(posts, activeTopic) {
+  if (!activeTopic || activeTopic === 'Alle') {
+    return posts;
+  }
+
+  return posts.filter((post) => (post.category || 'IT').trim() === activeTopic);
 }
 
 async function loadPosts() {
@@ -116,8 +130,25 @@ async function loadPosts() {
     }
 
     const posts = await response.json();
-    renderPosts(posts);
-    renderTopics(posts);
+    let activeTopic = 'Alle';
+
+    const applyView = () => {
+      const visiblePosts = filterPostsByTopic(posts, activeTopic);
+      renderPosts(visiblePosts);
+      renderTopics(posts, activeTopic);
+    };
+
+    topicsList.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-topic]');
+      if (!button) {
+        return;
+      }
+
+      activeTopic = button.dataset.topic || 'Alle';
+      applyView();
+    });
+
+    applyView();
   } catch (_error) {
     postsList.innerHTML = '<p>Artikel konnten gerade nicht geladen werden.</p>';
     topicsList.innerHTML = '<p>Themen konnten gerade nicht geladen werden.</p>';
