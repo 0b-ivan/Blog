@@ -40,10 +40,8 @@
   text-decoration: underline;
 }
 
-.terminal-content .post-figure:target {
-  outline: 2px solid rgba(154, 200, 255, 0.45);
-  outline-offset: 8px;
-  border-radius: 10px;
+.terminal-content .post-figure:target .figure-anchor {
+  color: #c6d5e5;
 }
 
 @media (prefers-reduced-motion: no-preference) {
