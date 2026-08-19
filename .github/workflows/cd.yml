@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
   packages: write
 
 concurrency:
@@ -20,8 +21,32 @@ env:
   FUNCTION_IMAGE_NAME: kernel-notes-function
 
 jobs:
+  verify-main-origin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require merged PR for main deployments
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          PR_COUNT=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | length')
+
+          if [ "$PR_COUNT" -lt 1 ]; then
+            echo "Refusing deployment: main commit is not associated with a merged pull request."
+            exit 1
+          fi
+
+          echo "Main commit is associated with a merged pull request."
+
   build-and-push:
     runs-on: ubuntu-latest
+    needs: verify-main-origin
     outputs:
       blog_image: ${{ steps.meta.outputs.blog_image }}
       function_image: ${{ steps.meta.outputs.function_image }}
