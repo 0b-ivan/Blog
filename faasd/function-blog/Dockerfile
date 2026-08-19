@@ -1,4 +1,4 @@
-FROM node:20-alpine AS app
+FROM node:26-alpine AS app
 WORKDIR /home/app
 
 COPY package.json package-lock.json* ./
@@ -9,7 +9,7 @@ COPY public ./public
 
 FROM ghcr.io/openfaas/of-watchdog:0.11.7 AS watchdog
 
-FROM node:20-alpine
+FROM node:26-alpine
 WORKDIR /home/app
 
 RUN addgroup -S app && adduser -S -G app app
