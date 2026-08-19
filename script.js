@@ -86,18 +86,43 @@ function renderPosts(posts) {
         ? `<div class="post-tags">${tags.map((tag) => `<span class="tag-chip">${tag}</span>`).join('')}</div>`
         : '';
       return `
-        <article class="post-card reveal" data-delay="${delay}">
+        <article class="post-card reveal" data-delay="${delay}" data-href="/posts/${post.slug}" role="link" tabindex="0" aria-label="${post.title} oeffnen">
           <p class="meta">${meta}</p>
           <h3>${post.title}</h3>
           <p>${post.excerpt}</p>
           ${tagsHtml}
-          <a href="/posts/${post.slug}" class="read-more">Artikel lesen</a>
+          <span class="read-more">Artikel lesen</span>
         </article>
       `;
     })
     .join('');
 
+  setupPostCardNavigation(list);
   observeRevealItems(list);
+}
+
+function setupPostCardNavigation(container) {
+  const cards = [...container.querySelectorAll('.post-card[data-href]')];
+
+  cards.forEach((card) => {
+    const href = card.dataset.href;
+    if (!href) {
+      return;
+    }
+
+    card.addEventListener('click', () => {
+      window.location.href = href;
+    });
+
+    card.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+
+      event.preventDefault();
+      window.location.href = href;
+    });
+  });
 }
 
 function getTopics(posts) {

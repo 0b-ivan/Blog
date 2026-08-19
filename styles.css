@@ -199,6 +199,7 @@ h1 {
   padding: 1.2rem;
   margin-bottom: 1rem;
   border-radius: 14px;
+  cursor: pointer;
   transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
@@ -206,6 +207,11 @@ h1 {
   transform: translateY(-3px);
   border-color: #a79d8a;
   box-shadow: 0 10px 24px rgba(43, 48, 56, 0.12);
+}
+
+.post-card:focus-visible {
+  outline: 2px solid #145a78;
+  outline-offset: 2px;
 }
 
 .post-card h3 {
