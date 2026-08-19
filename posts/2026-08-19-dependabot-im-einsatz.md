@@ -22,7 +22,13 @@ Wichtig ist aber: Dependabot ist kein „Merge alles automatisch“-Bot. Ich seh
 
 Der Dependency Graph bildet direkte und transitive Abhängigkeiten aus Manifest- und Lock-Dateien ab. Bei npm sind das zum Beispiel `package.json` und `package-lock.json`.
 
-In meinem Blog-Repository zeigt der Dependency Graph zum Zeitpunkt dieses Beitrags **288 Dependencies**. GitHub unterscheidet dabei unter anderem:
+In meinem Blog-Repository zeigt der Dependency Graph zum Zeitpunkt dieses Beitrags **288 Dependencies**.
+
+![GitHub Dependency Graph mit direkten und transitiven Abhängigkeiten](/assets/posts/dependabot/03-dependency-graph.svg)
+
+*Dependency Graph: GitHub zeigt direkte und transitive Abhängigkeiten sowie bekannte Findings.*
+
+GitHub unterscheidet dabei unter anderem:
 
 - **Direct**: direkt im Projekt definiert
 - **Transitive**: kommt über eine andere Dependency ins Projekt
@@ -34,7 +40,13 @@ Das ist für die Bewertung wichtig. Eine kritische Schwachstelle in einer Develo
 
 Dependabot Alerts entstehen, wenn GitHub eine bekannte Schwachstelle für eine Dependency im Dependency Graph erkennt.
 
-In meinem Repository waren zum Zeitpunkt der Screenshots **fünf offene Alerts** sichtbar, unter anderem für:
+In meinem Repository waren zum Zeitpunkt der Screenshots **fünf offene Alerts** sichtbar.
+
+![Dependabot Alerts mit Critical, High und Moderate Findings](/assets/posts/dependabot/02-alerts.svg)
+
+*Dependabot Alerts: Severity und Scope helfen bei der ersten Triage.*
+
+Unter anderem waren Findings sichtbar für:
 
 - `vitest` mit **Critical**
 - `vite` mit **High** und **Moderate**
@@ -57,6 +69,10 @@ Ein Alert ist damit nicht automatisch „Produktionssystem kompromittiert“, ab
 Neben Alerts kann Dependabot Pull Requests für Dependency-Updates öffnen.
 
 Im Repository waren zum Zeitpunkt des Screenshots vier offene Dependabot-PRs vorhanden, unter anderem für `vitest`, `vite`, `esbuild` und `express`.
+
+![Von Dependabot geöffnete Pull Requests](/assets/posts/dependabot/01-pull-requests.svg)
+
+*Dependabot bereitet Updates als normale Pull Requests vor. CI und Review bleiben weiterhin entscheidend.*
 
 Dabei gibt es zwei wichtige Fälle:
 
@@ -125,6 +141,10 @@ Damit prüft Dependabot bei mir wöchentlich:
 ## Wo aktiviere ich Dependabot?
 
 Im Repository findest du die Security-Funktionen unter **Security and quality** bzw. in den Repository Settings unter den Security-Einstellungen.
+
+![GitHub Security and quality Übersicht](/assets/posts/dependabot/04-security-overview.svg)
+
+*Security and quality: Dependabot ist nur eine Ebene neben Secret Scanning, Code Scanning und Security Advisories.*
 
 In meinem Repository sind unter anderem **Dependabot Alerts**, **Security Advisories**, **Private Vulnerability Reporting** und **Secret Scanning Alerts** aktiviert. Code Scanning ist davon getrennt und muss separat eingerichtet werden.
 
