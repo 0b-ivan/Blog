@@ -1,0 +1,31 @@
+.terminal-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto 0.45rem;
+  border: 1px solid rgba(154, 200, 255, 0.35);
+  border-radius: 10px;
+  background: #0b131f;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  cursor: zoom-in;
+}
+
+.terminal-content img + em {
+  display: block;
+  margin: 0 auto 1.25rem;
+  max-width: 90ch;
+  color: #aab8c8;
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.medium-zoom-overlay {
+  background: rgba(8, 12, 18, 0.94) !important;
+  z-index: 100;
+}
+
+.medium-zoom-image--opened {
+  z-index: 101;
+  border-radius: 8px;
+  cursor: zoom-out;
+}
