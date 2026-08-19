@@ -7,7 +7,7 @@ RUN npm install --omit=dev
 COPY index.js ./
 COPY public ./public
 
-FROM ghcr.io/openfaas/of-watchdog:0.10.9 AS watchdog
+FROM ghcr.io/openfaas/of-watchdog:0.11.7 AS watchdog
 
 FROM node:20-alpine
 WORKDIR /home/app
