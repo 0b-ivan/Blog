@@ -401,6 +401,7 @@ function createApp(options = {}) {
     res.status(200).send('ok');
   });
 
+  // Express 5 requires a named wildcard; wrapping it in braces also matches '/'.
   app.get('/{*splat}', (_req, res) => {
     res.sendFile(path.join(root, 'index.html'));
   });
