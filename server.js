@@ -401,7 +401,7 @@ function createApp(options = {}) {
     res.status(200).send('ok');
   });
 
-  app.get('*', (_req, res) => {
+  app.get('/{*splat}', (_req, res) => {
     res.sendFile(path.join(root, 'index.html'));
   });
 
