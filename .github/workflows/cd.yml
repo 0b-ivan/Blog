@@ -10,6 +10,10 @@ permissions:
   contents: read
   packages: write
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   BLOG_IMAGE_NAME: kernel-notes-blog
@@ -19,6 +23,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     outputs:
+      blog_image: ${{ steps.meta.outputs.blog_image }}
       function_image: ${{ steps.meta.outputs.function_image }}
 
     steps:
@@ -59,6 +64,128 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.function_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.FUNCTION_IMAGE_NAME }}:latest
+
+  deploy-to-hetzner:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Hetzner deployment secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          test -n "$HETZNER_HOST" || { echo "HETZNER_HOST is missing"; exit 1; }
+          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing"; exit 1; }
+          test -n "$HETZNER_SSH_KEY" || { echo "HETZNER_SSH_KEY is missing"; exit 1; }
+          test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy production Compose file
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          scp \
+            -i ~/.ssh/hetzner_deploy \
+            -P "$PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            docker-compose.prod.yml \
+            "${HETZNER_USER}@${HETZNER_HOST}:/tmp/kernel-notes-compose.yml"
+
+      - name: Login Hetzner host to GHCR
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          printf '%s' "$GHCR_TOKEN" | ssh \
+            -i ~/.ssh/hetzner_deploy \
+            -p "$PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            "docker login ghcr.io -u '${GHCR_USER}' --password-stdin"
+
+      - name: Deploy exact main image
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          BLOG_IMAGE: ${{ needs.build-and-push.outputs.blog_image }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh \
+            -i ~/.ssh/hetzner_deploy \
+            -p "$PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            bash -s -- "$BLOG_IMAGE" <<'REMOTE'
+          set -euo pipefail
+
+          BLOG_IMAGE="$1"
+          DEPLOY_DIR="/opt/Blog"
+          COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.prod.yml"
+          ENV_FILE="${DEPLOY_DIR}/.env.production"
+          CONTAINER_NAME="kernel-notes-blog"
+
+          mkdir -p "$DEPLOY_DIR"
+          mv /tmp/kernel-notes-compose.yml "$COMPOSE_FILE"
+
+          PREVIOUS_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
+          printf 'BLOG_IMAGE=%s\n' "$BLOG_IMAGE" > "$ENV_FILE"
+
+          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog
+          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
+
+          healthy=false
+          for _ in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null; then
+              healthy=true
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$healthy" != "true" ]; then
+            echo "Deployment health check failed"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=100 blog || true
+
+            if [ -n "$PREVIOUS_IMAGE" ]; then
+              echo "Rolling back to $PREVIOUS_IMAGE"
+              printf 'BLOG_IMAGE=%s\n' "$PREVIOUS_IMAGE" > "$ENV_FILE"
+              docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
+            fi
+
+            exit 1
+          fi
+
+          echo "Deployed $BLOG_IMAGE successfully"
+          docker image prune -f >/dev/null
+          REMOTE
 
   deploy-to-faasd:
     runs-on: ubuntu-latest
