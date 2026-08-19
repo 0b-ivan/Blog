@@ -43,8 +43,8 @@
           />
           <div>
             <h2>Betreiber der Website</h2>
-            <p><strong>Ivan Babayev</strong><br />AWS Cloud Infrastructure Engineer bei e2n</p>
-            <p>Standort: Würzburg, Bayern, Deutschland</p>
+            <p><strong id="legal-operator-name">Ivan Babayev</strong><br /><span id="legal-operator-role">AWS Cloud Infrastructure Engineer bei e2n</span></p>
+            <p>Standort: <span id="legal-operator-location">Würzburg, Bayern, Deutschland</span></p>
             <p>
               LinkedIn:
               <a href="https://www.linkedin.com/in/ivan-babayev/?isSelfProfile=false" target="_blank" rel="noopener noreferrer">Profil ansehen</a>
@@ -56,26 +56,26 @@
           <section>
             <h2>Angaben gemäß § 5 TMG</h2>
             <p>
-              Ivan Babayev<br />
-              [Straße und Hausnummer]<br />
-              [PLZ] Würzburg, Bayern<br />
-              Deutschland
+              <span id="legal-name">Ivan Babayev</span><br />
+              <span id="legal-street">[Straße und Hausnummer]</span><br />
+              <span id="legal-postal-city">[PLZ Ort]</span><br />
+              <span id="legal-country">Deutschland</span>
             </p>
           </section>
 
           <section>
             <h2>Kontakt</h2>
             <p>
-              E-Mail: [deine-email@example.com]<br />
-              Telefon: [optional]
+              E-Mail: <span id="legal-email">[deine-email@example.com]</span><br />
+              Telefon: <span id="legal-phone">[optional]</span>
             </p>
           </section>
 
           <section>
             <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
             <p>
-              Ivan Babayev<br />
-              [Anschrift wie oben]
+              <span id="legal-content-responsible">Ivan Babayev</span><br />
+              <span id="legal-content-address">[Anschrift wie oben]</span>
             </p>
           </section>
 
@@ -100,5 +100,38 @@
         <a href="/">Startseite</a>
       </div>
     </footer>
+    <script>
+      (async function hydrateLegalInfo() {
+        try {
+          const response = await fetch('/api/legal-info');
+          if (!response.ok) {
+            return;
+          }
+
+          const info = await response.json();
+          const setText = (id, value) => {
+            const node = document.getElementById(id);
+            if (!node) {
+              return;
+            }
+            node.textContent = value;
+          };
+
+          setText('legal-operator-name', info.operatorName);
+          setText('legal-operator-role', info.operatorRole);
+          setText('legal-operator-location', info.operatorLocation);
+          setText('legal-name', info.operatorName);
+          setText('legal-street', info.street);
+          setText('legal-postal-city', info.postalCity);
+          setText('legal-country', info.country);
+          setText('legal-email', info.email);
+          setText('legal-phone', info.phone);
+          setText('legal-content-responsible', info.contentResponsible);
+          setText('legal-content-address', info.contentAddress);
+        } catch (_error) {
+          // Keep static fallback values when API is unavailable.
+        }
+      }());
+    </script>
   </body>
 </html>

@@ -250,6 +250,21 @@ function resolvePostBySlug(posts, requestedSlug) {
   return posts.find((item) => slugFromWikiName(item.slug).endsWith(`-${normalized}`)) || null;
 }
 
+function getLegalInfo() {
+  return {
+    operatorName: process.env.LEGAL_OPERATOR_NAME || 'Ivan Babayev',
+    operatorRole: process.env.LEGAL_OPERATOR_ROLE || 'AWS Cloud Infrastructure Engineer bei e2n',
+    operatorLocation: process.env.LEGAL_OPERATOR_LOCATION || 'Würzburg, Bayern, Deutschland',
+    street: process.env.LEGAL_STREET || '[Straße und Hausnummer]',
+    postalCity: process.env.LEGAL_POSTAL_CITY || '[PLZ Ort]',
+    country: process.env.LEGAL_COUNTRY || 'Deutschland',
+    email: process.env.LEGAL_EMAIL || '[deine-email@example.com]',
+    phone: process.env.LEGAL_PHONE || '[optional]',
+    contentResponsible: process.env.LEGAL_CONTENT_RESPONSIBLE || 'Ivan Babayev',
+    contentAddress: process.env.LEGAL_CONTENT_ADDRESS || '[Anschrift wie oben]'
+  };
+}
+
 function renderPostPage(post) {
   const meta = `${post.category} · ${post.date}`;
   const tagsHtml = (post.tags || [])
@@ -327,6 +342,10 @@ function createApp(options = {}) {
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.use(express.static(root, { extensions: ['html'] }));
 
+  app.get('/api/legal-info', (_req, res) => {
+    res.json(getLegalInfo());
+  });
+
   app.get('/api/posts', async (_req, res) => {
     try {
       const posts = await readPosts(postsDir);
@@ -396,6 +415,7 @@ module.exports = {
   inferDateFromSlug,
   recoverMetadata,
   resolvePostBySlug,
+  getLegalInfo,
   readPosts,
   renderPostPage
 };

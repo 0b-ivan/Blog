@@ -6,6 +6,17 @@ services:
     container_name: kernel-notes-blog
     ports:
       - "8080:8080"
+    environment:
+      LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Ivan Babayev}
+      LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-AWS Cloud Infrastructure Engineer bei e2n}
+      LEGAL_OPERATOR_LOCATION: ${LEGAL_OPERATOR_LOCATION:-Würzburg, Bayern, Deutschland}
+      LEGAL_STREET: ${LEGAL_STREET:-[Straße und Hausnummer]}
+      LEGAL_POSTAL_CITY: ${LEGAL_POSTAL_CITY:-[PLZ Ort]}
+      LEGAL_COUNTRY: ${LEGAL_COUNTRY:-Deutschland}
+      LEGAL_EMAIL: ${LEGAL_EMAIL:-[deine-email@example.com]}
+      LEGAL_PHONE: ${LEGAL_PHONE:-[optional]}
+      LEGAL_CONTENT_RESPONSIBLE: ${LEGAL_CONTENT_RESPONSIBLE:-Ivan Babayev}
+      LEGAL_CONTENT_ADDRESS: ${LEGAL_CONTENT_ADDRESS:-[Anschrift wie oben]}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]

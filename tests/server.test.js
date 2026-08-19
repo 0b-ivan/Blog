@@ -109,6 +109,18 @@ describe('blog server', () => {
     expect(res.body[0].html).toBeUndefined();
   });
 
+  it('api returns legal info payload', async () => {
+    const app = createApp({ postsDir: tmpDir });
+    const res = await request(app).get('/api/legal-info');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      operatorName: expect.any(String),
+      street: expect.any(String),
+      email: expect.any(String)
+    });
+  });
+
   it('post detail route renders html and 404 for missing slug', async () => {
     await writePost(
       tmpDir,
