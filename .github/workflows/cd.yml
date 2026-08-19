@@ -107,7 +107,7 @@ jobs:
           HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
         run: |
           test -n "$HETZNER_HOST" || { echo "HETZNER_HOST is missing"; exit 1; }
-          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing"; exit 1; }
+          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing (recommended: blog-deploy)"; exit 1; }
           test -n "$HETZNER_SSH_KEY" || { echo "HETZNER_SSH_KEY is missing"; exit 1; }
           test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
 
