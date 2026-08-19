@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kernel Notes | IT Blog</title>
+    <meta
+      name="description"
+      content="Kernel Notes ist ein IT-Blog über Infrastruktur, Security, DevOps und Engineering-Realitaet."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
+
+    <header class="site-header reveal" data-delay="0">
+      <a class="logo" href="#">Kernel Notes</a>
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <a href="#posts">Artikel</a>
+        <a href="#topics">Themen</a>
+        <a href="#about">About</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero reveal" data-delay="120">
+        <p class="eyebrow">IT BLOG</p>
+        <h1>Praktische Technik statt Buzzword-Folien.</h1>
+        <p class="hero-copy">
+          Ich schreibe ueber Linux, Cloud, Security und Automation aus echter
+          Projektpraxis. Klar, direkt und mit Code, den man wirklich deployen kann.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#posts">Neueste Artikel</a>
+          <a class="btn btn-ghost" href="#topics">Themen ansehen</a>
+        </div>
+      </section>
+
+      <section class="posts" id="posts">
+        <div class="section-head reveal" data-delay="180">
+          <h2>Neu im Blog</h2>
+          <a href="#">Alle Beitraege</a>
+        </div>
+
+        <article class="post-card reveal" data-delay="240">
+          <p class="meta">DevOps · 18 Aug 2026</p>
+          <h3>Zero-Downtime Deployments mit Docker Compose</h3>
+          <p>
+            Rolling Updates ohne Kubernetes: Healthchecks, Reverse Proxy und ein
+            sauberer Cutover fuer kleine bis mittlere Deployments.
+          </p>
+          <a href="#" class="read-more">Artikel lesen</a>
+        </article>
+
+        <article class="post-card reveal" data-delay="300">
+          <p class="meta">Security · 12 Aug 2026</p>
+          <h3>Cloudflare Tunnel haerten: Die 7 wichtigsten Checks</h3>
+          <p>
+            Access Policies, service tokens, mTLS und sinnvolle Logging-Defaults,
+            damit aus einem schnellen Setup eine robuste Kante wird.
+          </p>
+          <a href="#" class="read-more">Artikel lesen</a>
+        </article>
+
+        <article class="post-card reveal" data-delay="360">
+          <p class="meta">Linux · 04 Aug 2026</p>
+          <h3>Systemd-Timer als bessere Cronjobs</h3>
+          <p>
+            Reproduzierbare Jobs mit Journal-Logs, Dependencies und Recovery-Strategie.
+            Mehr Kontrolle, weniger stille Fehler.
+          </p>
+          <a href="#" class="read-more">Artikel lesen</a>
+        </article>
+      </section>
+
+      <section class="topics" id="topics">
+        <h2 class="reveal" data-delay="120">Themenfelder</h2>
+        <div class="topic-grid">
+          <div class="topic reveal" data-delay="180">Infrastructure as Code</div>
+          <div class="topic reveal" data-delay="220">Container Operations</div>
+          <div class="topic reveal" data-delay="260">Cloud Security</div>
+          <div class="topic reveal" data-delay="300">Self-Hosting</div>
+          <div class="topic reveal" data-delay="340">Observability</div>
+          <div class="topic reveal" data-delay="380">Scripting & Tooling</div>
+        </div>
+      </section>
+
+      <section class="about reveal" id="about" data-delay="120">
+        <h2>About</h2>
+        <p>
+          Ich bin Infrastruktur-Nerd und schreibe diesen Blog, um komplexe Themen
+          in klare, lauffaehige Schritte zu zerlegen. Kein Theorie-Overload,
+          sondern Entscheidungen, Trade-offs und sofort nutzbare Beispiele.
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer reveal" data-delay="120">
+      <p>© 2026 Kernel Notes</p>
+      <a href="#">RSS</a>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

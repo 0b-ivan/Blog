@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  validate-and-smoke-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: docker compose config
+
+      - name: Build local blog image
+        run: docker build -t kernel-notes-blog:ci .
+
+      - name: Build OpenFaaS function image
+        run: docker build -t kernel-notes-function:ci ./faasd/function-blog
+
+      - name: Start stack
+        run: docker compose up -d --build
+
+      - name: Wait for health endpoint
+        run: |
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:8080/healthz > /dev/null; then
+              echo "Service is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Service did not become healthy in time"
+          docker compose ps
+          exit 1
+
+      - name: Shutdown stack
+        if: always()
+        run: docker compose down -v

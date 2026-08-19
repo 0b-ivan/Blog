@@ -1,0 +1,13 @@
+{
+  "name": "kernel-notes-blog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static IT blog served via Node and containerized with Docker Compose",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
