@@ -23,7 +23,12 @@ module.exports = [
     }
   },
   {
-    files: ['script.js', 'faasd/function-blog/public/script.js'],
+    files: [
+      'script.js',
+      'assets/newsletter-config.js',
+      'assets/newsletter.js',
+      'faasd/function-blog/public/script.js'
+    ],
     languageOptions: {
       globals: {
         window: 'readonly',
