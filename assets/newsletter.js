@@ -1,4 +1,11 @@
 (() => {
+  const newsletter = document.getElementById('newsletter');
+  const about = document.getElementById('about');
+
+  if (newsletter && about) {
+    about.insertAdjacentElement('afterend', newsletter);
+  }
+
   const form = document.querySelector('[data-newsletter-form]');
   const unavailable = document.querySelector('[data-newsletter-unavailable]');
   if (!form) {
