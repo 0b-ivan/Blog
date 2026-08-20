@@ -19,7 +19,7 @@ Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, war
 Der Blog soll:
 
 - schnell Inhalte publizieren können
-- einfach auf einem kleinen Server laufen
+- einfach auf einem klainen Server laufen
 - ohne großes CMS auskommen
 - sauber containerisierbar und CI/CD-fähig sein
 - für Security- und Ops-Themen gut geeignet sein
