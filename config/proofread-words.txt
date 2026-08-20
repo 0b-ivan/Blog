@@ -1,4 +1,5 @@
-# Technische Begriffe und Eigennamen, die LanguageTool im Blog nicht beanstanden soll.
+# Technische Begriffe, Eigennamen und bewusst verwendete Schreibweisen.
+# Diese Liste wird von LanguageTool und CSpell genutzt.
 # Ein Begriff pro Zeile; Vergleich erfolgt ohne Beachtung der Gross-/Kleinschreibung.
 AWS
 CDK
@@ -8,6 +9,7 @@ CouchDB
 Dependabot
 DevOps
 Docker
+Einmalaktion
 esbuild
 Express
 Fail2ban
@@ -34,3 +36,15 @@ Vaultwarden
 Vite
 Vitest
 Zero Trust
+containerisierbar
+containerisiert
+deployen
+faasd
+gefixte
+gehostete
+gehosteter
+gemerged
+journalctl
+reduzierteren
+versioniert
+Zusatzinfos
