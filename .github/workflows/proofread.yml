@@ -5,6 +5,8 @@ on:
     paths:
       - 'posts/**/*.md'
       - 'config/proofread-words.txt'
+      - 'cspell.json'
+      - 'scripts/spellcheck-posts.js'
       - 'scripts/proofread-posts.js'
       - '.github/workflows/proofread.yml'
   workflow_dispatch:
@@ -24,6 +26,24 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
+
+      - name: Spellcheck active posts with CSpell
+        run: |
+          set +e
+          npm run posts:spellcheck
+          status=$?
+          set -e
+
+          if [ "$status" -gt 1 ]; then
+            echo 'CSpell failed to run.'
+            exit "$status"
+          fi
+
+          if [ "$status" -eq 1 ]; then
+            echo 'CSpell found spelling suggestions. This check is intentionally non-blocking.'
+          fi
+
+          exit 0
 
       - name: Start LanguageTool
         run: |
@@ -47,7 +67,7 @@ jobs:
           echo 'LanguageTool did not become ready'
           exit 1
 
-      - name: Proofread active posts
+      - name: Proofread active posts with LanguageTool
         env:
           LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
           PROOFREAD_LANGUAGE: de-DE
