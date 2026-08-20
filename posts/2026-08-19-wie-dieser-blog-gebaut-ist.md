@@ -1,10 +1,10 @@
 ---
 id: 2026-08-19-wie-dieser-blog-gebaut-ist
-version: 1
+version: 2
 title: Wie dieser Blog gebaut ist
 date: 2026-08-19
 created_at: 2026-08-19
-updated_at: 2026-08-19
+updated_at: 2026-08-20
 author: obivan
 reviewed_by: pending
 category: Engineering
@@ -76,8 +76,8 @@ Automatisiert werden u. a.:
 - Linting
 - Tests inkl. Coverage
 - Compose Smoke-Test
-- Build und Publish nach GHCR
-- optionales Deploy nach OpenFaaS/faasd
+- Build und Publish des Blog-Images nach GHCR
+- Deployment des SHA-getaggten Images auf den Hetzner-Host
 
 Warum:
 
