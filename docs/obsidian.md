@@ -90,6 +90,42 @@ npm run post:restore -- mein-artikel
 
 Nach PR, Merge und Deployment ist der Beitrag wieder normal im Blog sichtbar. Beim Archivieren und Wiederherstellen werden Inhalt und Frontmatter nicht veraendert.
 
+## Rechtschreibung und Grammatik
+
+Pull Requests mit Aenderungen unter `posts/` starten zusaetzlich den Workflow `Proofread Blog Posts`. Er prueft den normalen Markdown-Fliesstext mit einem lokalen LanguageTool-Server. Frontmatter, Codebloecke, Inline-Code und Link-Ziele werden fuer die Sprachpruefung ausgeblendet.
+
+Die Hinweise erscheinen als GitHub-Warnings und in der Job-Zusammenfassung. Der Proofread-Check ist bewusst nicht blockierend: Rechtschreib-, Grammatik- und Stilhinweise sollen sichtbar sein, aber einen technischen Fix oder eine bewusst gewaehlte Formulierung nicht am Merge hindern.
+
+Technische Begriffe und Eigennamen koennen in dieser Datei gepflegt werden:
+
+```text
+config/proofread-words.txt
+```
+
+Lokal kann derselbe Check genutzt werden, wenn ein LanguageTool HTTP Server unter `http://127.0.0.1:8010/v2/check` laeuft:
+
+```bash
+npm run posts:proofread
+```
+
+Ein einzelner Beitrag kann gezielt geprueft werden:
+
+```bash
+npm run posts:proofread -- posts/2026-08-20-mein-artikel.md
+```
+
+Eine andere LanguageTool-Instanz kann ueber `LANGUAGETOOL_URL` gesetzt werden.
+
+### Autocorrect als Pull Request
+
+Der manuelle GitHub-Workflow `Autocorrect Blog Posts` prueft `main`, wendet sichere Korrekturen an und erzeugt bei Aenderungen automatisch einen neuen Branch und Pull Request.
+
+Automatisch geaendert werden nur LanguageTool-Hinweise vom Typ Rechtschreibung/Typografie mit genau einem eindeutigen Ersatz. Grammatik- und Stilvorschlaege werden weiterhin nur gemeldet und nicht automatisch umgeschrieben.
+
+Der Workflow kann unter GitHub Actions gestartet werden. Das optionale Feld `target` kann auf einen einzelnen Beitrag gesetzt werden; leer bedeutet alle aktiven Beitraege unter `posts/`.
+
+Fuer die automatische PR-Erstellung muss das Repository GitHub Actions erlauben, Pull Requests mit dem `GITHUB_TOKEN` zu erstellen (`Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests`).
+
 ## Vor dem Push pruefen
 
 ```bash
