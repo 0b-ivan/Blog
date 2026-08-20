@@ -11,6 +11,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    env:
+      REMOTE_DIR: /opt/Blog/ops/obsidian-livesync
 
     steps:
       - name: Checkout
@@ -54,7 +56,7 @@ jobs:
           PORT="${HETZNER_PORT:-22}"
           ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "${HETZNER_USER}@${HETZNER_HOST}" \
-            "mkdir -p /opt/obsidian-livesync/config /opt/obsidian-livesync/scripts"
+            "mkdir -p '${REMOTE_DIR}/config' '${REMOTE_DIR}/scripts'"
 
       - name: Copy LiveSync stack
         env:
@@ -65,13 +67,13 @@ jobs:
           PORT="${HETZNER_PORT:-22}"
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/docker-compose.yml \
-            "${HETZNER_USER}@${HETZNER_HOST}:/opt/obsidian-livesync/docker-compose.yml"
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/docker-compose.yml"
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/config/livesync.ini \
-            "${HETZNER_USER}@${HETZNER_HOST}:/opt/obsidian-livesync/config/livesync.ini"
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/config/livesync.ini"
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/scripts/couchdb-init.sh \
-            "${HETZNER_USER}@${HETZNER_HOST}:/opt/obsidian-livesync/scripts/couchdb-init.sh"
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/couchdb-init.sh"
 
       - name: Write remote environment
         env:
@@ -93,7 +95,7 @@ jobs:
             printf 'CF_TUNNEL_TOKEN=%s\n' "$OBSIDIAN_CF_TUNNEL_TOKEN"
           } | ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "${HETZNER_USER}@${HETZNER_HOST}" \
-            "umask 077; cat > /opt/obsidian-livesync/.env"
+            "umask 077; cat > '${REMOTE_DIR}/.env'"
 
       - name: Deploy LiveSync stack
         env:
@@ -103,9 +105,10 @@ jobs:
         run: |
           PORT="${HETZNER_PORT:-22}"
           ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "${HETZNER_USER}@${HETZNER_HOST}" <<'REMOTE'
+            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_DIR" <<'REMOTE'
           set -euo pipefail
-          cd /opt/obsidian-livesync
+          REMOTE_DIR="$1"
+          cd "$REMOTE_DIR"
 
           docker compose --env-file .env --profile cloudflare config >/dev/null
           docker compose --env-file .env --profile cloudflare pull
