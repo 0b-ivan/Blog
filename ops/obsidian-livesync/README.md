@@ -28,6 +28,8 @@ Git und LiveSync haben unterschiedliche Aufgaben:
 
 ## 1. Server vorbereiten
 
+Fuer einen manuellen Start:
+
 ```bash
 cd ops/obsidian-livesync
 cp .env.example .env
@@ -51,7 +53,7 @@ In Cloudflare Zero Trust:
 
 1. `Networks -> Tunnels -> Create tunnel`
 2. einen Cloudflared-Tunnel anlegen
-3. den Connector-Token als `CF_TUNNEL_TOKEN` in `.env` speichern
+3. den Connector-Token speichern
 4. einen Public Hostname anlegen, empfohlen:
 
 ```text
@@ -72,7 +74,47 @@ Keinen Port `5984` in der Firewall oder im Compose nach aussen freigeben.
 
 Ein interaktiver Cloudflare-Access-Login vor diesem Hostnamen kann die Obsidian-Replikation blockieren. Fuer den ersten stabilen Betrieb daher CouchDB-Authentifizierung + HTTPS verwenden. Wer spaeter Cloudflare Access davor setzen will, sollte mit Service Tokens/custom headers arbeiten und CORS/OPTIONS nicht blockieren.
 
-## 3. Stack starten
+## 3. Deployment ueber GitHub Actions
+
+Das Repository enthaelt den manuellen Workflow:
+
+```text
+.github/workflows/deploy-obsidian-livesync.yml
+```
+
+Er verwendet dasselbe GitHub Environment `production` und dieselben Hetzner-SSH-Secrets wie das Blog-Deployment. Zusaetzlich muessen dort angelegt werden:
+
+```text
+OBSIDIAN_COUCHDB_USER
+OBSIDIAN_COUCHDB_PASSWORD
+OBSIDIAN_CF_TUNNEL_TOKEN
+```
+
+Der Workflow kopiert das Stack-Setup nach:
+
+```text
+/opt/Blog/ops/obsidian-livesync
+```
+
+und startet dort:
+
+```bash
+docker compose --env-file .env --profile cloudflare up -d
+```
+
+Anschliessend prueft der Workflow, ob CouchDB healthy ist und `cloudflared` laeuft.
+
+Start in GitHub:
+
+```text
+Actions -> Deploy Obsidian LiveSync -> Run workflow
+```
+
+Der Workflow ist bewusst `workflow_dispatch` und wird nicht bei jedem Blog-Deployment gestartet.
+
+## 4. Manueller Stack-Start
+
+Alternativ direkt auf einem Server:
 
 ```bash
 docker compose --profile cloudflare up -d
@@ -94,7 +136,7 @@ Ein erneuter Lauf ist moeglich mit:
 docker compose restart couchdb-init
 ```
 
-## 4. Obsidian konfigurieren
+## 5. Obsidian konfigurieren
 
 Auf dem ersten Geraet das Community Plugin `Self-hosted LiveSync` installieren.
 
@@ -111,13 +153,13 @@ Bei Cloudflare sollte im Plugin `Use Request API` / `Use Internal API` aktiviert
 
 Danach zuerst die Datenbankverbindung testen und erst dann die Synchronisation aktivieren.
 
-## 5. Zweites Geraet hinzufuegen
+## 6. Zweites Geraet hinzufuegen
 
 Auf dem ersten Geraet einen Self-hosted-LiveSync Setup URI erzeugen und auf dem zweiten Geraet importieren.
 
 Der Setup URI enthaelt verschluesselte Verbindungsdaten und ist wie ein Secret zu behandeln. Nicht in Git, Tickets, Screenshots oder den Vault schreiben. Die Passphrase fuer den Setup URI getrennt uebertragen.
 
-## 6. Nicht parallel mit anderen Vault-Syncs betreiben
+## 7. Nicht parallel mit anderen Vault-Syncs betreiben
 
 Fuer denselben Vault nicht gleichzeitig verwenden:
 
