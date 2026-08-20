@@ -1,0 +1,59 @@
+name: Proofread Single Post Test
+
+on:
+  push:
+    branches:
+      - test/proofread-single-post
+
+jobs:
+  autocorrect-one-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Start LanguageTool
+        run: |
+          docker run -d \
+            --name languagetool \
+            -p 127.0.0.1:8010:8081 \
+            meyay/languagetool:latest
+
+          for _ in $(seq 1 60); do
+            if curl -fsS -X POST \
+              -d 'language=de-DE' \
+              -d 'text=Das ist ein Test.' \
+              http://127.0.0.1:8010/v2/check >/dev/null; then
+              echo 'LanguageTool is ready'
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs languagetool || true
+          exit 1
+
+      - name: Autocorrect one real article
+        env:
+          LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
+          PROOFREAD_LANGUAGE: de-DE
+        run: npm run posts:proofread:fix -- posts/2026-08-19-wie-dieser-blog-gebaut-ist.md
+
+      - name: Show and verify correction
+        run: |
+          git diff -- posts/2026-08-19-wie-dieser-blog-gebaut-ist.md
+          grep -F 'um die Angriffsoberfläche kleinzuhalten.' posts/2026-08-19-wie-dieser-blog-gebaut-ist.md
+          if git diff --quiet -- posts/2026-08-19-wie-dieser-blog-gebaut-ist.md; then
+            echo 'Expected an autocorrection diff, but none was produced.'
+            exit 1
+          fi
+
+      - name: Stop LanguageTool
+        if: always()
+        run: docker rm -f languagetool >/dev/null 2>&1 || true
