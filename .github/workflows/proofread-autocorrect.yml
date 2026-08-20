@@ -32,6 +32,24 @@ jobs:
         with:
           node-version: 22
 
+      - name: Apply CSpell autocorrections
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          set +e
+          if [ -n "$TARGET" ]; then
+            npm run posts:spellcheck:fix -- "$TARGET"
+          else
+            npm run posts:spellcheck:fix
+          fi
+          status=$?
+          set -e
+
+          if [ "$status" -gt 1 ]; then
+            echo 'CSpell autocorrection failed to run.'
+            exit "$status"
+          fi
+
       - name: Start LanguageTool
         run: |
           docker run -d \
@@ -54,7 +72,7 @@ jobs:
           echo 'LanguageTool did not become ready'
           exit 1
 
-      - name: Apply safe autocorrections
+      - name: Apply safe LanguageTool autocorrections
         env:
           LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
           PROOFREAD_LANGUAGE: de-DE
@@ -71,7 +89,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if git diff --quiet -- posts/; then
-            echo 'Keine sicheren Autokorrekturen gefunden.'
+            echo 'Keine automatischen Korrekturen gefunden.'
             exit 0
           fi
 
@@ -87,7 +105,7 @@ jobs:
             --base main \
             --head "$branch" \
             --title 'Autocorrect blog post spelling' \
-            --body "LanguageTool hat nur eindeutige Rechtschreibkorrekturen mit genau einem Ersatz automatisch angewendet. Typografie-, Grammatik- und Stilvorschlaege werden bewusst nicht automatisch geaendert.\n\nWorkflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            --body "CSpell und LanguageTool haben automatische Rechtschreibkorrekturen angewendet. CSpell deckt klassische Tippfehler ab; LanguageTool korrigiert nur eindeutige Rechtschreibtreffer mit genau einem Ersatz. Grammatik-, Stil- und mehrdeutige Vorschlaege werden bewusst nicht automatisch uebernommen. Bitte den Diff vor dem Merge pruefen.\n\nWorkflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Stop LanguageTool
         if: always()
