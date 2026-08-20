@@ -2,3 +2,10 @@ node_modules/
 coverage/
 *.log
 .DS_Store
+
+# Obsidian local state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.obsidian/plugins/
+.trash/
