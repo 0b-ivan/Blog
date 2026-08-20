@@ -7,13 +7,14 @@ const { URL, URLSearchParams } = require('node:url');
 const root = path.resolve(__dirname, '..');
 const DEFAULT_LANGUAGE = 'de-DE';
 const DEFAULT_LANGUAGETOOL_URL = 'http://127.0.0.1:8010/v2/check';
-const SAFE_ISSUE_TYPES = new Set(['misspelling', 'typographical']);
+const SAFE_ISSUE_TYPES = new Set(['misspelling']);
 const MAX_GITHUB_ANNOTATIONS = 50;
+const MASK_PADDING = 2;
 
 function blankRange(chars, start, end) {
   for (let index = start; index < end && index < chars.length; index += 1) {
     if (chars[index] !== '\n' && chars[index] !== '\r') {
-      chars[index] = ' ';
+      chars[index] = '0';
     }
   }
 }
@@ -89,6 +90,19 @@ function maskMarkdown(source) {
   }));
 
   return chars.join('');
+}
+
+function isMaskedMatch(source, masked, match, padding = MASK_PADDING) {
+  const start = Math.max(0, match.offset - padding);
+  const end = Math.min(source.length, match.offset + match.length + padding);
+
+  for (let index = start; index < end; index += 1) {
+    if (source[index] !== masked[index]) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 async function collectMarkdownFiles(targets) {
@@ -334,7 +348,9 @@ async function run() {
     const source = await fs.readFile(file, 'utf-8');
     const masked = maskMarkdown(source);
     const result = await requestLanguageTool(masked, endpoint, language);
-    const matches = (result.matches || []).filter((match) => !isIgnoredMatch(source, match, ignoredWords));
+    const matches = (result.matches || [])
+      .filter((match) => !isMaskedMatch(source, masked, match))
+      .filter((match) => !isIgnoredMatch(source, match, ignoredWords));
 
     totalIssues += matches.length;
 
@@ -362,7 +378,7 @@ async function run() {
     `- LanguageTool-Hinweise: ${totalIssues}`,
     `- automatisch angewendet: ${totalApplied}`,
     '',
-    'Autocorrect wendet nur eindeutige Rechtschreib-/Typografie-Korrekturen mit genau einem Vorschlag an. Grammatik- und Stilhinweise bleiben zur manuellen Prüfung stehen.'
+    'Autocorrect wendet nur eindeutige Rechtschreibkorrekturen mit genau einem Vorschlag an. Typografie-, Grammatik- und Stilhinweise bleiben zur manuellen Prüfung stehen.'
   ];
 
   await appendGithubSummary(summaryLines.join('\n'));
@@ -384,6 +400,7 @@ if (require.main === module) {
 module.exports = {
   SAFE_ISSUE_TYPES,
   maskMarkdown,
+  isMaskedMatch,
   normalizeMatchedText,
   isIgnoredMatch,
   safeFixCandidates,
