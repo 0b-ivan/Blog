@@ -11,6 +11,7 @@ module.exports = [
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
       globals: {
+        Buffer: 'readonly',
         console: 'readonly',
         module: 'readonly',
         require: 'readonly',
