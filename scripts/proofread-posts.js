@@ -97,13 +97,19 @@ async function collectMarkdownFiles(targets) {
 
   async function visit(targetPath) {
     const absolute = path.resolve(root, targetPath);
+    const rootPrefix = `${root}${path.sep}`;
+
+    if (absolute !== root && !absolute.startsWith(rootPrefix)) {
+      throw new Error(`Proofread target must stay inside the repository: ${targetPath}`);
+    }
+
     let stat;
 
     try {
       stat = await fs.stat(absolute);
     } catch (error) {
       if (error && error.code === 'ENOENT') {
-        throw new Error(`Proofread target not found: ${targetPath}`);
+        throw new Error(`Proofread target not found: ${targetPath}`, { cause: error });
       }
       throw error;
     }
@@ -201,7 +207,7 @@ function requestLanguageTool(text, endpoint, language = DEFAULT_LANGUAGE) {
           try {
             resolve(JSON.parse(responseBody));
           } catch (error) {
-            reject(new Error(`Could not parse LanguageTool response: ${error.message}`));
+            reject(new Error(`Could not parse LanguageTool response: ${error.message}`, { cause: error }));
           }
         });
       }
