@@ -21,7 +21,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/build-info.json ./build-info.json
-COPY index.html impressum.html styles.css image-viewer.css script.js ./
+COPY index.html impressum.html styles.css image-viewer.css mobile-topics.css script.js ./
 COPY assets ./assets
 COPY server.js ./
 COPY posts ./posts
