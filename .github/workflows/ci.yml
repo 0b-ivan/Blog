@@ -60,9 +60,6 @@ jobs:
       - name: Build local blog image
         run: docker build -t kernel-notes-blog:ci .
 
-      - name: Build OpenFaaS function image
-        run: docker build -t kernel-notes-function:ci ./faasd/function-blog
-
       - name: Start stack
         run: docker compose up -d --build
 
