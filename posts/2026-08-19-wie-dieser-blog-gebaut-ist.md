@@ -21,7 +21,7 @@ Der Blog soll:
 - schnell Inhalte publizieren können
 - einfach auf einem kleinen Server laufen
 - ohne großes CMS auskommen
-- sauber containerisierbar und CI/CD-fähig sein
+- sauber containerisierbaar und CI/CD-fähig sein
 - für Security- und Ops-Themen gut geeignet sein
 
 Kurz: pragmatisch, wartbar, nachvollziehbar.
