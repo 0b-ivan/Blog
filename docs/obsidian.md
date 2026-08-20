@@ -54,6 +54,42 @@ Das erzeugt beispielsweise:
 posts/2026-08-20-sqlite-oefter-benutzt-als-gedacht.md
 ```
 
+## Artikel archivieren
+
+Ein archivierter Artikel wird nicht geloescht. Seine Markdown-Datei wird aus `posts/` nach `archive/` verschoben und bleibt damit weiterhin im Repository und im Obsidian-Vault erhalten.
+
+Weil der Blog nur Markdown-Dateien direkt aus `posts/` als Artikel einliest, verschwindet ein archivierter Beitrag nach dem normalen PR/Merge/Deployment automatisch von der Website, aus der Artikel-API, dem RSS-Feed und den verwandten Beitraegen.
+
+Archivieren per Slug oder Dateiname:
+
+```bash
+npm run post:archive -- 2026-08-19-mein-artikel
+```
+
+Auch der kurze Slug funktioniert, sofern er eindeutig ist:
+
+```bash
+npm run post:archive -- mein-artikel
+```
+
+Danach liegt die Datei beispielsweise hier:
+
+```text
+archive/2026-08-19-mein-artikel.md
+```
+
+Archivierte Beitraege sind damit nicht mehr als normale Blog-URL verfuegbar. Der Inhalt bleibt aber in Git und Obsidian erhalten.
+
+## Artikel wiederherstellen
+
+Ein archivierter Beitrag kann jederzeit wieder nach `posts/` verschoben werden:
+
+```bash
+npm run post:restore -- mein-artikel
+```
+
+Nach PR, Merge und Deployment ist der Beitrag wieder normal im Blog sichtbar. Beim Archivieren und Wiederherstellen werden Inhalt und Frontmatter nicht veraendert.
+
 ## Vor dem Push pruefen
 
 ```bash
@@ -65,8 +101,8 @@ npm run test:coverage
 Danach normal committen und pushen:
 
 ```bash
-git add posts/ assets/
-git commit -m "Add SQLite post"
+git add posts/ archive/ assets/
+git commit -m "Update blog posts"
 git push -u origin HEAD
 ```
 
