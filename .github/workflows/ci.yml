@@ -44,6 +44,14 @@ jobs:
           BLOG_IMAGE: ghcr.io/0b-ivan/kernel-notes-blog:ci
         run: docker compose -f docker-compose.prod.yml config
 
+      - name: Validate Obsidian LiveSync Docker Compose
+        env:
+          COUCHDB_USER: obsidian-ci
+          COUCHDB_PASSWORD: ci-placeholder-password
+          COUCHDB_DATABASE: kernelnotes
+          CF_TUNNEL_TOKEN: ci-placeholder-token
+        run: docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare config
+
       - name: Build local blog image
         run: docker build -t kernel-notes-blog:ci .
 

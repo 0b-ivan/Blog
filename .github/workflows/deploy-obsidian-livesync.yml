@@ -1,0 +1,142 @@
+name: Deploy Obsidian LiveSync
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: obsidian-livesync-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      REMOTE_DIR: /opt/Blog/ops/obsidian-livesync
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate deployment secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+          OBSIDIAN_COUCHDB_USER: ${{ secrets.OBSIDIAN_COUCHDB_USER }}
+          OBSIDIAN_COUCHDB_PASSWORD: ${{ secrets.OBSIDIAN_COUCHDB_PASSWORD }}
+          OBSIDIAN_CF_TUNNEL_TOKEN: ${{ secrets.OBSIDIAN_CF_TUNNEL_TOKEN }}
+        run: |
+          test -n "$HETZNER_HOST" || { echo "HETZNER_HOST is missing"; exit 1; }
+          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing"; exit 1; }
+          test -n "$HETZNER_SSH_KEY" || { echo "HETZNER_SSH_KEY is missing"; exit 1; }
+          test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
+          test -n "$OBSIDIAN_COUCHDB_USER" || { echo "OBSIDIAN_COUCHDB_USER is missing"; exit 1; }
+          test -n "$OBSIDIAN_COUCHDB_PASSWORD" || { echo "OBSIDIAN_COUCHDB_PASSWORD is missing"; exit 1; }
+          test -n "$OBSIDIAN_CF_TUNNEL_TOKEN" || { echo "OBSIDIAN_CF_TUNNEL_TOKEN is missing"; exit 1; }
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Prepare remote directory
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            "mkdir -p '${REMOTE_DIR}/config' '${REMOTE_DIR}/scripts'"
+
+      - name: Copy LiveSync stack
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            ops/obsidian-livesync/docker-compose.yml \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/docker-compose.yml"
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            ops/obsidian-livesync/config/livesync.ini \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/config/livesync.ini"
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            ops/obsidian-livesync/scripts/couchdb-init.sh \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/couchdb-init.sh"
+
+      - name: Write remote environment
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          OBSIDIAN_COUCHDB_USER: ${{ secrets.OBSIDIAN_COUCHDB_USER }}
+          OBSIDIAN_COUCHDB_PASSWORD: ${{ secrets.OBSIDIAN_COUCHDB_PASSWORD }}
+          OBSIDIAN_CF_TUNNEL_TOKEN: ${{ secrets.OBSIDIAN_CF_TUNNEL_TOKEN }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          case "$OBSIDIAN_COUCHDB_USER$OBSIDIAN_COUCHDB_PASSWORD$OBSIDIAN_CF_TUNNEL_TOKEN" in
+            *$'\n'*) echo "LiveSync secrets must not contain newlines"; exit 1 ;;
+          esac
+          {
+            printf 'COUCHDB_USER=%s\n' "$OBSIDIAN_COUCHDB_USER"
+            printf 'COUCHDB_PASSWORD=%s\n' "$OBSIDIAN_COUCHDB_PASSWORD"
+            printf 'COUCHDB_DATABASE=kernelnotes\n'
+            printf 'CF_TUNNEL_TOKEN=%s\n' "$OBSIDIAN_CF_TUNNEL_TOKEN"
+          } | ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            "umask 077; cat > '${REMOTE_DIR}/.env'"
+
+      - name: Deploy LiveSync stack
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_DIR" <<'REMOTE'
+          set -euo pipefail
+          REMOTE_DIR="$1"
+          cd "$REMOTE_DIR"
+
+          docker compose --env-file .env --profile cloudflare config >/dev/null
+          docker compose --env-file .env --profile cloudflare pull
+          docker compose --env-file .env --profile cloudflare up -d --remove-orphans
+
+          healthy=false
+          for _ in $(seq 1 30); do
+            status="$(docker inspect -f '{{.State.Health.Status}}' kernel-notes-livesync-couchdb 2>/dev/null || true)"
+            if [ "$status" = "healthy" ]; then
+              healthy=true
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$healthy" != "true" ]; then
+            echo "CouchDB did not become healthy"
+            docker compose --env-file .env --profile cloudflare ps
+            docker compose --env-file .env logs --tail=100 couchdb couchdb-init || true
+            exit 1
+          fi
+
+          if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cloudflared 2>/dev/null || true)" != "true" ]; then
+            echo "cloudflared is not running"
+            docker compose --env-file .env --profile cloudflare ps
+            docker compose --env-file .env logs --tail=100 cloudflared || true
+            exit 1
+          fi
+
+          docker compose --env-file .env --profile cloudflare ps
+          REMOTE

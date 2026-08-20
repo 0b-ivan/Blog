@@ -9,3 +9,7 @@ coverage/
 .obsidian/cache/
 .obsidian/plugins/
 .trash/
+
+# Obsidian LiveSync server-local state
+ops/obsidian-livesync/.env
+ops/obsidian-livesync/backups/

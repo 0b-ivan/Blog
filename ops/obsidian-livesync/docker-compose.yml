@@ -1,0 +1,65 @@
+name: kernel-notes-obsidian-sync
+
+services:
+  couchdb:
+    image: couchdb:3
+    container_name: kernel-notes-livesync-couchdb
+    restart: unless-stopped
+    environment:
+      COUCHDB_USER: ${COUCHDB_USER:?Set COUCHDB_USER in .env}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+      # Do not mount this read-only. The CouchDB entrypoint adjusts its mode on startup.
+      - ./config/livesync.ini:/opt/couchdb/etc/local.ini
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -sf -u ${COUCHDB_USER}:${COUCHDB_PASSWORD} http://localhost:5984/_session | grep -q ok || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+    networks:
+      - livesync
+
+  couchdb-init:
+    image: curlimages/curl:latest
+    container_name: kernel-notes-livesync-init
+    restart: on-failure
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    environment:
+      COUCHDB_INTERNAL_URL: http://couchdb:5984
+      COUCHDB_USER: ${COUCHDB_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
+      COUCHDB_DATABASE: ${COUCHDB_DATABASE:-kernelnotes}
+    volumes:
+      - ./scripts/couchdb-init.sh:/couchdb-init.sh:ro
+    entrypoint: ["sh", "/couchdb-init.sh"]
+    networks:
+      - livesync
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: kernel-notes-livesync-cloudflared
+    profiles: [cloudflare]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CF_TUNNEL_TOKEN:?Set CF_TUNNEL_TOKEN in .env}
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    networks:
+      - livesync
+
+volumes:
+  couchdb-data:
+    name: kernel-notes-obsidian-couchdb-data
+
+networks:
+  livesync:
+    name: kernel-notes-obsidian-livesync
+    driver: bridge
