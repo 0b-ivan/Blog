@@ -9,6 +9,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
+    "post:new": "node scripts/new-post.js",
     "posts:sync-meta": "node scripts/sync-post-metadata.js",
     "posts:validate-meta": "node scripts/validate-post-frontmatter.js"
   },
