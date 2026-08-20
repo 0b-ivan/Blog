@@ -120,7 +120,7 @@ Eine andere LanguageTool-Instanz kann ueber `LANGUAGETOOL_URL` gesetzt werden.
 
 Der manuelle GitHub-Workflow `Autocorrect Blog Posts` prueft `main`, wendet sichere Korrekturen an und erzeugt bei Aenderungen automatisch einen neuen Branch und Pull Request.
 
-Automatisch geaendert werden nur LanguageTool-Hinweise vom Typ Rechtschreibung/Typografie mit genau einem eindeutigen Ersatz. Grammatik- und Stilvorschlaege werden weiterhin nur gemeldet und nicht automatisch umgeschrieben.
+Automatisch geaendert werden nur Rechtschreibhinweise mit genau einem eindeutigen Ersatz. Typografie-, Grammatik- und Stilvorschlaege werden weiterhin nur gemeldet und nicht automatisch umgeschrieben.
 
 Der Workflow kann unter GitHub Actions gestartet werden. Das optionale Feld `target` kann auf einen einzelnen Beitrag gesetzt werden; leer bedeutet alle aktiven Beitraege unter `posts/`.
 
