@@ -24,7 +24,6 @@ Kernel Notes
 LiveSync
 Node.js
 Obsidian
-OpenFaaS
 Proxmox
 REST
 RSS
@@ -39,7 +38,6 @@ Zero Trust
 containerisierbar
 containerisiert
 deployen
-faasd
 gefixte
 gehostete
 gehosteter

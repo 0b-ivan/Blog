@@ -2,7 +2,7 @@
 
 Persoenlicher IT-Blog mit Node.js/Express, Markdown-Posts, Docker und GitHub Actions.
 
-Der Blog wird lokal per Docker Compose entwickelt und in Production als fertiges Docker-Image aus GHCR auf einem Hetzner-Host betrieben. Zusaetzlich existiert weiterhin eine OpenFaaS/faasd-Variante.
+Der Blog wird lokal per Docker Compose entwickelt und in Production als fertiges Docker-Image aus GHCR auf einem Hetzner-Host betrieben.
 
 ## Betriebsarten
 
@@ -64,18 +64,6 @@ http://127.0.0.1:1888/healthz
 
 Wenn das Port-Mapping nicht `1888 -> 8080` entspricht oder `/healthz` nicht erfolgreich antwortet, gilt das Deployment als fehlgeschlagen und der Workflow versucht ein Rollback auf das vorherige Image.
 
-### faasd / OpenFaaS
-
-Die bestehende faasd-Variante bleibt erhalten.
-
-Relevante Dateien:
-
-- `faasd/stack.yml`
-- `faasd/function-blog/`
-- `faasd/install-faasd.sh`
-
-`faasd` ist kein normaler Docker-Compose-Container. Es laeuft auf Linux mit `containerd`, CNI und `systemd`.
-
 ## Deployment-User auf Hetzner
 
 GitHub Actions verwendet fuer Production einen eigenen SSH-Account:
@@ -135,7 +123,6 @@ Die CI laeuft fuer Pull Requests und prueft unter anderem:
 - Docker Compose
 - Production Compose
 - Blog-Image
-- OpenFaaS-Function-Image
 - Smoke-Test und `/healthz`
 - Trivy Security Scan
 
@@ -311,4 +298,3 @@ Lokale Docker-Builds ohne `BUILD_VERSION` verwenden weiterhin die Version aus `p
 - `.github/workflows/ci.yml` - CI
 - `.github/workflows/cd.yml` - GHCR + Hetzner Deployment
 - `ops/hetzner/` - Setup des Deployment-Users
-- `faasd/` - optionale OpenFaaS/faasd-Variante

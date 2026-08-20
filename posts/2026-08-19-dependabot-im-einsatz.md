@@ -1,10 +1,10 @@
 ---
 id: 2026-08-19-dependabot-im-einsatz
-version: 2
+version: 3
 title: "Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?"
 date: 2026-08-19
 created_at: 2026-08-19
-updated_at: 2026-08-19
+updated_at: 2026-08-20
 author: obivan
 reviewed_by: pending
 category: Security
@@ -109,20 +109,8 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
 
-  - package-ecosystem: "npm"
-    directory: "/faasd/function-blog"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
   - package-ecosystem: "docker"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
-  - package-ecosystem: "docker"
-    directory: "/faasd/function-blog"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -132,9 +120,7 @@ Damit prüft Dependabot bei mir wöchentlich:
 
 - GitHub Actions
 - npm im Blog selbst
-- npm in der faasd Function
 - Docker Images im Root-Dockerfile
-- Docker Images in der faasd Function
 
 `weekly` reicht mir hier bewusst aus. Bei einem größeren Projekt oder einem Security-kritischen Stack kann `daily` sinnvoller sein.
 

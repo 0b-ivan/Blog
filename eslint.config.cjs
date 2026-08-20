@@ -27,8 +27,7 @@ module.exports = [
     files: [
       'script.js',
       'assets/newsletter-config.js',
-      'assets/newsletter.js',
-      'faasd/function-blog/public/script.js'
+      'assets/newsletter.js'
     ],
     languageOptions: {
       globals: {
