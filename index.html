@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="assets/typewriter.css" data-kernel-typewriter />
     <link rel="stylesheet" href="assets/about.css" />
+    <link rel="stylesheet" href="assets/newsletter.css" />
   </head>
   <body>
     <div class="bg-grid" aria-hidden="true"></div>
@@ -23,6 +24,7 @@
       <a class="logo" href="#">Kernel Notes</a>
       <nav class="main-nav" aria-label="Hauptnavigation">
         <a href="#posts">Artikel</a>
+        <a href="#newsletter">Abo</a>
         <a href="#topics">Themen</a>
         <a href="#about">About</a>
         <a href="impressum.html">Impressum</a>
@@ -70,6 +72,44 @@
           <a href="#posts">Alle Beiträge</a>
         </div>
         <div id="posts-list" aria-live="polite"></div>
+      </section>
+
+      <section class="newsletter reveal" id="newsletter" data-delay="120" aria-labelledby="newsletter-title">
+        <div class="newsletter-layout">
+          <div>
+            <p class="eyebrow">MAIL-ABO</p>
+            <h2 id="newsletter-title">Neue Kernel Notes per Mail</h2>
+            <p class="newsletter-copy">
+              Neue Beiträge direkt ins Postfach. Nach der Anmeldung bestätigt Buttondown
+              deine E-Mail-Adresse. Das Abo kann jederzeit wieder beendet werden. Alternativ
+              bleibt der offene RSS-Feed verfügbar.
+            </p>
+          </div>
+
+          <form class="newsletter-form" method="post" data-newsletter-form hidden>
+            <label for="newsletter-email">E-Mail-Adresse</label>
+            <div class="newsletter-controls">
+              <input
+                id="newsletter-email"
+                type="email"
+                name="email"
+                autocomplete="email"
+                inputmode="email"
+                placeholder="du@example.com"
+                required
+              />
+              <button type="submit">Abonnieren</button>
+            </div>
+            <input type="hidden" name="embed" value="1" />
+            <p class="newsletter-note">
+              Versand und Verwaltung laufen über Buttondown. <a href="/rss.xml">Lieber RSS?</a>
+            </p>
+          </form>
+
+          <p class="newsletter-unavailable" data-newsletter-unavailable>
+            Das Mail-Abo wird gerade eingerichtet. Der <a href="/rss.xml">RSS-Feed</a> ist bereits verfügbar.
+          </p>
+        </div>
       </section>
 
       <section class="topics" id="topics">
@@ -160,6 +200,8 @@
       </div>
     </footer>
 
+    <script src="assets/newsletter-config.js"></script>
+    <script src="assets/newsletter.js"></script>
     <script src="script.js"></script>
     <script>
       (async () => {
