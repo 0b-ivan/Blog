@@ -1,0 +1,94 @@
+name: Autocorrect Blog Posts
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Optionaler Pfad, z. B. posts/2026-08-20-mein-artikel.md. Leer = alle aktiven Posts.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: proofread-autocorrect
+  cancel-in-progress: false
+
+jobs:
+  autocorrect-posts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Start LanguageTool
+        run: |
+          docker run -d \
+            --name languagetool \
+            -p 127.0.0.1:8010:8081 \
+            meyay/languagetool:latest
+
+          for _ in $(seq 1 60); do
+            if curl -fsS -X POST \
+              -d 'language=de-DE' \
+              -d 'text=Das ist ein Test.' \
+              http://127.0.0.1:8010/v2/check >/dev/null; then
+              echo 'LanguageTool is ready'
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs languagetool || true
+          echo 'LanguageTool did not become ready'
+          exit 1
+
+      - name: Apply safe autocorrections
+        env:
+          LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
+          PROOFREAD_LANGUAGE: de-DE
+          TARGET: ${{ inputs.target }}
+        run: |
+          if [ -n "$TARGET" ]; then
+            npm run posts:proofread:fix -- "$TARGET"
+          else
+            npm run posts:proofread:fix
+          fi
+
+      - name: Create correction pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- posts/; then
+            echo 'Keine sicheren Autokorrekturen gefunden.'
+            exit 0
+          fi
+
+          branch="chore/proofread-${GITHUB_RUN_ID}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git add posts/
+          git commit -m 'Autocorrect blog post spelling'
+          git push origin "$branch"
+
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title 'Autocorrect blog post spelling' \
+            --body "LanguageTool hat eindeutige Rechtschreib- und Typografie-Korrekturen automatisch angewendet. Grammatik- und Stilvorschlaege werden bewusst nicht automatisch geaendert.\n\nWorkflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Stop LanguageTool
+        if: always()
+        run: docker rm -f languagetool >/dev/null 2>&1 || true
