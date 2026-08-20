@@ -87,7 +87,7 @@ jobs:
             --base main \
             --head "$branch" \
             --title 'Autocorrect blog post spelling' \
-            --body "LanguageTool hat eindeutige Rechtschreib- und Typografie-Korrekturen automatisch angewendet. Grammatik- und Stilvorschlaege werden bewusst nicht automatisch geaendert.\n\nWorkflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            --body "LanguageTool hat nur eindeutige Rechtschreibkorrekturen mit genau einem Ersatz automatisch angewendet. Typografie-, Grammatik- und Stilvorschlaege werden bewusst nicht automatisch geaendert.\n\nWorkflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - name: Stop LanguageTool
         if: always()
