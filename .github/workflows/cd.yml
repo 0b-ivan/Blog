@@ -18,7 +18,6 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   BLOG_IMAGE_NAME: kernel-notes-blog
-  FUNCTION_IMAGE_NAME: kernel-notes-function
 
 jobs:
   verify-main-origin:
@@ -50,13 +49,12 @@ jobs:
     outputs:
       blog_image: ${{ steps.meta.outputs.blog_image }}
       blog_version: ${{ steps.meta.outputs.blog_version }}
-      function_image: ${{ steps.meta.outputs.function_image }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set image names and deployment version
+      - name: Set image name and deployment version
         id: meta
         run: |
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
@@ -66,7 +64,6 @@ jobs:
 
           echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
           echo "blog_version=${BLOG_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "function_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.FUNCTION_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
           echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
           echo "Deployment version: ${BLOG_VERSION}"
 
@@ -89,16 +86,6 @@ jobs:
             ${{ steps.meta.outputs.blog_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:${{ steps.meta.outputs.blog_version }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:latest
-
-      - name: Build and push function image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./faasd/function-blog
-          file: ./faasd/function-blog/Dockerfile
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.function_image }}
-            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.FUNCTION_IMAGE_NAME }}:latest
 
   deploy-to-hetzner:
     runs-on: ubuntu-latest
@@ -232,51 +219,3 @@ jobs:
           echo "Deployed $BLOG_IMAGE successfully on host port $HEALTH_PORT"
           docker image prune -f >/dev/null
           REMOTE
-
-  deploy-to-faasd:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-
-    steps:
-      - name: Check deploy secrets
-        id: check
-        env:
-          OPENFAAS_URL: ${{ secrets.OPENFAAS_URL }}
-          OPENFAAS_USERNAME: ${{ secrets.OPENFAAS_USERNAME }}
-          OPENFAAS_PASSWORD: ${{ secrets.OPENFAAS_PASSWORD }}
-        run: |
-          if [[ -z "${OPENFAAS_URL}" || -z "${OPENFAAS_USERNAME}" || -z "${OPENFAAS_PASSWORD}" ]]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "OpenFaaS secrets fehlen. Deploy wird uebersprungen."
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install faas-cli
-        if: steps.check.outputs.enabled == 'true'
-        run: curl -sSLf https://cli.openfaas.com | sudo sh
-
-      - name: Login and deploy function
-        if: steps.check.outputs.enabled == 'true'
-        env:
-          OPENFAAS_URL: ${{ secrets.OPENFAAS_URL }}
-          OPENFAAS_USERNAME: ${{ secrets.OPENFAAS_USERNAME }}
-          OPENFAAS_PASSWORD: ${{ secrets.OPENFAAS_PASSWORD }}
-          OPENFAAS_INSECURE: ${{ secrets.OPENFAAS_INSECURE }}
-          FUNCTION_IMAGE: ${{ needs.build-and-push.outputs.function_image }}
-        run: |
-          TLS_ARG=""
-          if [[ "${OPENFAAS_INSECURE}" == "true" ]]; then
-            TLS_ARG="--tls-no-verify"
-          fi
-
-          echo "${OPENFAAS_PASSWORD}" | faas-cli login \
-            -g "${OPENFAAS_URL}" \
-            --username "${OPENFAAS_USERNAME}" \
-            --password-stdin ${TLS_ARG}
-
-          faas-cli deploy \
-            -g "${OPENFAAS_URL}" \
-            --name kernel-notes \
-            --image "${FUNCTION_IMAGE}" \
-            --replace ${TLS_ARG}
