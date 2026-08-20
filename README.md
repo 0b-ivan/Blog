@@ -249,6 +249,36 @@ Ein Artikel ist erreichbar unter:
 GET /posts/<slug>
 ```
 
+### Schreiben mit Obsidian
+
+Das komplette Repository kann als Obsidian-Vault geoeffnet werden. Ein passendes Template liegt unter:
+
+```text
+templates/blog-post.md
+```
+
+Neue Posts koennen alternativ direkt per CLI mit gueltigem Slug und CI-kompatiblem Frontmatter erzeugt werden:
+
+```bash
+npm run post:new -- "Mein neuer Artikel"
+```
+
+Optionale Metadaten:
+
+```bash
+npm run post:new -- \
+  "Mein neuer Artikel" \
+  --category DevOps \
+  --tags "Docker,CI/CD" \
+  --excerpt "Kurze Zusammenfassung."
+```
+
+Die komplette Obsidian-Einrichtung und der empfohlene Branch-/PR-Workflow stehen unter:
+
+```text
+docs/obsidian.md
+```
+
 ## Release-Information im Footer
 
 Das Docker-Image erzeugt beim Build eine `build-info.json`.
@@ -272,6 +302,9 @@ Lokale Docker-Builds ohne `BUILD_VERSION` verwenden weiterhin die Version aus `p
 
 - `server.js` - Express-Anwendung und API
 - `posts/` - Markdown-Artikel
+- `templates/blog-post.md` - Obsidian-Template fuer neue Artikel
+- `scripts/new-post.js` - Generator fuer neue Blogposts
+- `docs/obsidian.md` - Obsidian-Setup und Authoring-Workflow
 - `docker-compose.yml` - lokale Entwicklung
 - `docker-compose.prod.yml` - Production auf Hetzner
 - `Dockerfile` - Blog-Image
