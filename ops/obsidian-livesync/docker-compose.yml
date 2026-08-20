@@ -41,6 +41,23 @@ services:
     networks:
       - livesync
 
+  livesync-cli:
+    image: ghcr.io/vrtmrz/livesync-cli:edge@sha256:f5683b7265a19b255d4483639f1b5c081dceab7089f0e48921f592877d4ea882
+    container_name: kernel-notes-livesync-cli
+    profiles: [headless]
+    restart: unless-stopped
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    environment:
+      LIVESYNC_DB_PATH: /data
+    command: ["--vault", "/vault", "daemon"]
+    volumes:
+      - livesync-cli-data:/data
+      - ${OBSIDIAN_VAULT_PATH:-../../posts}:/vault
+    networks:
+      - livesync
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: kernel-notes-livesync-cloudflared
@@ -59,6 +76,8 @@ services:
 volumes:
   couchdb-data:
     name: kernel-notes-obsidian-couchdb-data
+  livesync-cli-data:
+    name: kernel-notes-obsidian-livesync-cli-data
 
 networks:
   livesync:

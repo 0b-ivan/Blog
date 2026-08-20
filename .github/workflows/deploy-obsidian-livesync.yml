@@ -84,6 +84,9 @@ jobs:
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/scripts/couchdb-init.sh \
             "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/couchdb-init.sh"
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            ops/obsidian-livesync/scripts/livesync-bootstrap.sh \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/livesync-bootstrap.sh"
 
       - name: Write remote environment
         env:
@@ -133,7 +136,7 @@ jobs:
           else
             docker compose --env-file .env config >/dev/null
             docker compose --env-file .env pull couchdb couchdb-init
-            docker compose --env-file .env up -d --remove-orphans couchdb couchdb-init
+            docker compose --env-file .env up -d couchdb couchdb-init
           fi
 
           healthy=false
