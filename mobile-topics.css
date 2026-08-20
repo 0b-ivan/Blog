@@ -1,6 +1,31 @@
+.topic-filter-groups {
+  display: grid;
+  gap: 1.35rem;
+  margin-top: 1rem;
+}
+
+.topic-group-title {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.05rem !important;
+  letter-spacing: 0.03em;
+}
+
+.topic-group .topic-grid {
+  margin-top: 0.65rem;
+}
+
 @media (max-width: 720px) {
   .topics {
     margin-top: 2.4rem;
+  }
+
+  .topic-filter-groups {
+    gap: 1.05rem;
+  }
+
+  .topic-group-title {
+    font-size: 0.95rem !important;
   }
 
   .topic-grid {
