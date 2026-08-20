@@ -92,17 +92,38 @@ Nach PR, Merge und Deployment ist der Beitrag wieder normal im Blog sichtbar. Be
 
 ## Rechtschreibung und Grammatik
 
-Pull Requests mit Aenderungen unter `posts/` starten zusaetzlich den Workflow `Proofread Blog Posts`. Er prueft den normalen Markdown-Fliesstext mit einem lokalen LanguageTool-Server. Frontmatter, Codebloecke, Inline-Code und Link-Ziele werden fuer die Sprachpruefung ausgeblendet.
+Pull Requests mit Aenderungen unter `posts/` starten zusaetzlich den Workflow `Proofread Blog Posts`. Die Pruefung besteht aus zwei Teilen:
 
-Die Hinweise erscheinen als GitHub-Warnings und in der Job-Zusammenfassung. Der Proofread-Check ist bewusst nicht blockierend: Rechtschreib-, Grammatik- und Stilhinweise sollen sichtbar sein, aber einen technischen Fix oder eine bewusst gewaehlte Formulierung nicht am Merge hindern.
+- CSpell mit deutschem Woerterbuch fuer klassische Tippfehler
+- LanguageTool fuer Rechtschreibung, Grammatik und Stil
 
-Technische Begriffe und Eigennamen koennen in dieser Datei gepflegt werden:
+Frontmatter, Codebloecke, Inline-Code und URLs werden soweit moeglich von den Sprachpruefungen ausgeblendet. Technische Begriffe und bewusst verwendete Schreibweisen koennen zentral gepflegt werden:
 
 ```text
 config/proofread-words.txt
 ```
 
-Lokal kann derselbe Check genutzt werden, wenn ein LanguageTool HTTP Server unter `http://127.0.0.1:8010/v2/check` laeuft:
+Die Hinweise sind bewusst nicht blockierend. Ein technischer Fix oder eine absichtlich gewaehlte Formulierung soll nicht allein wegen eines Sprachhinweises am Merge gehindert werden.
+
+### CSpell lokal
+
+Alle aktiven Beitraege pruefen:
+
+```bash
+npm run posts:spellcheck
+```
+
+Einen einzelnen Beitrag pruefen:
+
+```bash
+npm run posts:spellcheck -- posts/2026-08-20-mein-artikel.md
+```
+
+CSpell und das deutsche Woerterbuch werden in festen Versionen ueber `npm exec` geladen; dadurch muss kein zusaetzliches Paket dauerhaft in `package.json` oder `package-lock.json` aufgenommen werden.
+
+### LanguageTool lokal
+
+Wenn ein LanguageTool HTTP Server unter `http://127.0.0.1:8010/v2/check` laeuft:
 
 ```bash
 npm run posts:proofread
@@ -118,9 +139,11 @@ Eine andere LanguageTool-Instanz kann ueber `LANGUAGETOOL_URL` gesetzt werden.
 
 ### Autocorrect als Pull Request
 
-Der manuelle GitHub-Workflow `Autocorrect Blog Posts` prueft `main`, wendet sichere Korrekturen an und erzeugt bei Aenderungen automatisch einen neuen Branch und Pull Request.
+Der manuelle GitHub-Workflow `Autocorrect Blog Posts` prueft `main`, wendet nur sichere automatische Korrekturen an und erzeugt bei Aenderungen einen neuen Branch und Pull Request.
 
-Automatisch geaendert werden nur Rechtschreibhinweise mit genau einem eindeutigen Ersatz. Typografie-, Grammatik- und Stilvorschlaege werden weiterhin nur gemeldet und nicht automatisch umgeschrieben.
+CSpell korrigiert dabei nur Treffer mit genau einem eindeutigen Ersatz. Mehrdeutige CSpell-Vorschlaege bleiben unveraendert. LanguageTool korrigiert ebenfalls nur eindeutige Rechtschreibtreffer; Typografie-, Grammatik- und Stilvorschlaege werden nicht automatisch umgeschrieben.
+
+Damit bleibt der erzeugte PR die Sicherheitsgrenze: Vor dem Merge kann der komplette Diff geprueft werden.
 
 Der Workflow kann unter GitHub Actions gestartet werden. Das optionale Feld `target` kann auf einen einzelnen Beitrag gesetzt werden; leer bedeutet alle aktiven Beitraege unter `posts/`.
 
@@ -130,6 +153,7 @@ Fuer die automatische PR-Erstellung muss das Repository GitHub Actions erlauben,
 
 ```bash
 npm run posts:validate-meta
+npm run posts:spellcheck
 npm run lint
 npm run test:coverage
 ```
