@@ -2,6 +2,12 @@ name: Deploy Obsidian LiveSync
 
 on:
   workflow_dispatch:
+    inputs:
+      deploy_cloudflared:
+        description: Deploy the optional cloudflared sidecar from this stack
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: obsidian-livesync-production
@@ -13,6 +19,7 @@ jobs:
     environment: production
     env:
       REMOTE_DIR: /opt/Blog/ops/obsidian-livesync
+      DEPLOY_CLOUDFLARED: ${{ inputs.deploy_cloudflared }}
 
     steps:
       - name: Checkout
@@ -34,7 +41,10 @@ jobs:
           test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
           test -n "$OBSIDIAN_COUCHDB_USER" || { echo "OBSIDIAN_COUCHDB_USER is missing"; exit 1; }
           test -n "$OBSIDIAN_COUCHDB_PASSWORD" || { echo "OBSIDIAN_COUCHDB_PASSWORD is missing"; exit 1; }
-          test -n "$OBSIDIAN_CF_TUNNEL_TOKEN" || { echo "OBSIDIAN_CF_TUNNEL_TOKEN is missing"; exit 1; }
+
+          if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
+            test -n "$OBSIDIAN_CF_TUNNEL_TOKEN" || { echo "OBSIDIAN_CF_TUNNEL_TOKEN is required when deploy_cloudflared=true"; exit 1; }
+          fi
 
       - name: Configure SSH
         env:
@@ -88,11 +98,16 @@ jobs:
           case "$OBSIDIAN_COUCHDB_USER$OBSIDIAN_COUCHDB_PASSWORD$OBSIDIAN_CF_TUNNEL_TOKEN" in
             *$'\n'*) echo "LiveSync secrets must not contain newlines"; exit 1 ;;
           esac
+
           {
             printf 'COUCHDB_USER=%s\n' "$OBSIDIAN_COUCHDB_USER"
             printf 'COUCHDB_PASSWORD=%s\n' "$OBSIDIAN_COUCHDB_PASSWORD"
             printf 'COUCHDB_DATABASE=kernelnotes\n'
-            printf 'CF_TUNNEL_TOKEN=%s\n' "$OBSIDIAN_CF_TUNNEL_TOKEN"
+            if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
+              printf 'CF_TUNNEL_TOKEN=%s\n' "$OBSIDIAN_CF_TUNNEL_TOKEN"
+            else
+              printf 'CF_TUNNEL_TOKEN=\n'
+            fi
           } | ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "${HETZNER_USER}@${HETZNER_HOST}" \
             "umask 077; cat > '${REMOTE_DIR}/.env'"
@@ -105,14 +120,21 @@ jobs:
         run: |
           PORT="${HETZNER_PORT:-22}"
           ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_DIR" <<'REMOTE'
+            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_DIR" "$DEPLOY_CLOUDFLARED" <<'REMOTE'
           set -euo pipefail
           REMOTE_DIR="$1"
+          DEPLOY_CLOUDFLARED="$2"
           cd "$REMOTE_DIR"
 
-          docker compose --env-file .env --profile cloudflare config >/dev/null
-          docker compose --env-file .env --profile cloudflare pull
-          docker compose --env-file .env --profile cloudflare up -d --remove-orphans
+          if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
+            docker compose --env-file .env --profile cloudflare config >/dev/null
+            docker compose --env-file .env --profile cloudflare pull
+            docker compose --env-file .env --profile cloudflare up -d --remove-orphans
+          else
+            docker compose --env-file .env config >/dev/null
+            docker compose --env-file .env pull couchdb couchdb-init
+            docker compose --env-file .env up -d --remove-orphans couchdb couchdb-init
+          fi
 
           healthy=false
           for _ in $(seq 1 30); do
@@ -126,17 +148,20 @@ jobs:
 
           if [ "$healthy" != "true" ]; then
             echo "CouchDB did not become healthy"
-            docker compose --env-file .env --profile cloudflare ps
+            docker compose --env-file .env ps
             docker compose --env-file .env logs --tail=100 couchdb couchdb-init || true
             exit 1
           fi
 
-          if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cloudflared 2>/dev/null || true)" != "true" ]; then
-            echo "cloudflared is not running"
+          if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
+            if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cloudflared 2>/dev/null || true)" != "true" ]; then
+              echo "cloudflared is not running"
+              docker compose --env-file .env --profile cloudflare ps
+              docker compose --env-file .env logs --tail=100 cloudflared || true
+              exit 1
+            fi
             docker compose --env-file .env --profile cloudflare ps
-            docker compose --env-file .env logs --tail=100 cloudflared || true
-            exit 1
+          else
+            docker compose --env-file .env ps
           fi
-
-          docker compose --env-file .env --profile cloudflare ps
           REMOTE
