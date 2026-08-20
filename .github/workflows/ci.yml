@@ -50,9 +50,12 @@ jobs:
           COUCHDB_PASSWORD: ci-placeholder-password
           COUCHDB_DATABASE: kernelnotes
           CF_TUNNEL_TOKEN: ci-placeholder-token
+          OBSIDIAN_VAULT_PATH: ../../posts
         run: |
           docker compose -f ops/obsidian-livesync/docker-compose.yml config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare config
+          docker compose -f ops/obsidian-livesync/docker-compose.yml --profile headless config
+          docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare --profile headless config
 
       - name: Build local blog image
         run: docker build -t kernel-notes-blog:ci .
