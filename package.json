@@ -12,6 +12,10 @@
     "post:new": "node scripts/new-post.js",
     "post:archive": "node scripts/archive-post.js archive",
     "post:restore": "node scripts/archive-post.js restore",
+    "posts:spellcheck": "node scripts/spellcheck-posts.js",
+    "posts:spellcheck:fix": "node scripts/spellcheck-posts.js --fix",
+    "posts:proofread": "node scripts/proofread-posts.js",
+    "posts:proofread:fix": "node scripts/proofread-posts.js --fix",
     "posts:sync-meta": "node scripts/sync-post-metadata.js",
     "posts:validate-meta": "node scripts/validate-post-frontmatter.js"
   },

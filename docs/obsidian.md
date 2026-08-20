@@ -90,10 +90,70 @@ npm run post:restore -- mein-artikel
 
 Nach PR, Merge und Deployment ist der Beitrag wieder normal im Blog sichtbar. Beim Archivieren und Wiederherstellen werden Inhalt und Frontmatter nicht veraendert.
 
+## Rechtschreibung und Grammatik
+
+Pull Requests mit Aenderungen unter `posts/` starten zusaetzlich den Workflow `Proofread Blog Posts`. Die Pruefung besteht aus zwei Teilen:
+
+- CSpell mit deutschem Woerterbuch fuer klassische Tippfehler
+- LanguageTool fuer Rechtschreibung, Grammatik und Stil
+
+Frontmatter, Codebloecke, Inline-Code und URLs werden soweit moeglich von den Sprachpruefungen ausgeblendet. Technische Begriffe und bewusst verwendete Schreibweisen koennen zentral gepflegt werden:
+
+```text
+config/proofread-words.txt
+```
+
+Die Hinweise sind bewusst nicht blockierend. Ein technischer Fix oder eine absichtlich gewaehlte Formulierung soll nicht allein wegen eines Sprachhinweises am Merge gehindert werden.
+
+### CSpell lokal
+
+Alle aktiven Beitraege pruefen:
+
+```bash
+npm run posts:spellcheck
+```
+
+Einen einzelnen Beitrag pruefen:
+
+```bash
+npm run posts:spellcheck -- posts/2026-08-20-mein-artikel.md
+```
+
+CSpell und das deutsche Woerterbuch werden in festen Versionen ueber `npm exec` geladen; dadurch muss kein zusaetzliches Paket dauerhaft in `package.json` oder `package-lock.json` aufgenommen werden.
+
+### LanguageTool lokal
+
+Wenn ein LanguageTool HTTP Server unter `http://127.0.0.1:8010/v2/check` laeuft:
+
+```bash
+npm run posts:proofread
+```
+
+Ein einzelner Beitrag kann gezielt geprueft werden:
+
+```bash
+npm run posts:proofread -- posts/2026-08-20-mein-artikel.md
+```
+
+Eine andere LanguageTool-Instanz kann ueber `LANGUAGETOOL_URL` gesetzt werden.
+
+### Autocorrect als Pull Request
+
+Der manuelle GitHub-Workflow `Autocorrect Blog Posts` prueft `main`, wendet nur sichere automatische Korrekturen an und erzeugt bei Aenderungen einen neuen Branch und Pull Request.
+
+CSpell korrigiert dabei nur Treffer mit genau einem eindeutigen Ersatz. Mehrdeutige CSpell-Vorschlaege bleiben unveraendert. LanguageTool korrigiert ebenfalls nur eindeutige Rechtschreibtreffer; Typografie-, Grammatik- und Stilvorschlaege werden nicht automatisch umgeschrieben.
+
+Damit bleibt der erzeugte PR die Sicherheitsgrenze: Vor dem Merge kann der komplette Diff geprueft werden.
+
+Der Workflow kann unter GitHub Actions gestartet werden. Das optionale Feld `target` kann auf einen einzelnen Beitrag gesetzt werden; leer bedeutet alle aktiven Beitraege unter `posts/`.
+
+Fuer die automatische PR-Erstellung muss das Repository GitHub Actions erlauben, Pull Requests mit dem `GITHUB_TOKEN` zu erstellen (`Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests`).
+
 ## Vor dem Push pruefen
 
 ```bash
 npm run posts:validate-meta
+npm run posts:spellcheck
 npm run lint
 npm run test:coverage
 ```
