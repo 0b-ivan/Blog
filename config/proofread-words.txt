@@ -1,0 +1,28 @@
+# Technische Begriffe und Eigennamen, die LanguageTool im Blog nicht beanstanden soll.
+# Ein Begriff pro Zeile; Vergleich erfolgt ohne Beachtung der Gross-/Kleinschreibung.
+AWS
+CDK
+CI/CD
+Cloudflare
+CouchDB
+DevOps
+Docker
+GitHub
+Hetzner
+IAM
+Java
+JavaScript
+Kavita
+Kernel Notes
+LiveSync
+Node.js
+Obsidian
+OpenFaaS
+Proxmox
+REST
+RSS
+S3
+Self-Hosting
+SQLite
+Vaultwarden
+Zero Trust
