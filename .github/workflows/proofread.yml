@@ -1,0 +1,73 @@
+name: Proofread Blog Posts
+
+on:
+  pull_request:
+    paths:
+      - 'posts/**/*.md'
+      - 'config/proofread-words.txt'
+      - 'scripts/proofread-posts.js'
+      - '.github/workflows/proofread.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proofread-posts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Start LanguageTool
+        run: |
+          docker run -d \
+            --name languagetool \
+            -p 127.0.0.1:8010:8081 \
+            meyay/languagetool:latest
+
+          for _ in $(seq 1 60); do
+            if curl -fsS -X POST \
+              -d 'language=de-DE' \
+              -d 'text=Das ist ein Test.' \
+              http://127.0.0.1:8010/v2/check >/dev/null; then
+              echo 'LanguageTool is ready'
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs languagetool || true
+          echo 'LanguageTool did not become ready'
+          exit 1
+
+      - name: Proofread active posts
+        env:
+          LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
+          PROOFREAD_LANGUAGE: de-DE
+        run: |
+          set +e
+          npm run posts:proofread
+          status=$?
+          set -e
+
+          if [ "$status" -eq 2 ]; then
+            echo 'Proofreading failed because LanguageTool or the script could not run.'
+            exit 2
+          fi
+
+          if [ "$status" -eq 1 ]; then
+            echo 'LanguageTool found suggestions. This check is intentionally non-blocking.'
+          fi
+
+          exit 0
+
+      - name: Stop LanguageTool
+        if: always()
+        run: docker rm -f languagetool >/dev/null 2>&1 || true
