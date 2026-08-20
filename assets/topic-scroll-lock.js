@@ -1,3 +1,5 @@
+/* global document, window */
+
 (() => {
   const topicsList = document.getElementById('topics-list');
   if (!topicsList) {
