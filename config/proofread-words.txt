@@ -5,8 +5,13 @@ CDK
 CI/CD
 Cloudflare
 CouchDB
+Dependabot
 DevOps
 Docker
+esbuild
+Express
+Fail2ban
+FreshRSS
 GitHub
 Hetzner
 IAM
@@ -24,5 +29,8 @@ RSS
 S3
 Self-Hosting
 SQLite
+systemd
 Vaultwarden
+Vite
+Vitest
 Zero Trust
