@@ -1,0 +1,31 @@
+{
+  "version": "0.2",
+  "language": "de,de-DE,en",
+  "import": [
+    "@cspell/dict-de-de/cspell-ext.json"
+  ],
+  "useGitignore": true,
+  "allowCompoundWords": true,
+  "caseSensitive": false,
+  "ignorePaths": [
+    "archive/**",
+    "node_modules/**"
+  ],
+  "ignoreRegExpList": [
+    "/^---\\s*$[\\s\\S]*?^---\\s*$/gm",
+    "/```[\\s\\S]*?```/g",
+    "/~~~[\\s\\S]*?~~~/g",
+    "/`[^`\\n]+`/g",
+    "/https?:\\/\\/[^\\s)]+/g"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "kernel-notes",
+      "path": "./config/proofread-words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": [
+    "kernel-notes"
+  ]
+}
