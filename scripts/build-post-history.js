@@ -1,5 +1,4 @@
 const crypto = require('node:crypto');
-const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
@@ -70,7 +69,7 @@ function normalizeResourceUrl(value) {
 }
 
 function extractResourcePaths(markdown) {
-  const matches = String(markdown || '').match(/\/(?:snippets|assets\/posts)\/[A-Za-z0-9._~!$&'()*+,;=:@%\/-]+/g) || [];
+  const matches = String(markdown || '').match(/\/(?:snippets|assets\/posts)\/[^\s)"']+/g) || [];
   return [...new Set(matches.map(normalizeResourceUrl).filter(Boolean))].sort();
 }
 
