@@ -58,8 +58,6 @@ function formatDate(dateInput) {
   }).format(date);
 }
 
-const MAX_VISIBLE_TAGS = 2;
-
 function sanitizeTags(tags) {
   if (!Array.isArray(tags)) {
     return [];
@@ -71,7 +69,7 @@ function sanitizeTags(tags) {
 }
 
 function visibleTags(tags) {
-  return sanitizeTags(tags).slice(0, MAX_VISIBLE_TAGS);
+  return sanitizeTags(tags);
 }
 
 function topicLabel(topic) {
