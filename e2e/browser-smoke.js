@@ -127,9 +127,12 @@ async function main() {
     ]);
     const roadmap = page.locator('#roadmap-content[data-roadmap-ready="true"]');
     await roadmap.waitFor({ state: 'visible', timeout: 15_000 });
-    assert.equal((await roadmap.locator('h1').innerText()).trim(), 'Kernel Notes Roadmap');
+    assert.equal((await roadmap.locator('.roadmap-hero__title').innerText()).trim(), 'Kernel Notes Roadmap');
+    assert.equal(await roadmap.locator('.roadmap-milestone').count(), 1, 'Expected one roadmap milestone');
+    assert.equal(await roadmap.locator('.roadmap-detail-card').count(), 4, 'Expected four milestone detail cards');
     assert.match(await roadmap.innerText(), /Meilenstein 1 — Vollwertige englische Version des Blogs/);
     assert.match(await roadmap.innerText(), /Definition of Done/);
+    await roadmap.locator('.roadmap-loop-note').waitFor({ state: 'visible' });
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await Promise.all([
@@ -147,7 +150,7 @@ async function main() {
     await page.locator('.legal-card h1').waitFor({ state: 'visible' });
 
     assert.deepEqual(failures, [], failures.join('\n'));
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), graph on every post, roadmap rendered.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), graph on every post, hand-drawn roadmap rendered.`);
   } finally {
     await browser.close();
   }
