@@ -18,6 +18,37 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function tagUrl(tag) {
+  return `/tags/${encodeURIComponent(String(tag || '').trim())}`;
+}
+
+function tagLink(tag) {
+  const label = String(tag || '').trim();
+  return `<a class="tag-chip" href="${tagUrl(label)}">${escapeHtml(label)}</a>`;
+}
+
+function filterPostsByTag(posts, requestedTag) {
+  const wanted = String(requestedTag || '').trim().toLocaleLowerCase('de');
+  if (!wanted) {
+    return [];
+  }
+
+  return posts.filter((post) => legacy.normalizeTags(post.tags)
+    .some((tag) => tag.toLocaleLowerCase('de') === wanted));
+}
+
+function canonicalTag(posts, requestedTag) {
+  const wanted = String(requestedTag || '').trim().toLocaleLowerCase('de');
+  for (const post of posts) {
+    const matchingTag = legacy.normalizeTags(post.tags)
+      .find((tag) => tag.toLocaleLowerCase('de') === wanted);
+    if (matchingTag) {
+      return matchingTag;
+    }
+  }
+  return String(requestedTag || '').trim();
+}
+
 async function readManifest(slug) {
   try {
     const raw = await fs.readFile(path.join(historyDir, slug, 'manifest.json'), 'utf8');
@@ -86,11 +117,34 @@ function addHistoryStyles(html) {
   return html.replace('</head>', '    <link rel="stylesheet" href="/assets/css/history.css" />\n  </head>');
 }
 
-function injectAfterTitle(html, markup) {
-  return html.replace(/(<h1>[^]*?<\/h1>)/, `$1\n        ${markup}`);
+function addTagNavigationAssets(html) {
+  let output = html;
+  if (!output.includes('/assets/css/tag-links.css')) {
+    output = output.replace('</head>', '    <link rel="stylesheet" href="/assets/css/tag-links.css" />\n  </head>');
+  }
+  if (!output.includes('/assets/tag-navigation.js')) {
+    output = output.replace('</body>', '    <script src="/assets/tag-navigation.js"></script>\n  </body>');
+  }
+  return output;
 }
 
-function versionBar(slug, manifest, options = {}) {
+function injectArticleFooter(html, markup) {
+  const relatedMarker = '<section class="related-posts"';
+  const relatedIndex = html.indexOf(relatedMarker);
+  if (relatedIndex >= 0) {
+    return `${html.slice(0, relatedIndex)}${markup}\n        ${html.slice(relatedIndex)}`;
+  }
+
+  const navigationMarker = '<p><a class="read-more" href="/">';
+  const navigationIndex = html.indexOf(navigationMarker);
+  if (navigationIndex >= 0) {
+    return `${html.slice(0, navigationIndex)}${markup}\n        ${html.slice(navigationIndex)}`;
+  }
+
+  return html;
+}
+
+function versionFooter(slug, manifest, options = {}) {
   if (!manifest || !manifest.currentVersion) {
     return '';
   }
@@ -101,19 +155,25 @@ function versionBar(slug, manifest, options = {}) {
   const currentUrl = archived ? `/archive/${slug}` : `/posts/${slug}`;
   const historical = viewingVersion !== currentVersion;
 
-  return `<aside class="post-version-bar" aria-label="Artikelversion">
-          <span>${historical ? 'Historische ' : ''}Version <strong>v${viewingVersion}</strong></span>
-          <a href="/history/${slug}">Versionsverlauf</a>
-          ${historical ? `<a href="${currentUrl}">Aktuelle Version v${currentVersion}</a>` : ''}
-          ${archived ? '<span class="archive-badge">Archiviert</span>' : ''}
+  return `<aside class="post-version-footer" aria-label="Artikelversion">
+          <div class="post-version-footer__identity">
+            <span class="post-version-footer__label">${historical ? 'Historische Version' : 'Artikelversion'}</span>
+            <strong class="post-version-footer__number">v${viewingVersion}</strong>
+            ${historical ? '' : '<span class="current-badge">Aktuell</span>'}
+            ${archived ? '<span class="archive-badge">Archiviert</span>' : ''}
+          </div>
+          <nav class="post-version-footer__actions" aria-label="Versionsnavigation">
+            <a href="/history/${slug}">Versionsverlauf</a>
+            ${historical ? `<a href="${currentUrl}">Aktuelle Version v${currentVersion}</a>` : ''}
+          </nav>
         </aside>`;
 }
 
 function decoratePostHtml(html, slug, manifest, options = {}) {
-  let output = addHistoryStyles(addArchiveNavigation(html));
-  const bar = versionBar(slug, manifest, options);
-  if (bar) {
-    output = injectAfterTitle(output, bar);
+  let output = addTagNavigationAssets(addHistoryStyles(addArchiveNavigation(html)));
+  const footer = versionFooter(slug, manifest, options);
+  if (footer) {
+    output = injectArticleFooter(output, footer);
   }
 
   if (options.historical) {
@@ -159,6 +219,7 @@ function pageShell(title, body) {
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/assets/css/history.css" />
+    <link rel="stylesheet" href="/assets/css/tag-links.css" />
   </head>
   <body>
     <div class="bg-grid" aria-hidden="true"></div>
@@ -168,14 +229,26 @@ function pageShell(title, body) {
         <a href="/#posts">Artikel</a>
         <a href="/#topics">Themen</a>
         <a href="/snippets/">Snippets</a>
-        <a href="/archive">Archiv</a>
         <a href="/#about">About</a>
+        <a href="/archive">Archiv</a>
         <a href="/impressum">Impressum</a>
       </nav>
     </header>
     <main class="history-page">${body}</main>
+    <script src="/assets/tag-navigation.js"></script>
   </body>
 </html>`;
+}
+
+function collectionCard(post, href) {
+  const tags = legacy.normalizeTags(post.tags).slice(0, 10).map(tagLink).join('');
+  return `<article class="archive-card collection-card">
+      <p class="meta">${escapeHtml(post.category)} · ${escapeHtml(post.date)}</p>
+      <h2><a class="collection-card__title" href="${href}">${escapeHtml(post.title)}</a></h2>
+      <p>${escapeHtml(post.excerpt)}</p>
+      ${tags ? `<div class="tag-list">${tags}</div>` : ''}
+      <a class="read-more" href="${href}">Artikel lesen</a>
+    </article>`;
 }
 
 async function renderArchiveIndex() {
@@ -186,18 +259,26 @@ async function renderArchiveIndex() {
 
   const cards = await Promise.all(posts.map(async (post) => {
     const manifest = await readManifest(post.slug);
-    const tags = legacy.normalizeTags(post.tags).slice(0, 10)
-      .map((tag) => `<span class="tag-chip">${escapeHtml(tag)}</span>`)
-      .join('');
-    return `<a class="archive-card" href="/archive/${post.slug}">
+    const href = `/archive/${post.slug}`;
+    const tags = legacy.normalizeTags(post.tags).slice(0, 10).map(tagLink).join('');
+    return `<article class="archive-card collection-card">
       <p class="meta">${escapeHtml(post.category)} · ${escapeHtml(post.date)}${manifest?.currentVersion ? ` · v${manifest.currentVersion}` : ''}</p>
-      <h2>${escapeHtml(post.title)}</h2>
+      <h2><a class="collection-card__title" href="${href}">${escapeHtml(post.title)}</a></h2>
       <p>${escapeHtml(post.excerpt)}</p>
       ${tags ? `<div class="tag-list">${tags}</div>` : ''}
-    </a>`;
+      <a class="read-more" href="${href}">Archivierten Artikel lesen</a>
+    </article>`;
   }));
 
   return pageShell('Archiv', `<section class="history-panel"><p class="eyebrow">Archiv</p><h1>Archivierte Artikel</h1><p>Diese Beiträge sind nicht mehr in der normalen Artikelliste, bleiben aber dauerhaft lesbar.</p><div class="archive-grid">${cards.join('')}</div></section>`);
+}
+
+function renderTagIndex(tag, posts) {
+  const cards = posts.map((post) => collectionCard(post, `/posts/${post.slug}`)).join('');
+  return pageShell(
+    `Tag: ${tag}`,
+    `<section class="history-panel tag-results"><p class="eyebrow">Tag</p><h1>${escapeHtml(tag)}</h1><p>${posts.length} ${posts.length === 1 ? 'Artikel' : 'Artikel'} mit diesem Tag.</p><div class="archive-grid">${cards}</div></section>`
+  );
 }
 
 async function renderHistoryIndex(slug, manifest) {
@@ -217,6 +298,36 @@ function createApp() {
   const app = express();
 
   app.use('/history-assets', express.static(historyDir, { index: false, fallthrough: false }));
+
+  app.get('/', async (_req, res, next) => {
+    try {
+      const html = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+      res.type('html').send(addTagNavigationAssets(html));
+    } catch (error) {
+      if (error && error.code === 'ENOENT') {
+        next();
+        return;
+      }
+      console.error(error);
+      res.status(500).send('Could not render home page');
+    }
+  });
+
+  app.get('/tags/:tag', async (req, res) => {
+    try {
+      const posts = await legacy.readPosts(postsDir);
+      const matchingPosts = filterPostsByTag(posts, req.params.tag);
+      if (!matchingPosts.length) {
+        res.status(404).send('Tag not found');
+        return;
+      }
+      const tag = canonicalTag(matchingPosts, req.params.tag);
+      res.type('html').send(renderTagIndex(tag, matchingPosts));
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Could not render tag');
+    }
+  });
 
   app.get('/archive', async (_req, res) => {
     try {
@@ -329,6 +440,9 @@ module.exports = {
   startServer,
   readManifest,
   resolveHistorySlug,
-  versionBar,
-  decoratePostHtml
+  tagUrl,
+  filterPostsByTag,
+  versionFooter,
+  decoratePostHtml,
+  renderTagIndex
 };
