@@ -11,8 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout full history
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -26,6 +28,9 @@ jobs:
           else
             npm install
           fi
+
+      - name: Build article version history
+        run: npm run posts:build-history
 
       - name: Validate post frontmatter metadata
         run: npm run posts:validate-meta
@@ -86,6 +91,11 @@ jobs:
           BLOG_BASE_URL: http://127.0.0.1:8080
         run: node e2e/browser-smoke.js
 
+      - name: Archive and history smoke test
+        env:
+          BLOG_BASE_URL: http://127.0.0.1:8080
+        run: node e2e/archive-history-smoke.js
+
       - name: Shutdown stack
         if: always()
         run: docker compose down -v
@@ -94,8 +104,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout full history
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build article version history
+        run: node scripts/build-post-history.js
 
       - name: Build blog image for scan
         run: docker build -t kernel-notes-blog:ci .
