@@ -4,6 +4,16 @@ const { chromium } = require('playwright');
 const baseUrl = process.env.BLOG_BASE_URL || 'http://127.0.0.1:8080';
 const baseOrigin = new URL(baseUrl).origin;
 
+async function clickTopic(page, topic) {
+  await page.locator('#topics-list [data-topic]').evaluateAll((buttons, wantedTopic) => {
+    const button = buttons.find((candidate) => candidate.dataset.topic === wantedTopic);
+    if (!button) {
+      throw new Error(`Topic button not found: ${wantedTopic}`);
+    }
+    button.click();
+  }, topic);
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
@@ -41,10 +51,9 @@ async function main() {
     );
 
     for (const topic of topics) {
-      const selector = `#topics-list [data-topic="${CSS.escape(topic)}"]`;
-      await page.locator(selector).click();
+      await clickTopic(page, topic);
       await page.locator('#topics-list [data-topic="all"]').waitFor({ state: 'visible' });
-      await page.locator(selector).click();
+      await clickTopic(page, topic);
     }
 
     for (const href of postHrefs) {
