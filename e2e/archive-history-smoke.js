@@ -1,4 +1,3 @@
-/* global process */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 
