@@ -25,7 +25,7 @@ describe('snippet library and publish ordering', () => {
 
       const posts = await readPosts(tmpDir);
       expect(posts.map((post) => post.title)).toEqual(['Newer', 'Older']);
-      expect(posts[0].publishedAt).toBe('2026-08-21T10:00:00Z');
+      expect(new Date(posts[0].publishedAt).toISOString()).toBe('2026-08-21T10:00:00.000Z');
 
       const response = await request(createApp({ postsDir: tmpDir })).get('/api/posts');
       expect(response.status).toBe(200);
