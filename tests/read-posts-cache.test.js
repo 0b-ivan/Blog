@@ -1,3 +1,5 @@
+/* global vi */
+
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
