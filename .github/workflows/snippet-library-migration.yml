@@ -1,0 +1,50 @@
+name: Snippet Library Migration
+
+on:
+  push:
+    branches:
+      - feat/snippet-library
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v7
+        with:
+          ref: feat/snippet-library
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Run repository migration
+        run: python3 scripts/migrate-snippet-library.py
+
+      - name: Install Highlight.js
+        run: npm install highlight.js@11.11.1 --save
+
+      - name: Validate
+        run: |
+          npm run lint
+          npm test
+
+      - name: Commit migration
+        run: |
+          if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
+            echo 'No migration changes found.'
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add versioned code snippet library'
+          git push origin HEAD:feat/snippet-library
