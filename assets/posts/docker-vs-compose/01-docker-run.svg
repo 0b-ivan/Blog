@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Docker run im Terminal</title>
+  <desc id="desc">Terminalfenster mit docker run und docker ps für einen nginx Container.</desc>
+  <rect width="1400" height="760" rx="28" fill="#0d141c"/>
+  <rect width="1400" height="64" rx="28" fill="#202b36"/>
+  <rect y="36" width="1400" height="28" fill="#202b36"/>
+  <circle cx="38" cy="32" r="10" fill="#ff5f56"/>
+  <circle cx="70" cy="32" r="10" fill="#ffbd2e"/>
+  <circle cx="102" cy="32" r="10" fill="#27c93f"/>
+  <text x="700" y="40" text-anchor="middle" fill="#c8d3dc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20">terminal — docker</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="26">
+    <text x="48" y="120" fill="#7ee2a8">$</text>
+    <text x="82" y="120" fill="#e8edf2">docker run --name web -p 8080:80 -d nginx:alpine</text>
+    <text x="48" y="166" fill="#94a7b7">9f4e7b6c2d70a06b9670f541f307b9aa5032a95a8216d1c4fd97d5a041dc7081</text>
+
+    <text x="48" y="232" fill="#7ee2a8">$</text>
+    <text x="82" y="232" fill="#e8edf2">docker ps</text>
+
+    <text x="48" y="290" fill="#6baed6">CONTAINER ID</text>
+    <text x="280" y="290" fill="#6baed6">IMAGE</text>
+    <text x="520" y="290" fill="#6baed6">COMMAND</text>
+    <text x="770" y="290" fill="#6baed6">STATUS</text>
+    <text x="980" y="290" fill="#6baed6">PORTS</text>
+    <text x="1250" y="290" fill="#6baed6">NAMES</text>
+
+    <text x="48" y="342" fill="#dbe4eb">9f4e7b6c2d70</text>
+    <text x="280" y="342" fill="#dbe4eb">nginx:alpine</text>
+    <text x="520" y="342" fill="#dbe4eb">"/docker-entrypoint…"</text>
+    <text x="770" y="342" fill="#dbe4eb">Up 5 seconds</text>
+    <text x="980" y="342" fill="#dbe4eb">0.0.0.0:8080-&gt;80/tcp</text>
+    <text x="1250" y="342" fill="#dbe4eb">web</text>
+
+    <text x="48" y="430" fill="#7ee2a8">$</text>
+    <rect x="82" y="406" width="14" height="30" fill="#e8edf2" opacity="0.85"/>
+  </g>
+  <text x="48" y="690" fill="#647687" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20">Ein Container, direkt über die Docker CLI gestartet.</text>
+</svg>
