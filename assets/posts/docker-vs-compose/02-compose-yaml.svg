@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" role="img" aria-labelledby="title desc">
+  <title id="title">compose.yaml im Editor</title>
+  <desc id="desc">Editorfenster mit einer Docker Compose Datei für Web und Redis.</desc>
+  <rect width="1400" height="860" rx="28" fill="#111820"/>
+  <rect width="1400" height="64" rx="28" fill="#26313c"/>
+  <rect y="36" width="1400" height="28" fill="#26313c"/>
+  <circle cx="38" cy="32" r="10" fill="#ff5f56"/>
+  <circle cx="70" cy="32" r="10" fill="#ffbd2e"/>
+  <circle cx="102" cy="32" r="10" fill="#27c93f"/>
+  <text x="700" y="40" text-anchor="middle" fill="#c8d3dc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20">compose.yaml</text>
+  <rect x="0" y="64" width="86" height="796" fill="#0d1319"/>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="27">
+    <g fill="#526474" text-anchor="end">
+      <text x="66" y="120">1</text><text x="66" y="164">2</text><text x="66" y="208">3</text><text x="66" y="252">4</text><text x="66" y="296">5</text><text x="66" y="340">6</text><text x="66" y="384">7</text><text x="66" y="428">8</text><text x="66" y="472">9</text><text x="66" y="516">10</text><text x="66" y="560">11</text><text x="66" y="604">12</text><text x="66" y="648">13</text><text x="66" y="692">14</text><text x="66" y="736">15</text>
+    </g>
+    <text x="118" y="120" fill="#82c7ff">services:</text>
+    <text x="150" y="164" fill="#dbe4eb">web:</text>
+    <text x="184" y="208" fill="#b7d984">image:</text><text x="305" y="208" fill="#f2c879">nginx:alpine</text>
+    <text x="184" y="252" fill="#b7d984">ports:</text>
+    <text x="218" y="296" fill="#dbe4eb">-</text><text x="250" y="296" fill="#f2c879">"8080:80"</text>
+    <text x="150" y="384" fill="#dbe4eb">redis:</text>
+    <text x="184" y="428" fill="#b7d984">image:</text><text x="305" y="428" fill="#f2c879">redis:7-alpine</text>
+    <text x="184" y="472" fill="#b7d984">volumes:</text>
+    <text x="218" y="516" fill="#dbe4eb">-</text><text x="250" y="516" fill="#f2c879">redis-data:/data</text>
+    <text x="118" y="648" fill="#82c7ff">volumes:</text>
+    <text x="150" y="692" fill="#dbe4eb">redis-data:</text>
+  </g>
+  <rect x="100" y="790" width="225" height="34" rx="17" fill="#17222d"/>
+  <text x="212" y="814" text-anchor="middle" fill="#7ee2a8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="18">YAML · 2 Services</text>
+</svg>
