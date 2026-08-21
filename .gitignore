@@ -3,6 +3,10 @@ coverage/
 *.log
 .DS_Store
 
+# Generated article history (rebuilt from Git in CI/CD)
+post-history/*
+!post-history/.gitkeep
+
 # Obsidian local state
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json

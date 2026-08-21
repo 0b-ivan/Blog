@@ -24,12 +24,17 @@ COPY --from=deps /app/build-info.json ./build-info.json
 COPY index.html impressum.html script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets
-COPY server.js ./
+COPY server.js enhanced-server.js ./
 
-# Content remains in the image as a bootstrap/fallback. Production mounts
-# persistent volumes over these paths and content-only deploys update them.
+# Current article content remains in the image as a bootstrap/fallback.
+# Production mounts persistent volumes over these paths.
 COPY posts ./posts
 COPY snippets ./snippets
+COPY archive /content/archive
+COPY post-history /content/post-history
+
+ENV ARCHIVE_DIR=/content/archive
+ENV POST_HISTORY_DIR=/content/post-history
 
 EXPOSE 8080
-CMD ["server.js"]
+CMD ["enhanced-server.js"]

@@ -8,6 +8,11 @@ services:
       - blog-posts:/app/posts:ro
       - blog-snippets:/app/snippets:ro
       - blog-post-assets:/app/assets/posts:ro
+      - blog-archive:/content/archive:ro
+      - blog-history:/content/post-history:ro
+    environment:
+      ARCHIVE_DIR: /content/archive
+      POST_HISTORY_DIR: /content/post-history
     restart: unless-stopped
 
 volumes:
@@ -17,3 +22,7 @@ volumes:
     name: kernel-notes-blog-snippets
   blog-post-assets:
     name: kernel-notes-blog-post-assets
+  blog-archive:
+    name: kernel-notes-blog-archive
+  blog-history:
+    name: kernel-notes-blog-history

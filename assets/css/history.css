@@ -1,0 +1,135 @@
+.history-page {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 72px 0 96px;
+}
+
+.history-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.history-panel > h1 {
+  margin: 0 0 18px;
+  font-size: clamp(2.2rem, 6vw, 5rem);
+  line-height: 0.95;
+}
+
+.archive-grid {
+  display: grid;
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.archive-card {
+  display: block;
+  padding: 22px;
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.72);
+  color: inherit;
+  text-decoration: none;
+}
+
+.archive-card:hover {
+  border-color: rgba(147, 197, 253, 0.8);
+}
+
+.archive-card h2 {
+  margin: 6px 0 10px;
+}
+
+.post-version-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 18px 0 22px;
+  padding: 11px 14px;
+  border: 1px solid rgba(100, 116, 139, 0.38);
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.72);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.86rem;
+}
+
+.post-version-bar a,
+.history-actions a {
+  color: #93c5fd;
+}
+
+.archive-badge,
+.current-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  border-radius: 999px;
+  color: #fcd34d;
+  font-size: 0.78rem;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-version {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 18px;
+  border: 1px solid rgba(100, 116, 139, 0.35);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.64);
+}
+
+.history-version.is-current {
+  border-color: rgba(74, 222, 128, 0.5);
+}
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  text-align: right;
+}
+
+.history-snippet {
+  margin: 18px 0;
+  border: 1px solid rgba(100, 116, 139, 0.45);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.history-snippet summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-family: "IBM Plex Mono", monospace;
+  color: #93c5fd;
+}
+
+.history-snippet pre {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid rgba(100, 116, 139, 0.35);
+  border-radius: 0;
+}
+
+@media (max-width: 720px) {
+  .history-page {
+    width: min(100% - 28px, 1180px);
+    padding-top: 42px;
+  }
+
+  .history-version {
+    flex-direction: column;
+  }
+
+  .history-actions {
+    text-align: left;
+  }
+}

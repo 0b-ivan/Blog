@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'posts/**'
+      - 'archive/**'
       - 'snippets/**'
       - 'assets/posts/**'
   workflow_dispatch:
@@ -58,8 +59,13 @@ jobs:
     environment: production
 
     steps:
-      - name: Checkout
+      - name: Checkout full history
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build article version history
+        run: node scripts/build-post-history.js
 
       - name: Validate Hetzner deployment secrets
         env:
@@ -88,8 +94,10 @@ jobs:
         run: |
           tar -czf /tmp/kernel-notes-content.tgz \
             posts \
+            archive \
             snippets \
-            assets/posts
+            assets/posts \
+            post-history
 
       - name: Upload article content
         env:
@@ -135,6 +143,8 @@ jobs:
           docker volume create kernel-notes-blog-posts >/dev/null
           docker volume create kernel-notes-blog-snippets >/dev/null
           docker volume create kernel-notes-blog-post-assets >/dev/null
+          docker volume create kernel-notes-blog-archive >/dev/null
+          docker volume create kernel-notes-blog-history >/dev/null
           docker pull "$HELPER_IMAGE" >/dev/null
 
           sync_volume() {
@@ -151,6 +161,8 @@ jobs:
           sync_volume kernel-notes-blog-posts "$STAGE/posts"
           sync_volume kernel-notes-blog-snippets "$STAGE/snippets"
           sync_volume kernel-notes-blog-post-assets "$STAGE/assets/posts"
+          sync_volume kernel-notes-blog-archive "$STAGE/archive"
+          sync_volume kernel-notes-blog-history "$STAGE/post-history"
 
           rm -rf "$STAGE" "$ARCHIVE"
 
@@ -158,7 +170,8 @@ jobs:
             sleep 2
             curl -fsS http://127.0.0.1:1888/healthz >/dev/null
             curl -fsS http://127.0.0.1:1888/api/posts >/dev/null
-            echo "Content ${COMMIT_SHA} deployed without rebuilding the app image."
+            curl -fsS http://127.0.0.1:1888/archive >/dev/null
+            echo "Content ${COMMIT_SHA} deployed with article history and without rebuilding the app image."
           else
             echo "Content volumes prepared; blog container is not running yet."
           fi
