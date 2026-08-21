@@ -1,0 +1,80 @@
+[
+  {
+    "title": "So ist Dependabot in diesem Blog konfiguriert",
+    "path": "2026-08-19-dependabot-im-einsatz/01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml",
+    "language": "yaml",
+    "post": "2026-08-19-dependabot-im-einsatz"
+  },
+  {
+    "title": "Deployment",
+    "path": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/01-deployment.sh",
+    "language": "bash",
+    "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"
+  },
+  {
+    "title": "Updates und Rollbacks",
+    "path": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/02-updates-und-rollbacks.yml",
+    "language": "yaml",
+    "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"
+  },
+  {
+    "title": "2) Fail2ban aktivieren",
+    "path": "2026-08-19-fail2ban-ssh-hardening/01-2-fail2ban-aktivieren.sh",
+    "language": "bash",
+    "post": "2026-08-19-fail2ban-ssh-hardening"
+  },
+  {
+    "title": "2) Fail2ban aktivieren",
+    "path": "2026-08-19-fail2ban-ssh-hardening/02-2-fail2ban-aktivieren.ini",
+    "language": "ini",
+    "post": "2026-08-19-fail2ban-ssh-hardening"
+  },
+  {
+    "title": "3) Firewall minimal halten",
+    "path": "2026-08-19-fail2ban-ssh-hardening/03-3-firewall-minimal-halten.sh",
+    "language": "bash",
+    "post": "2026-08-19-fail2ban-ssh-hardening"
+  },
+  {
+    "title": "Docker macht das Setup einfach",
+    "path": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung/01-docker-macht-das-setup-einfach.yml",
+    "language": "yaml",
+    "post": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung"
+  },
+  {
+    "title": "Beispiel Unit",
+    "path": "2026-08-19-systemd-services-sauber-betreiben/01-beispiel-unit.ini",
+    "language": "ini",
+    "post": "2026-08-19-systemd-services-sauber-betreiben"
+  },
+  {
+    "title": "Ein Container direkt mit Docker",
+    "path": "2026-08-21-docker-vs-docker-compose/01-ein-container-direkt-mit-docker.sh",
+    "language": "bash",
+    "post": "2026-08-21-docker-vs-docker-compose"
+  },
+  {
+    "title": "Wo es mit mehreren Containern unübersichtlich wird",
+    "path": "2026-08-21-docker-vs-docker-compose/02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh",
+    "language": "bash",
+    "post": "2026-08-21-docker-vs-docker-compose"
+  },
+  {
+    "title": "Dasselbe mit Docker Compose",
+    "path": "2026-08-21-docker-vs-docker-compose/03-dasselbe-mit-docker-compose.yml",
+    "language": "yaml",
+    "post": "2026-08-21-docker-vs-docker-compose"
+  },
+  {
+    "title": "Dockerfile und Docker Compose sind ebenfalls nicht dasselbe",
+    "path": "2026-08-21-docker-vs-docker-compose/04-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.Dockerfile",
+    "language": "dockerfile",
+    "post": "2026-08-21-docker-vs-docker-compose"
+  },
+  {
+    "title": "Dockerfile und Docker Compose sind ebenfalls nicht dasselbe",
+    "path": "2026-08-21-docker-vs-docker-compose/05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml",
+    "language": "yaml",
+    "post": "2026-08-21-docker-vs-docker-compose"
+  }
+]

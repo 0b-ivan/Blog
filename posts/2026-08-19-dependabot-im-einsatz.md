@@ -3,6 +3,7 @@ id: 2026-08-19-dependabot-im-einsatz
 version: 3
 title: "Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?"
 date: 2026-08-19
+published_at: 2026-08-19T18:10:45+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-20
 author: obivan
@@ -94,27 +95,7 @@ Ein rotes `X` am Dependabot-PR ist genau das Signal, **nicht blind zu mergen**.
 
 Die Konfiguration liegt unter `.github/dependabot.yml`.
 
-```yaml
-version: 2
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-```
+[So ist Dependabot in diesem Blog konfiguriert](/snippets/2026-08-19-dependabot-im-einsatz/01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml "snippet:yaml")
 
 Damit prüft Dependabot bei mir wöchentlich:
 

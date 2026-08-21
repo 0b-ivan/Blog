@@ -3,6 +3,7 @@ id: 2026-08-19-fail2ban-ssh-hardening
 version: 1
 title: SSH absichern mit Fail2ban und sauberen Defaults
 date: 2026-08-19
+published_at: 2026-08-19T12:05:52+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-19
 author: obivan
@@ -38,20 +39,11 @@ Nicht aussperren: erst testen, ob Login mit Key wirklich funktioniert.
 
 ## 2) Fail2ban aktivieren
 
-```bash
-sudo apt update
-sudo apt install -y fail2ban
-```
+[2) Fail2ban aktivieren](/snippets/2026-08-19-fail2ban-ssh-hardening/01-2-fail2ban-aktivieren.sh "snippet:bash")
 
 Beispiel für `/etc/fail2ban/jail.local`:
 
-```ini
-[sshd]
-enabled = true
-maxretry = 5
-findtime = 10m
-bantime = 1h
-```
+[2) Fail2ban aktivieren](/snippets/2026-08-19-fail2ban-ssh-hardening/02-2-fail2ban-aktivieren.ini "snippet:ini")
 
 Status prüfen:
 
@@ -63,12 +55,7 @@ sudo fail2ban-client status sshd
 
 Nur benötigte Ports öffnen, z. B. mit UFW:
 
-```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw enable
-```
+[3) Firewall minimal halten](/snippets/2026-08-19-fail2ban-ssh-hardening/03-3-firewall-minimal-halten.sh "snippet:bash")
 
 ## 4) Monitoring nicht vergessen
 

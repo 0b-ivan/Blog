@@ -58,9 +58,11 @@ jobs:
         id: meta
         run: |
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          BASE_VERSION=$(node -p "require('./package.json').version")
-          VERSION_PREFIX="${BASE_VERSION%.*}"
-          BLOG_VERSION="${VERSION_PREFIX}.${GITHUB_RUN_NUMBER}"
+          BLOG_VERSION=$(tr -d '[:space:]' < VERSION)
+          if ! printf '%s' "$BLOG_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid VERSION: $BLOG_VERSION"
+            exit 1
+          fi
 
           echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
           echo "blog_version=${BLOG_VERSION}" >> "$GITHUB_OUTPUT"

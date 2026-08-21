@@ -3,6 +3,7 @@ id: 2026-08-19-markdown-features-im-blog
 version: 1
 title: Markdown-Features im Blog nutzen
 date: 2026-08-19
+published_at: 2026-08-19T12:08:03+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-19
 author: obivan

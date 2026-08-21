@@ -3,6 +3,7 @@ id: 2026-08-04-systemd-timer-statt-cron
 version: 1
 title: Systemd-Timer als bessere Cronjobs
 date: 2026-08-04
+published_at: 2026-08-19T10:58:26+02:00
 created_at: 2026-08-04
 updated_at: 2026-08-04
 author: obivan
