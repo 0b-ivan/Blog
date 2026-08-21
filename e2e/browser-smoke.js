@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { URL } = require('node:url');
 const { chromium } = require('playwright');
 
 const baseUrl = process.env.BLOG_BASE_URL || 'http://127.0.0.1:8080';
@@ -12,6 +13,20 @@ async function clickTopic(page, topic) {
     }
     button.click();
   }, topic);
+}
+
+async function waitForSnippetLibrary(page) {
+  const root = page.locator('#snippet-root');
+  await root.waitFor({ state: 'visible' });
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    if ((await root.innerText()).trim().length > 0) {
+      return;
+    }
+    await page.waitForTimeout(100);
+  }
+
+  throw new Error('Snippet library did not render any content');
 }
 
 async function main() {
@@ -97,8 +112,7 @@ async function main() {
       page.locator('a[href="/snippets/"]').first().click()
     ]);
     await page.locator('.snippet-library h1').waitFor({ state: 'visible' });
-    await page.locator('#snippet-root').waitFor({ state: 'visible' });
-    await page.waitForFunction(() => document.querySelector('#snippet-root')?.textContent?.trim().length > 0);
+    await waitForSnippetLibrary(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await Promise.all([
