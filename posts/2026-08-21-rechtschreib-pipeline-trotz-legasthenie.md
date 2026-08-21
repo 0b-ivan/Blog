@@ -76,7 +76,7 @@ Sprachliche Hinweise sind dabei bewusst **non-blocking**. Ein möglicher Kommafe
 
 Der Workflow schreibt die Ergebnisse direkt in die GitHub-Action-Summary und als Annotations an die betroffenen Zeilen.
 
-![Proofread Summary mit LanguageTool-Hinweisen](/assets/posts/rechtschreib-pipeline/01-proofread-summary.jpg)
+![Proofread Summary mit LanguageTool-Hinweisen](/assets/posts/rechtschreib-pipeline/01-proofread-summary.webp)
 
 In diesem Lauf wurden 11 Dateien geprüft. LanguageTool hat 22 Hinweise gefunden, aber nur eine Korrektur wurde automatisch als sicher eingestuft. Genau das ist gewollt: viele Hinweise, wenige automatische Änderungen.
 
@@ -107,7 +107,7 @@ Das ist der Unterschied zwischen **Autokorrektur als Hilfe** und **Autokorrektur
 
 Die eigentliche Autokorrektur startet nicht bei jedem Commit. Sie wird in GitHub Actions bewusst manuell ausgelöst.
 
-![Manueller Start des Autocorrect-Workflows](/assets/posts/rechtschreib-pipeline/02-autocorrect-workflow.jpg)
+![Manueller Start des Autocorrect-Workflows](/assets/posts/rechtschreib-pipeline/02-autocorrect-workflow.webp)
 
 Dabei kann ich optional nur einen bestimmten Markdown-Post angeben. Bleibt das Feld leer, werden alle aktiven Posts geprüft.
 
@@ -135,7 +135,7 @@ Der Workflow schreibt also nicht direkt nach `main`.
 
 Er erzeugt einen eigenen Branch und danach einen Pull Request.
 
-![Automatisch erzeugter Korrektur-Pull-Request](/assets/posts/rechtschreib-pipeline/03-autocorrect-pr.jpg)
+![Automatisch erzeugter Korrektur-Pull-Request](/assets/posts/rechtschreib-pipeline/03-autocorrect-pr.webp)
 
 Damit bleibt jede automatische Textänderung nachvollziehbar und überprüfbar.
 
@@ -143,7 +143,7 @@ Damit bleibt jede automatische Textänderung nachvollziehbar und überprüfbar.
 
 Im Pull Request sehe ich genau, was die Automatik verändert hat.
 
-![Diff einer automatisch angewendeten Rechtschreibkorrektur](/assets/posts/rechtschreib-pipeline/04-autocorrect-diff.jpg)
+![Diff einer automatisch angewendeten Rechtschreibkorrektur](/assets/posts/rechtschreib-pipeline/04-autocorrect-diff.webp)
 
 Im gezeigten Lauf wurde beispielsweise:
 
