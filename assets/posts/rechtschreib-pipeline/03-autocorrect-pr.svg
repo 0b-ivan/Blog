@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Automatisch erzeugter Korrektur-Pull-Request</title>
+  <desc id="desc">Vektorisierte GitHub Pull Request Ansicht für einen automatisch erzeugten Autocorrect-PR mit ausstehenden Checks.</desc>
+  <style>
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .text { fill: #e6edf3; }
+    .muted { fill: #8b949e; }
+  </style>
+  <rect width="1400" height="900" rx="18" fill="#0d1117"/>
+
+  <text x="40" y="58" class="sans text" font-size="34" font-weight="600">Autocorrect blog post spelling <tspan fill="#8b949e">#60</tspan></text>
+  <rect x="40" y="78" width="70" height="30" rx="15" fill="#da3633"/>
+  <text x="75" y="99" class="sans" fill="#fff" text-anchor="middle" font-size="14" font-weight="700">Open</text>
+  <text x="125" y="99" class="sans muted" font-size="14">github-actions[bot] wants to merge 1 commit into</text>
+  <rect x="474" y="81" width="52" height="24" rx="12" fill="#1f6feb" opacity=".25"/>
+  <text x="500" y="98" class="mono" fill="#58a6ff" text-anchor="middle" font-size="12">main</text>
+  <text x="537" y="99" class="sans muted" font-size="14">from</text>
+  <rect x="572" y="81" width="218" height="24" rx="12" fill="#1f6feb" opacity=".25"/>
+  <text x="681" y="98" class="mono" fill="#58a6ff" text-anchor="middle" font-size="12">chore/proofread-32454815455</text>
+
+  <line x1="40" y1="132" x2="1360" y2="132" stroke="#30363d"/>
+  <g class="sans" font-size="15">
+    <text x="55" y="168" class="text" font-weight="600">Conversation</text>
+    <text x="190" y="168" class="muted">Commits 1</text>
+    <text x="285" y="168" class="muted">Checks 0</text>
+    <text x="370" y="168" class="muted">Files changed 1</text>
+  </g>
+  <line x1="40" y1="186" x2="1360" y2="186" stroke="#30363d"/>
+
+  <rect x="72" y="220" width="860" height="190" rx="8" fill="#161b22" stroke="#30363d"/>
+  <circle cx="45" cy="248" r="20" fill="#21262d" stroke="#30363d"/>
+  <text x="100" y="252" class="sans text" font-size="15" font-weight="700">github-actions</text>
+  <rect x="214" y="234" width="42" height="24" rx="12" fill="#30363d"/>
+  <text x="235" y="251" class="sans muted" text-anchor="middle" font-size="11">Bot</text>
+  <text x="270" y="252" class="sans muted" font-size="13">commented 4 minutes ago</text>
+  <line x1="72" y1="275" x2="932" y2="275" stroke="#30363d"/>
+  <text x="100" y="308" class="sans text" font-size="14">CSpell und LanguageTool haben automatische Rechtschreibkorrekturen angewendet.</text>
+  <text x="100" y="334" class="sans text" font-size="14">CSpell deckt klassische Tippfehler ab; LanguageTool korrigiert nur eindeutige Treffer</text>
+  <text x="100" y="360" class="sans text" font-size="14">mit genau einem Ersatz. Grammatik-, Stil- und mehrdeutige Vorschläge bleiben bewusst</text>
+  <text x="100" y="386" class="sans text" font-size="14">nicht automatisch übernommen. Bitte den Diff vor dem Merge prüfen.</text>
+
+  <rect x="72" y="446" width="860" height="82" rx="8" fill="#161b22" stroke="#30363d"/>
+  <circle cx="103" cy="486" r="13" fill="#8250df"/>
+  <text x="130" y="491" class="sans text" font-size="14">Autocorrect blog post spelling</text>
+  <text x="820" y="491" class="mono muted" font-size="13">a4a0c3c</text>
+
+  <rect x="72" y="560" width="860" height="210" rx="8" fill="#161b22" stroke="#30363d"/>
+  <circle cx="102" cy="602" r="13" fill="#d29922"/>
+  <text x="130" y="608" class="sans text" font-size="17" font-weight="700">2 workflows awaiting approval</text>
+  <text x="130" y="636" class="sans muted" font-size="14">This workflow requires approval from a maintainer.</text>
+  <rect x="724" y="585" width="178" height="42" rx="7" fill="#21262d" stroke="#8b949e"/>
+  <text x="813" y="611" class="sans text" text-anchor="middle" font-size="14" font-weight="600">Approve workflows to run</text>
+  <line x1="92" y1="662" x2="912" y2="662" stroke="#30363d"/>
+  <circle cx="104" cy="692" r="6" fill="#d29922"/>
+  <text x="125" y="697" class="sans text" font-size="14">security-trivy</text>
+  <text x="258" y="697" class="sans muted" font-size="13">Expected — Waiting for status to be reported</text>
+  <rect x="834" y="679" width="68" height="26" rx="13" fill="#21262d" stroke="#8b949e"/>
+  <text x="868" y="697" class="sans text" text-anchor="middle" font-size="11">Required</text>
+  <circle cx="104" cy="730" r="6" fill="#d29922"/>
+  <text x="125" y="735" class="sans text" font-size="14">validate-and-smoke-test</text>
+  <text x="300" y="735" class="sans muted" font-size="13">Expected — Waiting for status to be reported</text>
+  <rect x="834" y="717" width="68" height="26" rx="13" fill="#21262d" stroke="#8b949e"/>
+  <text x="868" y="735" class="sans text" text-anchor="middle" font-size="11">Required</text>
+
+  <rect x="1000" y="220" width="330" height="350" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <text x="1024" y="255" class="sans muted" font-size="13">Reviewers</text>
+  <line x1="1000" y1="275" x2="1330" y2="275" stroke="#30363d"/>
+  <text x="1024" y="310" class="sans text" font-size="14">Suggestions</text>
+  <text x="1024" y="344" class="sans" fill="#58a6ff" font-size="14">0b-ivan</text>
+  <line x1="1000" y1="374" x2="1330" y2="374" stroke="#30363d"/>
+  <text x="1024" y="410" class="sans muted" font-size="13">Assignees</text>
+  <text x="1024" y="440" class="sans text" font-size="14">No one — assign yourself</text>
+  <line x1="1000" y1="470" x2="1330" y2="470" stroke="#30363d"/>
+  <text x="1024" y="506" class="sans muted" font-size="13">Labels</text>
+  <text x="1024" y="536" class="sans text" font-size="14">None yet</text>
+</svg>
