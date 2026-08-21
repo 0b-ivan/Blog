@@ -209,10 +209,21 @@
       return null;
     }
 
+    const currentTitle = document.querySelector('.post-page > h1')?.textContent?.trim() || 'article-graph';
+    const chromeTitle = `knowledge-graph://kernel-notes/${shortLabel(currentTitle, 56)}`;
+
     const section = document.createElement('section');
     section.className = 'knowledge-graph';
     section.setAttribute('aria-labelledby', 'knowledge-graph-title');
     section.innerHTML = `
+      <div class="knowledge-graph__chrome" aria-hidden="true">
+        <div class="knowledge-graph__chrome-controls">
+          <span class="knowledge-graph__chrome-dot is-red"></span>
+          <span class="knowledge-graph__chrome-dot is-yellow"></span>
+          <span class="knowledge-graph__chrome-dot is-green"></span>
+        </div>
+        <div class="knowledge-graph__chrome-title"></div>
+      </div>
       <div class="knowledge-graph__head">
         <div>
           <p class="eyebrow">Wissensnetz</p>
@@ -230,6 +241,7 @@
         <p class="knowledge-graph__status">Graph wird geladen…</p>
       </div>`;
 
+    section.querySelector('.knowledge-graph__chrome-title').textContent = chromeTitle;
     terminal.insertAdjacentElement('afterend', section);
     return section;
   }
