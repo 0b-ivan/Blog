@@ -31,6 +31,33 @@ jobs:
       - name: Install Highlight.js
         run: npm install highlight.js@11.11.1 --save
 
+      - name: Fix generated lint issues
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          script = Path('script.js')
+          text = script.read_text(encoding='utf-8').replace('navigator.clipboard', 'window.navigator.clipboard')
+          script.write_text(text, encoding='utf-8')
+
+          server = Path('server.js')
+          text = server.read_text(encoding='utf-8')
+          text = text.replace(
+              """const dto = posts.map(({ slug, title, date, category, tags, excerpt }) => ({
+                slug,
+                title,
+                date,
+                publishedAt,
+                category,""",
+              """const dto = posts.map(({ slug, title, date, category, tags, excerpt }) => ({
+                slug,
+                title,
+                date,
+                category,""",
+          )
+          server.write_text(text, encoding='utf-8')
+          PY
+
       - name: Validate
         run: |
           npm run lint
