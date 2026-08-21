@@ -1,9 +1,9 @@
 name: Snippet Library Migration
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/snippet-library
+      - main
 
 permissions:
   contents: write
