@@ -27,6 +27,7 @@
         <a href="#posts">Artikel</a>
         <a href="#newsletter">Abo</a>
         <a href="#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
         <a href="#about">About</a>
         <a href="impressum.html">Impressum</a>
       </nav>
@@ -193,7 +194,7 @@
     <footer class="site-footer reveal" data-delay="120">
       <p>
         © 2026 Kernel Notes
-        <span id="build-info" aria-live="polite">· v1.0.0 · Letztes Release: lokal</span>
+        <span id="build-info" aria-live="polite">· v1.1.0 · Letztes Release: lokal</span>
       </p>
       <div class="footer-links">
         <a href="impressum.html">Impressum</a>
@@ -224,8 +225,7 @@
           const release = Number.isNaN(releaseDate.getTime())
             ? info.release || 'unbekannt'
             : new Intl.DateTimeFormat('de-DE', {
-                dateStyle: 'medium',
-                timeStyle: 'short'
+                dateStyle: 'medium'
               }).format(releaseDate);
 
           target.textContent = `· ${version} · Letztes Release: ${release}`;

@@ -65,12 +65,12 @@ function yamlString(value) {
   return JSON.stringify(String(value || ''));
 }
 
-function renderPost({ id, title, date, category, tags, excerpt }) {
+function renderPost({ id, title, date, publishedAt, category, tags, excerpt }) {
   const tagsYaml = tags.length > 0
     ? `\n${tags.map((tag) => `  - ${yamlString(tag)}`).join('\n')}`
     : ' []';
 
-  return `---\nid: ${id}\nversion: 1\ntitle: ${yamlString(title)}\ndate: ${date}\ncreated_at: ${date}\nupdated_at: ${date}\nauthor: obivan\nreviewed_by: pending\ncategory: ${yamlString(category)}\nexcerpt: ${yamlString(excerpt)}\ntags:${tagsYaml}\n---\n\n# ${title}\n\n`;
+  return `---\nid: ${id}\nversion: 1\ntitle: ${yamlString(title)}\ndate: ${date}\npublished_at: ${publishedAt}\ncreated_at: ${date}\nupdated_at: ${date}\nauthor: obivan\nreviewed_by: pending\ncategory: ${yamlString(category)}\nexcerpt: ${yamlString(excerpt)}\ntags:${tagsYaml}\n---\n\n# ${title}\n\n`;
 }
 
 async function main() {
@@ -87,7 +87,9 @@ async function main() {
     process.exit(1);
   }
 
-  const date = localDateString();
+  const now = new Date();
+  const date = localDateString(now);
+  const publishedAt = now.toISOString();
   const id = `${date}-${slug}`;
   const postsDir = path.join(__dirname, '..', 'posts');
   const targetPath = path.join(postsDir, `${id}.md`);
@@ -106,6 +108,7 @@ async function main() {
     id,
     title: options.title,
     date,
+    publishedAt,
     category: options.category,
     tags: options.tags,
     excerpt: options.excerpt

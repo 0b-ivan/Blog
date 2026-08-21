@@ -298,3 +298,16 @@ Lokale Docker-Builds ohne `BUILD_VERSION` verwenden weiterhin die Version aus `p
 - `.github/workflows/ci.yml` - CI
 - `.github/workflows/cd.yml` - GHCR + Hetzner Deployment
 - `ops/hetzner/` - Setup des Deployment-Users
+
+
+## Snippet Library
+
+Groessere Codebeispiele liegen unter `snippets/` und werden im Markdown nur referenziert:
+
+```markdown
+[Proofread Workflow](/snippets/2026-08-21-rechtschreib-pipeline/proofread.yml "snippet:yaml")
+```
+
+Optional kann ein Ausschnitt mit `snippet:yaml:10-40` angegeben werden. Die Vollansicht liegt unter `/snippets/`.
+
+Die sichtbare Blog-Version liegt in `VERSION`. Reine Content-Aenderungen unter `posts/` erhoehen diese Version nicht. Neue Features/Fixes werden nach SemVer versioniert.

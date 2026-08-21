@@ -3,6 +3,7 @@ id: 2026-08-21-rechtschreib-pipeline-trotz-legasthenie
 version: 1
 title: "Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline"
 date: 2026-08-21
+published_at: 2026-08-21T09:24:57+02:00
 created_at: 2026-08-21
 updated_at: 2026-08-21
 author: obivan

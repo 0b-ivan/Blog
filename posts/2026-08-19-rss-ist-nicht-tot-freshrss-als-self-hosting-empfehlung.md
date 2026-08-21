@@ -3,6 +3,7 @@ id: 2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung
 version: 1
 title: RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung
 date: 2026-08-19
+published_at: 2026-08-19T23:57:52+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-19
 author: obivan
@@ -118,19 +119,7 @@ FreshRSS lässt sich problemlos als Container betreiben.
 
 Ein typisches Setup könnte beispielsweise so aussehen:
 
-```yaml
-services:
-  freshrss:
-    image: freshrss/freshrss:latest
-    restart: unless-stopped
-    volumes:
-      - freshrss-data:/var/www/FreshRSS/data
-      - freshrss-extensions:/var/www/FreshRSS/extensions
-
-volumes:
-  freshrss-data:
-  freshrss-extensions:
-```
+[Docker macht das Setup einfach](/snippets/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung/01-docker-macht-das-setup-einfach.yml "snippet:yaml")
 
 Davor kann ein Reverse Proxy oder ein Cloudflare Tunnel liegen.
 

@@ -3,6 +3,7 @@ id: 2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust
 version: 1
 title: Deployment mit Hetzner, Docker und Cloudflare Zero Trust
 date: 2026-08-19
+published_at: 2026-08-19T23:57:52+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-19
 author: obivan
@@ -166,10 +167,7 @@ Das eigentliche Deployment bleibt sehr einfach.
 
 Das Docker Image wird in CI gebaut und in eine Registry gepusht. Auf dem Hetzner Server reichen anschließend im Kern Befehle wie:
 
-```bash
-docker compose pull
-docker compose up -d
-```
+[Deployment](/snippets/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/01-deployment.sh "snippet:bash")
 
 Der Ablauf sieht dann ungefähr so aus:
 
@@ -199,11 +197,7 @@ Für produktive Deployments sind feste Image-Tags beziehungsweise noch besser ei
 
 Zum Beispiel:
 
-```yaml
-services:
-  blog:
-    image: ghcr.io/example/blog:9f42c1a
-```
+[Updates und Rollbacks](/snippets/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/02-updates-und-rollbacks.yml "snippet:yaml")
 
 Damit ist nachvollziehbar, welcher Stand gerade läuft.
 

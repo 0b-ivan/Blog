@@ -3,6 +3,7 @@ id: 2026-08-18-zero-downtime-mit-compose
 version: 1
 title: Zero-Downtime Deployments mit Docker Compose
 date: 2026-08-18
+published_at: 2026-08-19T10:58:26+02:00
 created_at: 2026-08-18
 updated_at: 2026-08-18
 author: obivan

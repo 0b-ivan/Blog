@@ -403,3 +403,163 @@ function setupTerminalFocusMode() {
 }
 
 setupTerminalFocusMode();
+
+
+const SNIPPET_HIGHLIGHT_VERSION = '11.11.1';
+
+function ensureSnippetStyles() {
+  if (!document.querySelector('link[data-snippet-styles]')) {
+    const localStyles = document.createElement('link');
+    localStyles.rel = 'stylesheet';
+    localStyles.href = '/assets/snippets.css';
+    localStyles.dataset.snippetStyles = '';
+    document.head.append(localStyles);
+  }
+
+  if (!document.querySelector('link[data-highlight-styles]')) {
+    const highlightStyles = document.createElement('link');
+    highlightStyles.rel = 'stylesheet';
+    highlightStyles.href = `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@${SNIPPET_HIGHLIGHT_VERSION}/build/styles/github-dark.min.css`;
+    highlightStyles.dataset.highlightStyles = '';
+    document.head.append(highlightStyles);
+  }
+}
+
+function ensureHighlightJs() {
+  if (window.hljs) {
+    return Promise.resolve(window.hljs);
+  }
+
+  const existing = document.querySelector('script[data-highlight-js]');
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve(window.hljs), { once: true });
+      existing.addEventListener('error', reject, { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = `https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@${SNIPPET_HIGHLIGHT_VERSION}/build/highlight.min.js`;
+    script.dataset.highlightJs = '';
+    script.addEventListener('load', () => resolve(window.hljs), { once: true });
+    script.addEventListener('error', reject, { once: true });
+    document.head.append(script);
+  });
+}
+
+function parseSnippetReference(link) {
+  const title = link.getAttribute('title') || '';
+  if (!title.startsWith('snippet:')) {
+    return null;
+  }
+
+  const [, language = '', range = ''] = title.split(':');
+  const href = link.getAttribute('href') || '';
+  if (!href.startsWith('/snippets/') || href.includes('..')) {
+    return null;
+  }
+
+  return {
+    title: link.textContent?.trim() || href.split('/').pop(),
+    language,
+    range,
+    href
+  };
+}
+
+function sliceSnippet(source, range) {
+  const match = String(range || '').match(/^(\d+)-(\d+)$/);
+  if (!match) {
+    return source;
+  }
+
+  const start = Math.max(1, Number.parseInt(match[1], 10));
+  const end = Math.max(start, Number.parseInt(match[2], 10));
+  return source.split(/\r?\n/).slice(start - 1, end).join('\n');
+}
+
+async function renderSnippetEmbed(link, reference, highlighter) {
+  const response = await fetch(reference.href);
+  if (!response.ok) {
+    throw new Error(`Snippet ${reference.href} konnte nicht geladen werden`);
+  }
+
+  const fullSource = await response.text();
+  const source = sliceSnippet(fullSource, reference.range);
+  const highlighted = reference.language && highlighter.getLanguage(reference.language)
+    ? highlighter.highlight(source, { language: reference.language }).value
+    : highlighter.highlightAuto(source).value;
+
+  const figure = document.createElement('figure');
+  figure.className = 'code-snippet';
+
+  const header = document.createElement('header');
+  header.className = 'code-snippet__header';
+
+  const titleBox = document.createElement('div');
+  const title = document.createElement('p');
+  title.className = 'code-snippet__title';
+  title.textContent = reference.title;
+  const meta = document.createElement('span');
+  meta.className = 'code-snippet__meta';
+  meta.textContent = [reference.language, reference.range ? `Zeilen ${reference.range}` : ''].filter(Boolean).join(' · ');
+  titleBox.append(title, meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'code-snippet__actions';
+  const copy = document.createElement('button');
+  copy.className = 'code-snippet__copy';
+  copy.type = 'button';
+  copy.textContent = 'Kopieren';
+  copy.addEventListener('click', async () => {
+    await window.navigator.clipboard.writeText(source);
+    copy.textContent = 'Kopiert';
+    window.setTimeout(() => { copy.textContent = 'Kopieren'; }, 1200);
+  });
+  actions.append(copy);
+  header.append(titleBox, actions);
+
+  const pre = document.createElement('pre');
+  const code = document.createElement('code');
+  code.className = `hljs${reference.language ? ` language-${reference.language}` : ''}`;
+  code.innerHTML = highlighted;
+  pre.append(code);
+
+  const footer = document.createElement('footer');
+  footer.className = 'code-snippet__footer';
+  const full = document.createElement('a');
+  full.href = `/snippets/#/${encodeURIComponent(reference.href.replace(/^\/snippets\//, ''))}`;
+  full.textContent = 'Vollständigen Code anzeigen';
+  footer.append(full);
+
+  figure.append(header, pre, footer);
+  const paragraph = link.parentElement?.tagName === 'P' && link.parentElement.children.length === 1
+    ? link.parentElement
+    : null;
+  (paragraph || link).replaceWith(figure);
+}
+
+async function setupSnippetEmbeds() {
+  const links = [...document.querySelectorAll('.terminal-content a[title^="snippet:"]')];
+  if (!links.length) {
+    return;
+  }
+
+  ensureSnippetStyles();
+  const highlighter = await ensureHighlightJs();
+  await Promise.all(links.map(async (link) => {
+    const reference = parseSnippetReference(link);
+    if (!reference) {
+      return;
+    }
+
+    try {
+      await renderSnippetEmbed(link, reference, highlighter);
+    } catch (error) {
+      console.error(error);
+    }
+  }));
+}
+
+setupSnippetEmbeds();

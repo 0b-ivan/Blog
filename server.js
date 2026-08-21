@@ -3,6 +3,7 @@ const fs = require('node:fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
 const MarkdownIt = require('markdown-it');
+const hljs = require('highlight.js/lib/common');
 const mdFootnote = require('markdown-it-footnote');
 const mdContainer = require('markdown-it-container');
 
@@ -86,7 +87,7 @@ function parseMetadataLine(line) {
 
 function recoverMetadata(raw, parsed) {
   const fallbackData = {};
-  const knownKeys = new Set(['id', 'version', 'title', 'date', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags']);
+  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags']);
 
   const hasParsedData = parsed && parsed.data && Object.keys(parsed.data).length > 0;
   if (hasParsedData) {
@@ -153,7 +154,14 @@ function recoverMetadata(raw, parsed) {
 const md = new MarkdownIt({
   html: false,
   linkify: true,
-  typographer: true
+  typographer: true,
+  highlight(code, language) {
+    if (language && hljs.getLanguage(language)) {
+      return hljs.highlight(code, { language }).value;
+    }
+
+    return md.utils.escapeHtml(code);
+  }
 });
 
 md.use(mdFootnote);
@@ -236,6 +244,7 @@ async function loadPosts(postsDir) {
       const title = recovered.data.title || slug;
       const inferredDate = inferDateFromSlug(slug);
       const date = recovered.data.date || recovered.data.created_at || inferredDate || '1970-01-01';
+      const publishedAt = recovered.data.published_at || recovered.data.created_at || date;
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
@@ -245,6 +254,7 @@ async function loadPosts(postsDir) {
         slug,
         title,
         date,
+        publishedAt,
         category,
         tags,
         excerpt,
@@ -253,7 +263,14 @@ async function loadPosts(postsDir) {
     })
   );
 
-  posts.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+  posts.sort((a, b) => {
+    const publishedDelta = parseDate(b.publishedAt) - parseDate(a.publishedAt);
+    if (publishedDelta !== 0) {
+      return publishedDelta;
+    }
+
+    return parseDate(b.date) - parseDate(a.date);
+  });
   return posts;
 }
 
@@ -440,7 +457,7 @@ function findRelatedPosts(posts, currentPost, limit = 3) {
         return b.score - a.score;
       }
 
-      const dateDelta = parseDate(b.post.date) - parseDate(a.post.date);
+      const dateDelta = parseDate(b.post.publishedAt) - parseDate(a.post.publishedAt);
       if (dateDelta !== 0) {
         return dateDelta;
       }
@@ -534,6 +551,7 @@ function renderPostPage(post, relatedPosts = []) {
       <nav class="main-nav" aria-label="Hauptnavigation">
         <a href="/#posts">Artikel</a>
         <a href="/#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
         <a href="/#about">About</a>
         <a href="/impressum">Impressum</a>
       </nav>

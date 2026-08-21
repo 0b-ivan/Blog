@@ -3,6 +3,7 @@ id: 2026-08-21-docker-vs-docker-compose
 version: 1
 title: "Docker vs. Docker Compose: Was ist der Unterschied?"
 date: 2026-08-21
+published_at: 2026-08-21T07:12:56+02:00
 created_at: 2026-08-21
 updated_at: 2026-08-21
 author: obivan
@@ -25,13 +26,7 @@ Compose ersetzt Docker also nicht. Compose benutzt Docker im Hintergrund und nim
 
 Für einen einzelnen Container reicht meistens ein normaler Docker-Befehl:
 
-```bash
-docker run \
-  --name web \
-  -p 8080:80 \
-  -d \
-  nginx:alpine
-```
+[Ein Container direkt mit Docker](/snippets/2026-08-21-docker-vs-docker-compose/01-ein-container-direkt-mit-docker.sh "snippet:bash")
 
 Danach kann ich mit `docker ps` prüfen, ob der Container läuft:
 
@@ -58,22 +53,7 @@ Sobald mehrere Container zusammengehören, werden die einzelnen Befehle länger.
 
 Angenommen, ich möchte einen Webserver und zusätzlich Redis starten. Ohne Compose könnte das beispielsweise so aussehen:
 
-```bash
-docker network create demo
-
-docker run \
-  --name redis \
-  --network demo \
-  -d \
-  redis:7-alpine
-
-docker run \
-  --name web \
-  --network demo \
-  -p 8080:80 \
-  -d \
-  nginx:alpine
-```
+[Wo es mit mehreren Containern unübersichtlich wird](/snippets/2026-08-21-docker-vs-docker-compose/02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh "snippet:bash")
 
 Das funktioniert. Ich muss mir aber selbst merken:
 
@@ -90,21 +70,7 @@ Je größer der Stack wird, desto eher wird aus einem einfachen `docker run` ein
 
 Mit Compose wandert diese Konfiguration in eine Datei, normalerweise `compose.yaml`:
 
-```yaml
-services:
-  web:
-    image: nginx:alpine
-    ports:
-      - "8080:80"
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis-data:/data
-
-volumes:
-  redis-data:
-```
+[Dasselbe mit Docker Compose](/snippets/2026-08-21-docker-vs-docker-compose/03-dasselbe-mit-docker-compose.yml "snippet:yaml")
 
 ![compose.yaml mit Web- und Redis-Service](/assets/posts/docker-vs-compose/02-compose-yaml.svg)
 
@@ -178,24 +144,11 @@ Eine zweite Verwechslung ist `Dockerfile` vs. `compose.yaml`.
 
 Ein **Dockerfile beschreibt, wie ein Image gebaut wird**:
 
-```dockerfile
-FROM node:22-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --omit=dev
-COPY . .
-CMD ["node", "server.js"]
-```
+[Dockerfile und Docker Compose sind ebenfalls nicht dasselbe](/snippets/2026-08-21-docker-vs-docker-compose/04-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.Dockerfile "snippet:dockerfile")
 
 Eine **Compose-Datei beschreibt, wie ein oder mehrere Container ausgeführt werden**:
 
-```yaml
-services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-```
+[Dockerfile und Docker Compose sind ebenfalls nicht dasselbe](/snippets/2026-08-21-docker-vs-docker-compose/05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml "snippet:yaml")
 
 Das lässt sich gut als Kette lesen:
 

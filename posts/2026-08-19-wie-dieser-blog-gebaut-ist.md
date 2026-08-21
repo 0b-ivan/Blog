@@ -3,6 +3,7 @@ id: 2026-08-19-wie-dieser-blog-gebaut-ist
 version: 2
 title: Wie dieser Blog gebaut ist
 date: 2026-08-19
+published_at: 2026-08-19T12:39:19+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-20
 author: obivan

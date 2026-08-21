@@ -3,6 +3,7 @@ id: 2026-08-19-systemd-services-sauber-betreiben
 version: 1
 title: systemd Services sauber betreiben
 date: 2026-08-19
+published_at: 2026-08-19T12:05:52+02:00
 created_at: 2026-08-19
 updated_at: 2026-08-19
 author: obivan
@@ -18,24 +19,7 @@ Wenn Services stabil laufen sollen, helfen ein paar saubere Defaults.
 
 ## Beispiel Unit
 
-```ini
-[Unit]
-Description=Kernel Notes API
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/opt/kernel-notes
-ExecStart=/usr/bin/node server.js
-Restart=always
-RestartSec=3
-Environment=NODE_ENV=production
-
-[Install]
-WantedBy=multi-user.target
-```
+[Beispiel Unit](/snippets/2026-08-19-systemd-services-sauber-betreiben/01-beispiel-unit.ini "snippet:ini")
 
 ## Restart-Strategie bewusst setzen
 
