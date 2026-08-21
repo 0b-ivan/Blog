@@ -31,6 +31,25 @@
     root.querySelectorAll?.('.tag-chip').forEach(upgradeTagChip);
   }
 
+  function ensureRoadmapNavigation() {
+    const nav = document.querySelector('.main-nav');
+    if (!nav || nav.querySelector('a[href="/roadmap"]')) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = '/roadmap';
+    link.textContent = 'Roadmap';
+
+    const snippets = nav.querySelector('a[href="/snippets/"]');
+    if (snippets) {
+      snippets.insertAdjacentElement('afterend', link);
+      return;
+    }
+
+    nav.append(link);
+  }
+
   function loadKnowledgeGraph() {
     if (!document.querySelector('.post-page .terminal-post')) {
       return;
@@ -52,6 +71,7 @@
   }
 
   upgradeTagChips();
+  ensureRoadmapNavigation();
   loadKnowledgeGraph();
 
   const observer = new MutationObserver((mutations) => {

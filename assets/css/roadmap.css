@@ -1,0 +1,83 @@
+.roadmap-shell {
+  width: min(980px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 3rem 0 5rem;
+}
+
+.roadmap-content {
+  padding: clamp(1.2rem, 3vw, 2.2rem);
+  border: 1px solid rgba(31, 43, 58, 0.2);
+  border-radius: 16px;
+  background: rgba(250, 249, 245, 0.92);
+  box-shadow: 0 18px 48px rgba(27, 37, 49, 0.09);
+}
+
+.roadmap-content h1 {
+  margin-top: 0;
+  font-size: clamp(2.2rem, 6vw, 4.6rem);
+  line-height: 0.98;
+}
+
+.roadmap-content h2 {
+  margin-top: 2.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(31, 43, 58, 0.14);
+}
+
+.roadmap-content h3 {
+  margin-top: 1.8rem;
+}
+
+.roadmap-content p,
+.roadmap-content li {
+  line-height: 1.7;
+}
+
+.roadmap-content ul {
+  padding-left: 1.4rem;
+}
+
+.roadmap-content pre {
+  overflow-x: auto;
+  padding: 1rem;
+  border: 1px solid rgba(119, 145, 173, 0.42);
+  border-radius: 10px;
+  background: #111c29;
+  color: #edf4fb;
+}
+
+.roadmap-content code {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.roadmap-content :not(pre) > code {
+  padding: 0.08rem 0.28rem;
+  border-radius: 4px;
+  background: rgba(65, 94, 124, 0.12);
+}
+
+.roadmap-content hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid rgba(31, 43, 58, 0.14);
+}
+
+.roadmap-loading {
+  color: #606a74;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.roadmap-source {
+  margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .roadmap-shell {
+    width: min(100% - 1rem, 980px);
+    padding-top: 1.4rem;
+  }
+
+  .roadmap-content {
+    border-radius: 12px;
+  }
+}

@@ -120,6 +120,18 @@ async function main() {
     }
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await page.locator('a[href="/roadmap"]').first().waitFor({ state: 'visible' });
+    await Promise.all([
+      page.waitForURL((url) => url.pathname === '/roadmap'),
+      page.locator('a[href="/roadmap"]').first().click()
+    ]);
+    const roadmap = page.locator('#roadmap-content[data-roadmap-ready="true"]');
+    await roadmap.waitFor({ state: 'visible', timeout: 15_000 });
+    assert.equal((await roadmap.locator('h1').innerText()).trim(), 'Kernel Notes Roadmap');
+    assert.match(await roadmap.innerText(), /Meilenstein 1 — Vollwertige englische Version des Blogs/);
+    assert.match(await roadmap.innerText(), /Definition of Done/);
+
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await Promise.all([
       page.waitForURL((url) => url.pathname === '/snippets/' || url.pathname === '/snippets'),
       page.locator('a[href="/snippets/"]').first().click()
@@ -135,7 +147,7 @@ async function main() {
     await page.locator('.legal-card h1').waitFor({ state: 'visible' });
 
     assert.deepEqual(failures, [], failures.join('\n'));
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), graph on every post.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), graph on every post, roadmap rendered.`);
   } finally {
     await browser.close();
   }
