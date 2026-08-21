@@ -10,7 +10,11 @@ services:
       - ./posts:/app/posts:ro
       - ./snippets:/app/snippets:ro
       - ./assets/posts:/app/assets/posts:ro
+      - ./archive:/content/archive:ro
+      - ./post-history:/content/post-history:ro
     environment:
+      ARCHIVE_DIR: /content/archive
+      POST_HISTORY_DIR: /content/post-history
       LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Ivan Babayev}
       LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-AWS Cloud Infrastructure Engineer bei e2n}
       LEGAL_OPERATOR_LOCATION: ${LEGAL_OPERATOR_LOCATION:-Würzburg, Bayern, Deutschland}
