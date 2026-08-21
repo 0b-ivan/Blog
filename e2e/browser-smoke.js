@@ -88,6 +88,13 @@ async function main() {
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
       await graphSection.scrollIntoViewIfNeeded();
+      await graphSection.locator('.knowledge-graph__chrome-title').waitFor({ state: 'visible', timeout: 10_000 });
+      assert.match(
+        await graphSection.locator('.knowledge-graph__chrome-title').innerText(),
+        /^knowledge-graph:\/\/kernel-notes\//,
+        `Graph chrome title missing for ${href}`
+      );
+      assert.equal(await graphSection.locator('.knowledge-graph__chrome-dot').count(), 3, `Graph chrome controls incomplete for ${href}`);
       await graphSection.locator('.knowledge-graph__canvas canvas').waitFor({ state: 'visible', timeout: 15_000 });
       assert.equal(await graphSection.locator('.knowledge-graph__legend span').count(), 4, `Graph legend incomplete for ${href}`);
 
