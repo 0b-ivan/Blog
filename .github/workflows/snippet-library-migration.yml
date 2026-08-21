@@ -56,6 +56,9 @@ jobs:
 
       - name: Commit migration
         run: |
+          # The GitHub Actions token cannot modify workflow files. cd.yml is patched separately.
+          git restore .github/workflows/cd.yml
+
           if git diff --quiet && [ -z "$(git status --porcelain)" ]; then
             echo 'No migration changes found.'
             exit 0
