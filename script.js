@@ -10,7 +10,7 @@ function ensureKernelBrandAssets() {
   if (!document.querySelector('link[data-kernel-typewriter]')) {
     const typewriter = document.createElement('link');
     typewriter.rel = 'stylesheet';
-    typewriter.href = '/assets/typewriter.css';
+    typewriter.href = '/assets/css/typewriter.css';
     typewriter.dataset.kernelTypewriter = '';
     document.head.append(typewriter);
   }
@@ -58,6 +58,8 @@ function formatDate(dateInput) {
   }).format(date);
 }
 
+const MAX_VISIBLE_TAGS = 10;
+
 function sanitizeTags(tags) {
   if (!Array.isArray(tags)) {
     return [];
@@ -69,7 +71,7 @@ function sanitizeTags(tags) {
 }
 
 function visibleTags(tags) {
-  return sanitizeTags(tags);
+  return sanitizeTags(tags).slice(0, MAX_VISIBLE_TAGS);
 }
 
 function topicLabel(topic) {
@@ -402,14 +404,13 @@ function setupTerminalFocusMode() {
 
 setupTerminalFocusMode();
 
-
 const SNIPPET_HIGHLIGHT_VERSION = '11.11.1';
 
 function ensureSnippetStyles() {
   if (!document.querySelector('link[data-snippet-styles]')) {
     const localStyles = document.createElement('link');
     localStyles.rel = 'stylesheet';
-    localStyles.href = '/assets/snippets.css';
+    localStyles.href = '/assets/css/snippets.css';
     localStyles.dataset.snippetStyles = '';
     document.head.append(localStyles);
   }
