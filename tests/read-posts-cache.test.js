@@ -1,6 +1,7 @@
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { setTimeout: delay } = require('node:timers/promises');
 
 const { readPosts } = require('../server');
 
@@ -29,7 +30,7 @@ describe('readPosts cache', () => {
       expect(cached).toBe(first);
       expect(cached[0].title).toBe('First');
 
-      await new Promise((resolve) => setTimeout(resolve, 40));
+      await delay(40);
 
       const refreshed = await readPosts(tmpDir);
       expect(refreshed).not.toBe(first);
