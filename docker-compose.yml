@@ -6,6 +6,10 @@ services:
     container_name: kernel-notes-blog
     ports:
       - "8080:8080"
+    volumes:
+      - ./posts:/app/posts:ro
+      - ./snippets:/app/snippets:ro
+      - ./assets/posts:/app/assets/posts:ro
     environment:
       LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Ivan Babayev}
       LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-AWS Cloud Infrastructure Engineer bei e2n}
