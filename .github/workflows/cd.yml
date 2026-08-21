@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'posts/**'
+      - 'archive/**'
       - 'snippets/**'
       - 'assets/posts/**'
   workflow_dispatch:
@@ -65,8 +66,13 @@ jobs:
       blog_version: ${{ steps.meta.outputs.blog_version }}
 
     steps:
-      - name: Checkout
+      - name: Checkout full history
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Build article version history
+        run: node scripts/build-post-history.js
 
       - name: Set image name and deployment version
         id: meta
@@ -232,6 +238,7 @@ jobs:
             exit 1
           fi
 
+          curl -fsS "http://127.0.0.1:${HEALTH_PORT}/archive" >/dev/null
           echo "Deployed $BLOG_IMAGE successfully on host port $HEALTH_PORT"
           docker image prune -f >/dev/null
           REMOTE
