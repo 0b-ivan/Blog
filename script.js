@@ -479,18 +479,7 @@ function sliceSnippet(source, range) {
   return source.split(/\r?\n/).slice(start - 1, end).join('\n');
 }
 
-async function renderSnippetEmbed(link, reference, highlighter) {
-  const response = await fetch(reference.href);
-  if (!response.ok) {
-    throw new Error(`Snippet ${reference.href} konnte nicht geladen werden`);
-  }
-
-  const fullSource = await response.text();
-  const source = sliceSnippet(fullSource, reference.range);
-  const highlighted = reference.language && highlighter.getLanguage(reference.language)
-    ? highlighter.highlight(source, { language: reference.language }).value
-    : highlighter.highlightAuto(source).value;
-
+function renderSnippetEmbed(link, reference) {
   const figure = document.createElement('figure');
   figure.className = 'code-snippet';
 
@@ -506,24 +495,45 @@ async function renderSnippetEmbed(link, reference, highlighter) {
   meta.textContent = [reference.language, reference.range ? `Zeilen ${reference.range}` : ''].filter(Boolean).join(' · ');
   titleBox.append(title, meta);
 
-  const actions = document.createElement('div');
-  actions.className = 'code-snippet__actions';
+  const headerActions = document.createElement('div');
+  headerActions.className = 'code-snippet__actions';
+  const download = document.createElement('a');
+  download.className = 'code-snippet__download';
+  download.href = reference.href;
+  download.download = '';
+  download.textContent = 'Download';
+  headerActions.append(download);
+  header.append(titleBox, headerActions);
+
+  const details = document.createElement('details');
+  details.className = 'code-snippet__details';
+
+  const summary = document.createElement('summary');
+  summary.className = 'code-snippet__summary';
+  const toggleLabel = document.createElement('span');
+  toggleLabel.textContent = 'Code anzeigen';
+  summary.append(toggleLabel);
+
+  const body = document.createElement('div');
+  body.className = 'code-snippet__body';
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'code-snippet__toolbar';
   const copy = document.createElement('button');
   copy.className = 'code-snippet__copy';
   copy.type = 'button';
   copy.textContent = 'Kopieren';
-  copy.addEventListener('click', async () => {
-    await window.navigator.clipboard.writeText(source);
-    copy.textContent = 'Kopiert';
-    window.setTimeout(() => { copy.textContent = 'Kopieren'; }, 1200);
-  });
-  actions.append(copy);
-  header.append(titleBox, actions);
+  copy.disabled = true;
+  toolbar.append(copy);
+
+  const loading = document.createElement('p');
+  loading.className = 'code-snippet__loading';
+  loading.textContent = 'Code wird geladen ...';
 
   const pre = document.createElement('pre');
+  pre.hidden = true;
   const code = document.createElement('code');
   code.className = `hljs${reference.language ? ` language-${reference.language}` : ''}`;
-  code.innerHTML = highlighted;
   pre.append(code);
 
   const footer = document.createElement('footer');
@@ -533,33 +543,89 @@ async function renderSnippetEmbed(link, reference, highlighter) {
   full.textContent = 'Vollständigen Code anzeigen';
   footer.append(full);
 
-  figure.append(header, pre, footer);
+  body.append(toolbar, loading, pre, footer);
+  details.append(summary, body);
+  figure.append(header, details);
+
   const paragraph = link.parentElement?.tagName === 'P' && link.parentElement.children.length === 1
     ? link.parentElement
     : null;
   (paragraph || link).replaceWith(figure);
+
+  let source = '';
+  let loaded = false;
+  let loadingSource = false;
+
+  copy.addEventListener('click', async () => {
+    if (!loaded) {
+      return;
+    }
+
+    await window.navigator.clipboard.writeText(source);
+    copy.textContent = 'Kopiert';
+    window.setTimeout(() => { copy.textContent = 'Kopieren'; }, 1200);
+  });
+
+  const loadSource = async () => {
+    if (loaded || loadingSource) {
+      return;
+    }
+
+    loadingSource = true;
+    loading.hidden = false;
+    loading.textContent = 'Code wird geladen ...';
+
+    try {
+      const [response, highlighter] = await Promise.all([
+        fetch(reference.href),
+        ensureHighlightJs()
+      ]);
+      if (!response.ok) {
+        throw new Error(`Snippet ${reference.href} konnte nicht geladen werden`);
+      }
+
+      const fullSource = await response.text();
+      source = sliceSnippet(fullSource, reference.range);
+      const highlighted = reference.language && highlighter.getLanguage(reference.language)
+        ? highlighter.highlight(source, { language: reference.language }).value
+        : highlighter.highlightAuto(source).value;
+
+      code.innerHTML = highlighted;
+      pre.hidden = false;
+      loading.hidden = true;
+      copy.disabled = false;
+      loaded = true;
+    } catch (error) {
+      loading.textContent = 'Code konnte nicht geladen werden.';
+      console.error(error);
+    } finally {
+      loadingSource = false;
+    }
+  };
+
+  details.addEventListener('toggle', () => {
+    toggleLabel.textContent = details.open ? 'Code ausblenden' : 'Code anzeigen';
+    if (details.open && !loaded) {
+      void loadSource();
+    }
+  });
 }
 
-async function setupSnippetEmbeds() {
+function setupSnippetEmbeds() {
   const links = [...document.querySelectorAll('.terminal-content a[title^="snippet:"]')];
   if (!links.length) {
     return;
   }
 
   ensureSnippetStyles();
-  const highlighter = await ensureHighlightJs();
-  await Promise.all(links.map(async (link) => {
+  links.forEach((link) => {
     const reference = parseSnippetReference(link);
     if (!reference) {
       return;
     }
 
-    try {
-      await renderSnippetEmbed(link, reference, highlighter);
-    } catch (error) {
-      console.error(error);
-    }
-  }));
+    renderSnippetEmbed(link, reference);
+  });
 }
 
 setupSnippetEmbeds();
