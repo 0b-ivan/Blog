@@ -26,6 +26,7 @@
 }
 
 .topic-result-count {
+  flex: 0 0 auto;
   margin: 0;
   color: #5c6871;
   font-size: 0.82rem;
@@ -70,11 +71,20 @@
   color: #f9fcfb;
 }
 
+.topic-search-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.85rem;
+}
+
 .topic-search {
   position: relative;
   display: block;
-  width: min(390px, 100%);
-  margin-top: 0.85rem;
+  flex: 1 1 390px;
+  min-width: 0;
+  max-width: 390px;
 }
 
 .topic-search-icon {
@@ -115,7 +125,7 @@
 .topic {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.28rem;
+  gap: 0.46rem;
   flex: 0 0 auto;
   width: auto;
   min-height: 38px;
@@ -157,6 +167,7 @@
 .topic-count {
   opacity: 0.62;
   font-size: 0.72em;
+  white-space: nowrap;
 }
 
 .topic.is-active .topic-count {
@@ -212,9 +223,14 @@
     font-size: 0.72rem;
   }
 
-  .topic-search {
-    width: 100%;
+  .topic-search-row {
+    gap: 0.7rem;
     margin-top: 0.7rem;
+  }
+
+  .topic-search {
+    flex: 1 1 auto;
+    max-width: none;
   }
 
   .topic-search input {

@@ -29,12 +29,6 @@
     header.append(sectionHeading);
   }
 
-  const resultCount = document.createElement('p');
-  resultCount.className = 'topic-result-count';
-  resultCount.setAttribute('aria-live', 'polite');
-  resultCount.textContent = 'Artikel werden geladen …';
-  header.append(resultCount);
-
   const controls = document.createElement('div');
   controls.className = 'topic-browser-controls';
 
@@ -64,6 +58,9 @@
   tabs.append(tagsTab, categoriesTab);
   controls.append(filterLabel, tabs);
 
+  const searchRow = document.createElement('div');
+  searchRow.className = 'topic-search-row';
+
   const searchWrap = document.createElement('label');
   searchWrap.className = 'topic-search';
 
@@ -80,6 +77,13 @@
 
   searchWrap.append(searchIcon, searchInput);
 
+  const resultCount = document.createElement('p');
+  resultCount.className = 'topic-result-count';
+  resultCount.setAttribute('aria-live', 'polite');
+  resultCount.textContent = 'Artikel werden geladen …';
+
+  searchRow.append(searchWrap, resultCount);
+
   const showMore = document.createElement('button');
   showMore.className = 'topic-show-more';
   showMore.type = 'button';
@@ -90,7 +94,7 @@
 
   topicsSection.insertBefore(header, topicsList);
   topicsSection.insertBefore(controls, topicsList);
-  topicsSection.insertBefore(searchWrap, topicsList);
+  topicsSection.insertBefore(searchRow, topicsList);
   topicsSection.insertBefore(showMore, topicsList.nextSibling);
 
   const topicLabel = (topic) => {
@@ -108,7 +112,7 @@
 
   const updateResultCount = () => {
     const count = postsList.querySelectorAll('.post-card').length;
-    resultCount.textContent = `${count} ${count === 1 ? 'Artikel' : 'Artikel'}`;
+    resultCount.textContent = `${count} Artikel`;
   };
 
   const updateTabs = () => {
@@ -131,7 +135,7 @@
 
     const countNode = document.createElement('span');
     countNode.className = 'topic-count';
-    countNode.textContent = String(count);
+    countNode.textContent = `[${count}]`;
     button.append(countNode);
   };
 
