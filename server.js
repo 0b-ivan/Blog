@@ -9,6 +9,8 @@ const mdContainer = require('markdown-it-container');
 const port = process.env.PORT || 8080;
 const root = __dirname;
 const DEFAULT_SITE_URL = 'https://blog.obivan.org';
+const DEFAULT_POSTS_CACHE_TTL_MS = 1000;
+const postsCache = new Map();
 
 function getPostsDir(explicitPostsDir) {
   return explicitPostsDir || process.env.POSTS_DIR || path.join(root, 'posts');
@@ -198,8 +200,20 @@ md.renderer.rules.fence = (tokens, idx, options, env, self) => {
   return defaultFenceRule(tokens, idx, options, env, self);
 };
 
-async function readPosts(explicitPostsDir) {
-  const postsDir = getPostsDir(explicitPostsDir);
+function getPostsCacheTtlMs() {
+  const configured = Number.parseInt(
+    String(process.env.POSTS_CACHE_TTL_MS ?? DEFAULT_POSTS_CACHE_TTL_MS),
+    10
+  );
+
+  if (!Number.isFinite(configured) || configured < 0) {
+    return DEFAULT_POSTS_CACHE_TTL_MS;
+  }
+
+  return configured;
+}
+
+async function loadPosts(postsDir) {
   let entries;
   try {
     entries = await fs.readdir(postsDir, { withFileTypes: true });
@@ -241,6 +255,48 @@ async function readPosts(explicitPostsDir) {
 
   posts.sort((a, b) => parseDate(b.date) - parseDate(a.date));
   return posts;
+}
+
+async function readPosts(explicitPostsDir) {
+  const postsDir = path.resolve(getPostsDir(explicitPostsDir));
+  const ttlMs = getPostsCacheTtlMs();
+  const now = Date.now();
+  const cached = postsCache.get(postsDir);
+
+  if (ttlMs > 0 && cached?.posts && cached.expiresAt > now) {
+    return cached.posts;
+  }
+
+  if (cached?.loading) {
+    return cached.loading;
+  }
+
+  const loading = loadPosts(postsDir)
+    .then((posts) => {
+      if (ttlMs > 0) {
+        postsCache.set(postsDir, {
+          posts,
+          expiresAt: Date.now() + ttlMs,
+          loading: null
+        });
+      } else {
+        postsCache.delete(postsDir);
+      }
+
+      return posts;
+    })
+    .catch((error) => {
+      postsCache.delete(postsDir);
+      throw error;
+    });
+
+  postsCache.set(postsDir, {
+    posts: cached?.posts || null,
+    expiresAt: 0,
+    loading
+  });
+
+  return loading;
 }
 
 function escapeXml(value) {
