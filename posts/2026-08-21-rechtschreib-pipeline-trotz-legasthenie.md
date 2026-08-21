@@ -177,6 +177,35 @@ HTML
 
 So wird möglichst der Text geprüft, den ein Leser tatsächlich liest, und nicht jede technische Zeichenfolge im Dokument.
 
+## Kurz nachbauen
+
+Für denselben Ansatz reichen im Repository im Kern diese Dateien:
+
+```text
+.github/workflows/proofread.yml
+.github/workflows/proofread-autocorrect.yml
+scripts/spellcheck-posts.js
+scripts/proofread-posts.js
+cspell.json
+config/proofread-words.txt
+```
+
+Dann sind es fünf Schritte:
+
+1. CSpell konfigurieren und eigene technische Begriffe in `proofread-words.txt` aufnehmen.
+2. LanguageTool im Workflow per Docker starten: `meyay/languagetool:latest`.
+3. `proofread.yml` bei Änderungen an `posts/**/*.md` laufen lassen und sprachliche Hinweise non-blocking behandeln.
+4. `proofread-autocorrect.yml` nur per `workflow_dispatch` starten und nur eindeutige Korrekturen anwenden.
+5. Unter **Settings → Actions → General** Schreibrechte sowie **Allow GitHub Actions to create and approve pull requests** aktivieren.
+
+Danach reicht im Alltag:
+
+```text
+Pull Request → automatische Prüfung
+Actions → Autocorrect Blog Posts → Run workflow
+→ Korrektur-PR öffnen → Diff prüfen → Merge
+```
+
 ## Warum dieser Aufwand?
 
 Natürlich könnte ich jeden Artikel vor dem Veröffentlichen durch einen normalen Texteditor schicken.
