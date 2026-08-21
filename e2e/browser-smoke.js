@@ -85,6 +85,12 @@ async function main() {
       await page.locator('.post-page h1').waitFor({ state: 'visible' });
       assert.ok((await page.locator('.post-page h1').innerText()).trim().length > 0, `Missing title for ${href}`);
 
+      const graphSection = page.locator('.knowledge-graph');
+      await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
+      await graphSection.scrollIntoViewIfNeeded();
+      await graphSection.locator('.knowledge-graph__canvas canvas').waitFor({ state: 'visible', timeout: 15_000 });
+      assert.equal(await graphSection.locator('.knowledge-graph__legend span').count(), 4, `Graph legend incomplete for ${href}`);
+
       const imageUrls = await page.locator('.terminal-content img').evaluateAll((images) =>
         images.map((image) => image.getAttribute('src')).filter(Boolean)
       );
@@ -122,7 +128,7 @@ async function main() {
     await page.locator('.legal-card h1').waitFor({ state: 'visible' });
 
     assert.deepEqual(failures, [], failures.join('\n'));
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s).`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), graph on every post.`);
   } finally {
     await browser.close();
   }
