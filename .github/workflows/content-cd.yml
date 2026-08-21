@@ -1,0 +1,165 @@
+name: Content CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'posts/**'
+      - 'snippets/**'
+      - 'assets/posts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  verify-main-origin:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Require merged PR for main deployments
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          PR_COUNT=0
+
+          for attempt in 1 2 3 4 5; do
+            PR_COUNT=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/pulls" \
+              --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | length')
+
+            if [ "$PR_COUNT" -ge 1 ]; then
+              echo "Main commit is associated with a merged pull request."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 5 ]; then
+              echo "PR association not available yet (attempt ${attempt}/5), retrying..."
+              sleep 3
+            fi
+          done
+
+          echo "Refusing content deployment: main commit is not associated with a merged pull request."
+          exit 1
+
+  deploy-content:
+    runs-on: ubuntu-latest
+    needs: verify-main-origin
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate Hetzner deployment secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          test -n "$HETZNER_HOST" || { echo "HETZNER_HOST is missing"; exit 1; }
+          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing"; exit 1; }
+          test -n "$HETZNER_SSH_KEY" || { echo "HETZNER_SSH_KEY is missing"; exit 1; }
+          test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Package article content
+        run: |
+          tar -czf /tmp/kernel-notes-content.tgz \
+            posts \
+            snippets \
+            assets/posts
+
+      - name: Upload article content
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          scp \
+            -i ~/.ssh/hetzner_deploy \
+            -P "$PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            /tmp/kernel-notes-content.tgz \
+            "${HETZNER_USER}@${HETZNER_HOST}:/tmp/kernel-notes-content-${{ github.sha }}.tgz"
+
+      - name: Update persistent content volumes
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh \
+            -i ~/.ssh/hetzner_deploy \
+            -p "$PORT" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            bash -s -- "$COMMIT_SHA" <<'REMOTE'
+          set -euo pipefail
+
+          COMMIT_SHA="$1"
+          ARCHIVE="/tmp/kernel-notes-content-${COMMIT_SHA}.tgz"
+          STAGE="/tmp/kernel-notes-content-${COMMIT_SHA}"
+          HELPER_IMAGE="alpine:3.22"
+
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+
+          docker volume create kernel-notes-blog-posts >/dev/null
+          docker volume create kernel-notes-blog-snippets >/dev/null
+          docker volume create kernel-notes-blog-post-assets >/dev/null
+          docker pull "$HELPER_IMAGE" >/dev/null
+
+          sync_volume() {
+            volume="$1"
+            source="$2"
+
+            docker run --rm \
+              -v "${volume}:/target" \
+              -v "${source}:/source:ro" \
+              "$HELPER_IMAGE" \
+              sh -c 'set -eu; find /target -mindepth 1 -maxdepth 1 -exec rm -rf {} +; cp -a /source/. /target/'
+          }
+
+          sync_volume kernel-notes-blog-posts "$STAGE/posts"
+          sync_volume kernel-notes-blog-snippets "$STAGE/snippets"
+          sync_volume kernel-notes-blog-post-assets "$STAGE/assets/posts"
+
+          rm -rf "$STAGE" "$ARCHIVE"
+
+          if docker inspect kernel-notes-blog >/dev/null 2>&1; then
+            sleep 2
+            curl -fsS http://127.0.0.1:1888/healthz >/dev/null
+            curl -fsS http://127.0.0.1:1888/api/posts >/dev/null
+            echo "Content ${COMMIT_SHA} deployed without rebuilding the app image."
+          else
+            echo "Content volumes prepared; blog container is not running yet."
+          fi
+          REMOTE

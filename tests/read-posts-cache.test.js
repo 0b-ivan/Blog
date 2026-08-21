@@ -1,7 +1,8 @@
+/* global vi */
+
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
-const { setTimeout: delay } = require('node:timers/promises');
 
 const { readPosts } = require('../server');
 
@@ -17,8 +18,11 @@ describe('readPosts cache', () => {
   it('serves the cached render until the TTL expires and then refreshes', async () => {
     const previousTtl = process.env.POSTS_CACHE_TTL_MS;
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-cache-'));
+    const nowSpy = vi.spyOn(Date, 'now');
+    let now = 1_000_000;
 
-    process.env.POSTS_CACHE_TTL_MS = '25';
+    process.env.POSTS_CACHE_TTL_MS = '1000';
+    nowSpy.mockImplementation(() => now);
 
     try {
       await writePost(tmpDir, 'First');
@@ -30,12 +34,14 @@ describe('readPosts cache', () => {
       expect(cached).toBe(first);
       expect(cached[0].title).toBe('First');
 
-      await delay(40);
+      now += 1001;
 
       const refreshed = await readPosts(tmpDir);
       expect(refreshed).not.toBe(first);
       expect(refreshed[0].title).toBe('Second');
     } finally {
+      nowSpy.mockRestore();
+
       if (previousTtl === undefined) {
         delete process.env.POSTS_CACHE_TTL_MS;
       } else {

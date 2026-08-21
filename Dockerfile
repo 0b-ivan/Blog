@@ -21,9 +21,13 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/build-info.json ./build-info.json
-COPY index.html impressum.html styles.css image-viewer.css mobile-topics.css script.js ./
+COPY index.html impressum.html script.js ./
+COPY styles.css image-viewer.css ./
 COPY assets ./assets
 COPY server.js ./
+
+# Content remains in the image as a bootstrap/fallback. Production mounts
+# persistent volumes over these paths and content-only deploys update them.
 COPY posts ./posts
 COPY snippets ./snippets
 
