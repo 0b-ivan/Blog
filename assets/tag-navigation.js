@@ -31,7 +31,28 @@
     root.querySelectorAll?.('.tag-chip').forEach(upgradeTagChip);
   }
 
+  function loadKnowledgeGraph() {
+    if (!document.querySelector('.post-page .terminal-post')) {
+      return;
+    }
+
+    if (window.location.pathname.startsWith('/history/')) {
+      return;
+    }
+
+    if (document.querySelector('script[data-knowledge-graph]')) {
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = '/assets/knowledge-graph.js';
+    script.defer = true;
+    script.dataset.knowledgeGraph = 'true';
+    document.body.append(script);
+  }
+
   upgradeTagChips();
+  loadKnowledgeGraph();
 
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
