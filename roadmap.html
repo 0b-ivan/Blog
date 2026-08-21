@@ -34,10 +34,16 @@
       <p class="roadmap-source"><a class="read-more" href="/roadmap.md">Markdown-Rohdatei ansehen</a></p>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/markdown-it@15.0.0/dist/markdown-it.min.js"></script>
+    <script src="/node_modules/markdown-it/dist/markdown-it.min.js"></script>
     <script>
       (() => {
         const root = document.querySelector('#roadmap-content');
+        if (typeof window.markdownit !== 'function') {
+          root.innerHTML = '<h1>Roadmap</h1><p>Der Markdown-Renderer konnte nicht geladen werden.</p>';
+          root.dataset.roadmapReady = 'error';
+          return;
+        }
+
         const renderer = window.markdownit({
           html: false,
           linkify: true,
