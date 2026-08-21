@@ -1,0 +1,109 @@
+.knowledge-graph {
+  margin: 1.4rem 0 1.8rem;
+  border: 1px solid #cfc6b4;
+  border-radius: 14px;
+  background: rgba(251, 250, 247, 0.92);
+  box-shadow: 0 10px 24px rgba(43, 48, 56, 0.08);
+  overflow: hidden;
+}
+
+.knowledge-graph__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem 0.85rem;
+  border-bottom: 1px solid #d8d2c4;
+}
+
+.knowledge-graph__head h2 {
+  margin: 0.15rem 0 0.3rem;
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+}
+
+.knowledge-graph__head .eyebrow {
+  margin: 0;
+}
+
+.knowledge-graph__hint {
+  margin: 0;
+  color: #5b6168;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+}
+
+.knowledge-graph__legend {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 0.4rem 0.8rem;
+  padding-top: 0.2rem;
+  color: #444b52;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+}
+
+.knowledge-graph__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.knowledge-graph__legend i {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: var(--node-color);
+  box-shadow: 0 0 0 1px rgba(18, 19, 20, 0.08);
+}
+
+.knowledge-graph__canvas {
+  position: relative;
+  width: 100%;
+  min-height: 440px;
+  background:
+    linear-gradient(to right, rgba(0, 0, 0, 0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.028) 1px, transparent 1px),
+    #fbfaf7;
+  background-size: 28px 28px;
+  overflow: hidden;
+}
+
+.knowledge-graph__canvas canvas {
+  display: block;
+}
+
+.knowledge-graph__status {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  color: #59616a;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.knowledge-graph__status.is-error {
+  width: min(36rem, calc(100% - 2rem));
+  color: #9b2c2c;
+}
+
+.knowledge-graph .graph-tooltip {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+@media (max-width: 720px) {
+  .knowledge-graph__head {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .knowledge-graph__legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .knowledge-graph__canvas {
+    min-height: 360px;
+  }
+}
