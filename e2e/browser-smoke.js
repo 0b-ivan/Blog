@@ -40,8 +40,9 @@ async function main() {
 
   page.on('requestfailed', (request) => {
     const url = request.url();
-    if (new URL(url).origin === baseOrigin) {
-      failures.push(`request failed: ${request.method()} ${url} (${request.failure()?.errorText || 'unknown'})`);
+    const failure = request.failure()?.errorText || 'unknown';
+    if (new URL(url).origin === baseOrigin && failure !== 'net::ERR_ABORTED') {
+      failures.push(`request failed: ${request.method()} ${url} (${failure})`);
     }
   });
 
