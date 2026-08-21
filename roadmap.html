@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roadmap | Kernel Notes</title>
+    <meta name="description" content="Roadmap und geplante Meilensteine für Kernel Notes." />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/roadmap.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="logo" href="/">Kernel Notes</a>
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <a href="/#posts">Artikel</a>
+        <a href="/#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
+        <a href="/roadmap" aria-current="page">Roadmap</a>
+        <a href="/archive">Archiv</a>
+        <a href="/#about">About</a>
+        <a href="/impressum">Impressum</a>
+      </nav>
+    </header>
+
+    <main class="roadmap-shell">
+      <article id="roadmap-content" class="roadmap-content" aria-live="polite">
+        <p class="roadmap-loading">Roadmap wird geladen…</p>
+      </article>
+      <p class="roadmap-source"><a class="read-more" href="/roadmap.md">Markdown-Rohdatei ansehen</a></p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@15.0.0/dist/markdown-it.min.js"></script>
+    <script>
+      (() => {
+        const root = document.querySelector('#roadmap-content');
+        const renderer = window.markdownit({
+          html: false,
+          linkify: true,
+          typographer: true
+        });
+
+        fetch('/roadmap.md')
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+            return response.text();
+          })
+          .then((markdown) => {
+            root.innerHTML = renderer.render(markdown);
+            root.dataset.roadmapReady = 'true';
+          })
+          .catch((error) => {
+            root.innerHTML = `<h1>Roadmap</h1><p>Die Roadmap konnte nicht geladen werden: ${error.message}</p>`;
+            root.dataset.roadmapReady = 'error';
+          });
+      })();
+    </script>
+    <script src="/assets/tag-navigation.js"></script>
+  </body>
+</html>
