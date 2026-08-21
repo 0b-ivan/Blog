@@ -42,19 +42,10 @@ jobs:
 
           server = Path('server.js')
           text = server.read_text(encoding='utf-8')
-          text = text.replace(
-              """const dto = posts.map(({ slug, title, date, category, tags, excerpt }) => ({
-                slug,
-                title,
-                date,
-                publishedAt,
-                category,""",
-              """const dto = posts.map(({ slug, title, date, category, tags, excerpt }) => ({
-                slug,
-                title,
-                date,
-                category,""",
-          )
+          start = text.index("const dto = posts.map(")
+          end = text.index("res.json(dto);", start)
+          dto = text[start:end].replace("        publishedAt,\n", "")
+          text = text[:start] + dto + text[end:]
           server.write_text(text, encoding='utf-8')
           PY
 
