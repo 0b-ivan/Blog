@@ -1,0 +1,34 @@
+.tag-chip[href] {
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.tag-chip[href]:hover {
+  transform: translateY(-1px);
+  border-color: #6f91b7;
+  background: #dceafb;
+}
+
+.tag-chip[href]:focus-visible {
+  outline: 2px solid #145a78;
+  outline-offset: 2px;
+}
+
+.collection-card__title {
+  color: inherit;
+  text-decoration: none;
+}
+
+.collection-card__title:hover {
+  text-decoration: underline;
+}
+
+.collection-card .read-more {
+  display: inline-block;
+  margin-top: 0.45rem;
+}
+
+.tag-results > p {
+  max-width: 70ch;
+}

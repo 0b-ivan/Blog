@@ -27,13 +27,16 @@ module.exports = [
     files: [
       'script.js',
       'assets/newsletter-config.js',
-      'assets/newsletter.js'
+      'assets/newsletter.js',
+      'assets/tag-navigation.js'
     ],
     languageOptions: {
       globals: {
         window: 'readonly',
         document: 'readonly',
         fetch: 'readonly',
+        Element: 'readonly',
+        MutationObserver: 'readonly',
         IntersectionObserver: 'readonly'
       }
     }

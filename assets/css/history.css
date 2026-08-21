@@ -26,46 +26,82 @@
   padding: 22px;
   border: 1px solid rgba(100, 116, 139, 0.35);
   border-radius: 16px;
-  background: rgba(15, 23, 42, 0.72);
+  background: rgba(255, 253, 250, 0.78);
   color: inherit;
   text-decoration: none;
 }
 
 .archive-card:hover {
-  border-color: rgba(147, 197, 253, 0.8);
+  border-color: rgba(65, 105, 145, 0.62);
 }
 
 .archive-card h2 {
   margin: 6px 0 10px;
 }
 
-.post-version-bar {
+.post-version-footer {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px 16px;
-  margin: 18px 0 22px;
-  padding: 11px 14px;
-  border: 1px solid rgba(100, 116, 139, 0.38);
-  border-radius: 10px;
-  background: rgba(15, 23, 42, 0.72);
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 28px 0 34px;
+  padding: 15px 2px;
+  border-top: 1px solid rgba(100, 116, 139, 0.3);
+  border-bottom: 1px solid rgba(100, 116, 139, 0.22);
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.86rem;
+  font-size: 0.84rem;
 }
 
-.post-version-bar a,
+.post-version-footer__identity,
+.post-version-footer__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.post-version-footer__label {
+  color: #5b6570;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+
+.post-version-footer__number {
+  font-size: 1rem;
+  color: #17202a;
+}
+
+.post-version-footer__actions a,
 .history-actions a {
-  color: #93c5fd;
+  color: #326b9b;
+  text-underline-offset: 3px;
+}
+
+.post-version-footer__actions a:hover,
+.history-actions a:hover {
+  color: #174e7c;
 }
 
 .archive-badge,
 .current-badge {
   display: inline-block;
   padding: 2px 8px;
-  border: 1px solid rgba(251, 191, 36, 0.45);
   border-radius: 999px;
-  color: #fcd34d;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
+}
+
+.archive-badge {
+  border: 1px solid rgba(180, 120, 20, 0.45);
+  color: #805d16;
+  background: rgba(251, 191, 36, 0.11);
+}
+
+.current-badge {
+  border: 1px solid rgba(45, 125, 85, 0.36);
+  color: #226344;
+  background: rgba(74, 222, 128, 0.1);
 }
 
 .history-list {
@@ -83,11 +119,11 @@
   padding: 16px 18px;
   border: 1px solid rgba(100, 116, 139, 0.35);
   border-radius: 12px;
-  background: rgba(15, 23, 42, 0.64);
+  background: rgba(255, 253, 250, 0.76);
 }
 
 .history-version.is-current {
-  border-color: rgba(74, 222, 128, 0.5);
+  border-color: rgba(45, 125, 85, 0.45);
 }
 
 .history-actions {
@@ -125,7 +161,9 @@
     padding-top: 42px;
   }
 
+  .post-version-footer,
   .history-version {
+    align-items: flex-start;
     flex-direction: column;
   }
 
