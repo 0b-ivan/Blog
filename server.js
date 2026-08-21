@@ -11,6 +11,7 @@ const port = process.env.PORT || 8080;
 const root = __dirname;
 const DEFAULT_SITE_URL = 'https://blog.obivan.org';
 const DEFAULT_POSTS_CACHE_TTL_MS = 1000;
+const MAX_VISIBLE_TAGS = 10;
 const postsCache = new Map();
 
 function getPostsDir(explicitPostsDir) {
@@ -480,7 +481,7 @@ function renderRelatedPosts(relatedPosts) {
       const category = md.utils.escapeHtml(String(relatedPost.category || 'IT'));
       const date = md.utils.escapeHtml(String(relatedPost.date || ''));
       const tags = normalizeTags(relatedPost.tags)
-        .slice(0, 2)
+        .slice(0, MAX_VISIBLE_TAGS)
         .map((tag) => `<span class="tag-chip">${md.utils.escapeHtml(tag)}</span>`)
         .join('');
 
@@ -520,9 +521,9 @@ function getLegalInfo() {
 
 function renderPostPage(post, relatedPosts = []) {
   const meta = `${post.category} · ${post.date}`;
-  const tagsHtml = (post.tags || [])
-    .slice(0, 2)
-    .map((tag) => `<span class="tag-chip">${tag}</span>`)
+  const tagsHtml = normalizeTags(post.tags)
+    .slice(0, MAX_VISIBLE_TAGS)
+    .map((tag) => `<span class="tag-chip">${md.utils.escapeHtml(tag)}</span>`)
     .join('');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
 
