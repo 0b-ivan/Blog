@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="620" viewBox="0 0 1600 620" role="img" aria-labelledby="title desc">
+  <title id="title">Proofread Summary mit LanguageTool-Hinweisen</title>
+  <desc id="desc">Vektorisierte GitHub Actions Summary mit 11 geprüften Dateien, 22 LanguageTool-Hinweisen und einer automatisch angewendeten Korrektur.</desc>
+  <style>
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .muted { fill: #8b949e; }
+    .text { fill: #e6edf3; }
+    .line { stroke: #30363d; }
+  </style>
+  <rect width="1600" height="620" rx="18" fill="#0d1117"/>
+  <rect x="18" y="18" width="1564" height="210" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="38" y="52" class="sans text" font-size="15" font-weight="600">autocorrect-posts summary</text>
+  <line x1="18" y1="70" x2="1582" y2="70" class="line"/>
+  <text x="38" y="108" class="sans text" font-size="22" font-weight="700">Proofread Blog Posts</text>
+  <line x1="38" y1="124" x2="1560" y2="124" class="line"/>
+  <text x="54" y="158" class="sans text" font-size="16">• Dateien: <tspan font-weight="700">11</tspan></text>
+  <text x="54" y="186" class="sans text" font-size="16">• LanguageTool-Hinweise: <tspan font-weight="700">22</tspan></text>
+  <text x="54" y="214" class="sans text" font-size="16">• automatisch angewendet: <tspan font-weight="700">1</tspan></text>
+  <text x="38" y="255" class="sans text" font-size="15">Autocorrect übernimmt nur eindeutige Rechtschreibkorrekturen. Grammatik-, Stil- und Interpunktionshinweise bleiben zur manuellen Prüfung.</text>
+
+  <rect x="18" y="280" width="1564" height="320" rx="10" fill="#161b22" stroke="#30363d"/>
+  <text x="38" y="316" class="sans text" font-size="18" font-weight="700">Annotations</text>
+  <text x="38" y="340" class="sans muted" font-size="13">10 warnings</text>
+
+  <g class="mono" font-size="13">
+    <circle cx="46" cy="378" r="7" fill="#d29922"/>
+    <text x="66" y="383" fill="#c9d1d9" font-weight="700">DE_CASE/uncategorized</text>
+    <text x="275" y="383" class="muted">posts/2026-08-19-markdown-features-im-blog.md#L23</text>
+    <text x="66" y="405" class="muted">Außer am Satzanfang werden nur Nomen und Eigennamen großgeschrieben.</text>
+
+    <line x1="28" y1="424" x2="1570" y2="424" class="line"/>
+    <circle cx="46" cy="452" r="7" fill="#d29922"/>
+    <text x="66" y="457" fill="#c9d1d9" font-weight="700">DE_SUBJECT_VERB_AGREEMENT</text>
+    <text x="310" y="457" class="muted">posts/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.md#L232</text>
+    <text x="66" y="479" class="muted">Bitte prüfen, ob hier „sind“ stehen sollte. Vorschlag: sind</text>
+
+    <line x1="28" y1="498" x2="1570" y2="498" class="line"/>
+    <circle cx="46" cy="526" r="7" fill="#d29922"/>
+    <text x="66" y="531" fill="#c9d1d9" font-weight="700">UPPERCASE_SENTENCE_START</text>
+    <text x="300" y="531" class="muted">posts/2026-08-19-dependabot-im-einsatz.md#L62</text>
+    <text x="66" y="553" class="muted">Dieser Satz fängt nicht mit einem großgeschriebenen Wort an.</text>
+
+    <line x1="28" y1="572" x2="1570" y2="572" class="line"/>
+  </g>
+</svg>

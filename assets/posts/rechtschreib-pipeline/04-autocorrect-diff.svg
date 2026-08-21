@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="520" viewBox="0 0 1400 520" role="img" aria-labelledby="title desc">
+  <title id="title">Diff einer automatisch angewendeten Rechtschreibkorrektur</title>
+  <desc id="desc">Vektorisierte GitHub Diff Ansicht mit der Änderung von klein zu halten zu kleinzuhalten.</desc>
+  <style>
+    .sans { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .text { fill: #e6edf3; }
+    .muted { fill: #8b949e; }
+  </style>
+  <rect width="1400" height="520" rx="18" fill="#0d1117"/>
+  <text x="34" y="54" class="sans text" font-size="28" font-weight="600">Autocorrect blog post spelling <tspan fill="#8b949e">#60</tspan></text>
+  <rect x="34" y="74" width="66" height="28" rx="14" fill="#da3633"/>
+  <text x="67" y="94" class="sans" fill="#fff" text-anchor="middle" font-size="13" font-weight="700">Open</text>
+  <text x="116" y="94" class="sans muted" font-size="13">github-actions[bot] wants to merge 1 commit into main</text>
+
+  <line x1="34" y1="126" x2="1366" y2="126" stroke="#30363d"/>
+  <text x="52" y="161" class="sans muted" font-size="14">Conversation</text>
+  <text x="170" y="161" class="sans muted" font-size="14">Commits 1</text>
+  <text x="258" y="161" class="sans muted" font-size="14">Checks 0</text>
+  <text x="340" y="161" class="sans text" font-size="14" font-weight="600">Files changed 1</text>
+  <line x1="34" y1="184" x2="1366" y2="184" stroke="#30363d"/>
+
+  <rect x="34" y="214" width="1332" height="260" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <rect x="34" y="214" width="1332" height="48" rx="8" fill="#161b22"/>
+  <text x="60" y="244" class="mono text" font-size="14" font-weight="600">posts/2026-08-19-wie-dieser-blog-gebaut-ist.md</text>
+  <line x1="34" y1="262" x2="1366" y2="262" stroke="#30363d"/>
+
+  <rect x="34" y="276" width="1332" height="34" fill="#161b22"/>
+  <text x="60" y="299" class="mono muted" font-size="13">@@ -67,7 +67,7 @@ Warum: Build und Runtime</text>
+
+  <g class="mono" font-size="15">
+    <text x="58" y="344" class="muted">67</text>
+    <text x="105" y="344" class="muted">67</text>
+    <text x="154" y="344" class="text">- einfache Deployments auch ohne Kubernetes</text>
+
+    <text x="58" y="379" class="muted">68</text>
+    <text x="105" y="379" class="muted">68</text>
+    <text x="154" y="379" class="text">- klare Trennung von Build und Runtime</text>
+
+    <rect x="34" y="394" width="1332" height="38" fill="#3b1d21"/>
+    <text x="58" y="419" fill="#f85149">70</text>
+    <text x="105" y="419" fill="#f85149">-</text>
+    <text x="154" y="419" fill="#ffa198">- Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche </text>
+    <rect x="777" y="400" width="122" height="25" rx="3" fill="#7d2d35"/>
+    <text x="790" y="419" fill="#ffa198">klein zu halten.</text>
+
+    <rect x="34" y="432" width="1332" height="38" fill="#162f1f"/>
+    <text x="58" y="457" fill="#3fb950">+</text>
+    <text x="105" y="457" fill="#3fb950">70</text>
+    <text x="154" y="457" fill="#7ee787">+ Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche </text>
+    <rect x="777" y="438" width="111" height="25" rx="3" fill="#1f6f3b"/>
+    <text x="790" y="457" fill="#7ee787">kleinzuhalten.</text>
+  </g>
+</svg>
