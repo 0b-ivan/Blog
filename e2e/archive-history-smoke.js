@@ -22,13 +22,32 @@ async function main() {
     const postHref = await firstPost.getAttribute('data-href');
     assert.ok(postHref, 'No post href found');
 
-    await page.goto(`${baseUrl}${postHref}`, { waitUntil: 'domcontentloaded' });
-    const versionBar = page.locator('.post-version-bar');
-    await versionBar.waitFor({ state: 'visible' });
-    assert.match(await versionBar.innerText(), /Version\s+v\d+/i);
+    const homeTagLink = firstPost.locator('a.tag-chip').first();
+    await homeTagLink.waitFor({ state: 'visible' });
+    assert.match(await homeTagLink.getAttribute('href'), /^\/tags\//);
 
-    const historyHref = await versionBar.locator('a[href^="/history/"]').getAttribute('href');
+    await page.goto(`${baseUrl}${postHref}`, { waitUntil: 'domcontentloaded' });
+    const terminal = page.locator('.terminal-post');
+    const versionFooter = page.locator('.post-version-footer');
+    await terminal.waitFor({ state: 'visible' });
+    await versionFooter.waitFor({ state: 'visible' });
+    assert.match(await versionFooter.innerText(), /Artikelversion\s+v\d+/i);
+
+    const terminalBox = await terminal.boundingBox();
+    const versionBox = await versionFooter.boundingBox();
+    assert.ok(terminalBox && versionBox && versionBox.y > terminalBox.y, 'Version footer must be below the article terminal');
+
+    const historyHref = await versionFooter.locator('a[href^="/history/"]').getAttribute('href');
     assert.ok(historyHref, 'Current post does not link to its version history');
+
+    const postTagLink = page.locator('.tag-list a.tag-chip').first();
+    await postTagLink.waitFor({ state: 'visible' });
+    const tagHref = await postTagLink.getAttribute('href');
+    assert.ok(tagHref?.startsWith('/tags/'), 'Post tag does not link to a tag page');
+
+    await page.goto(`${baseUrl}${tagHref}`, { waitUntil: 'domcontentloaded' });
+    await page.locator('.tag-results').waitFor({ state: 'visible' });
+    assert.ok(await page.locator('.collection-card').count() >= 1, 'Tag page does not contain matching posts');
 
     await page.goto(`${baseUrl}${historyHref}`, { waitUntil: 'domcontentloaded' });
     await page.locator('.history-list').waitFor({ state: 'visible' });
@@ -40,7 +59,7 @@ async function main() {
 
     await page.goto(`${baseUrl}${firstVersionHref}`, { waitUntil: 'domcontentloaded' });
     await page.locator('.terminal-post').waitFor({ state: 'visible' });
-    await page.locator('.post-version-bar').waitFor({ state: 'visible' });
+    await page.locator('.post-version-footer').waitFor({ state: 'visible' });
 
     await page.goto(`${baseUrl}/archive`, { waitUntil: 'domcontentloaded' });
     await page.locator('.history-panel h1').waitFor({ state: 'visible' });
@@ -48,12 +67,12 @@ async function main() {
 
     const archiveCards = page.locator('.archive-card');
     if (await archiveCards.count() > 0) {
-      await archiveCards.first().click();
+      await archiveCards.first().locator('.collection-card__title').click();
       await page.locator('.archive-badge').waitFor({ state: 'visible' });
     }
 
     assert.deepEqual(failures, [], failures.join('\n'));
-    console.log('Archive and article version history smoke test passed.');
+    console.log('Archive, version footer and tag navigation smoke test passed.');
   } finally {
     await browser.close();
   }
