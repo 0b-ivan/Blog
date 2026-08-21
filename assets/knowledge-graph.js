@@ -1,6 +1,6 @@
 (() => {
   const FORCE_GRAPH_SRC = 'https://cdn.jsdelivr.net/npm/force-graph@1.51.4/dist/force-graph.min.js';
-  const MAX_RELATED_POSTS = 8;
+  const MAX_RELATED_POSTS = 10;
   const COLORS = {
     current: '#f2913d',
     article: '#5b9cf6',
