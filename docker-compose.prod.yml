@@ -4,4 +4,16 @@ services:
     container_name: kernel-notes-blog
     ports:
       - "1888:8080"
+    volumes:
+      - blog-posts:/app/posts:ro
+      - blog-snippets:/app/snippets:ro
+      - blog-post-assets:/app/assets/posts:ro
     restart: unless-stopped
+
+volumes:
+  blog-posts:
+    name: kernel-notes-blog-posts
+  blog-snippets:
+    name: kernel-notes-blog-snippets
+  blog-post-assets:
+    name: kernel-notes-blog-post-assets
