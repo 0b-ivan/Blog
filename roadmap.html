@@ -9,10 +9,8 @@
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/roadmap.css" />
   </head>
-  <body>
+  <body class="roadmap-page">
     <div class="bg-grid" aria-hidden="true"></div>
-    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
-    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
 
     <header class="site-header">
       <a class="logo" href="/">Kernel Notes</a>
@@ -29,44 +27,15 @@
 
     <main class="roadmap-shell">
       <article id="roadmap-content" class="roadmap-content" aria-live="polite">
-        <p class="roadmap-loading">Roadmap wird geladen…</p>
+        <p class="roadmap-loading">Roadmap wird gezeichnet…</p>
       </article>
-      <p class="roadmap-source"><a class="read-more" href="/roadmap.md">Markdown-Rohdatei ansehen</a></p>
+      <p class="roadmap-source">
+        <a class="read-more" href="/roadmap.md">Markdown-Rohdatei ansehen</a>
+      </p>
     </main>
 
     <script src="/node_modules/markdown-it/dist/browser/markdown-it.umd.min.js"></script>
-    <script>
-      (() => {
-        const root = document.querySelector('#roadmap-content');
-        if (typeof window.markdownit !== 'function') {
-          root.innerHTML = '<h1>Roadmap</h1><p>Der Markdown-Renderer konnte nicht geladen werden.</p>';
-          root.dataset.roadmapReady = 'error';
-          return;
-        }
-
-        const renderer = window.markdownit({
-          html: false,
-          linkify: true,
-          typographer: true
-        });
-
-        fetch('/roadmap.md')
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
-            return response.text();
-          })
-          .then((markdown) => {
-            root.innerHTML = renderer.render(markdown);
-            root.dataset.roadmapReady = 'true';
-          })
-          .catch((error) => {
-            root.innerHTML = `<h1>Roadmap</h1><p>Die Roadmap konnte nicht geladen werden: ${error.message}</p>`;
-            root.dataset.roadmapReady = 'error';
-          });
-      })();
-    </script>
+    <script src="/assets/roadmap.js"></script>
     <script src="/assets/tag-navigation.js"></script>
   </body>
 </html>
