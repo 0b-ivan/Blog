@@ -218,3 +218,5 @@ veröffentlichen
 Die Pipeline soll Fehler früh finden und mir Arbeit abnehmen. Sie soll aber nicht entscheiden, was ich geschrieben haben wollte.
 
 Für mich ist das die passende Mischung aus Accessibility und Engineering: **Technik reduziert die Fehlerquote, der Mensch behält die Kontrolle.**
+
+<script src="/assets/base64-image-fallback.js"></script>
