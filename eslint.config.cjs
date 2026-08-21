@@ -29,7 +29,8 @@ module.exports = [
       'assets/newsletter-config.js',
       'assets/newsletter.js',
       'assets/tag-navigation.js',
-      'assets/knowledge-graph.js'
+      'assets/knowledge-graph.js',
+      'assets/roadmap.js'
     ],
     languageOptions: {
       globals: {
