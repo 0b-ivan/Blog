@@ -1,0 +1,76 @@
+name: Repair proofreading screenshots as SVG
+
+on:
+  push:
+    branches:
+      - fix/use-png-proofread-screenshots
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/use-png-proofread-screenshots
+
+      - name: Install WebP decoder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y webp
+
+      - name: Build full-resolution SVG assets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dir="assets/posts/rechtschreib-pipeline"
+
+          make_svg() {
+            src="$1"
+            dst="$2"
+            width="$3"
+            height="$4"
+            title="$5"
+
+            tmp_webp="$(mktemp --suffix=.webp)"
+            tmp_png="$(mktemp --suffix=.png)"
+
+            base64 --decode "$dir/$src" > "$tmp_webp"
+            dwebp "$tmp_webp" -o "$tmp_png"
+
+            png64="$(base64 -w 0 "$tmp_png")"
+
+            cat > "$dir/$dst" <<EOF
+          <svg xmlns="http://www.w3.org/2000/svg" width="$width" height="$height" viewBox="0 0 $width $height" role="img" aria-labelledby="title desc">
+            <title id="title">$title</title>
+            <desc id="desc">GitHub-Screenshot in voller Auflösung.</desc>
+            <image width="$width" height="$height" href="data:image/png;base64,$png64" preserveAspectRatio="xMidYMid meet"/>
+          </svg>
+          EOF
+
+            rm -f "$tmp_webp" "$tmp_png"
+          }
+
+          make_svg "01-proofread-summary.webp" "01-proofread-summary.svg" 2048 763 "Proofread Summary mit LanguageTool-Hinweisen"
+          make_svg "02-autocorrect-workflow.webp" "02-autocorrect-workflow.svg" 1067 848 "Manueller Start des Autocorrect-Workflows"
+          make_svg "03-autocorrect-pr.webp" "03-autocorrect-pr.svg" 1067 866 "Automatisch erzeugter Korrektur-Pull-Request"
+          make_svg "04-autocorrect-diff.webp" "04-autocorrect-diff.svg" 1246 429 "Diff einer automatisch angewendeten Rechtschreibkorrektur"
+
+          sed -i 's/\.webp)/.svg)/g' posts/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md
+          sed -i '/base64-image-fallback\.js/d' posts/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md
+
+          rm -f "$dir"/*.webp
+          rm -f assets/base64-image-fallback.js
+          rm -f .github/workflows/repair-proofread-svgs.yml
+
+      - name: Commit clean SVG fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Use SVG assets for proofreading screenshots"
+          git push origin HEAD:fix/use-png-proofread-screenshots
