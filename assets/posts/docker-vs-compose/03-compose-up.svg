@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+  <title id="title">Docker Compose im Terminal</title>
+  <desc id="desc">Terminalfenster mit docker compose up und docker compose ps für zwei Services.</desc>
+  <rect width="1400" height="820" rx="28" fill="#0d141c"/>
+  <rect width="1400" height="64" rx="28" fill="#202b36"/>
+  <rect y="36" width="1400" height="28" fill="#202b36"/>
+  <circle cx="38" cy="32" r="10" fill="#ff5f56"/>
+  <circle cx="70" cy="32" r="10" fill="#ffbd2e"/>
+  <circle cx="102" cy="32" r="10" fill="#27c93f"/>
+  <text x="700" y="40" text-anchor="middle" fill="#c8d3dc" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20">terminal — docker compose</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="26">
+    <text x="48" y="120" fill="#7ee2a8">$</text>
+    <text x="82" y="120" fill="#e8edf2">docker compose up -d</text>
+    <text x="48" y="172" fill="#94a7b7">[+] Running 3/3</text>
+    <text x="80" y="214" fill="#7ee2a8">✔</text><text x="120" y="214" fill="#dbe4eb">Network demo_default</text><text x="560" y="214" fill="#94a7b7">Created</text>
+    <text x="80" y="256" fill="#7ee2a8">✔</text><text x="120" y="256" fill="#dbe4eb">Container demo-redis-1</text><text x="560" y="256" fill="#94a7b7">Started</text>
+    <text x="80" y="298" fill="#7ee2a8">✔</text><text x="120" y="298" fill="#dbe4eb">Container demo-web-1</text><text x="560" y="298" fill="#94a7b7">Started</text>
+
+    <text x="48" y="378" fill="#7ee2a8">$</text>
+    <text x="82" y="378" fill="#e8edf2">docker compose ps</text>
+
+    <text x="48" y="436" fill="#6baed6">NAME</text>
+    <text x="360" y="436" fill="#6baed6">IMAGE</text>
+    <text x="690" y="436" fill="#6baed6">STATUS</text>
+    <text x="960" y="436" fill="#6baed6">PORTS</text>
+
+    <text x="48" y="488" fill="#dbe4eb">demo-web-1</text>
+    <text x="360" y="488" fill="#dbe4eb">nginx:alpine</text>
+    <text x="690" y="488" fill="#dbe4eb">Up 4 seconds</text>
+    <text x="960" y="488" fill="#dbe4eb">0.0.0.0:8080-&gt;80/tcp</text>
+
+    <text x="48" y="540" fill="#dbe4eb">demo-redis-1</text>
+    <text x="360" y="540" fill="#dbe4eb">redis:7-alpine</text>
+    <text x="690" y="540" fill="#dbe4eb">Up 4 seconds</text>
+    <text x="960" y="540" fill="#647687">—</text>
+
+    <text x="48" y="630" fill="#7ee2a8">$</text>
+    <text x="82" y="630" fill="#e8edf2">docker compose logs -f</text>
+    <rect x="390" y="606" width="14" height="30" fill="#e8edf2" opacity="0.85"/>
+  </g>
+  <text x="48" y="758" fill="#647687" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20">Ein Stack, gemeinsam gestartet und verwaltet.</text>
+</svg>
