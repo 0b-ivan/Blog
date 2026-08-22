@@ -9,7 +9,7 @@
     "test": "node --test tests/*.node.js"
   },
   "dependencies": {
-    "@duckdb/node-api": "1.5.5",
+    "@duckdb/node-api": "1.5.5-r.4",
     "@huggingface/transformers": "3.8.1",
     "gray-matter": "4.0.3"
   }
