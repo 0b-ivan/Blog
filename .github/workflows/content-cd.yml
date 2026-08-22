@@ -75,7 +75,7 @@ jobs:
           HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
         run: |
           test -n "$HETZNER_HOST" || { echo "HETZNER_HOST is missing"; exit 1; }
-          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing"; exit 1; }
+          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing (recommended: blog-deploy)"; exit 1; }
           test -n "$HETZNER_SSH_KEY" || { echo "HETZNER_SSH_KEY is missing"; exit 1; }
           test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
 
@@ -135,6 +135,7 @@ jobs:
           ARCHIVE="/tmp/kernel-notes-content-${COMMIT_SHA}.tgz"
           STAGE="/tmp/kernel-notes-content-${COMMIT_SHA}"
           HELPER_IMAGE="alpine:3.22"
+          SEARCH_CONTAINER="kernel-notes-search"
 
           rm -rf "$STAGE"
           mkdir -p "$STAGE"
@@ -166,12 +167,36 @@ jobs:
 
           rm -rf "$STAGE" "$ARCHIVE"
 
+          if docker inspect "$SEARCH_CONTAINER" >/dev/null 2>&1; then
+            echo "Restarting Kernel Grep to incrementally reindex changed content."
+            docker restart "$SEARCH_CONTAINER" >/dev/null
+
+            search_healthy=false
+            for _ in $(seq 1 90); do
+              SEARCH_HEALTH="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
+              if [ "$SEARCH_HEALTH" = "healthy" ]; then
+                search_healthy=true
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "$search_healthy" != "true" ]; then
+              echo "Kernel Grep did not become healthy after the content update."
+              docker logs --tail=100 "$SEARCH_CONTAINER" || true
+              exit 1
+            fi
+          fi
+
           if docker inspect kernel-notes-blog >/dev/null 2>&1; then
             sleep 2
             curl -fsS http://127.0.0.1:1888/healthz >/dev/null
             curl -fsS http://127.0.0.1:1888/api/posts >/dev/null
             curl -fsS http://127.0.0.1:1888/archive >/dev/null
-            echo "Content ${COMMIT_SHA} deployed with article history and without rebuilding the app image."
+            if docker inspect "$SEARCH_CONTAINER" >/dev/null 2>&1; then
+              curl -fsS 'http://127.0.0.1:1888/api/search?q=Kernel&limit=1' >/dev/null
+            fi
+            echo "Content ${COMMIT_SHA} deployed with article history and Kernel Grep reindexing, without rebuilding the app image."
           else
             echo "Content volumes prepared; blog container is not running yet."
           fi
