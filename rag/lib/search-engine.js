@@ -53,8 +53,10 @@ class SemanticSearchEngine {
 
     const safeLimit = Math.min(12, Math.max(1, Number(limit) || 8));
     const queryEmbedding = await this.embedder.embedQuery(normalizedQuery);
-    return rankChunks(this.chunks, queryEmbedding, safeLimit).map((result) => ({
+    return rankChunks(this.chunks, queryEmbedding, normalizedQuery, safeLimit).map((result) => ({
       score: result.score,
+      relevanceScore: result.relevanceScore,
+      lexicalScore: result.lexicalScore,
       title: result.title,
       slug: result.slug,
       url: `/posts/${result.slug}`,
