@@ -20,8 +20,7 @@ function embedText(value) {
   for (const token of tokens) {
     const digest = crypto.createHash('sha256').update(token).digest();
     const index = digest.readUInt16BE(0) % DIMENSIONS;
-    const sign = (digest[2] & 1) === 0 ? 1 : -1;
-    vector[index] += sign;
+    vector[index] += 1;
   }
 
   return normalize(vector);
@@ -29,11 +28,11 @@ function embedText(value) {
 
 class HashEmbedder {
   async embedDocuments(texts) {
-    return texts.map((text) => embedText(`passage: ${text}`));
+    return texts.map(embedText);
   }
 
   async embedQuery(text) {
-    return embedText(`query: ${text}`);
+    return embedText(text);
   }
 }
 
