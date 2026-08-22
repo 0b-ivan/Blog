@@ -30,7 +30,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/build-info.json ./build-info.json
-COPY index.html about.html impressum.html datenschutz.html roadmap.html roadmap.md script.js ./
+COPY index.html about.html grep.html impressum.html datenschutz.html roadmap.html roadmap.md script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets
 COPY server.js enhanced-server.js privacy-server.js ./
@@ -44,6 +44,7 @@ COPY post-history /content/post-history
 
 ENV ARCHIVE_DIR=/content/archive
 ENV POST_HISTORY_DIR=/content/post-history
+ENV SEARCH_SERVICE_URL=http://search:8090/search
 
 EXPOSE 8080
 CMD ["privacy-server.js"]
