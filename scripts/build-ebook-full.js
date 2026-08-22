@@ -62,7 +62,7 @@ async function expandSnippetLinks(markdown, options = {}) {
       snippet = await fs.readFile(filePath, 'utf8');
     } catch (error) {
       if (error.code === 'ENOENT') {
-        throw new Error(`Referenced snippet does not exist: ${reference}`);
+        throw new Error(`Referenced snippet does not exist: ${reference}`, { cause: error });
       }
       throw error;
     }
