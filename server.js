@@ -6,6 +6,13 @@ const MarkdownIt = require('markdown-it');
 const hljs = require('highlight.js/lib/common');
 const mdFootnote = require('markdown-it-footnote');
 const mdContainer = require('markdown-it-container');
+const mdAbbr = require('markdown-it-abbr');
+const {
+  canonicalGlossaryKey,
+  glossarySlug,
+  renderGlossaryPage,
+  withGlossaryDefinitions
+} = require('./lib/glossary');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -166,6 +173,23 @@ const md = new MarkdownIt({
 });
 
 md.use(mdFootnote);
+md.use(mdAbbr);
+
+const defaultAbbrOpenRule = md.renderer.rules.abbr_open
+  || ((tokens, idx, options, env, self) => self.renderToken(tokens, idx, options));
+md.renderer.rules.abbr_open = (tokens, idx, options, env, self) => {
+  const token = tokens[idx];
+  const label = tokens[idx + 1]?.content || '';
+  const key = canonicalGlossaryKey(label);
+
+  if (key) {
+    token.attrJoin('class', 'glossary-term');
+    token.attrSet('data-glossary-key', key);
+    token.attrSet('data-glossary-slug', glossarySlug(key));
+  }
+
+  return defaultAbbrOpenRule(tokens, idx, options, env, self);
+};
 
 function transformWikiLinks(content) {
   return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match, target, label) => {
@@ -249,7 +273,7 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
-      const markdownContent = transformWikiLinks(recovered.content);
+      const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content));
 
       return {
         slug,
@@ -541,6 +565,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/styles.css?v=20260819-2" />
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
+    <link rel="stylesheet" href="/assets/css/glossary.css" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -553,6 +578,7 @@ function renderPostPage(post, relatedPosts = []) {
         <a href="/#posts">Artikel</a>
         <a href="/#topics">Themen</a>
         <a href="/snippets/">Snippets</a>
+        <a href="/glossary">Glossar</a>
         <a href="/#about">About</a>
         <a href="/impressum">Impressum</a>
       </nav>
@@ -593,6 +619,7 @@ function renderPostPage(post, relatedPosts = []) {
       }
     </script>
     <script src="/script.js?v=20260819-2"></script>
+    <script src="/assets/glossary.js" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
@@ -650,6 +677,10 @@ function createApp(options = {}) {
       console.error(error);
       res.status(500).send('Could not generate RSS feed');
     }
+  });
+
+  app.get('/glossary', (_req, res) => {
+    res.type('html').send(renderGlossaryPage());
   });
 
   app.get('/posts/:slug', async (req, res) => {
@@ -716,5 +747,6 @@ module.exports = {
   renderRelatedPosts,
   getLegalInfo,
   readPosts,
+  renderGlossaryPage,
   renderPostPage
 };

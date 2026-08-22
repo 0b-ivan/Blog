@@ -49,7 +49,8 @@ module.exports = [
       'assets/knowledge-graph.js',
       'assets/roadmap.js',
       'assets/grep.js',
-      'assets/kernel-grep-overlay.js'
+      'assets/kernel-grep-overlay.js',
+      'assets/glossary.js'
     ],
     languageOptions: {
       globals: {
