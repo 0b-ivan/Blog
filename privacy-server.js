@@ -1,4 +1,5 @@
 const express = require('express');
+const fs = require('node:fs/promises');
 const path = require('node:path');
 const enhanced = require('./enhanced-server');
 
@@ -57,20 +58,40 @@ function stripExternalFontLinks(html) {
 
 function localizeBrowserDependencies(html) {
   return stripExternalFontLinks(html)
-    .replace(
+    .replaceAll(
       'https://cdn.jsdelivr.net/npm/medium-zoom@1.1.0/dist/medium-zoom.min.js',
       '/vendor/medium-zoom/medium-zoom.min.js'
     )
-    .replace(
+    .replaceAll(
       'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs',
       '/vendor/mermaid/mermaid.esm.min.mjs'
     )
-    .replace(
+    .replaceAll(
       'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/github-dark.min.css',
       '/vendor/highlight/styles/github-dark.min.css'
     )
-    .replace(
+    .replaceAll(
       'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js',
+      '/vendor/highlight/highlight.min.js'
+    )
+    .replaceAll(
+      '/node_modules/markdown-it/dist/browser/markdown-it.umd.min.js',
+      '/vendor/markdown-it/markdown-it.umd.min.js'
+    );
+}
+
+function localizeClientScript(source) {
+  return source
+    .replaceAll(
+      'https://cdn.jsdelivr.net/npm/force-graph@1.51.4/dist/force-graph.min.js',
+      '/vendor/force-graph/force-graph.min.js'
+    )
+    .replaceAll(
+      'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@${SNIPPET_HIGHLIGHT_VERSION}/build/styles/github-dark.min.css',
+      '/vendor/highlight/styles/github-dark.min.css'
+    )
+    .replaceAll(
+      'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@${SNIPPET_HIGHLIGHT_VERSION}/build/highlight.min.js',
       '/vendor/highlight/highlight.min.js'
     );
 }
@@ -81,16 +102,16 @@ function addPrivacyNavigation(html) {
   }
 
   let output = html
-    .replace(
+    .replaceAll(
       '<a href="/impressum">Impressum</a>',
       '<a href="/datenschutz">Datenschutz</a>\n        <a href="/impressum">Impressum</a>'
     )
-    .replace(
+    .replaceAll(
       '<a href="impressum.html">Impressum</a>',
       '<a href="datenschutz.html">Datenschutz</a>\n        <a href="impressum.html">Impressum</a>'
     );
 
-  output = output.replace(
+  output = output.replaceAll(
     '<p><a class="read-more" href="/impressum">Zum Impressum</a></p>',
     '<p><a class="read-more" href="/datenschutz">Zum Datenschutz</a></p>\n        <p><a class="read-more" href="/impressum">Zum Impressum</a></p>'
   );
@@ -111,6 +132,16 @@ function vendorStatic(relativePath) {
   });
 }
 
+async function sendHardenedHtml(res, fileName) {
+  const html = await fs.readFile(path.join(root, fileName), 'utf8');
+  res.type('html').send(hardenHtml(html));
+}
+
+async function sendLocalizedScript(res, fileName) {
+  const source = await fs.readFile(path.join(root, fileName), 'utf8');
+  res.type('application/javascript').send(localizeClientScript(source));
+}
+
 function createApp() {
   const app = express();
   app.disable('x-powered-by');
@@ -129,16 +160,72 @@ function createApp() {
   app.use('/vendor/mermaid', vendorStatic('mermaid/dist'));
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
 
+  app.get('/script.js', async (_req, res) => {
+    try {
+      await sendLocalizedScript(res, 'script.js');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load script');
+    }
+  });
+
+  app.get('/assets/knowledge-graph.js', async (_req, res) => {
+    try {
+      const source = await fs.readFile(path.join(root, 'assets', 'knowledge-graph.js'), 'utf8');
+      res.type('application/javascript').send(localizeClientScript(source));
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load graph script');
+    }
+  });
+
+  app.get(['/index.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'index.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load page');
+    }
+  });
+
+  app.get(['/impressum', '/impressum.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'impressum.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load legal notice');
+    }
+  });
+
+  app.get(['/roadmap', '/roadmap.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'roadmap.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load roadmap');
+    }
+  });
+
+  app.get(['/snippets', '/snippets/', '/snippets/index.html'], async (_req, res) => {
+    try {
+      const html = await fs.readFile(path.join(root, 'snippets', 'index.html'), 'utf8');
+      res.type('html').send(hardenHtml(html));
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load snippets');
+    }
+  });
+
+  app.get(['/datenschutz', '/datenschutz.html'], (_req, res) => {
+    res.sendFile(path.join(root, 'datenschutz.html'));
+  });
+
   app.use((req, res, next) => {
     if (BLOCKED_PATHS.some((pattern) => pattern.test(req.path))) {
       res.status(404).type('text').send('Not found');
       return;
     }
     next();
-  });
-
-  app.get(['/datenschutz', '/datenschutz.html'], (_req, res) => {
-    res.sendFile(path.join(root, 'datenschutz.html'));
   });
 
   app.use((_req, res, next) => {
@@ -171,6 +258,7 @@ module.exports = {
   BLOCKED_PATHS,
   stripExternalFontLinks,
   localizeBrowserDependencies,
+  localizeClientScript,
   addPrivacyNavigation,
   hardenHtml,
   createApp,
