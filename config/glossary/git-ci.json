@@ -1,0 +1,183 @@
+{
+  "Branch": {
+    "full": "Git Branch",
+    "short": "Unabhängiger Entwicklungszweig innerhalb eines Git-Repositories.",
+    "description": "Ein Branch erlaubt Änderungen getrennt vom Hauptstand zu entwickeln und später kontrolliert zusammenzuführen.",
+    "aliases": [
+      "Git Branch"
+    ]
+  },
+  "Commit": {
+    "full": "Git Commit",
+    "short": "Versionierter Änderungspunkt in einem Git-Repository.",
+    "description": "Ein Commit speichert einen definierten Stand von Änderungen zusammen mit Metadaten und einer eindeutigen Kennung.",
+    "aliases": [
+      "Git Commit"
+    ]
+  },
+  "Commit-SHA": {
+    "full": "Commit SHA",
+    "short": "Eindeutige Hash-Kennung eines Git-Commits.",
+    "description": "Die SHA eines Commits identifiziert einen konkreten Repository-Stand und eignet sich deshalb auch als unveränderlicher Versionsbezug für Deployments.",
+    "aliases": [
+      "Commit-SHA",
+      "SHA-Image",
+      "SHA-getaggten"
+    ]
+  },
+  "Dependabot": {
+    "full": "GitHub Dependabot",
+    "short": "GitHub-Dienst zum Erkennen und Aktualisieren von Software-Abhängigkeiten.",
+    "description": "Dependabot kann bekannte Schwachstellen melden und Pull Requests für Sicherheits- oder Versionsupdates von Dependencies erzeugen.",
+    "aliases": []
+  },
+  "Dependency": {
+    "full": "Software Dependency",
+    "short": "Externe Bibliothek oder Komponente, von der ein Projekt abhängt.",
+    "description": "Dependencies liefern wiederverwendbare Funktionen, müssen aber hinsichtlich Versionen, Kompatibilität und Sicherheitsrisiken gepflegt werden.",
+    "aliases": [
+      "Dependencies",
+      "Dependency"
+    ]
+  },
+  "Dependency Graph": {
+    "full": "Dependency Graph",
+    "short": "Darstellung der direkten und indirekten Abhängigkeiten eines Projekts.",
+    "description": "Ein Dependency Graph zeigt, welche Pakete unmittelbar verwendet werden und welche transitiv über andere Abhängigkeiten ins Projekt gelangen.",
+    "aliases": []
+  },
+  "Development Dependency": {
+    "full": "Development Dependency",
+    "short": "Abhängigkeit, die vor allem für Entwicklung, Tests oder Builds benötigt wird.",
+    "description": "Development Dependencies werden typischerweise nicht als Teil der eigentlichen Produktionslaufzeit benötigt, können aber Build- und Lieferkettenrisiken enthalten.",
+    "aliases": [
+      "Development-Dependency",
+      "Development-Dependencies"
+    ]
+  },
+  "Diff": {
+    "full": "Diff",
+    "short": "Darstellung der Unterschiede zwischen zwei Versionen.",
+    "description": "Ein Diff zeigt hinzugefügte, entfernte oder geänderte Zeilen und ist eine zentrale Grundlage für Code- und Textreviews.",
+    "aliases": []
+  },
+  "Git": {
+    "full": "Git",
+    "short": "Verteiltes Versionskontrollsystem für Dateien und Quellcode.",
+    "description": "Git speichert Änderungshistorien, Branches und Commits lokal und ermöglicht kollaborative Entwicklungs- und Review-Prozesse.",
+    "aliases": []
+  },
+  "Linting": {
+    "full": "Linting",
+    "short": "Automatisierte statische Prüfung von Quelltext auf Fehler und Stilprobleme.",
+    "description": "Ein Linter untersucht Code ohne ihn vollständig auszuführen und meldet beispielsweise Syntaxfehler, problematische Muster oder Regelverstöße.",
+    "aliases": [
+      "Linter"
+    ]
+  },
+  "Lock-Datei": {
+    "full": "Lock File",
+    "short": "Datei, die konkret aufgelöste Dependency-Versionen festschreibt.",
+    "description": "Eine Lock-Datei sorgt dafür, dass Installationen möglichst reproduzierbar dieselben Paketversionen und transitiven Abhängigkeiten verwenden.",
+    "aliases": [
+      "Lock-Dateien",
+      "Lock File",
+      "Lock-File"
+    ]
+  },
+  "Manifest": {
+    "full": "Dependency Manifest",
+    "short": "Datei, in der ein Projekt seine Abhängigkeiten und Metadaten deklariert.",
+    "description": "Manifest-Dateien wie package.json beschreiben gewünschte Dependencies und Projektinformationen, während Lock-Dateien die konkret aufgelösten Versionen festhalten.",
+    "aliases": [
+      "Manifest-Datei",
+      "Manifest-Dateien"
+    ]
+  },
+  "Pipeline": {
+    "full": "Pipeline",
+    "short": "Automatisierte Kette aufeinanderfolgender Verarbeitungsschritte.",
+    "description": "In CI/CD werden beispielsweise Build, Tests, Scans und Deployment als Pipeline organisiert, wobei ein Schritt auf dem Ergebnis vorheriger Schritte aufbaut.",
+    "aliases": []
+  },
+  "Pull Request": {
+    "full": "Pull Request",
+    "short": "Vorschlag, Änderungen aus einem Branch in einen anderen zu übernehmen.",
+    "description": "Ein Pull Request bündelt Diff, Diskussion, Reviews und CI-Ergebnisse und ermöglicht eine kontrollierte Freigabe vor dem Merge.",
+    "aliases": [
+      "Pull Requests",
+      "PR",
+      "PRs",
+      "Update-PR",
+      "Update-PRs",
+      "Korrektur-PR"
+    ]
+  },
+  "Regression": {
+    "full": "Regression",
+    "short": "Fehler, durch den eine zuvor funktionierende Eigenschaft nach einer Änderung wieder kaputtgeht.",
+    "description": "Regressionstests prüfen gezielt, dass behobene Fehler und bestehende Funktionen bei neuen Änderungen weiterhin korrekt bleiben.",
+    "aliases": [
+      "Regressionen"
+    ]
+  },
+  "Release Notes": {
+    "full": "Release Notes",
+    "short": "Dokumentation der Änderungen einer neuen Softwareversion.",
+    "description": "Release Notes beschreiben neue Funktionen, Fehlerbehebungen, bekannte Probleme und mögliche inkompatible Änderungen.",
+    "aliases": []
+  },
+  "Repository": {
+    "full": "Repository",
+    "short": "Versionierter Projektspeicher, typischerweise unter Git.",
+    "description": "Ein Repository enthält Dateien, Historie, Branches und Commits eines Projekts und bildet die Grundlage für kollaborative Entwicklung.",
+    "aliases": [
+      "Repositorys",
+      "Repositories",
+      "Repo"
+    ]
+  },
+  "Runtime Dependency": {
+    "full": "Runtime Dependency",
+    "short": "Abhängigkeit, die während des tatsächlichen Betriebs einer Anwendung benötigt wird.",
+    "description": "Eine Runtime Dependency befindet sich im produktiven Ausführungspfad und kann deshalb ein anderes Risiko als eine reine Development Dependency haben.",
+    "aliases": [
+      "Runtime-Dependency",
+      "Runtime-Dependencies"
+    ]
+  },
+  "Scope": {
+    "full": "Scope",
+    "short": "Geltungs- oder Wirkungsbereich eines Findings oder einer Konfiguration.",
+    "description": "Im Dependency- und Security-Kontext beschreibt Scope beispielsweise, ob eine Abhängigkeit nur Entwicklung oder auch die produktive Laufzeit betrifft.",
+    "aliases": []
+  },
+  "Transitive Dependency": {
+    "full": "Transitive Dependency",
+    "short": "Abhängigkeit, die nicht direkt, sondern über eine andere Dependency eingebunden wird.",
+    "description": "Transitive Dependencies stehen meist nicht selbst im eigenen Manifest, sind aber trotzdem Teil des installierten Dependency-Baums.",
+    "aliases": [
+      "transitive Dependency",
+      "transitive Dependencies",
+      "transitiv eingebunden"
+    ]
+  },
+  "Version Update": {
+    "full": "Version Update",
+    "short": "Aktualisierung einer Dependency auf eine neuere Version ohne konkreten Security-Anlass.",
+    "description": "Version Updates halten Abhängigkeiten regelmäßig aktuell und reduzieren damit große spätere Versionssprünge.",
+    "aliases": [
+      "Version Updates"
+    ]
+  },
+  "Workflow": {
+    "full": "Automation Workflow",
+    "short": "Definierte Folge automatisierter Schritte, beispielsweise in GitHub Actions.",
+    "description": "Ein Workflow beschreibt Trigger, Jobs und einzelne Schritte für Aufgaben wie Tests, Builds, Korrekturen oder Deployments.",
+    "aliases": [
+      "Workflows",
+      "Autocorrect Workflow",
+      "Autocorrect-Workflow"
+    ]
+  }
+}

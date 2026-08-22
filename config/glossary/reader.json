@@ -1,0 +1,116 @@
+{
+  "Algorithmus": {
+    "full": "Algorithmus",
+    "short": "Definierte Folge von Regeln oder Schritten zur Lösung einer Aufgabe.",
+    "description": "In Software verarbeitet ein Algorithmus Eingaben nach festgelegten Regeln und erzeugt daraus ein Ergebnis, beispielsweise eine Sortierung oder Empfehlung.",
+    "aliases": ["Algorithmen"]
+  },
+  "Authentifizierung": {
+    "full": "Authentication",
+    "short": "Prüfung, ob eine Person oder ein System tatsächlich die behauptete Identität besitzt.",
+    "description": "Authentifizierung erfolgt beispielsweise über Passwort, Schlüssel, Zertifikat oder einen externen Identity Provider und ist von der anschließenden Berechtigungsprüfung zu unterscheiden.",
+    "aliases": ["Authentication"]
+  },
+  "Audit": {
+    "full": "Audit",
+    "short": "Systematische Prüfung eines Systems, Prozesses oder Sicherheitszustands.",
+    "description": "Ein Audit bewertet anhand definierter Kriterien, ob Anforderungen erfüllt werden und welche Abweichungen oder Risiken bestehen.",
+    "aliases": ["Audits"]
+  },
+  "Debugging": {
+    "full": "Debugging",
+    "short": "Systematische Suche nach der Ursache eines Software- oder Laufzeitfehlers.",
+    "description": "Beim Debugging werden Verhalten, Logs, Zustände und Eingaben untersucht, bis die Ursache eines Fehlers nachvollziehbar und reproduzierbar ist.",
+    "aliases": []
+  },
+  "Docker Network": {
+    "full": "Docker Network",
+    "short": "Virtuelles Netzwerk, über das Docker-Container miteinander kommunizieren können.",
+    "description": "Docker Networks isolieren und verbinden Container. Docker Compose legt für einen Stack standardmäßig ein gemeinsames Netzwerk an.",
+    "aliases": ["Docker-Netzwerk"]
+  },
+  "Horizontal Scaling": {
+    "full": "Horizontal Scaling",
+    "short": "Skalierung durch zusätzliche Instanzen oder Rechner statt durch einen größeren einzelnen Rechner.",
+    "description": "Horizontale Skalierung verteilt Last auf mehrere gleichartige Instanzen und erfordert häufig gemeinsame Datenhaltung, Load Balancing oder Orchestrierung.",
+    "aliases": ["horizontale Skalierung"]
+  },
+  "HTML": {
+    "full": "HyperText Markup Language",
+    "short": "Standard-Auszeichnungssprache für die Struktur von Webseiten.",
+    "description": "HTML beschreibt Elemente wie Überschriften, Absätze, Links und Formulare, die ein Browser anschließend darstellt.",
+    "aliases": []
+  },
+  "Interpunktion": {
+    "full": "Interpunktion",
+    "short": "Regeln und Verwendung von Satzzeichen wie Komma, Punkt oder Doppelpunkt.",
+    "description": "Interpunktion strukturiert geschriebene Sprache und beeinflusst Lesbarkeit sowie Bedeutung eines Satzes.",
+    "aliases": []
+  },
+  "Overhead": {
+    "full": "Overhead",
+    "short": "Zusätzlicher Aufwand, der für Verwaltung oder technische Rahmenbedingungen entsteht.",
+    "description": "Overhead kann Rechenleistung, Speicher, Betriebsaufwand oder organisatorische Arbeit bezeichnen, die nicht direkt zur eigentlichen Nutzfunktion gehört.",
+    "aliases": []
+  },
+  "Parameter Binding": {
+    "full": "Parameter Binding",
+    "short": "Sichere Zuordnung konkreter Werte zu Platzhaltern einer Datenbankabfrage oder Funktion.",
+    "description": "Beim Datenbankzugriff trennt Parameter Binding SQL-Struktur und Werte. Zusätzlich kann dabei der Datentyp eines Parameters explizit vorgegeben werden.",
+    "aliases": ["Parameter-Binding"]
+  },
+  "Plain Text": {
+    "full": "Plain Text",
+    "short": "Reiner Text ohne proprietäre Dokumentformatierung.",
+    "description": "Plain Text lässt sich mit einfachen Editoren lesen, gut versionieren und unabhängig von einer bestimmten Anwendung verarbeiten.",
+    "aliases": []
+  },
+  "Query": {
+    "full": "Query",
+    "short": "Anfrage an eine Suchmaschine, Datenbank oder einen anderen Abfragedienst.",
+    "description": "Im Suchkontext ist die Query die vom Nutzer eingegebene Suchanfrage; Datenbanken verwenden Queries zum gezielten Lesen oder Verändern von Daten.",
+    "aliases": ["Queries", "Suchanfrage"]
+  },
+  "Secure by default": {
+    "full": "Secure by Default",
+    "short": "Grundsatz, bei dem die Standardkonfiguration bereits möglichst sicher gewählt ist.",
+    "description": "Secure by default bedeutet, dass Nutzer nicht erst manuell unsichere Vorgaben korrigieren müssen, etwa weil unnötige Ports standardmäßig geschlossen bleiben.",
+    "aliases": ["secure by default"]
+  },
+  "Session Manager": {
+    "full": "AWS Systems Manager Session Manager",
+    "short": "AWS-Dienst für administrativen Zugriff auf verwaltete Instanzen ohne klassischen eingehenden SSH-Zugang.",
+    "description": "Session Manager vermittelt Sitzungen über AWS Systems Manager und kann dadurch administrative Zugriffe ohne öffentlich erreichbaren SSH-Port ermöglichen.",
+    "aliases": ["AWS Systems Manager Session Manager"]
+  },
+  "SQL": {
+    "full": "Structured Query Language",
+    "short": "Sprache zum Abfragen und Verändern relationaler Datenbanken.",
+    "description": "SQL beschreibt unter anderem Tabellen, Filter, Joins sowie Lese- und Schreiboperationen in relationalen Datenbanksystemen.",
+    "aliases": []
+  },
+  "systemctl": {
+    "full": "systemctl",
+    "short": "Kommandozeilenwerkzeug zum Steuern von systemd-Units.",
+    "description": "systemctl startet, stoppt, aktiviert und inspiziert Services, Timer und weitere Units, die von systemd verwaltet werden.",
+    "aliases": []
+  },
+  "Typinferenz": {
+    "full": "Type Inference",
+    "short": "Automatische Ableitung eines Datentyps aus einem vorhandenen Wert oder Kontext.",
+    "description": "Typinferenz erspart explizite Typangaben, kann an Schnittstellen oder Datenbanktreibern aber zu falschen Annahmen führen, wenn ein Wert mehrdeutig ist.",
+    "aliases": ["Type Inference"]
+  },
+  "Typografie": {
+    "full": "Typografie",
+    "short": "Gestaltung und Verwendung von Schrift, Zeichen, Abständen und typografischen Regeln.",
+    "description": "Bei Textprüfung umfasst Typografie beispielsweise korrekte Anführungszeichen, Gedankenstriche oder Abstände.",
+    "aliases": []
+  },
+  "UX": {
+    "full": "User Experience",
+    "short": "Gesamterlebnis eines Nutzers bei der Verwendung eines Produkts oder einer Oberfläche.",
+    "description": "UX umfasst Verständlichkeit, Bedienbarkeit, Geschwindigkeit, visuelle Rückmeldung und weitere Faktoren, die beeinflussen, wie gut sich ein System benutzen lässt.",
+    "aliases": ["User Experience"]
+  }
+}

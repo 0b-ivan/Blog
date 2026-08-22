@@ -1,0 +1,315 @@
+{
+  "Audit-Trail": {
+    "full": "Audit Trail",
+    "short": "Nachvollziehbare Historie von Änderungen und Aktionen.",
+    "description": "Ein Audit-Trail dokumentiert, wer oder was wann eine Änderung durchgeführt hat und erleichtert damit Kontrolle und Nachvollziehbarkeit.",
+    "aliases": [
+      "Audit Trail"
+    ]
+  },
+  "Bastion Host": {
+    "full": "Bastion Host",
+    "short": "Speziell abgesicherter Zugangspunkt zu internen Systemen.",
+    "description": "Ein Bastion Host dient als kontrollierter Sprungpunkt, über den Administratoren auf Systeme zugreifen, die selbst nicht direkt aus dem Internet erreichbar sind.",
+    "aliases": [
+      "Bastion Hosts"
+    ]
+  },
+  "Cache": {
+    "full": "Cache",
+    "short": "Zwischenspeicher für häufig oder teuer erzeugte Daten.",
+    "description": "Ein Cache hält Daten vor, damit sie bei späteren Zugriffen schneller verfügbar sind und nicht jedes Mal neu berechnet oder geladen werden müssen.",
+    "aliases": []
+  },
+  "Cluster-Orchestrator": {
+    "full": "Cluster Orchestrator",
+    "short": "System zur koordinierten Ausführung von Workloads über mehrere Rechner.",
+    "description": "Ein Cluster-Orchestrator verteilt, startet, überwacht und skaliert Anwendungen über mehrere Hosts und berücksichtigt dabei Ressourcen und gewünschte Zustände.",
+    "aliases": [
+      "Cluster-Orchestrator"
+    ]
+  },
+  "CMS": {
+    "full": "Content Management System",
+    "short": "Software zum Erstellen, Verwalten und Veröffentlichen von Inhalten.",
+    "description": "Ein CMS bietet typischerweise Editor, Medienverwaltung, Benutzerrollen und Veröffentlichungsprozesse, ohne dass Inhalte direkt als Dateien gepflegt werden müssen.",
+    "aliases": []
+  },
+  "Compute": {
+    "full": "Compute",
+    "short": "Rechenleistung für das Ausführen von Anwendungen und Workloads.",
+    "description": "Im Cloud-Kontext bezeichnet Compute typischerweise virtuelle Maschinen, Container oder andere Ressourcen, auf denen Code ausgeführt wird.",
+    "aliases": []
+  },
+  "Container": {
+    "full": "Container",
+    "short": "Isolierte Laufzeitumgebung für einen Prozess samt benötigter Dateien und Abhängigkeiten.",
+    "description": "Container teilen sich den Kernel des Hosts, kapseln Anwendungen aber in getrennte Dateisystem-, Prozess- und Netzwerkräume.",
+    "aliases": [
+      "Containerisierung",
+      "containerisiert"
+    ]
+  },
+  "Container Registry": {
+    "full": "Container Registry",
+    "short": "Speicher und Verteildienst für Container-Images.",
+    "description": "Eine Container Registry speichert versionierte Images und stellt sie Build-, Test- und Produktionssystemen zum Herunterladen bereit.",
+    "aliases": [
+      "Registry",
+      "Container-Registry"
+    ]
+  },
+  "Cron": {
+    "full": "Cron",
+    "short": "Zeitgesteuerter Dienst zum regelmäßigen Ausführen von Befehlen unter Unix/Linux.",
+    "description": "Cron startet Jobs nach einem festen Zeitplan. Für komplexere Abhängigkeiten und Statusinformationen werden häufig systemd-Timer verwendet.",
+    "aliases": [
+      "Cronjob",
+      "Cronjobs"
+    ]
+  },
+  "Cutover": {
+    "full": "Cutover",
+    "short": "Geplanter Umschaltpunkt von einer alten auf eine neue Version oder Umgebung.",
+    "description": "Beim Cutover wird produktiver Traffic kontrolliert auf das neue System umgeleitet, nachdem dessen Funktionsfähigkeit geprüft wurde.",
+    "aliases": []
+  },
+  "Daemon": {
+    "full": "Daemon",
+    "short": "Hintergrundprozess, der dauerhaft einen Dienst bereitstellt.",
+    "description": "Unter Unix/Linux bezeichnet Daemon einen meist langlebigen Prozess ohne direkte Benutzeroberfläche, beispielsweise einen Webserver oder SSH-Dienst.",
+    "aliases": [
+      "Daemons"
+    ]
+  },
+  "Debounce": {
+    "full": "Debounce",
+    "short": "Verzögerung, die schnelle aufeinanderfolgende Eingaben zu weniger Aktionen zusammenfasst.",
+    "description": "Bei einer Live-Suche verhindert Debouncing, dass für jeden einzelnen Tastendruck sofort eine neue Anfrage gesendet wird.",
+    "aliases": []
+  },
+  "Distroless": {
+    "full": "Distroless Container Image",
+    "short": "Minimalistisches Container-Image ohne typische Linux-Benutzerwerkzeuge.",
+    "description": "Distroless-Images enthalten im Wesentlichen nur die Anwendung und ihre Laufzeitabhängigkeiten. Das reduziert Größe und Angriffsoberfläche.",
+    "aliases": [
+      "distroless"
+    ]
+  },
+  "Docker Compose": {
+    "full": "Docker Compose",
+    "short": "Werkzeug zum deklarativen Beschreiben und gemeinsamen Starten mehrerer Container.",
+    "description": "Docker Compose liest eine YAML-Konfiguration und verwaltet Services, Netzwerke, Volumes und Umgebungsvariablen einer Anwendung als gemeinsamen Stack.",
+    "aliases": [
+      "Compose"
+    ]
+  },
+  "Docker Image": {
+    "full": "Docker Image",
+    "short": "Unveränderliche Vorlage, aus der Container gestartet werden.",
+    "description": "Ein Docker Image enthält Anwendung, Laufzeit und Dateisystemschichten. Aus demselben Image können mehrere Container erzeugt werden.",
+    "aliases": [
+      "Image",
+      "Images",
+      "Docker-Image",
+      "Docker-Images"
+    ]
+  },
+  "Docker Volume": {
+    "full": "Docker Volume",
+    "short": "Von Docker verwalteter Speicher für persistente Daten.",
+    "description": "Docker Volumes speichern Daten außerhalb des kurzlebigen Container-Dateisystems, sodass sie Neustarts und den Austausch von Containern überstehen können.",
+    "aliases": [
+      "Volume",
+      "Volumes",
+      "Docker Volumes"
+    ]
+  },
+  "Dockerfile": {
+    "full": "Dockerfile",
+    "short": "Textdatei mit Anweisungen zum Bau eines Container-Images.",
+    "description": "Ein Dockerfile definiert schrittweise, welche Basis, Dateien, Abhängigkeiten und Startbefehle in ein Docker Image einfließen.",
+    "aliases": []
+  },
+  "Express": {
+    "full": "Express.js",
+    "short": "Minimalistisches Webframework für Node.js.",
+    "description": "Express stellt Routing, Middleware und HTTP-Hilfsfunktionen bereit und wird häufig für APIs und kleine Webserver eingesetzt.",
+    "aliases": [
+      "Express.js"
+    ]
+  },
+  "Healthcheck": {
+    "full": "Healthcheck",
+    "short": "Automatisierte Prüfung, ob ein Dienst funktionsfähig und erreichbar ist.",
+    "description": "Healthchecks werden von Deployments und Orchestratoren verwendet, um zu entscheiden, ob eine Instanz Traffic erhalten oder neu gestartet werden soll.",
+    "aliases": [
+      "Healthchecks"
+    ]
+  },
+  "Kubernetes": {
+    "full": "Kubernetes",
+    "short": "Orchestrierungsplattform für Container über einen Cluster aus mehreren Systemen.",
+    "description": "Kubernetes verwaltet Deployment, Skalierung, Netzwerk, Konfiguration und Wiederherstellung containerisierter Anwendungen anhand eines gewünschten Zustands.",
+    "aliases": []
+  },
+  "Logging": {
+    "full": "Logging",
+    "short": "Strukturierte oder textuelle Aufzeichnung von Laufzeitereignissen.",
+    "description": "Logs helfen bei Diagnose, Monitoring, Audits und Fehlersuche, indem Anwendungen und Systeme relevante Ereignisse protokollieren.",
+    "aliases": [
+      "Logs"
+    ]
+  },
+  "Monitoring": {
+    "full": "Monitoring",
+    "short": "Kontinuierliche Beobachtung von Zustand und Verhalten technischer Systeme.",
+    "description": "Monitoring sammelt Kennzahlen, Logs oder Zustände, um Ausfälle, Trends und ungewöhnliches Verhalten früh sichtbar zu machen.",
+    "aliases": []
+  },
+  "Node.js": {
+    "full": "Node.js",
+    "short": "JavaScript-Laufzeitumgebung für Server- und Kommandozeilenprogramme.",
+    "description": "Node.js führt JavaScript außerhalb des Browsers aus und wird häufig für Webserver, APIs, Build-Werkzeuge und Automatisierung eingesetzt.",
+    "aliases": [
+      "Node"
+    ]
+  },
+  "Observability": {
+    "full": "Observability",
+    "short": "Fähigkeit, den internen Zustand eines Systems anhand seiner Ausgaben zu verstehen.",
+    "description": "Observability stützt sich typischerweise auf Logs, Metriken und Traces, um Ursachen von Fehlern und ungewöhnlichem Verhalten nachvollziehen zu können.",
+    "aliases": []
+  },
+  "Overengineering": {
+    "full": "Overengineering",
+    "short": "Unnötig komplexe Lösung für ein vergleichsweise einfaches Problem.",
+    "description": "Von Overengineering spricht man, wenn zusätzliche Architektur, Abstraktionen oder Infrastruktur mehr Aufwand verursachen, als der aktuelle Anwendungsfall rechtfertigt.",
+    "aliases": [
+      "over-engineered"
+    ]
+  },
+  "Port": {
+    "full": "Network Port",
+    "short": "Numerische Adresse eines Netzwerkdienstes auf einem Host.",
+    "description": "Ports unterscheiden mehrere Dienste auf derselben IP-Adresse, beispielsweise HTTPS auf TCP-Port 443.",
+    "aliases": [
+      "Ports"
+    ]
+  },
+  "Port-Mapping": {
+    "full": "Port Mapping",
+    "short": "Zuordnung eines Ports auf dem Host zu einem Port innerhalb eines Containers.",
+    "description": "Docker Port-Mapping macht einen Containerdienst über einen Port des Hosts erreichbar, beispielsweise 8080:80.",
+    "aliases": []
+  },
+  "Reverse Proxy": {
+    "full": "Reverse Proxy",
+    "short": "Vorgeschalteter Server, der Anfragen an interne Dienste weiterleitet.",
+    "description": "Ein Reverse Proxy kann TLS terminieren, Routing übernehmen, mehrere Backends bündeln und interne Anwendungen vor direktem Zugriff abschirmen.",
+    "aliases": []
+  },
+  "Rollback": {
+    "full": "Rollback",
+    "short": "Rückkehr auf einen zuvor bekannten funktionierenden Softwarestand.",
+    "description": "Bei einem fehlgeschlagenen Deployment kann ein Rollback die vorherige Version oder Konfiguration wieder aktivieren.",
+    "aliases": [
+      "Rollbacks"
+    ]
+  },
+  "Rolling Update": {
+    "full": "Rolling Update",
+    "short": "Schrittweises Aktualisieren von Instanzen, ohne alle gleichzeitig abzuschalten.",
+    "description": "Bei einem Rolling Update werden neue Instanzen nacheinander gestartet und geprüft, während alte Instanzen erst anschließend entfernt werden.",
+    "aliases": [
+      "Rolling Updates"
+    ]
+  },
+  "Runtime": {
+    "full": "Runtime",
+    "short": "Laufzeitumgebung und tatsächliche Ausführungsphase einer Anwendung.",
+    "description": "Runtime bezeichnet sowohl die Umgebung, in der Code ausgeführt wird, als auch Abhängigkeiten, die während des produktiven Betriebs benötigt werden.",
+    "aliases": [
+      "Laufzeit"
+    ]
+  },
+  "Self-Hosting": {
+    "full": "Self-Hosting",
+    "short": "Betrieb einer Anwendung auf selbst kontrollierter Infrastruktur.",
+    "description": "Beim Self-Hosting verwaltet man Server, Updates, Daten und Verfügbarkeit selbst, statt die Anwendung vollständig als fremden Cloud-Dienst zu beziehen.",
+    "aliases": [
+      "Self Hosting",
+      "selbst gehostet",
+      "selbst gehosteter"
+    ]
+  },
+  "Smoke Test": {
+    "full": "Smoke Test",
+    "short": "Kurzer Funktionstest der wichtigsten Pfade nach Build oder Deployment.",
+    "description": "Ein Smoke Test prüft, ob ein System grundsätzlich startet und zentrale Funktionen erreichbar sind, bevor aufwendigere Tests folgen.",
+    "aliases": [
+      "Smoke-Test",
+      "Smoke-Tests",
+      "Production-Smoke-Test",
+      "Deployment-Smoke"
+    ]
+  },
+  "Stack": {
+    "full": "Technology Stack",
+    "short": "Zusammengehörige Technologien oder Services, aus denen eine Anwendung aufgebaut ist.",
+    "description": "Je nach Kontext kann Stack die verwendeten Technologien oder eine gemeinsam betriebene Gruppe von Diensten bezeichnen.",
+    "aliases": [
+      "Server-Stack",
+      "Docker-Stack"
+    ]
+  },
+  "Storage": {
+    "full": "Storage",
+    "short": "Persistenter Speicher für Dateien, Objekte, Volumes oder Datenbanken.",
+    "description": "Storage bezeichnet Infrastruktur zum dauerhaften Speichern von Daten unabhängig von der aktuell laufenden Recheninstanz.",
+    "aliases": []
+  },
+  "Subdomain": {
+    "full": "Subdomain",
+    "short": "Untergeordneter Namensbereich innerhalb einer Domain.",
+    "description": "Eine Subdomain wie admin.example.de kann auf einen eigenen Dienst zeigen und separat geroutet oder geschützt werden.",
+    "aliases": []
+  },
+  "systemd": {
+    "full": "systemd",
+    "short": "Init- und Service-Manager vieler Linux-Distributionen.",
+    "description": "systemd startet und überwacht Services, verwaltet Abhängigkeiten und bietet unter anderem Timer, Logging-Anbindung und Restart-Regeln.",
+    "aliases": [
+      "Systemd"
+    ]
+  },
+  "systemd-Timer": {
+    "full": "systemd Timer",
+    "short": "Zeitgesteuerte systemd-Unit als Alternative zu klassischen Cronjobs.",
+    "description": "systemd-Timer lösen Services nach Kalender- oder Zeitregeln aus und integrieren sich in Abhängigkeiten, Status und Logging von systemd.",
+    "aliases": [
+      "Systemd-Timer",
+      "systemd Timer",
+      "Systemd Timer"
+    ]
+  },
+  "Unit File": {
+    "full": "systemd Unit File",
+    "short": "Konfigurationsdatei, die einen systemd-Dienst, Timer oder andere Unit beschreibt.",
+    "description": "Unit Files definieren Startbefehl, Abhängigkeiten, Restart-Verhalten und weitere Eigenschaften eines von systemd verwalteten Objekts.",
+    "aliases": [
+      "Unit-File",
+      "Unit",
+      "Unit-Datei"
+    ]
+  },
+  "Zero Downtime": {
+    "full": "Zero-Downtime Deployment",
+    "short": "Deployment ohne merkbare Unterbrechung für Benutzer.",
+    "description": "Bei Zero-Downtime Deployments bleibt mindestens eine funktionsfähige Instanz erreichbar, während eine neue Version gestartet und geprüft wird.",
+    "aliases": [
+      "Zero-Downtime",
+      "Zero-Downtime Deployments"
+    ]
+  }
+}

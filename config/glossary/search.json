@@ -1,0 +1,221 @@
+{
+  "Chunk": {
+    "full": "Chunk",
+    "short": "Kleiner, zusammenhängender Abschnitt eines größeren Dokuments.",
+    "description": "Bei semantischer Suche werden lange Texte oft in Chunks zerlegt, damit einzelne Abschnitte separat eingebettet und gezielter gefunden werden können.",
+    "aliases": [
+      "Chunks"
+    ]
+  },
+  "Chunking": {
+    "full": "Chunking",
+    "short": "Aufteilen längerer Dokumente in kleinere Abschnitte.",
+    "description": "Chunking zerlegt Texte in sinnvoll begrenzte Einheiten, bevor sie beispielsweise indexiert oder in Embeddings umgewandelt werden.",
+    "aliases": [
+      "chunken",
+      "gechunkt"
+    ]
+  },
+  "Cosine Similarity": {
+    "full": "Cosine Similarity",
+    "short": "Ähnlichkeitsmaß für Vektoren anhand ihres Winkels.",
+    "description": "Cosine Similarity vergleicht die Richtung zweier Vektoren. Bei Embeddings wird sie häufig verwendet, um semantische Nähe zu bewerten.",
+    "aliases": [
+      "Cosine-Similarity",
+      "Cosine-Score",
+      "Cosine-Similarities"
+    ]
+  },
+  "DuckDB": {
+    "full": "DuckDB",
+    "short": "Eingebettete analytische SQL-Datenbank, die direkt in einem Prozess oder aus einer Datei arbeiten kann.",
+    "description": "DuckDB benötigt keinen separaten Datenbankserver und eignet sich gut für lokale Analysen sowie kompakte Daten- und Vektor-Workloads.",
+    "aliases": []
+  },
+  "DuckDB-VSS": {
+    "full": "DuckDB Vector Similarity Search",
+    "short": "DuckDB-Erweiterung für effiziente Vektor-Ähnlichkeitssuche.",
+    "description": "DuckDB-VSS ergänzt DuckDB um Vektorindizes und Funktionen für Approximate Nearest Neighbor Search, beispielsweise mit HNSW.",
+    "aliases": []
+  },
+  "E5": {
+    "full": "E5 Embedding Model",
+    "short": "Familie von Text-Embedding-Modellen für semantisches Retrieval.",
+    "description": "E5-Modelle wandeln Queries und Dokumente in Vektoren um. Je nach Modell werden Präfixe wie query: und passage: verwendet.",
+    "aliases": [
+      "multilingual-e5-small",
+      "E5-Modell"
+    ]
+  },
+  "Embedding": {
+    "full": "Embedding",
+    "short": "Numerische Vektordarstellung eines Textes oder anderen Objekts.",
+    "description": "Ein Embedding komprimiert inhaltliche Merkmale in einen Vektor. Ähnliche Inhalte liegen im Vektorraum typischerweise näher beieinander.",
+    "aliases": [
+      "Embeddings"
+    ]
+  },
+  "Embedding-Modell": {
+    "full": "Embedding Model",
+    "short": "Modell, das Texte in vergleichbare numerische Vektoren umwandelt.",
+    "description": "Ein Embedding-Modell erzeugt Vektoren, die semantische Eigenschaften eines Textes repräsentieren und dadurch Ähnlichkeitssuche ermöglichen.",
+    "aliases": [
+      "Embedding Model",
+      "Embedding-Modell",
+      "Embedding-Modelle"
+    ]
+  },
+  "Event Streaming": {
+    "full": "Event Streaming",
+    "short": "Fortlaufende Übertragung und Verarbeitung von Ereignissen zwischen Systemen.",
+    "description": "Beim Event Streaming werden Ereignisse dauerhaft in einem Stream veröffentlicht, sodass mehrere unabhängige Consumer sie zeitnah verarbeiten können.",
+    "aliases": [
+      "Event-Streaming"
+    ]
+  },
+  "GraphRAG": {
+    "full": "Graph Retrieval-Augmented Generation",
+    "short": "RAG-Ansatz, der zusätzlich Beziehungen in einem Wissensgraphen für Retrieval und Kontext nutzt.",
+    "description": "GraphRAG kombiniert semantische Suche mit Graphstrukturen, um nicht nur ähnliche Texte, sondern auch verknüpfte Entitäten und mehrstufige Beziehungen einzubeziehen.",
+    "aliases": []
+  },
+  "HNSW": {
+    "full": "Hierarchical Navigable Small World",
+    "short": "Graphbasierter Index für schnelle Approximate-Nearest-Neighbor-Suche in Vektoren.",
+    "description": "HNSW beschleunigt die Suche nach ähnlichen Vektoren erheblich und wird deshalb häufig in Vector-Datenbanken eingesetzt.",
+    "aliases": [
+      "HNSW-Index"
+    ]
+  },
+  "Hybrid Ranking": {
+    "full": "Hybrid Ranking",
+    "short": "Ranking, das mehrere Relevanzsignale miteinander kombiniert.",
+    "description": "Bei einer hybriden Suche können beispielsweise semantische Vektorähnlichkeit und klassische Worttreffer gemeinsam in die Ergebnisreihenfolge einfließen.",
+    "aliases": [
+      "hybrides Ranking"
+    ]
+  },
+  "Indexer": {
+    "full": "Indexer",
+    "short": "Komponente, die Inhalte aufbereitet und in einen Suchindex überführt.",
+    "description": "Ein Indexer liest Quellen, zerlegt und normalisiert Inhalte und speichert daraus erzeugte Suchdaten wie Chunks, Metadaten oder Embeddings.",
+    "aliases": [
+      "Indexierung",
+      "indexieren",
+      "indexiert"
+    ]
+  },
+  "Kafka": {
+    "full": "Apache Kafka",
+    "short": "Verteilte Plattform für Event Streaming und dauerhaft gespeicherte Ereignisströme.",
+    "description": "Kafka organisiert Ereignisse in Topics und ermöglicht mehreren Produzenten und Consumern, große Mengen von Events unabhängig voneinander zu verarbeiten.",
+    "aliases": [
+      "Apache Kafka"
+    ]
+  },
+  "Knowledge Graph": {
+    "full": "Knowledge Graph",
+    "short": "Graphstruktur, die Informationen und ihre Beziehungen explizit miteinander verknüpft.",
+    "description": "Ein Knowledge Graph modelliert Objekte als Knoten und Beziehungen als Kanten, etwa Artikel, Tags, Themen und Verlinkungen.",
+    "aliases": [
+      "Knowledge-Graph"
+    ]
+  },
+  "Lexikalisches Ranking": {
+    "full": "Lexical Ranking",
+    "short": "Bewertung von Suchtreffern anhand tatsächlich vorkommender Wörter und Textmerkmale.",
+    "description": "Lexikalisches Ranking bewertet beispielsweise Treffer in Titel, Tags oder Fließtext und ergänzt damit semantische Vektorsuche.",
+    "aliases": [
+      "lexical Ranking",
+      "lexikalischer Score",
+      "lexical Score"
+    ]
+  },
+  "LLM": {
+    "full": "Large Language Model",
+    "short": "Großes Sprachmodell zur Verarbeitung und Erzeugung natürlicher Sprache.",
+    "description": "Ein LLM wird auf großen Textmengen trainiert und kann Text verstehen, fortsetzen, zusammenfassen oder anhand von zusätzlichem Kontext Antworten erzeugen.",
+    "aliases": [
+      "Sprachmodell",
+      "LLM-Chat"
+    ]
+  },
+  "Neo4j": {
+    "full": "Neo4j",
+    "short": "Graphdatenbank zur Speicherung und Abfrage stark vernetzter Daten.",
+    "description": "Neo4j modelliert Daten als Knoten und Kanten und eignet sich für Abfragen über Beziehungen, Pfade und mehrstufige Zusammenhänge.",
+    "aliases": []
+  },
+  "Retrieval": {
+    "full": "Information Retrieval",
+    "short": "Gezieltes Auffinden relevanter Informationen aus einem Datenbestand.",
+    "description": "Bei semantischer Suche und RAG bezeichnet Retrieval den Schritt, passende Dokumente oder Chunks zu einer Anfrage zu ermitteln.",
+    "aliases": []
+  },
+  "Roundtrip-Test": {
+    "full": "Roundtrip Test",
+    "short": "Test, der Daten durch Schreiben und anschließendes Lesen auf unveränderte Bedeutung prüft.",
+    "description": "Ein Roundtrip-Test deckt Fehler in Serialisierung, Speicherung oder Typkonvertierung auf, indem Eingabe und wieder gelesene Ausgabe verglichen werden.",
+    "aliases": [
+      "Roundtrip-Test"
+    ]
+  },
+  "Semantic Search": {
+    "full": "Semantic Search",
+    "short": "Suche nach inhaltlicher Bedeutung statt nur nach identischen Wörtern.",
+    "description": "Semantische Suche nutzt häufig Embeddings, um auch Texte zu finden, die inhaltlich zur Anfrage passen, obwohl sie andere Formulierungen verwenden.",
+    "aliases": [
+      "semantische Suche",
+      "semantisch durchsucht"
+    ]
+  },
+  "SHA-256": {
+    "full": "Secure Hash Algorithm 256-bit",
+    "short": "Kryptografische Hashfunktion mit 256 Bit Ausgabelänge.",
+    "description": "SHA-256 erzeugt aus beliebigen Daten einen festen Fingerabdruck und wird beispielsweise verwendet, um Änderungen an Dateien zuverlässig zu erkennen.",
+    "aliases": [
+      "SHA-256-Hash"
+    ]
+  },
+  "Top-K": {
+    "full": "Top-K",
+    "short": "Die K höchstbewerteten Ergebnisse eines Rankings.",
+    "description": "Top-K liefert immer die besten K Kandidaten nach einem Score. Es sagt allein noch nicht aus, ob diese Kandidaten tatsächlich relevant genug sind.",
+    "aliases": []
+  },
+  "Transformers.js": {
+    "full": "Transformers.js",
+    "short": "JavaScript-Bibliothek zum lokalen Ausführen von Transformer-Modellen.",
+    "description": "Transformers.js kann Modelle beispielsweise für Feature Extraction und Embeddings direkt in Node.js oder im Browser ausführen.",
+    "aliases": []
+  },
+  "Vector Database": {
+    "full": "Vector Database",
+    "short": "Datenbank, die Vektoren speichert und effiziente Ähnlichkeitssuche darauf ermöglicht.",
+    "description": "Vector Databases werden häufig für Embeddings genutzt und bieten Indizes, um semantisch ähnliche Vektoren schnell zu finden.",
+    "aliases": [
+      "Vector DB",
+      "Vector-Datenbank",
+      "Vector-Datenbanken",
+      "externe Vector DB"
+    ]
+  },
+  "Vector Search": {
+    "full": "Vector Search",
+    "short": "Suche nach ähnlichen Vektoren statt nach identischen Wörtern.",
+    "description": "Vector Search vergleicht Query-Embeddings mit gespeicherten Embeddings und sortiert Kandidaten nach einem Ähnlichkeitsmaß.",
+    "aliases": [
+      "Vektorsuche",
+      "Vector-Suche"
+    ]
+  },
+  "Vector-Database-Cluster": {
+    "full": "Vector Database Cluster",
+    "short": "Verteilter Verbund mehrerer Systeme für skalierbare Vektorsuche.",
+    "description": "Ein Vector-Database-Cluster verteilt Speicherung und Suchlast auf mehrere Knoten. Für kleine lokale Datenbestände ist dieser Betriebsaufwand meist unnötig.",
+    "aliases": [
+      "Vector Database Cluster",
+      "Vector-Database-Cluster"
+    ]
+  }
+}

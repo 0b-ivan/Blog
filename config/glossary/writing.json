@@ -1,0 +1,101 @@
+{
+  "Accessibility": {
+    "full": "Accessibility",
+    "short": "Gestaltung von Software und Inhalten so, dass sie möglichst vielen Menschen zugänglich sind.",
+    "description": "Accessibility umfasst technische und gestalterische Maßnahmen, die Barrieren reduzieren, etwa Tastaturbedienung, ausreichende Kontraste oder unterstützende Werkzeuge.",
+    "aliases": [
+      "Barrierefreiheit"
+    ]
+  },
+  "Admonition": {
+    "full": "Admonition",
+    "short": "Hervorgehobener Hinweisblock in einer Dokumentation.",
+    "description": "Admonitions markieren Hinweise wie Note, Tip oder Warning optisch getrennt vom normalen Fließtext.",
+    "aliases": [
+      "Admonitions"
+    ]
+  },
+  "Annotation": {
+    "full": "Annotation",
+    "short": "Maschinenlesbarer Hinweis, der direkt an einer Datei oder Zeile angezeigt werden kann.",
+    "description": "CI-Systeme können Annotations verwenden, um Warnungen und Fehler direkt an den betroffenen Stellen eines Pull Requests sichtbar zu machen.",
+    "aliases": [
+      "Annotations"
+    ]
+  },
+  "Atom": {
+    "full": "Atom Syndication Format",
+    "short": "Standardisiertes Feed-Format ähnlich RSS.",
+    "description": "Atom ist ein XML-basiertes Format zur Veröffentlichung und zum Abonnieren regelmäßig aktualisierter Inhalte.",
+    "aliases": [
+      "Atom-Feed"
+    ]
+  },
+  "CSpell": {
+    "full": "CSpell",
+    "short": "Rechtschreibprüfung mit Fokus auf Quellcode und technische Texte.",
+    "description": "CSpell prüft Wörter gegen Wörterbücher und projektspezifische Wortlisten und lässt sich gut in CI-Pipelines integrieren.",
+    "aliases": []
+  },
+  "False Positive": {
+    "full": "False Positive",
+    "short": "Fehlalarm: Ein Prüfwerkzeug meldet ein Problem, obwohl tatsächlich keines vorliegt.",
+    "description": "False Positives entstehen beispielsweise bei Rechtschreib-, Security- oder Code-Scans, wenn eine Regel einen legitimen Fall fälschlich als Fehler einstuft.",
+    "aliases": [
+      "False Positives"
+    ]
+  },
+  "Frontmatter": {
+    "full": "Frontmatter",
+    "short": "Metadatenblock am Anfang einer Markdown-Datei.",
+    "description": "Frontmatter enthält strukturierte Angaben wie Titel, Datum, Tags oder Version und wird häufig in YAML zwischen Trennlinien geschrieben.",
+    "aliases": []
+  },
+  "LanguageTool": {
+    "full": "LanguageTool",
+    "short": "Werkzeug zur Prüfung von Grammatik, Rechtschreibung, Stil und Interpunktion.",
+    "description": "LanguageTool analysiert natürliche Sprache regelbasiert und kann lokal oder als Dienst in automatisierte Prüfprozesse eingebunden werden.",
+    "aliases": []
+  },
+  "Markdown": {
+    "full": "Markdown",
+    "short": "Leichtgewichtige Auszeichnungssprache für strukturierten Text.",
+    "description": "Markdown verwendet einfache Zeichen für Überschriften, Links, Listen und Code und lässt sich gut versionieren und in HTML umwandeln.",
+    "aliases": []
+  },
+  "Mermaid": {
+    "full": "Mermaid",
+    "short": "Textbasierte Sprache zum Erzeugen von Diagrammen.",
+    "description": "Mermaid beschreibt Ablauf-, Sequenz- und andere Diagramme als Text, der beim Rendern in eine grafische Darstellung umgewandelt wird.",
+    "aliases": [
+      "Mermaid-Diagramm",
+      "Mermaid-Diagramme"
+    ]
+  },
+  "OPML": {
+    "full": "Outline Processor Markup Language",
+    "short": "Austauschformat, das unter anderem Listen von RSS- und Atom-Feeds transportieren kann.",
+    "description": "RSS-Reader verwenden OPML häufig für Import und Export von Abonnements, sodass Feed-Listen zwischen Anwendungen umgezogen werden können.",
+    "aliases": [
+      "OPML Export",
+      "OPML-Export"
+    ]
+  },
+  "Wiki-Link": {
+    "full": "Wiki Link",
+    "short": "Kurze interne Linksyntax wie [[Artikelname]] zwischen Dokumenten.",
+    "description": "Wiki-Links ermöglichen schnelle interne Verweise, die ein Renderer später in normale Links zu passenden Seiten umwandelt.",
+    "aliases": [
+      "Wiki-Links",
+      "Wiki-Syntax"
+    ]
+  },
+  "YAML": {
+    "full": "YAML Ain't Markup Language",
+    "short": "Menschenlesbares Format für strukturierte Konfigurationsdaten.",
+    "description": "YAML wird häufig für CI/CD-, Docker-Compose- und andere Konfigurationsdateien verwendet und basiert stark auf Einrückung.",
+    "aliases": [
+      "YAML-Datei"
+    ]
+  }
+}
