@@ -41,6 +41,12 @@ jobs:
       - name: Unit and API tests with coverage
         run: npm run test:coverage
 
+      - name: Install semantic search dependencies
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund
+
+      - name: Semantic search unit tests
+        run: npm run rag:test
+
       - name: Validate Docker Compose
         run: docker compose config
 
