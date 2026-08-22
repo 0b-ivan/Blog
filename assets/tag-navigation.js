@@ -50,6 +50,28 @@
     nav.append(link);
   }
 
+  function ensureGlossaryNavigation() {
+    const nav = document.querySelector('.main-nav');
+    if (!nav || nav.querySelector('a[href="/glossary"]')) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = '/glossary';
+    link.textContent = 'Glossar';
+
+    const roadmap = nav.querySelector('a[href="/roadmap"]');
+    const snippets = nav.querySelector('a[href="/snippets/"]');
+    const anchor = roadmap || snippets;
+
+    if (anchor) {
+      anchor.insertAdjacentElement('afterend', link);
+      return;
+    }
+
+    nav.append(link);
+  }
+
   function loadKnowledgeGraph() {
     if (!document.querySelector('.post-page .terminal-post')) {
       return;
@@ -72,6 +94,7 @@
 
   upgradeTagChips();
   ensureRoadmapNavigation();
+  ensureGlossaryNavigation();
   loadKnowledgeGraph();
 
   const observer = new MutationObserver((mutations) => {
