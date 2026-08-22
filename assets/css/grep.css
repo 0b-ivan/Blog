@@ -22,26 +22,29 @@
 
 .grep-heading {
   margin-bottom: 1.55rem;
+  text-align: left;
 }
 
 .grep-kicker {
   margin: 0 0 0.35rem;
   color: var(--accent);
   font-size: 0.72rem;
+  font-weight: 700;
   letter-spacing: 0.05em;
 }
 
 .grep-heading h1 {
   margin: 0;
-  color: var(--text);
+  color: #121314;
   font-size: clamp(2rem, 5vw, 2.75rem);
+  font-weight: 800;
   line-height: 1.05;
   letter-spacing: -0.04em;
 }
 
 .grep-heading > p:last-child {
   margin: 0.55rem 0 0;
-  color: var(--muted);
+  color: #3f464b;
   font-size: 0.98rem;
 }
 
@@ -208,7 +211,8 @@
 }
 
 .grep-result h2 a {
-  color: var(--text);
+  color: #121314;
+  font-weight: 750;
   text-decoration: none;
 }
 
@@ -220,7 +224,7 @@
 
 .grep-result__preview {
   margin: 0.45rem 0 0.55rem;
-  color: var(--muted);
+  color: #4c5157;
   font-size: 0.88rem;
   line-height: 1.55;
 }
