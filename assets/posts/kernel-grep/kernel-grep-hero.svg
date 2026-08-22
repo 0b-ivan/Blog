@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Kernel Grep – semantische Suche für Kernel Notes</title>
+  <desc id="desc">Technische Illustration mit Kernel-Grep-Terminal, semantischer Suche und Ergebnisliste.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#d8ddd5" stroke-width="1" opacity="0.48"/>
+    </pattern>
+    <linearGradient id="paperGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dff5e9"/>
+      <stop offset="0.28" stop-color="#faf8f1"/>
+      <stop offset="1" stop-color="#fff7e8"/>
+    </linearGradient>
+    <linearGradient id="terminal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#152024"/>
+      <stop offset="1" stop-color="#0d1518"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#071012" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#paperGlow)"/>
+  <rect width="1600" height="900" fill="url(#grid)"/>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+    <text x="72" y="92" font-size="22" fill="#246455" letter-spacing="2">ARTIKEL / ENTWICKLUNG / TOOLS</text>
+    <text x="72" y="215" font-size="92" font-weight="800" fill="#111826">Kernel Grep</text>
+    <text x="72" y="300" font-size="54" font-weight="700" fill="#47936e">Semantische Suche</text>
+    <text x="72" y="364" font-size="54" font-weight="700" fill="#17202a">für meinen Blog.</text>
+    <path d="M75 398 C190 390 285 397 390 390" stroke="#62aa86" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.75"/>
+
+    <text x="75" y="468" font-size="23" fill="#607083">Nicht nur Wörter finden.</text>
+    <text x="75" y="505" font-size="23" fill="#607083">Sondern Inhalte, die wirklich passen.</text>
+
+    <g transform="translate(76 570)">
+      <text x="0" y="0" font-size="30" fill="#3f8d69">⚡</text>
+      <text x="48" y="0" font-size="22" font-weight="700" fill="#1e2832">lokal</text>
+      <text x="48" y="28" font-size="18" fill="#69798a">DuckDB + E5 auf dem eigenen Host</text>
+
+      <text x="0" y="92" font-size="30" fill="#3f8d69">⌁</text>
+      <text x="48" y="92" font-size="22" font-weight="700" fill="#1e2832">hybrid</text>
+      <text x="48" y="120" font-size="18" fill="#69798a">Semantik + Titel + Tags + Inhalt</text>
+
+      <text x="0" y="184" font-size="30" fill="#3f8d69">$</text>
+      <text x="48" y="184" font-size="22" font-weight="700" fill="#1e2832">grep</text>
+      <text x="48" y="212" font-size="18" fill="#69798a">Spotlight-Overlay im Konsolenstil</text>
+    </g>
+  </g>
+
+  <g transform="translate(650 132)" filter="url(#shadow)" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+    <rect width="875" height="620" rx="18" fill="url(#terminal)" stroke="#376d60" stroke-width="2"/>
+    <rect width="875" height="54" rx="18" fill="#192529"/>
+    <rect y="36" width="875" height="18" fill="#192529"/>
+    <circle cx="25" cy="27" r="6" fill="#c96763"/>
+    <circle cx="46" cy="27" r="6" fill="#c8a154"/>
+    <circle cx="67" cy="27" r="6" fill="#68b585"/>
+    <text x="92" y="34" font-size="18" fill="#8fac9f">grep://kernel-notes</text>
+    <text x="804" y="34" font-size="15" fill="#748782">esc</text>
+
+    <rect x="24" y="80" width="827" height="66" rx="10" fill="#0e181b" stroke="#376d60"/>
+    <text x="48" y="121" font-size="23" fill="#72d2a4">$</text>
+    <text x="82" y="121" font-size="23" fill="#eef4f1">Self Hosting RSS Reader</text>
+    <rect x="364" y="99" width="12" height="28" fill="#76df9d" opacity="0.9"/>
+    <text x="760" y="121" font-size="15" fill="#859690">live</text>
+
+    <text x="28" y="180" font-size="16" fill="#72d2a4">$ grep --semantic "Self Hosting RSS Reader" posts/</text>
+    <text x="28" y="208" font-size="15" fill="#7f918c">3 matches · 138 ms</text>
+
+    <g transform="translate(28 248)">
+      <text x="0" y="0" font-size="15" fill="#72d2a4">[01] ./posts/rss-ist-nicht-tot#self-hosting</text>
+      <text x="0" y="31" font-size="21" font-weight="700" fill="#eef4f1">&gt; RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung</text>
+      <text x="0" y="60" font-size="15" fill="#9baca7">Ein eigener RSS-Reader passt sehr gut zu einem Docker-Setup auf dem</text>
+      <text x="0" y="84" font-size="15" fill="#9baca7">eigenen Server. FreshRSS bleibt dabei schnell, frei und kontrollierbar.</text>
+      <text x="0" y="112" font-size="14" fill="#6d8c83">Self-Hosting  #RSS  #FreshRSS  #Docker</text>
+    </g>
+
+    <line x1="28" y1="392" x2="847" y2="392" stroke="#345049" stroke-dasharray="5 7" opacity="0.55"/>
+    <g transform="translate(28 430)">
+      <text x="0" y="0" font-size="15" fill="#72d2a4">[02] ./posts/docker-hetzner#deployment</text>
+      <text x="0" y="31" font-size="21" font-weight="700" fill="#eef4f1">&gt; Docker + Hetzner + Cloudflare Zero Trust</text>
+      <text x="0" y="60" font-size="15" fill="#9baca7">Ein verwandter Treffer durch semantischen Kontext und echte Schlüsselwörter.</text>
+      <text x="0" y="88" font-size="14" fill="#6d8c83">Deployment  #Docker  #Hetzner</text>
+    </g>
+
+    <line x1="0" y1="560" x2="875" y2="560" stroke="#314942" opacity="0.55"/>
+    <text x="28" y="594" font-size="14" fill="#667a74">⌘K / Ctrl+K öffnen · Esc schließen · Suche startet beim Tippen</text>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17" fill="#7ca893" opacity="0.72">
+    <text x="710" y="96">query → embedding → ranking</text>
+    <text x="1230" y="806">lokal · kein externer LLM-Call</text>
+  </g>
+</svg>
