@@ -13,8 +13,8 @@ Nur die größeren Sachen, die als Nächstes anstehen.
 
 ## Meilenstein 2 — Semantische Suche
 
-- Artikel lokal in DuckDB indexieren
-- semantische Suche über `/brain`
+- DuckDB + lokales Embedding-Modell
+- Kernel Grep unter `/grep`
 - ähnliche Artikel in den Knowledge Graph übernehmen
 - Neo4j später für echte Graph-Abfragen prüfen
 
