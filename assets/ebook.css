@@ -1,0 +1,78 @@
+body {
+  font-family: sans-serif;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.2;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+pre,
+code,
+kbd,
+samp {
+  font-family: monospace;
+}
+
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid #888;
+  border-radius: 0.35em;
+  padding: 0.8em;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border: 1px solid #999;
+  padding: 0.35em 0.5em;
+  vertical-align: top;
+}
+
+blockquote {
+  margin-left: 0;
+  padding-left: 1em;
+  border-left: 0.25em solid #888;
+}
+
+.admonition {
+  margin: 1em 0;
+  padding: 0.8em 1em;
+  border-left: 0.3em solid #777;
+}
+
+.admonition-title {
+  font-weight: bold;
+  margin-top: 0;
+}
+
+.page-break {
+  break-before: page;
+  page-break-before: always;
+}
+
+hr {
+  margin: 2em 0;
+}
