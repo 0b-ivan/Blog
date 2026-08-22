@@ -30,7 +30,8 @@
 
     const score = document.createElement('div');
     score.className = 'grep-result__score';
-    score.textContent = `${Math.max(0, Number(result.score || 0)) * 100 >= 0 ? (Number(result.score || 0) * 100).toFixed(1) : '0.0'}%`;
+    const percent = Math.max(0, Number(result.score || 0) * 100);
+    score.textContent = `${percent.toFixed(1)}%`;
 
     const body = document.createElement('div');
     const heading = document.createElement('h2');
@@ -86,9 +87,13 @@
     const startedAt = window.performance.now();
 
     try {
-      const params = new window.URLSearchParams({ q: normalized, limit: '8' });
-      const response = await fetch(`/api/search?${params.toString()}`, {
-        headers: { Accept: 'application/json' }
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ q: normalized, limit: 8 })
       });
       const payload = await response.json();
       if (!response.ok) {
