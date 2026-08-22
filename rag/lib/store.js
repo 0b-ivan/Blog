@@ -26,7 +26,7 @@ class RagStore {
         source_path VARCHAR NOT NULL,
         source_hash VARCHAR NOT NULL,
         updated_at VARCHAR,
-        indexed_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+        indexed_at TIMESTAMP NOT NULL DEFAULT (now())
       )
     `);
 
@@ -40,7 +40,7 @@ class RagStore {
         content_hash VARCHAR NOT NULL,
         embedding_model VARCHAR NOT NULL,
         embedding FLOAT[] NOT NULL,
-        indexed_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+        indexed_at TIMESTAMP NOT NULL DEFAULT (now())
       )
     `);
 
@@ -70,7 +70,7 @@ class RagStore {
         `INSERT INTO rag_documents (
            post_id, slug, title, category, tags_json, excerpt, source_path, source_hash, updated_at, indexed_at
          ) VALUES (
-           $post_id, $slug, $title, $category, $tags_json, $excerpt, $source_path, $source_hash, $updated_at, current_timestamp
+           $post_id, $slug, $title, $category, $tags_json, $excerpt, $source_path, $source_hash, $updated_at, now()
          )
          ON CONFLICT (post_id) DO UPDATE SET
            slug = excluded.slug,
@@ -81,7 +81,7 @@ class RagStore {
            source_path = excluded.source_path,
            source_hash = excluded.source_hash,
            updated_at = excluded.updated_at,
-           indexed_at = current_timestamp`,
+           indexed_at = now()`,
         {
           post_id: document.postId,
           slug: document.slug,
@@ -104,7 +104,7 @@ class RagStore {
           `INSERT INTO rag_chunks (
              chunk_id, post_id, ordinal, heading, content, content_hash, embedding_model, embedding, indexed_at
            ) VALUES (
-             $chunk_id, $post_id, $ordinal, $heading, $content, $content_hash, $embedding_model, $embedding, current_timestamp
+             $chunk_id, $post_id, $ordinal, $heading, $content, $content_hash, $embedding_model, $embedding, now()
            )`,
           {
             chunk_id: chunk.chunkId,
