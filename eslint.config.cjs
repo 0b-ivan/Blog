@@ -11,11 +11,14 @@ module.exports = [
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
       globals: {
+        AbortSignal: 'readonly',
         Buffer: 'readonly',
         console: 'readonly',
+        fetch: 'readonly',
         module: 'readonly',
         require: 'readonly',
         process: 'readonly',
+        setTimeout: 'readonly',
         __dirname: 'readonly'
       }
     },
@@ -30,7 +33,8 @@ module.exports = [
       'assets/newsletter.js',
       'assets/tag-navigation.js',
       'assets/knowledge-graph.js',
-      'assets/roadmap.js'
+      'assets/roadmap.js',
+      'assets/grep.js'
     ],
     languageOptions: {
       globals: {
