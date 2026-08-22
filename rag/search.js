@@ -58,8 +58,10 @@ async function main() {
   const options = parseOptions(process.argv.slice(2));
   try {
     await fs.access(options.databasePath);
-  } catch (_error) {
-    throw new Error(`Semantic index not found: ${options.databasePath}. Run npm run rag:index first.`);
+  } catch (error) {
+    throw new Error(`Semantic index not found: ${options.databasePath}. Run npm run rag:index first.`, {
+      cause: error
+    });
   }
 
   const store = await RagStore.open(options.databasePath);
