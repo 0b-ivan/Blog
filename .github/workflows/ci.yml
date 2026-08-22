@@ -1,14 +1,24 @@
-name: CI
+name: PR Checks
 
 on:
   pull_request:
-  push:
-    branches:
-      - "**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  BLOG_IMAGE: kernel-notes-blog:ci
+  SEARCH_IMAGE: kernel-notes-search:ci
 
 jobs:
-  validate-and-smoke-test:
+  checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout full history
@@ -16,18 +26,63 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Classify changed files
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "proofread=true" >> "$GITHUB_OUTPUT"
+            echo "security=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD > /tmp/changed-files.txt
+          echo "Changed files:"
+          cat /tmp/changed-files.txt
+
+          heavy=false
+          proofread=false
+          security=false
+
+          while IFS= read -r file; do
+            case "$file" in
+              posts/*.md|config/proofread-words.txt|cspell.json|scripts/spellcheck-posts.js|scripts/proofread-posts.js)
+                proofread=true
+                ;;
+            esac
+
+            case "$file" in
+              package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
+                security=true
+                ;;
+            esac
+
+            case "$file" in
+              posts/*|archive/*|snippets/*|assets/posts/*|config/proofread-words.txt|cspell.json|scripts/spellcheck-posts.js|scripts/proofread-posts.js|README*|docs/*|.github/workflows/*)
+                ;;
+              *)
+                heavy=true
+                ;;
+            esac
+          done < /tmp/changed-files.txt
+
+          echo "heavy=$heavy" >> "$GITHUB_OUTPUT"
+          echo "proofread=$proofread" >> "$GITHUB_OUTPUT"
+          echo "security=$security" >> "$GITHUB_OUTPUT"
+          echo "Classification: heavy=$heavy proofread=$proofread security=$security"
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm ci
 
       - name: Build article version history
         run: npm run posts:build-history
@@ -41,10 +96,75 @@ jobs:
       - name: Unit and API tests with coverage
         run: npm run test:coverage
 
+      - name: Spellcheck changed blog content
+        if: steps.changes.outputs.proofread == 'true'
+        run: |
+          set +e
+          npm run posts:spellcheck
+          status=$?
+          set -e
+
+          if [ "$status" -gt 1 ]; then
+            echo 'CSpell failed to run.'
+            exit "$status"
+          fi
+
+          if [ "$status" -eq 1 ]; then
+            echo 'CSpell found spelling suggestions. This check is intentionally non-blocking.'
+          fi
+
+      - name: Start LanguageTool
+        if: steps.changes.outputs.proofread == 'true'
+        run: |
+          docker run -d \
+            --name languagetool \
+            -p 127.0.0.1:8010:8081 \
+            meyay/languagetool:latest
+
+          for _ in $(seq 1 60); do
+            if curl -fsS -X POST \
+              -d 'language=de-DE' \
+              -d 'text=Das ist ein Test.' \
+              http://127.0.0.1:8010/v2/check >/dev/null; then
+              echo 'LanguageTool is ready'
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs languagetool || true
+          exit 1
+
+      - name: Proofread changed blog content
+        if: steps.changes.outputs.proofread == 'true'
+        env:
+          LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
+          PROOFREAD_LANGUAGE: de-DE
+        run: |
+          set +e
+          npm run posts:proofread
+          status=$?
+          set -e
+
+          if [ "$status" -eq 2 ]; then
+            echo 'Proofreading failed because LanguageTool or the script could not run.'
+            exit 2
+          fi
+
+          if [ "$status" -eq 1 ]; then
+            echo 'LanguageTool found suggestions. This check is intentionally non-blocking.'
+          fi
+
+      - name: Stop LanguageTool
+        if: always() && steps.changes.outputs.proofread == 'true'
+        run: docker rm -f languagetool >/dev/null 2>&1 || true
+
       - name: Install semantic search dependencies
+        if: steps.changes.outputs.heavy == 'true'
         run: npm install --prefix rag --package-lock=false --no-audit --no-fund
 
       - name: Semantic search unit tests
+        if: steps.changes.outputs.heavy == 'true'
         run: npm run rag:test
 
       - name: Validate Docker Compose
@@ -69,69 +189,76 @@ jobs:
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile headless config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare --profile headless config
 
-      - name: Build local blog image
-        run: docker build -t kernel-notes-blog:ci .
+      - name: Setup Docker Buildx
+        if: steps.changes.outputs.heavy == 'true'
+        uses: docker/setup-buildx-action@v4
 
-      - name: Build local Kernel Grep image
-        run: docker build -f Dockerfile.search -t kernel-notes-search:ci .
+      - name: Build blog image once
+        if: steps.changes.outputs.heavy == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: ${{ env.BLOG_IMAGE }}
+          cache-from: type=gha,scope=pr-blog
+          cache-to: type=gha,mode=max,scope=pr-blog
 
-      - name: Start stack with deterministic CI embeddings
+      - name: Build Kernel Grep image once
+        if: steps.changes.outputs.heavy == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile.search
+          load: true
+          tags: ${{ env.SEARCH_IMAGE }}
+          cache-from: type=gha,scope=pr-search
+          cache-to: type=gha,mode=max,scope=pr-search
+
+      - name: Start stack without rebuilding images
+        if: steps.changes.outputs.heavy == 'true'
         env:
           RAG_EMBEDDER_MODE: hash
-        run: docker compose up -d --build
+        run: docker compose up -d --no-build
 
       - name: Wait for health endpoint
+        if: steps.changes.outputs.heavy == 'true'
         run: |
-          for i in {1..40}; do
-            if curl -fsS http://127.0.0.1:8080/healthz > /dev/null; then
-              echo "Service is healthy"
+          for _ in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null; then
+              echo 'Service is healthy'
               exit 0
             fi
             sleep 2
           done
-          echo "Service did not become healthy in time"
           docker compose ps
           docker compose logs --tail=100 search blog || true
           exit 1
 
       - name: Install Chromium smoke-test runtime
+        if: steps.changes.outputs.heavy == 'true'
         run: |
           npm install --no-save --package-lock=false playwright@1.55.0
           npx playwright install --with-deps chromium
 
       - name: Browser click smoke test
+        if: steps.changes.outputs.heavy == 'true'
         env:
           BLOG_BASE_URL: http://127.0.0.1:8080
         run: node e2e/browser-smoke.js
 
       - name: Archive and history smoke test
+        if: steps.changes.outputs.heavy == 'true'
         env:
           BLOG_BASE_URL: http://127.0.0.1:8080
         run: node e2e/archive-history-smoke.js
 
       - name: Shutdown stack
-        if: always()
+        if: always() && steps.changes.outputs.heavy == 'true'
         run: docker compose down -v
 
-  security-trivy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout full history
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Build article version history
-        run: node scripts/build-post-history.js
-
-      - name: Build blog image for scan
-        run: docker build -t kernel-notes-blog:ci .
-
-      - name: Build Kernel Grep image for scan
-        run: docker build -f Dockerfile.search -t kernel-notes-search:ci .
-
-      - name: Trivy filesystem scan (report)
+      - name: Trivy filesystem scan
+        if: steps.changes.outputs.security == 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
@@ -142,20 +269,22 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '0'
 
-      - name: Trivy blog image scan (report)
+      - name: Trivy blog image scan
+        if: steps.changes.outputs.security == 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: kernel-notes-blog:ci
+          image-ref: ${{ env.BLOG_IMAGE }}
           format: table
           ignore-unfixed: true
           vuln-type: os,library
           severity: HIGH,CRITICAL
           exit-code: '0'
 
-      - name: Trivy Kernel Grep image scan (report)
+      - name: Trivy Kernel Grep image scan
+        if: steps.changes.outputs.security == 'true'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: kernel-notes-search:ci
+          image-ref: ${{ env.SEARCH_IMAGE }}
           format: table
           ignore-unfixed: true
           vuln-type: os,library
@@ -163,10 +292,10 @@ jobs:
           exit-code: '0'
 
       - name: Trivy blog strict gate on CRITICAL
-        if: ${{ vars.TRIVY_STRICT == 'true' }}
+        if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT == 'true' }}
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: kernel-notes-blog:ci
+          image-ref: ${{ env.BLOG_IMAGE }}
           format: table
           ignore-unfixed: true
           vuln-type: os,library
@@ -174,10 +303,10 @@ jobs:
           exit-code: '1'
 
       - name: Trivy Kernel Grep strict gate on CRITICAL
-        if: ${{ vars.TRIVY_STRICT == 'true' }}
+        if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT == 'true' }}
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: kernel-notes-search:ci
+          image-ref: ${{ env.SEARCH_IMAGE }}
           format: table
           ignore-unfixed: true
           vuln-type: os,library

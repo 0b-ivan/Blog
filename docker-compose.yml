@@ -1,5 +1,6 @@
 services:
   search:
+    image: ${SEARCH_IMAGE:-kernel-notes-search:local}
     build:
       context: .
       dockerfile: Dockerfile.search
@@ -27,6 +28,7 @@ services:
       start_period: 5s
 
   blog:
+    image: ${BLOG_IMAGE:-kernel-notes-blog:local}
     build:
       context: .
       dockerfile: Dockerfile
