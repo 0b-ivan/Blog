@@ -26,11 +26,11 @@ abbr.glossary-term--repeat {
   width: max-content;
   max-width: min(360px, calc(100vw - 24px));
   padding: 0.8rem 0.9rem;
-  border: 1px solid var(--line, rgba(127, 127, 127, 0.35));
+  border: 1px solid #425569;
   border-radius: 8px;
-  background: var(--surface, #111);
-  color: var(--text, #f4f4f4);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+  background: #0b131f;
+  color: #eaf2ff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
   line-height: 1.45;
 }
 
@@ -47,22 +47,30 @@ abbr.glossary-term--repeat {
 
 .glossary-tooltip__term {
   margin-bottom: 0.15rem;
+  color: #b8d5ff;
   font-size: 0.95rem;
 }
 
 .glossary-tooltip__full {
   margin-bottom: 0.45rem;
+  color: #b8c5d6;
   font-size: 0.8rem;
-  opacity: 0.72;
 }
 
 .glossary-tooltip__description {
+  color: #eaf2ff;
   font-size: 0.88rem;
 }
 
 .glossary-tooltip__link {
   margin-top: 0.65rem;
+  color: #9ac8ff;
   font-size: 0.8rem;
+}
+
+.glossary-tooltip__link:hover,
+.glossary-tooltip__link:focus-visible {
+  color: #c7e1ff;
 }
 
 .glossary-main {
