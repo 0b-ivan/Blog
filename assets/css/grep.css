@@ -1,0 +1,258 @@
+.grep-main {
+  width: min(1040px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 52px 0 72px;
+}
+
+.grep-terminal {
+  overflow: hidden;
+  border: 1px solid rgba(135, 161, 190, 0.28);
+  border-radius: 14px;
+  background: rgba(12, 18, 27, 0.94);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.grep-terminal__chrome {
+  display: grid;
+  grid-template-columns: 96px 1fr 96px;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, #2f3e51 0%, #253140 100%);
+}
+
+.grep-terminal__dots {
+  display: flex;
+  gap: 8px;
+}
+
+.grep-terminal__dots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.grep-terminal__dots span:nth-child(1) { background: #ff5f57; }
+.grep-terminal__dots span:nth-child(2) { background: #febc2e; }
+.grep-terminal__dots span:nth-child(3) { background: #28c840; }
+
+.grep-terminal__path {
+  overflow: hidden;
+  color: #c9d4e0;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grep-terminal__body {
+  padding: clamp(24px, 5vw, 52px);
+}
+
+.grep-kicker,
+.grep-form label,
+.grep-status,
+.grep-examples,
+.grep-result__meta,
+.grep-result__score {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.grep-kicker {
+  margin: 0 0 8px;
+  color: #7f9fbc;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.grep-terminal h1 {
+  margin: 0;
+  color: #f5f7fa;
+  font-size: clamp(2rem, 6vw, 4.2rem);
+  letter-spacing: -0.045em;
+}
+
+.grep-intro {
+  max-width: 760px;
+  margin: 14px 0 32px;
+  color: #aebdcc;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.grep-form label {
+  display: block;
+  margin-bottom: 10px;
+  color: #72d2a4;
+  font-size: 0.86rem;
+}
+
+.grep-command {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px 11px 16px;
+  border: 1px solid rgba(114, 210, 164, 0.35);
+  border-radius: 9px;
+  background: #0a1119;
+}
+
+.grep-command > span {
+  color: #72d2a4;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.grep-command input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #eef4f8;
+  font: 0.95rem/1.5 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.grep-command input::placeholder {
+  color: #647688;
+}
+
+.grep-command button,
+.grep-examples button {
+  border: 1px solid rgba(126, 164, 196, 0.34);
+  border-radius: 7px;
+  background: rgba(55, 79, 101, 0.32);
+  color: #dbe8f2;
+  cursor: pointer;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.grep-command button {
+  padding: 9px 14px;
+}
+
+.grep-command button:hover,
+.grep-command button:focus-visible,
+.grep-examples button:hover,
+.grep-examples button:focus-visible {
+  border-color: rgba(114, 210, 164, 0.75);
+  color: #fff;
+}
+
+.grep-command button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.grep-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  color: #708399;
+  font-size: 0.76rem;
+}
+
+.grep-examples button {
+  padding: 5px 9px;
+  font-size: 0.72rem;
+}
+
+.grep-status {
+  min-height: 1.4em;
+  margin: 26px 0 12px;
+  color: #7f9fbc;
+  font-size: 0.78rem;
+}
+
+.grep-status[data-state="error"] {
+  color: #ef8b8b;
+}
+
+.grep-results {
+  display: grid;
+  gap: 12px;
+}
+
+.grep-result {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid rgba(126, 164, 196, 0.2);
+  border-radius: 9px;
+  background: rgba(20, 31, 43, 0.72);
+}
+
+.grep-result__score {
+  color: #72d2a4;
+  font-size: 0.8rem;
+  padding-top: 3px;
+}
+
+.grep-result h2 {
+  margin: 0;
+  font-size: 1.06rem;
+}
+
+.grep-result h2 a {
+  color: #eef4f8;
+  text-decoration: none;
+}
+
+.grep-result h2 a:hover,
+.grep-result h2 a:focus-visible {
+  color: #8ec9ff;
+}
+
+.grep-result__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 6px 0 9px;
+  color: #71869a;
+  font-size: 0.72rem;
+}
+
+.grep-result__preview {
+  margin: 0;
+  color: #aebdcc;
+  font-size: 0.9rem;
+  line-height: 1.62;
+}
+
+.grep-empty {
+  padding: 24px;
+  border: 1px dashed rgba(126, 164, 196, 0.26);
+  border-radius: 9px;
+  color: #8396aa;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .grep-main {
+    width: min(100% - 20px, 1040px);
+    padding-top: 24px;
+  }
+
+  .grep-terminal__chrome {
+    grid-template-columns: 72px 1fr 72px;
+  }
+
+  .grep-command {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .grep-command button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .grep-result {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
