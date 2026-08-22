@@ -70,7 +70,7 @@ describe('glossary', () => {
       '2026-08-19-fail2ban-ssh-hardening.md': ['SSH', 'Fail2ban', 'UFW'],
       '2026-08-19-markdown-features-im-blog.md': ['Markdown', 'Admonition', 'Frontmatter'],
       '2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.md': ['RSS', 'OPML', 'Self-Hosting'],
-      '2026-08-19-systemd-services-sauber-betreiben.md': ['systemd', 'Daemon', 'Runbook'],
+      '2026-08-19-systemd-services-sauber-betreiben.md': ['Daemon', 'Runbook', 'Healthcheck'],
       '2026-08-19-wie-dieser-blog-gebaut-ist.md': ['Node.js', 'Docker Compose', 'Audit-Trail'],
       '2026-08-21-docker-vs-docker-compose.md': ['Docker Compose', 'Port-Mapping', 'Cluster-Orchestrator'],
       '2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md': ['CSpell', 'LanguageTool', 'False Positive'],
