@@ -11,19 +11,33 @@ module.exports = [
       ecmaVersion: 'latest',
       sourceType: 'commonjs',
       globals: {
-        AbortSignal: 'readonly',
         Buffer: 'readonly',
         console: 'readonly',
-        fetch: 'readonly',
         module: 'readonly',
         require: 'readonly',
         process: 'readonly',
-        setTimeout: 'readonly',
         __dirname: 'readonly'
       }
     },
     rules: {
       'no-unused-vars': ['error', { caughtErrors: 'all', caughtErrorsIgnorePattern: '^_' }]
+    }
+  },
+  {
+    files: ['privacy-server.js'],
+    languageOptions: {
+      globals: {
+        AbortSignal: 'readonly',
+        fetch: 'readonly'
+      }
+    }
+  },
+  {
+    files: ['rag/server.js'],
+    languageOptions: {
+      globals: {
+        setTimeout: 'readonly'
+      }
     }
   },
   {
