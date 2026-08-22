@@ -1,6 +1,6 @@
 ---
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
-version: 1
+version: 2
 title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
 date: 2026-08-22
 published_at: 2026-08-22T19:51:00+02:00
@@ -60,9 +60,9 @@ flowchart LR
     F --> U[SemanticSearchEngine]
     T --> U
     U --> V[Hybrid Ranking]
-    V --> W[Kernel Grep Service :8090]
-    W --> X[Blog /api/search]
-    X --> Y[/grep + Console Overlay]
+    V --> W["Kernel Grep Service :8090"]
+    W --> X["Blog /api/search"]
+    X --> Y["/grep + Console Overlay"]
 ```
 
 Der Blogprozess selbst führt das Embedding-Modell nicht aus. Dafür gibt es einen eigenen internen Search-Container.
