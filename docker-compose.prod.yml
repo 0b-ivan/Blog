@@ -49,17 +49,28 @@ services:
         max-file: "3"
         compress: "true"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
 
 volumes:
   blog-posts:
+    external: true
     name: kernel-notes-blog-posts
   blog-snippets:
+    external: true
     name: kernel-notes-blog-snippets
   blog-post-assets:
+    external: true
     name: kernel-notes-blog-post-assets
   blog-archive:
+    external: true
     name: kernel-notes-blog-archive
   blog-history:
+    external: true
     name: kernel-notes-blog-history
   kernel-search-data:
     name: kernel-notes-search-data
