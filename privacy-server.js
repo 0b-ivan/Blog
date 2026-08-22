@@ -97,7 +97,7 @@ function localizeClientScript(source) {
 }
 
 function addPrivacyNavigation(html) {
-  if (html.includes('href="/datenschutz"') || html.includes('href="datenschutz.html"')) {
+  if (html.includes('href="/datenschutz"')) {
     return html;
   }
 
@@ -108,7 +108,7 @@ function addPrivacyNavigation(html) {
     )
     .replaceAll(
       '<a href="impressum.html">Impressum</a>',
-      '<a href="datenschutz.html">Datenschutz</a>\n        <a href="impressum.html">Impressum</a>'
+      '<a href="/datenschutz">Datenschutz</a>\n        <a href="impressum.html">Impressum</a>'
     );
 
   output = output.replaceAll(
