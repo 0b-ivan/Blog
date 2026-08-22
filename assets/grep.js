@@ -103,10 +103,6 @@
       const elapsed = Math.round(window.performance.now() - startedAt);
       renderResults(payload.results);
       setStatus(`${payload.results.length} Treffer · ${elapsed} ms`, 'success');
-
-      const url = new window.URL(window.location.href);
-      url.searchParams.set('q', normalized);
-      window.history.replaceState(null, '', url);
     } catch (error) {
       setStatus(`Suche nicht verfügbar: ${error.message}`, 'error');
     } finally {
@@ -125,10 +121,4 @@
       search(input.value);
     });
   });
-
-  const initialQuery = new window.URL(window.location.href).searchParams.get('q');
-  if (initialQuery) {
-    input.value = initialQuery;
-    search(initialQuery);
-  }
 })();
