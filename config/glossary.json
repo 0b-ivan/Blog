@@ -1,0 +1,158 @@
+{
+  "API": {
+    "full": "Application Programming Interface",
+    "short": "Programmierschnittstelle für die Kommunikation zwischen Software-Komponenten.",
+    "description": "Eine definierte Schnittstelle, über die Anwendungen oder Dienste Daten und Funktionen austauschen.",
+    "aliases": []
+  },
+  "AWS": {
+    "full": "Amazon Web Services",
+    "short": "Cloud-Plattform von Amazon.",
+    "description": "Eine Cloud-Plattform mit Diensten für Rechenleistung, Speicher, Datenbanken, Netzwerke, Security und viele weitere Bereiche.",
+    "aliases": []
+  },
+  "CDN": {
+    "full": "Content Delivery Network",
+    "short": "Verteiltes Netzwerk zur schnellen Auslieferung von Inhalten.",
+    "description": "Ein CDN verteilt Inhalte über mehrere Standorte und liefert sie möglichst nah am Besucher aus.",
+    "aliases": []
+  },
+  "CIDR": {
+    "full": "Classless Inter-Domain Routing",
+    "short": "Schreibweise für IP-Adressbereiche wie 10.0.0.0/24.",
+    "description": "CIDR beschreibt IP-Netze über eine Netzadresse und eine Präfixlänge. Dadurch lassen sich Adressbereiche flexibel aufteilen.",
+    "aliases": []
+  },
+  "CI/CD": {
+    "full": "Continuous Integration / Continuous Delivery",
+    "short": "Automatisierte Prüfung, Erstellung und Auslieferung von Software.",
+    "description": "CI/CD fasst Prozesse zusammen, die Änderungen automatisiert bauen, testen und anschließend für eine Auslieferung oder ein Deployment bereitstellen.",
+    "aliases": ["CI", "CD"]
+  },
+  "CLI": {
+    "full": "Command Line Interface",
+    "short": "Bedienung eines Programms über die Kommandozeile.",
+    "description": "Eine textbasierte Schnittstelle, über die Programme und Werkzeuge mit Befehlen im Terminal gesteuert werden.",
+    "aliases": []
+  },
+  "DNS": {
+    "full": "Domain Name System",
+    "short": "Übersetzt Domainnamen in IP-Adressen und andere DNS-Einträge.",
+    "description": "DNS ist das verteilte Namenssystem des Internets und ordnet Namen wie example.org unter anderem IP-Adressen zu.",
+    "aliases": []
+  },
+  "Docker": {
+    "full": "Docker",
+    "short": "Plattform zum Bauen und Ausführen von Containern.",
+    "description": "Docker verpackt Anwendungen samt benötigter Laufzeit und Abhängigkeiten in Images, die als isolierte Container gestartet werden können.",
+    "aliases": []
+  },
+  "EC2": {
+    "full": "Amazon Elastic Compute Cloud",
+    "short": "Virtuelle Serverinstanzen innerhalb von AWS.",
+    "description": "EC2 stellt virtuelle Maschinen mit frei wählbaren Instanztypen, Betriebssystemen, Netzwerken und Speichern in AWS bereit.",
+    "aliases": ["Amazon EC2"]
+  },
+  "GitHub Actions": {
+    "full": "GitHub Actions",
+    "short": "Automatisierungs- und CI/CD-System von GitHub.",
+    "description": "GitHub Actions führt Workflows aus einem Repository aus, beispielsweise Tests, Builds, Security-Scans oder Deployments.",
+    "aliases": []
+  },
+  "GHCR": {
+    "full": "GitHub Container Registry",
+    "short": "Container-Registry von GitHub.",
+    "description": "GHCR speichert und verteilt OCI- und Docker-Images, die beispielsweise von GitHub Actions gebaut werden.",
+    "aliases": []
+  },
+  "HTTP": {
+    "full": "Hypertext Transfer Protocol",
+    "short": "Protokoll zur Übertragung von Web-Inhalten.",
+    "description": "HTTP beschreibt die Kommunikation zwischen Clients und Servern im Web über Requests und Responses.",
+    "aliases": []
+  },
+  "HTTPS": {
+    "full": "Hypertext Transfer Protocol Secure",
+    "short": "HTTP mit verschlüsselter TLS-Verbindung.",
+    "description": "HTTPS schützt die Übertragung zwischen Client und Server durch TLS und ermöglicht zusätzlich die Prüfung der Serveridentität über Zertifikate.",
+    "aliases": []
+  },
+  "IAM": {
+    "full": "Identity and Access Management",
+    "short": "Verwaltung von Identitäten, Rollen und Berechtigungen.",
+    "description": "IAM steuert, wer auf welche Ressourcen zugreifen darf und welche Aktionen dabei erlaubt sind.",
+    "aliases": []
+  },
+  "IaC": {
+    "full": "Infrastructure as Code",
+    "short": "Infrastruktur wird über versionierten Code definiert.",
+    "description": "Bei Infrastructure as Code wird Infrastruktur deklarativ oder programmatisch beschrieben und automatisiert erstellt, geändert und reproduziert.",
+    "aliases": ["Infrastructure as Code"]
+  },
+  "IP": {
+    "full": "Internet Protocol",
+    "short": "Grundlegendes Netzwerkprotokoll für adressierte Datenpakete.",
+    "description": "Das Internet Protocol sorgt dafür, dass Datenpakete anhand von IP-Adressen zwischen Netzwerken übertragen werden können.",
+    "aliases": []
+  },
+  "NAT": {
+    "full": "Network Address Translation",
+    "short": "Übersetzt Netzwerkadressen zwischen unterschiedlichen Netzen.",
+    "description": "NAT wird häufig eingesetzt, damit Systeme aus privaten Netzen über eine gemeinsame öffentliche Adresse nach außen kommunizieren können.",
+    "aliases": []
+  },
+  "OIDC": {
+    "full": "OpenID Connect",
+    "short": "Authentifizierungsprotokoll auf Basis von OAuth 2.0.",
+    "description": "OpenID Connect ergänzt OAuth 2.0 um eine standardisierte Identitätsschicht und wird häufig für Single Sign-on verwendet.",
+    "aliases": ["OpenID Connect"]
+  },
+  "RAG": {
+    "full": "Retrieval-Augmented Generation",
+    "short": "LLM-Antworten werden mit zuvor abgerufenen Informationen angereichert.",
+    "description": "Bei RAG werden passende Inhalte aus einer Wissensquelle gesucht und dem Sprachmodell als zusätzlicher Kontext für die Antwort bereitgestellt.",
+    "aliases": []
+  },
+  "RDS": {
+    "full": "Amazon Relational Database Service",
+    "short": "Managed-Dienst für relationale Datenbanken in AWS.",
+    "description": "RDS übernimmt viele Betriebsaufgaben relationaler Datenbanken, beispielsweise Bereitstellung, Backups und Wartung.",
+    "aliases": ["Amazon RDS"]
+  },
+  "RSS": {
+    "full": "Really Simple Syndication",
+    "short": "Feed-Format zum Abonnieren neuer Inhalte.",
+    "description": "RSS stellt neue oder aktualisierte Inhalte in einem maschinenlesbaren Feed bereit, den Feedreader regelmäßig abrufen können.",
+    "aliases": []
+  },
+  "S3": {
+    "full": "Amazon Simple Storage Service",
+    "short": "Objektspeicher von AWS.",
+    "description": "Amazon S3 speichert Dateien und andere Objekte in Buckets und stellt dafür APIs, Zugriffssteuerung und verschiedene Speicherklassen bereit.",
+    "aliases": ["Amazon S3"]
+  },
+  "SSH": {
+    "full": "Secure Shell",
+    "short": "Verschlüsseltes Protokoll für entfernte Shell- und Netzwerkzugriffe.",
+    "description": "SSH ermöglicht verschlüsselte Verbindungen zu entfernten Systemen und wird unter anderem für Shell-Zugriff und Port-Forwarding eingesetzt.",
+    "aliases": []
+  },
+  "TLS": {
+    "full": "Transport Layer Security",
+    "short": "Protokoll zur Verschlüsselung und Absicherung von Netzwerkverbindungen.",
+    "description": "TLS schützt Daten während der Übertragung durch Verschlüsselung, Integritätsprüfung und Zertifikate.",
+    "aliases": []
+  },
+  "VPC": {
+    "full": "Virtual Private Cloud",
+    "short": "Logisch isoliertes virtuelles Netzwerk in einer Cloud-Umgebung.",
+    "description": "Eine VPC bildet einen eigenen Netzwerkbereich mit Subnetzen, Routing und Sicherheitsregeln. In AWS ist sie die grundlegende Netzwerkgrenze vieler Ressourcen.",
+    "aliases": ["AWS VPC"]
+  },
+  "VPN": {
+    "full": "Virtual Private Network",
+    "short": "Verschlüsselte Verbindung zwischen Geräten oder Netzwerken.",
+    "description": "Ein VPN verbindet Endgeräte oder Netzwerke über ein anderes Netzwerk und schützt den Datenverkehr typischerweise durch Verschlüsselung.",
+    "aliases": []
+  }
+}
