@@ -205,14 +205,16 @@ function createApp() {
     next();
   });
 
+  app.use(express.json({ limit: '4kb', type: 'application/json' }));
+
   app.use('/vendor/markdown-it', vendorStatic('markdown-it/dist/browser'));
   app.use('/vendor/force-graph', vendorStatic('force-graph/dist'));
   app.use('/vendor/medium-zoom', vendorStatic('medium-zoom/dist'));
   app.use('/vendor/mermaid', vendorStatic('mermaid/dist'));
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
 
-  app.get('/api/search', async (req, res) => {
-    const query = String(req.query.q || '').trim();
+  app.post('/api/search', async (req, res) => {
+    const query = String(req.body?.q || '').trim();
     if (query.length < 2 || query.length > 300) {
       res.status(400).json({ error: 'q must contain between 2 and 300 characters' });
       return;
@@ -221,7 +223,7 @@ function createApp() {
     try {
       const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
       target.searchParams.set('q', query);
-      target.searchParams.set('limit', String(normalizedSearchLimit(req.query.limit)));
+      target.searchParams.set('limit', String(normalizedSearchLimit(req.body?.limit)));
       const upstream = await fetch(target, {
         headers: { Accept: 'application/json' },
         signal: AbortSignal.timeout(20_000)
@@ -232,6 +234,10 @@ function createApp() {
       console.error('Kernel Grep upstream unavailable:', error.message || error);
       res.status(503).json({ error: 'Kernel Grep is temporarily unavailable' });
     }
+  });
+
+  app.get('/api/search', (_req, res) => {
+    res.status(405).json({ error: 'Use POST /api/search' });
   });
 
   app.get('/script.js', async (_req, res) => {
