@@ -1,0 +1,236 @@
+{
+  "Access Policy": {
+    "full": "Access Policy",
+    "short": "Regel, die festlegt, wer oder was auf einen Dienst zugreifen darf.",
+    "description": "Eine Access Policy bewertet beispielsweise Identität, Gruppe, Gerät oder weitere Bedingungen, bevor Zugriff gewährt wird.",
+    "aliases": ["Access Policies"]
+  },
+  "Aggregator": {
+    "full": "Aggregator",
+    "short": "Dienst, der Inhalte aus mehreren Quellen einsammelt und gemeinsam darstellt.",
+    "description": "Ein RSS-Aggregator ruft mehrere Feeds regelmäßig ab und bündelt neue Beiträge in einer gemeinsamen Oberfläche.",
+    "aliases": []
+  },
+  "Alert": {
+    "full": "Alert",
+    "short": "Automatisch erzeugte Warnung zu einem erkannten Problem oder auffälligen Zustand.",
+    "description": "Alerts machen beispielsweise Sicherheitslücken, fehlgeschlagene Checks oder ungewöhnliche Systemzustände sichtbar und müssen anschließend bewertet werden.",
+    "aliases": ["Alerts"]
+  },
+  "Content Governance": {
+    "full": "Content Governance",
+    "short": "Regeln und Prozesse für Struktur, Pflege, Freigabe und Nachvollziehbarkeit von Inhalten.",
+    "description": "Content Governance legt fest, welche Metadaten, Verantwortlichkeiten und Qualitätsprüfungen für veröffentlichte Inhalte gelten.",
+    "aliases": ["Content-Governance"]
+  },
+  "Coverage": {
+    "full": "Test Coverage",
+    "short": "Messwert dafür, welcher Anteil des Codes durch Tests ausgeführt wird.",
+    "description": "Coverage kann Lücken in einer Testsuite sichtbar machen, beweist allein aber noch nicht, dass alle relevanten Verhaltensweisen korrekt geprüft werden.",
+    "aliases": ["Test Coverage"]
+  },
+  "Crash Loop": {
+    "full": "Crash Loop",
+    "short": "Zustand, in dem ein Prozess wiederholt abstürzt und automatisch neu gestartet wird.",
+    "description": "Crash Loops können Systeme belasten und die Fehlersuche erschweren. Eine Wartezeit zwischen Neustarts verhindert zu schnelle Wiederholungen.",
+    "aliases": ["Crash-Loops", "Crash-Loop"]
+  },
+  "Database": {
+    "full": "Database",
+    "short": "Strukturierter, dauerhaft gespeicherter Datenbestand mit einer Schnittstelle zum Lesen und Schreiben.",
+    "description": "Datenbanken organisieren Daten so, dass Anwendungen sie zuverlässig speichern, suchen und verändern können.",
+    "aliases": ["DB", "Datenbank"]
+  },
+  "Declarative": {
+    "full": "Declarative Configuration",
+    "short": "Beschreibung des gewünschten Zustands statt einer Folge einzelner Arbeitsschritte.",
+    "description": "Deklarative Konfiguration sagt beispielsweise, welche Services laufen sollen. Das Werkzeug entscheidet anschließend selbst, welche Schritte dafür notwendig sind.",
+    "aliases": ["deklarativ", "deklarative", "deklarativen"]
+  },
+  "Deployment": {
+    "full": "Deployment",
+    "short": "Auslieferung und Inbetriebnahme einer Softwareversion in einer Zielumgebung.",
+    "description": "Ein Deployment umfasst je nach System beispielsweise Image-Verteilung, Konfiguration, Start neuer Instanzen, Healthchecks und Umschalten des Traffics.",
+    "aliases": ["Deployments", "deployen", "deployed", "Deploy"]
+  },
+  "Editorial Workflow": {
+    "full": "Editorial Workflow",
+    "short": "Definierter Ablauf vom Schreiben über Review und Freigabe bis zur Veröffentlichung eines Inhalts.",
+    "description": "Editorial Workflows regeln beispielsweise Entwurf, Korrektur, Freigabe, Versionierung und Veröffentlichung von Artikeln.",
+    "aliases": ["Editorial-Workflows"]
+  },
+  "Environment Variable": {
+    "full": "Environment Variable",
+    "short": "Schlüssel-Wert-Konfiguration, die einem Prozess über seine Laufzeitumgebung bereitgestellt wird.",
+    "description": "Umgebungsvariablen werden häufig für Ports, Zugangsdaten, Feature-Schalter oder andere deploymentspezifische Einstellungen genutzt.",
+    "aliases": ["Umgebungsvariable", "Umgebungsvariablen"]
+  },
+  "Finding": {
+    "full": "Finding",
+    "short": "Von einem Prüfwerkzeug festgestellter Befund, der bewertet werden muss.",
+    "description": "Ein Finding kann eine echte Schwachstelle, Fehlkonfiguration oder einen Fehlalarm darstellen. Erst die anschließende Triage klärt Relevanz und Priorität.",
+    "aliases": ["Findings"]
+  },
+  "Footnote": {
+    "full": "Footnote",
+    "short": "Zusatzinformation außerhalb des eigentlichen Leseflusses eines Textes.",
+    "description": "Fußnoten eignen sich für Quellen oder ergänzende Details, die den Haupttext nicht unterbrechen sollen.",
+    "aliases": ["Footnotes", "Fußnote", "Fußnoten"]
+  },
+  "Graph": {
+    "full": "Graph",
+    "short": "Datenstruktur aus Knoten und Verbindungen zwischen diesen Knoten.",
+    "description": "Graphen eignen sich besonders für stark vernetzte Informationen, bei denen Beziehungen selbst ein wichtiger Teil der Daten sind.",
+    "aliases": ["Graph-Kanten", "Graph-Kante"]
+  },
+  "Guardrail": {
+    "full": "Guardrail",
+    "short": "Technische oder organisatorische Leitplanke, die riskante Zustände verhindert oder begrenzt.",
+    "description": "Guardrails setzen sichere Grenzen, ohne jeden Einzelfall manuell prüfen zu müssen, etwa durch verpflichtende Zugriffspolicies oder CI-Regeln.",
+    "aliases": ["Guardrails"]
+  },
+  "Incident": {
+    "full": "Incident",
+    "short": "Ungeplantes Ereignis, das Verfügbarkeit, Sicherheit oder korrekten Betrieb eines Systems beeinträchtigt.",
+    "description": "Incident Management umfasst Erkennen, Eindämmen, Beheben und anschließendes Aufarbeiten einer Betriebs- oder Sicherheitsstörung.",
+    "aliases": ["Incidents", "Incident-Aufwand"]
+  },
+  "journalctl": {
+    "full": "journalctl",
+    "short": "Kommandozeilenwerkzeug zum Lesen des systemd-Journals.",
+    "description": "journalctl zeigt Logs von systemd und den darüber verwalteten Diensten an und kann nach Unit, Zeitraum oder Priorität filtern.",
+    "aliases": []
+  },
+  "Lock-in": {
+    "full": "Vendor Lock-in",
+    "short": "Abhängigkeit von einer Plattform, die einen späteren Wechsel erschwert.",
+    "description": "Lock-in entsteht, wenn Datenformate, APIs oder Betriebsmodelle stark an einen Anbieter gebunden sind und Migration dadurch aufwendig wird.",
+    "aliases": ["Vendor Lock-in"]
+  },
+  "Major Update": {
+    "full": "Major Version Update",
+    "short": "Versionssprung, der inkompatible Änderungen enthalten kann.",
+    "description": "Nach Semantic Versioning darf eine neue Major-Version bestehende APIs oder Verhalten brechen und sollte deshalb besonders sorgfältig getestet werden.",
+    "aliases": ["Major-Update", "Major-Updates"]
+  },
+  "Median": {
+    "full": "Median",
+    "short": "Mittlerer Wert einer sortierten Zahlenmenge.",
+    "description": "Der Median ist robuster gegenüber einzelnen Ausreißern als ein arithmetischer Mittelwert und kann als Vergleichsbasis für Scores dienen.",
+    "aliases": []
+  },
+  "Model Card": {
+    "full": "Model Card",
+    "short": "Dokumentation zu Zweck, Training, Grenzen und Nutzung eines Machine-Learning-Modells.",
+    "description": "Eine Model Card beschreibt typischerweise erwartete Eingaben, Evaluierung, bekannte Einschränkungen und empfohlene Verwendung eines Modells.",
+    "aliases": ["Modellkarte"]
+  },
+  "MotherDuck": {
+    "full": "MotherDuck",
+    "short": "Cloud-Dienst auf Basis von DuckDB für gemeinsam genutzte analytische Daten und Abfragen.",
+    "description": "MotherDuck ergänzt lokale DuckDB-Workloads um eine verwaltete Cloud-Schicht, die Daten und Abfragen zwischen mehreren Clients verfügbar machen kann.",
+    "aliases": []
+  },
+  "Multi-Hop": {
+    "full": "Multi-Hop Query",
+    "short": "Abfrage, die mehrere aufeinanderfolgende Beziehungen benötigt, um zu einem Ergebnis zu gelangen.",
+    "description": "In einem Graphen kann eine Multi-Hop-Abfrage beispielsweise von einem Artikel über ein Thema zu einem weiteren verknüpften Artikel laufen.",
+    "aliases": ["Multi-Hop-Beziehungen"]
+  },
+  "non-blocking": {
+    "full": "Non-blocking Check",
+    "short": "Prüfung, deren Warnungen einen Workflow nicht automatisch fehlschlagen lassen.",
+    "description": "Non-blocking Checks liefern Feedback, ohne das Mergen oder Deployment allein aufgrund dieses Hinweises zu stoppen.",
+    "aliases": ["non-blocking"]
+  },
+  "npm": {
+    "full": "Node Package Manager",
+    "short": "Paketmanager und Registry-Ökosystem für JavaScript- und Node.js-Projekte.",
+    "description": "npm installiert Dependencies anhand von package.json und package-lock.json und führt außerdem definierte Projektskripte aus.",
+    "aliases": []
+  },
+  "Producer/Consumer": {
+    "full": "Producer and Consumer",
+    "short": "Producer veröffentlichen Ereignisse, Consumer lesen und verarbeiten sie.",
+    "description": "In Event-Streaming-Systemen sind Produzenten und Konsumenten voneinander entkoppelt, sodass mehrere Consumer denselben Ereignisstrom unabhängig verarbeiten können.",
+    "aliases": ["Consumer", "Consumer gleichzeitig", "Produzent", "Producer"]
+  },
+  "Public IP": {
+    "full": "Public IP Address",
+    "short": "IP-Adresse, die aus öffentlichen IP-Netzen erreichbar und routbar ist.",
+    "description": "Eine Public IP macht einen Host grundsätzlich aus externen Netzen adressierbar. Firewall- und Zugriffsregeln bestimmen anschließend, welche Dienste tatsächlich erreichbar sind.",
+    "aliases": ["öffentliche IP", "öffentlichen IP"]
+  },
+  "Redis": {
+    "full": "Redis",
+    "short": "Schneller In-Memory-Datenspeicher, häufig als Cache oder für kurzlebige Zustände verwendet.",
+    "description": "Redis hält Daten überwiegend im Arbeitsspeicher und bietet einfache Datenstrukturen, wodurch sehr schnelle Zugriffe möglich sind.",
+    "aliases": []
+  },
+  "Relevanz-Gate": {
+    "full": "Relevance Gate",
+    "short": "Schwellwertlogik, die schwache Suchkandidaten vollständig aussortiert.",
+    "description": "Ein Relevanz-Gate trennt Ranking von der Frage, ob ein Ergebnis überhaupt gut genug ist, um dem Nutzer gezeigt zu werden.",
+    "aliases": ["Relevanz-Gate"]
+  },
+  "Rendering": {
+    "full": "Rendering",
+    "short": "Umwandlung strukturierter Inhalte in eine darstellbare Ausgabe.",
+    "description": "Im Blog wird beispielsweise Markdown geparst und anschließend als HTML gerendert, das der Browser darstellen kann.",
+    "aliases": ["Rendern", "gerendert"]
+  },
+  "Routing": {
+    "full": "Routing",
+    "short": "Zuordnung eingehender Anfragen zu einem Ziel oder einer passenden Anwendungskomponente.",
+    "description": "Web-Routing entscheidet anhand von Pfad, Hostname oder weiteren Merkmalen, welcher Handler oder Backend-Dienst eine Anfrage verarbeitet.",
+    "aliases": []
+  },
+  "Runbook": {
+    "full": "Runbook",
+    "short": "Dokumentierte Schrittfolge für wiederkehrende Betriebs- oder Störungssituationen.",
+    "description": "Runbooks beschreiben nachvollziehbar, wie ein Service geprüft, gewartet oder bei einem Incident wiederhergestellt werden soll.",
+    "aliases": ["Runbooks"]
+  },
+  "Scheduling": {
+    "full": "Scheduling",
+    "short": "Entscheidung, wann und auf welchem verfügbaren System ein Workload ausgeführt wird.",
+    "description": "Cluster-Orchestratoren berücksichtigen beim Scheduling Ressourcen, Regeln und Verfügbarkeit, um Container oder andere Workloads auf Hosts zu verteilen.",
+    "aliases": []
+  },
+  "Semantic Lift": {
+    "full": "Semantic Lift",
+    "short": "Abstand eines semantischen Scores zu einer Vergleichsbasis des restlichen Datenbestands.",
+    "description": "Ein Semantic Lift hilft zu unterscheiden, ob ein Kandidat nur absolut einen hohen Vektor-Score hat oder tatsächlich deutlich besser als typische andere Treffer ist.",
+    "aliases": ["semanticLift", "semantischer Lift"]
+  },
+  "TCP": {
+    "full": "Transmission Control Protocol",
+    "short": "Verbindungsorientiertes Transportprotokoll für zuverlässige Datenübertragung über IP-Netze.",
+    "description": "TCP stellt Reihenfolge, Wiederholung verlorener Pakete und eine zuverlässige Byte-Verbindung zwischen zwei Endpunkten bereit.",
+    "aliases": []
+  },
+  "Topic": {
+    "full": "Event Streaming Topic",
+    "short": "Benannter Ereignisstrom, in den Producer schreiben und aus dem Consumer lesen.",
+    "description": "Systeme wie Kafka organisieren Events in Topics, damit unterschiedliche Ereignisarten getrennt veröffentlicht und konsumiert werden können.",
+    "aliases": ["Topics"]
+  },
+  "Trade-off": {
+    "full": "Trade-off",
+    "short": "Bewusster Kompromiss, bei dem ein Vorteil durch einen Nachteil oder Aufwand erkauft wird.",
+    "description": "Architekturentscheidungen bestehen häufig aus Trade-offs zwischen Einfachheit, Kosten, Leistung, Sicherheit und Wartbarkeit.",
+    "aliases": ["Trade-offs"]
+  },
+  "Traffic": {
+    "full": "Network Traffic",
+    "short": "Datenverkehr, der zwischen Clients, Diensten und Netzwerken übertragen wird.",
+    "description": "Beim Deployment bezeichnet Traffic häufig die produktiven Benutzeranfragen, die kontrolliert auf eine neue oder alte Instanz geleitet werden.",
+    "aliases": []
+  },
+  "Workflow Permissions": {
+    "full": "Workflow Permissions",
+    "short": "Berechtigungen, mit denen ein CI-Workflow auf Repository-Funktionen zugreifen darf.",
+    "description": "Workflow Permissions bestimmen beispielsweise, ob GitHub Actions Inhalte schreiben oder Pull Requests erzeugen darf.",
+    "aliases": []
+  }
+}
