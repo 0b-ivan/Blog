@@ -50,12 +50,12 @@ const BLOCKED_PATHS = [
 ];
 
 const FOOTER_META_LINKS = [
-  '<a href="/#about">About</a>',
+  '<a href="/about">About</a>',
   '<a href="/datenschutz">Datenschutz</a>',
   '<a href="/impressum">Impressum</a>'
 ].join('\n        ');
 
-const META_LINK_PATTERN = /\s*<a\b[^>]*href="(?:#about|\/#about|index\.html#about|\/datenschutz|datenschutz\.html|\/impressum|impressum\.html)"[^>]*>(?:About|Datenschutz|Impressum)<\/a>/gi;
+const META_LINK_PATTERN = /\s*<a\b[^>]*href="(?:#about|\/#about|index\.html#about|\/about|about\.html|\/datenschutz|datenschutz\.html|\/impressum|impressum\.html)"[^>]*>(?:About|Datenschutz|Impressum)<\/a>/gi;
 
 function stripExternalFontLinks(html) {
   return html
@@ -218,6 +218,15 @@ function createApp() {
     } catch (error) {
       console.error(error);
       res.status(500).type('text').send('Could not load page');
+    }
+  });
+
+  app.get(['/about', '/about.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'about.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load about page');
     }
   });
 

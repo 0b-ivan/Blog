@@ -34,6 +34,8 @@ async function assertMetaLinksInFooter(page) {
     '.main-nav a[href="#about"]',
     '.main-nav a[href="/#about"]',
     '.main-nav a[href="index.html#about"]',
+    '.main-nav a[href="/about"]',
+    '.main-nav a[href="about.html"]',
     '.main-nav a[href="/datenschutz"]',
     '.main-nav a[href="datenschutz.html"]',
     '.main-nav a[href="/impressum"]',
@@ -43,7 +45,7 @@ async function assertMetaLinksInFooter(page) {
 
   const footer = page.locator('.site-footer .footer-links');
   await footer.waitFor({ state: 'attached' });
-  assert.equal(await footer.locator('a[href="/#about"]').count(), 1, 'About must appear once in the footer');
+  assert.equal(await footer.locator('a[href="/about"]').count(), 1, 'About must appear once in the footer');
   assert.equal(await footer.locator('a[href="/datenschutz"]').count(), 1, 'Datenschutz must appear once in the footer');
   assert.equal(await footer.locator('a[href="/impressum"]').count(), 1, 'Impressum must appear once in the footer');
 }
@@ -100,6 +102,9 @@ async function main() {
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#posts-list .post-card').first().waitFor({ state: 'visible' });
     await assertMetaLinksInFooter(page);
+    assert.equal(await page.locator('.main-nav a[href="#newsletter"]').count(), 0, 'Abo must not appear in the main navigation');
+    assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
+    await page.locator('.hero-profile a[href="/about"]').waitFor({ state: 'visible' });
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
       cards.map((card) => card.dataset.href).filter(Boolean)
@@ -175,10 +180,11 @@ async function main() {
     await roadmap.waitFor({ state: 'visible', timeout: 15_000 });
     assert.equal((await roadmap.locator('.roadmap-hero__title').innerText()).trim(), 'Kernel Notes Roadmap');
     assert.equal(await roadmap.locator('.roadmap-milestone').count(), 1, 'Expected one roadmap milestone');
-    assert.equal(await roadmap.locator('.roadmap-detail-card').count(), 4, 'Expected four milestone detail cards');
-    assert.match(await roadmap.innerText(), /Meilenstein 1 — Vollwertige englische Version des Blogs/);
-    assert.match(await roadmap.innerText(), /Definition of Done/);
-    await roadmap.locator('.roadmap-loop-note').waitFor({ state: 'visible' });
+    assert.equal(await roadmap.locator('.roadmap-detail-card').count(), 0, 'Roadmap should stay compact without detail cards');
+    assert.equal(await roadmap.locator('.roadmap-milestone__summary li').count(), 6, 'Expected six compact roadmap bullets');
+    assert.match(await roadmap.innerText(), /Meilenstein 1 — Englische Version/);
+    assert.equal(await roadmap.locator('.roadmap-loop-note').count(), 0, 'Roadmap loop note should be removed');
+    assert.equal(await roadmap.locator('.roadmap-reminder').count(), 0, 'Roadmap focus reminder should be removed');
     await assertMetaLinksInFooter(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
@@ -188,6 +194,17 @@ async function main() {
     ]);
     await page.locator('.snippet-library h1').waitFor({ state: 'visible' });
     await waitForSnippetLibrary(page);
+    await assertMetaLinksInFooter(page);
+
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await page.locator('.site-footer a[href="/about"]').waitFor({ state: 'visible' });
+    await Promise.all([
+      page.waitForURL((url) => url.pathname === '/about'),
+      page.locator('.site-footer a[href="/about"]').click()
+    ]);
+    await page.locator('#about-title').waitFor({ state: 'visible' });
+    assert.equal((await page.locator('#about-title').innerText()).trim(), 'About');
+    assert.match(await page.locator('.about').innerText(), /Kernel Notes ist mein technisches Notizbuch/);
     await assertMetaLinksInFooter(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
@@ -218,7 +235,7 @@ async function main() {
       [],
       `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
     );
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), meta links only in footer, privacy headers/page and zero passive third-party requests.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }

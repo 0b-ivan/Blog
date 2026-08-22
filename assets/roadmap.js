@@ -99,13 +99,7 @@
     const intro = document.createElement('div');
     intro.className = 'roadmap-hero__intro';
     intro.append(...introNodes);
-
-    const note = document.createElement('aside');
-    note.className = 'roadmap-loop-note';
-    note.setAttribute('aria-label', 'Roadmap-Prinzip');
-    note.innerHTML = '<strong>Planen → Bauen</strong><span>Verbessern → Wiederholen</span>';
-
-    hero.append(title, intro, note);
+    hero.append(title, intro);
 
     const board = document.createElement('div');
     board.className = 'roadmap-board';
@@ -134,11 +128,7 @@
       milestoneIndex += 1;
     }
 
-    const reminder = document.createElement('div');
-    reminder.className = 'roadmap-reminder';
-    reminder.innerHTML = '<span>★</span><strong>Aktueller Fokus</strong><span>Meilenstein 1</span>';
-
-    root.replaceChildren(hero, reminder, board);
+    root.replaceChildren(hero, board);
     root.classList.add('is-enhanced');
   }
 
