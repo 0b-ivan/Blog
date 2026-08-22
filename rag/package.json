@@ -1,11 +1,12 @@
 {
   "name": "kernel-notes-semantic-search",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Local DuckDB semantic index for Kernel Notes",
+  "description": "Local DuckDB semantic index and Kernel Grep service",
   "scripts": {
     "index": "node index.js",
     "search": "node search.js",
+    "serve": "node server.js",
     "test": "node --test tests/*.node.js"
   },
   "dependencies": {
