@@ -1,0 +1,144 @@
+name: Build E-Book
+
+on:
+  pull_request:
+    paths:
+      - 'posts/**'
+      - 'assets/posts/**'
+      - 'assets/ebook.css'
+      - 'config/glossary.json'
+      - 'config/glossary/**'
+      - 'scripts/build-ebook.js'
+      - 'package.json'
+      - '.github/workflows/ebook.yml'
+  workflow_run:
+    workflows:
+      - Deploy
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-ebook-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'publish' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pandoc
+
+      - name: Build EPUB
+        env:
+          EBOOK_BUILD_DATE: 2026-01-01
+        run: npm run ebook:build
+
+      - name: Validate EPUB archive
+        run: |
+          set -euo pipefail
+          EPUB='assets/posts/downloads/kernel-notes.epub'
+          test -s "$EPUB"
+          unzip -t "$EPUB" >/dev/null
+          test "$(unzip -p "$EPUB" mimetype)" = 'application/epub+zip'
+          echo "EPUB size: $(du -h "$EPUB" | cut -f1)"
+
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - name: Checkout deployed revision
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Install Pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends pandoc
+
+      - name: Build EPUB
+        env:
+          EBOOK_BUILD_DATE: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.updated_at || github.event.repository.updated_at }}
+        run: npm run ebook:build
+
+      - name: Validate EPUB archive
+        run: |
+          set -euo pipefail
+          EPUB='assets/posts/downloads/kernel-notes.epub'
+          test -s "$EPUB"
+          unzip -t "$EPUB" >/dev/null
+          test "$(unzip -p "$EPUB" mimetype)" = 'application/epub+zip'
+
+      - name: Validate Hetzner deployment secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          test -n "$HETZNER_HOST" || { echo 'HETZNER_HOST is missing'; exit 1; }
+          test -n "$HETZNER_USER" || { echo 'HETZNER_USER is missing'; exit 1; }
+          test -n "$HETZNER_SSH_KEY" || { echo 'HETZNER_SSH_KEY is missing'; exit 1; }
+          test -n "$HETZNER_KNOWN_HOSTS" || { echo 'HETZNER_KNOWN_HOSTS is missing'; exit 1; }
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload EPUB
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          REVISION: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          PORT="${HETZNER_PORT:-22}"
+          REMOTE_FILE="/tmp/kernel-notes-${REVISION}.epub"
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            assets/posts/downloads/kernel-notes.epub \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_FILE}"
+
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_FILE" <<'REMOTE'
+          set -euo pipefail
+          SOURCE="$1"
+          VOLUME='kernel-notes-blog-post-assets'
+          TARGET='/target/downloads/kernel-notes.epub'
+          HELPER_IMAGE='alpine:3.22'
+
+          docker volume inspect "$VOLUME" >/dev/null 2>&1 || docker volume create "$VOLUME" >/dev/null
+          docker pull "$HELPER_IMAGE" >/dev/null
+          docker run --rm \
+            -v "${VOLUME}:/target" \
+            -v "${SOURCE}:/source.epub:ro" \
+            "$HELPER_IMAGE" \
+            sh -c 'set -eu; mkdir -p /target/downloads; cp /source.epub /target/downloads/kernel-notes.epub.new; mv /target/downloads/kernel-notes.epub.new /target/downloads/kernel-notes.epub'
+          rm -f "$SOURCE"
+
+          test "$(docker run --rm -v "${VOLUME}:/target:ro" "$HELPER_IMAGE" sh -c 'wc -c < /target/downloads/kernel-notes.epub')" -gt 1000
+          curl -fsS --max-time 20 http://127.0.0.1:1888/assets/posts/downloads/kernel-notes.epub -o /dev/null
+          echo 'E-Book published successfully.'
+          REMOTE

@@ -11,6 +11,10 @@ rag/node_modules/
 post-history/*
 !post-history/.gitkeep
 
+# Generated EPUB source and output
+.ebook/
+assets/posts/downloads/*.epub
+
 # Obsidian local state
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
