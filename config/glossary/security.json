@@ -1,0 +1,176 @@
+{
+  "Break-Glass-Zugang": {
+    "full": "Break-Glass Access",
+    "short": "Dokumentierter Notfallzugang für den Fall, dass normale Zugriffswege ausfallen.",
+    "description": "Ein Break-Glass-Zugang wird nur im Ausnahmefall verwendet und sollte besonders geschützt, überwacht und regelmäßig getestet werden.",
+    "aliases": [
+      "Break-Glass",
+      "Break-Glass-Zugang"
+    ]
+  },
+  "Cloudflare Access": {
+    "full": "Cloudflare Access",
+    "short": "Zugriffskontrolle vor Webanwendungen und internen Diensten.",
+    "description": "Cloudflare Access prüft Identität und Richtlinien, bevor eine Anfrage an den dahinterliegenden Dienst weitergeleitet wird.",
+    "aliases": [
+      "Access"
+    ]
+  },
+  "Cloudflare Tunnel": {
+    "full": "Cloudflare Tunnel",
+    "short": "Ausgehender Tunnel von einem privaten Dienst zum Cloudflare-Netzwerk.",
+    "description": "Ein Cloudflare Tunnel verbindet einen Dienst ohne direkt offenen eingehenden Port mit Cloudflare. Der lokale cloudflared-Prozess baut die Verbindung nach außen auf.",
+    "aliases": [
+      "Tunnel"
+    ]
+  },
+  "Cloudflare Zero Trust": {
+    "full": "Cloudflare Zero Trust",
+    "short": "Cloudflare-Dienste für identitäts- und richtlinienbasierten Zugriff.",
+    "description": "Cloudflare Zero Trust kombiniert unter anderem Access-Richtlinien, Tunnel und weitere Kontrollen, um Zugriffe nicht allein anhand des Netzstandorts zu vertrauen.",
+    "aliases": []
+  },
+  "Code Scanning": {
+    "full": "Code Scanning",
+    "short": "Automatisierte Analyse von Quellcode auf Fehler und Sicherheitsprobleme.",
+    "description": "Code Scanning untersucht Quellcode statisch oder semantisch und meldet potenzielle Schwachstellen, Fehlkonfigurationen oder Programmierfehler.",
+    "aliases": []
+  },
+  "Fail2ban": {
+    "full": "Fail2ban",
+    "short": "Werkzeug zum zeitweisen Sperren auffälliger IP-Adressen anhand von Logeinträgen.",
+    "description": "Fail2ban überwacht Logs auf wiederholte fehlgeschlagene Anmeldeversuche und kann passende Firewall-Regeln setzen.",
+    "aliases": []
+  },
+  "Firewall": {
+    "full": "Firewall",
+    "short": "Kontrolliert erlaubten und blockierten Netzwerkverkehr anhand von Regeln.",
+    "description": "Eine Firewall beschränkt Netzwerkverbindungen typischerweise nach Quelle, Ziel, Port und Protokoll und reduziert damit unnötig erreichbare Angriffsflächen.",
+    "aliases": []
+  },
+  "Hardening": {
+    "full": "System Hardening",
+    "short": "Gezielte Verringerung der Angriffsfläche eines Systems.",
+    "description": "Hardening umfasst beispielsweise das Abschalten unnötiger Dienste, restriktive Rechte, sichere Defaults und eine minimale Netzwerkerreichbarkeit.",
+    "aliases": []
+  },
+  "Key-Only Login": {
+    "full": "SSH Key-Only Login",
+    "short": "SSH-Anmeldung ausschließlich mit kryptografischem Schlüssel statt Passwort.",
+    "description": "Beim Key-Only Login wird Passwortauthentifizierung deaktiviert. Der Server akzeptiert nur Clients, die den passenden privaten Schlüssel nachweisen können.",
+    "aliases": [
+      "Key-Login",
+      "Key-Only"
+    ]
+  },
+  "Least Privilege": {
+    "full": "Principle of Least Privilege",
+    "short": "Jede Identität erhält nur die minimal erforderlichen Berechtigungen.",
+    "description": "Least Privilege begrenzt mögliche Schäden durch Fehlkonfigurationen, kompromittierte Konten oder fehlerhafte Anwendungen.",
+    "aliases": [
+      "least privilege"
+    ]
+  },
+  "Machine-to-Machine": {
+    "full": "Machine-to-Machine Authentication",
+    "short": "Authentifizierung zwischen technischen Systemen ohne interaktiven Benutzer.",
+    "description": "Machine-to-Machine-Zugriffe verwenden typischerweise Service-Identitäten, Tokens oder Zertifikate statt eines menschlichen Login-Flows.",
+    "aliases": [
+      "M2M"
+    ]
+  },
+  "mTLS": {
+    "full": "Mutual Transport Layer Security",
+    "short": "TLS-Verbindung, bei der sich Client und Server gegenseitig mit Zertifikaten authentifizieren.",
+    "description": "Bei mTLS weist nicht nur der Server, sondern auch der Client seine Identität durch ein Zertifikat nach. Das eignet sich besonders für sensible Service-zu-Service-Zugriffe.",
+    "aliases": [
+      "Mutual TLS"
+    ]
+  },
+  "Private Vulnerability Reporting": {
+    "full": "Private Vulnerability Reporting",
+    "short": "GitHub-Funktion zum vertraulichen Melden von Sicherheitslücken an Repository-Verantwortliche.",
+    "description": "Security-Forscher können eine Schwachstelle privat melden, bevor Details öffentlich gemacht oder ein Security Advisory veröffentlicht werden.",
+    "aliases": []
+  },
+  "Rate Limiting": {
+    "full": "Rate Limiting",
+    "short": "Begrenzt die Anzahl von Anfragen innerhalb eines Zeitraums.",
+    "description": "Rate Limiting schützt Dienste unter anderem vor Überlastung, automatisierten Login-Versuchen und missbräuchlicher Nutzung.",
+    "aliases": []
+  },
+  "Secret Scanning": {
+    "full": "Secret Scanning",
+    "short": "Automatisches Erkennen versehentlich veröffentlichter Zugangsdaten und Schlüssel.",
+    "description": "Secret Scanning sucht Repository-Inhalte nach Mustern für Tokens, Passwörter oder API-Schlüssel und kann entsprechende Warnungen erzeugen.",
+    "aliases": [
+      "Secret Scanning Alerts"
+    ]
+  },
+  "Security Advisory": {
+    "full": "Security Advisory",
+    "short": "Veröffentlichte Sicherheitsinformation zu einer konkreten Schwachstelle.",
+    "description": "Ein Security Advisory beschreibt betroffene Versionen, Auswirkungen und häufig auch sichere oder gepatchte Versionen einer Software.",
+    "aliases": [
+      "Security Advisories"
+    ]
+  },
+  "Security Update": {
+    "full": "Security Update",
+    "short": "Softwareaktualisierung, die eine bekannte Sicherheitslücke behebt.",
+    "description": "Security Updates priorisieren die Behebung konkret bekannter Schwachstellen und sollten abhängig von Risiko und Exposition zeitnah bewertet werden.",
+    "aliases": [
+      "Security Updates"
+    ]
+  },
+  "Service Token": {
+    "full": "Service Token",
+    "short": "Technischer Zugangsnachweis für automatisierte Service-zu-Service-Verbindungen.",
+    "description": "Service Tokens erlauben Maschinen oder Anwendungen einen authentifizierten Zugriff, ohne einen interaktiven Benutzer-Login zu benötigen.",
+    "aliases": [
+      "Service Tokens"
+    ]
+  },
+  "Severity": {
+    "full": "Severity",
+    "short": "Einstufung der Schwere eines Fehlers oder einer Sicherheitslücke.",
+    "description": "Severity-Stufen wie Critical, High oder Moderate helfen dabei, Findings nach potenzieller Auswirkung zu priorisieren.",
+    "aliases": []
+  },
+  "Supply Chain": {
+    "full": "Software Supply Chain",
+    "short": "Lieferkette aus Quellcode, Dependencies, Build-Systemen und Artefakten bis zur Auslieferung.",
+    "description": "Supply-Chain-Sicherheit betrachtet Risiken entlang des gesamten Software-Lieferwegs, nicht nur im eigenen Anwendungscode.",
+    "aliases": [
+      "Supply-Chain",
+      "Supply-Chain-Seite"
+    ]
+  },
+  "Triage": {
+    "full": "Triage",
+    "short": "Schnelle Erstbewertung und Priorisierung eines Findings oder Incidents.",
+    "description": "Bei der Triage werden Schwere, Betroffenheit, Erreichbarkeit und Dringlichkeit bewertet, bevor eine detaillierte Analyse oder Behebung folgt.",
+    "aliases": []
+  },
+  "Trivy": {
+    "full": "Trivy",
+    "short": "Security-Scanner für Container-Images, Dateisysteme, Dependencies und Konfigurationen.",
+    "description": "Trivy erkennt unter anderem bekannte Schwachstellen, Fehlkonfigurationen und Secrets und lässt sich in CI-Pipelines integrieren.",
+    "aliases": [
+      "Trivy-Scan",
+      "Trivy-Scans"
+    ]
+  },
+  "UFW": {
+    "full": "Uncomplicated Firewall",
+    "short": "Einfaches Kommandozeilenwerkzeug zur Verwaltung von Firewall-Regeln unter Linux.",
+    "description": "UFW vereinfacht das Erlauben oder Blockieren von Ports und basiert unter der Haube auf den Linux-Firewallmechanismen.",
+    "aliases": []
+  },
+  "Zero Trust": {
+    "full": "Zero Trust",
+    "short": "Sicherheitsmodell, das keiner Anfrage allein wegen ihres Netzstandorts vertraut.",
+    "description": "Zero Trust prüft Identität, Gerät und Richtlinien kontinuierlich und gewährt nur den jeweils notwendigen Zugriff.",
+    "aliases": []
+  }
+}
