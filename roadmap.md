@@ -11,4 +11,11 @@ Nur die größeren Sachen, die als Nächstes anstehen.
 - `hreflang` und eigener englischer RSS-Feed
 - Smoke-Tests für beide Sprachen
 
+## Meilenstein 2 — Semantische Suche
+
+- Artikel lokal in DuckDB indexieren
+- semantische Suche über `/brain`
+- ähnliche Artikel in den Knowledge Graph übernehmen
+- Neo4j später für echte Graph-Abfragen prüfen
+
 Weitere Punkte kommen dazu, wenn sie konkret werden.

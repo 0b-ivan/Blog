@@ -179,10 +179,13 @@ async function main() {
     const roadmap = page.locator('#roadmap-content[data-roadmap-ready="true"]');
     await roadmap.waitFor({ state: 'visible', timeout: 15_000 });
     assert.equal((await roadmap.locator('.roadmap-hero__title').innerText()).trim(), 'Kernel Notes Roadmap');
-    assert.equal(await roadmap.locator('.roadmap-milestone').count(), 1, 'Expected one roadmap milestone');
+    assert.equal(await roadmap.locator('.roadmap-milestone').count(), 2, 'Expected two roadmap milestones');
     assert.equal(await roadmap.locator('.roadmap-detail-card').count(), 0, 'Roadmap should stay compact without detail cards');
-    assert.equal(await roadmap.locator('.roadmap-milestone__summary li').count(), 6, 'Expected six compact roadmap bullets');
+    const roadmapMilestones = roadmap.locator('.roadmap-milestone');
+    assert.equal(await roadmapMilestones.nth(0).locator('.roadmap-milestone__summary li').count(), 6, 'Expected six bullets for milestone 1');
+    assert.equal(await roadmapMilestones.nth(1).locator('.roadmap-milestone__summary li').count(), 4, 'Expected four bullets for milestone 2');
     assert.match(await roadmap.innerText(), /Meilenstein 1 — Englische Version/);
+    assert.match(await roadmap.innerText(), /Meilenstein 2 — Semantische Suche/);
     assert.equal(await roadmap.locator('.roadmap-loop-note').count(), 0, 'Roadmap loop note should be removed');
     assert.equal(await roadmap.locator('.roadmap-reminder').count(), 0, 'Roadmap focus reminder should be removed');
     await assertMetaLinksInFooter(page);
