@@ -23,17 +23,28 @@
 }
 
 .grep-kicker {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   color: #72d2a4;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: lowercase;
 }
 
 .grep-search h1 {
+  margin: 0 0 18px;
+  color: #8fa2b4;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.grep-headline {
   margin: 0;
   color: #f5f7fa;
   font-size: clamp(2.55rem, 7vw, 5.4rem);
+  font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.06em;
 }
@@ -53,11 +64,11 @@
 
 .grep-command {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  gap: 10px;
   align-items: center;
   min-height: 68px;
-  padding: 10px 12px 10px 20px;
+  padding: 10px 10px 10px 20px;
   border: 1px solid rgba(114, 210, 164, 0.42);
   border-radius: 13px;
   background: rgba(8, 15, 23, 0.94);
@@ -99,22 +110,37 @@
   color: #657789;
 }
 
-.grep-command__clear {
+.grep-command__clear,
+.grep-command__submit {
   width: 34px;
   height: 34px;
   padding: 0;
-  border: 0;
   border-radius: 7px;
-  background: transparent;
-  color: #8797a7;
   cursor: pointer;
-  font-size: 1.45rem;
+  font-family: inherit;
   line-height: 1;
 }
 
+.grep-command__clear {
+  border: 0;
+  background: transparent;
+  color: #8797a7;
+  font-size: 1.45rem;
+}
+
+.grep-command__submit {
+  border: 1px solid rgba(114, 210, 164, 0.28);
+  background: rgba(114, 210, 164, 0.08);
+  color: #72d2a4;
+  font-size: 0.95rem;
+}
+
 .grep-command__clear:hover,
-.grep-command__clear:focus-visible {
-  background: rgba(126, 164, 196, 0.12);
+.grep-command__clear:focus-visible,
+.grep-command__submit:hover,
+.grep-command__submit:focus-visible {
+  border-color: rgba(114, 210, 164, 0.65);
+  background: rgba(114, 210, 164, 0.13);
   color: #fff;
 }
 
@@ -299,7 +325,7 @@
     padding-top: 42px;
   }
 
-  .grep-search h1 {
+  .grep-headline {
     font-size: clamp(2.4rem, 13vw, 4rem);
   }
 
@@ -308,7 +334,7 @@
   }
 
   .grep-command {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     min-height: 62px;
     padding-left: 15px;
   }
