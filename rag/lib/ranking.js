@@ -59,23 +59,6 @@ function tokenMatches(queryToken, candidateToken) {
   return candidateToken.startsWith(queryToken) || queryToken.startsWith(candidateToken);
 }
 
-function fieldMatchScore(queryTokens, value, weight) {
-  if (!value || queryTokens.length === 0) {
-    return 0;
-  }
-
-  const candidateTokens = tokens(Array.isArray(value) ? value.join(' ') : value);
-  let matchedWeight = 0;
-
-  for (const queryToken of queryTokens) {
-    if (candidateTokens.some((candidateToken) => tokenMatches(queryToken, candidateToken))) {
-      matchedWeight += weight;
-    }
-  }
-
-  return matchedWeight;
-}
-
 function lexicalMatchScore(query, chunk) {
   const queryTokens = tokens(query, { removeStopWords: true });
   if (queryTokens.length === 0) {
@@ -127,12 +110,14 @@ function rankChunks(chunks, queryEmbedding, query, limit = 8, relevanceOptions =
   for (const chunk of chunks) {
     const semanticScore = cosineSimilarity(queryEmbedding, chunk.embedding);
     const lexicalScore = lexicalMatchScore(query, chunk);
+    const chunkRankScore = semanticScore + (lexicalScore * options.lexicalBoost);
     const existing = bestByPost.get(chunk.post_id);
-    if (!existing || semanticScore > existing.semanticScore || lexicalScore > existing.lexicalScore) {
+    if (!existing || chunkRankScore > existing.chunkRankScore) {
       bestByPost.set(chunk.post_id, {
         ...chunk,
         semanticScore,
-        lexicalScore
+        lexicalScore,
+        chunkRankScore
       });
     }
   }
@@ -146,9 +131,7 @@ function rankChunks(chunks, queryEmbedding, query, limit = 8, relevanceOptions =
       const lexicalQualified = candidate.lexicalScore >= options.minLexicalScore;
       const semanticQualified = candidate.semanticScore >= options.minSemanticScore
         && semanticLift >= options.minSemanticLift;
-      const relevanceScore = candidate.semanticScore
-        + (candidate.lexicalScore * options.lexicalBoost)
-        + Math.max(0, semanticLift);
+      const relevanceScore = candidate.chunkRankScore + Math.max(0, semanticLift);
 
       return {
         ...candidate,
