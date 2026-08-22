@@ -30,7 +30,7 @@
 
     <main class="legal-main">
       <article class="legal-card">
-        <p class="eyebrow">Rechtliches · Version 1.0 · Stand 22.08.2026</p>
+        <p class="eyebrow">Rechtliches · Version 1.1 · Stand 22.08.2026</p>
         <h1>Datenschutzhinweise</h1>
 
         <p>
@@ -104,7 +104,7 @@
             <h2>5. Protokollierung und Löschung</h2>
             <p>
               Die Blog-Anwendung selbst führt kein eigenes Besucher-Access-Log und legt keine dauerhafte
-              Liste von Besucher-IP-Adressen an. Anwendungs- und Fehlerausgaben des Docker-Containers werden
+              Liste von Besucher-IP-Adressen an. Anwendungs- und Fehlerausgaben der Docker-Container werden
               größenbegrenzt rotiert: maximal drei Logdateien mit jeweils maximal 10 MB. Ältere Container-Logs
               werden bei der Rotation automatisch entfernt.
             </p>
@@ -145,7 +145,29 @@
           </section>
 
           <section>
-            <h2>8. RSS</h2>
+            <h2>8. Kernel Grep</h2>
+            <p>
+              Kernel Grep ist die semantische Suche des Blogs. Eine Suchanfrage wird an die eigene Blog-Domain
+              übertragen und durchläuft dabei dieselbe Cloudflare-Verbindung wie ein normaler Seitenaufruf.
+              Der Blog gibt den Suchtext anschließend ausschließlich innerhalb des internen Docker-Netzwerks
+              an den lokalen Suchdienst weiter.
+            </p>
+            <p>
+              Artikel und Textabschnitte werden lokal mit einem auf dem Server ausgeführten Embedding-Modell
+              indexiert und in einer lokalen DuckDB-Datenbank gespeichert. Suchtexte werden nicht als Teil des
+              Suchindex gespeichert und von der Suchanwendung nicht absichtlich protokolliert. Die Weboberfläche
+              sendet Suchtexte per POST, damit sie nicht unnötig in der öffentlichen URL stehen.
+            </p>
+            <p>
+              Suchanfragen werden nicht an OpenAI, Hugging Face oder einen anderen externen KI-/LLM-Dienst zur
+              Auswertung übertragen. Modell-Dateien können bei Einrichtung oder Aktualisierung serverseitig
+              vom jeweiligen Modell-Repository geladen werden; dabei wird keine konkrete Besuchersuchanfrage
+              übertragen.
+            </p>
+          </section>
+
+          <section>
+            <h2>9. RSS</h2>
             <p>
               Der RSS-Feed kann ohne Anmeldung unter <a href="/rss.xml">/rss.xml</a> abgerufen werden.
               Der Abruf wird technisch wie ein normaler Website-Aufruf behandelt. Eine personenbezogene
@@ -154,7 +176,7 @@
           </section>
 
           <section>
-            <h2>9. E-Mail-Abo</h2>
+            <h2>10. E-Mail-Abo</h2>
             <p>
               Das auf der Startseite vorbereitete E-Mail-Abo ist derzeit nicht aktiv. Solange es deaktiviert
               ist, werden über Kernel Notes keine E-Mail-Adressen an einen Newsletter-Dienst übertragen.
@@ -164,7 +186,7 @@
           </section>
 
           <section>
-            <h2>10. Speicherdauer</h2>
+            <h2>11. Speicherdauer</h2>
             <p>
               Personenbezogene Daten werden nur so lange verarbeitet, wie dies für den jeweiligen technischen
               Zweck erforderlich ist oder gesetzliche Pflichten eine längere Aufbewahrung verlangen.
@@ -174,7 +196,7 @@
           </section>
 
           <section>
-            <h2>11. Rechte betroffener Personen</h2>
+            <h2>12. Rechte betroffener Personen</h2>
             <p>
               Soweit die gesetzlichen Voraussetzungen vorliegen, bestehen insbesondere Rechte auf Auskunft,
               Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit sowie Widerspruch
@@ -187,11 +209,12 @@
           </section>
 
           <section>
-            <h2>12. Änderungen dieser Hinweise</h2>
+            <h2>13. Änderungen dieser Hinweise</h2>
             <p>
               Diese Hinweise werden angepasst, wenn sich die technische Architektur oder die eingesetzten
               Dienste ändern. Maßgeblich ist die auf dieser Seite angegebene Version mit Stand-Datum.
             </p>
+            <p><strong>Version 1.1:</strong> Kernel Grep als lokal verarbeitete semantische Suche ergänzt.</p>
             <p><strong>Version 1.0:</strong> Erstfassung vom 22.08.2026.</p>
           </section>
         </div>
