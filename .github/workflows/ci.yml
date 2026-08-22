@@ -53,6 +53,7 @@ jobs:
       - name: Validate production Docker Compose
         env:
           BLOG_IMAGE: ghcr.io/0b-ivan/kernel-notes-blog:ci
+          SEARCH_IMAGE: ghcr.io/0b-ivan/kernel-notes-search:ci
         run: docker compose -f docker-compose.prod.yml config
 
       - name: Validate Obsidian LiveSync Docker Compose
@@ -71,12 +72,17 @@ jobs:
       - name: Build local blog image
         run: docker build -t kernel-notes-blog:ci .
 
-      - name: Start stack
+      - name: Build local Kernel Grep image
+        run: docker build -f Dockerfile.search -t kernel-notes-search:ci .
+
+      - name: Start stack with deterministic CI embeddings
+        env:
+          RAG_EMBEDDER_MODE: hash
         run: docker compose up -d --build
 
       - name: Wait for health endpoint
         run: |
-          for i in {1..20}; do
+          for i in {1..40}; do
             if curl -fsS http://127.0.0.1:8080/healthz > /dev/null; then
               echo "Service is healthy"
               exit 0
@@ -85,6 +91,7 @@ jobs:
           done
           echo "Service did not become healthy in time"
           docker compose ps
+          docker compose logs --tail=100 search blog || true
           exit 1
 
       - name: Install Chromium smoke-test runtime
@@ -121,6 +128,9 @@ jobs:
       - name: Build blog image for scan
         run: docker build -t kernel-notes-blog:ci .
 
+      - name: Build Kernel Grep image for scan
+        run: docker build -f Dockerfile.search -t kernel-notes-search:ci .
+
       - name: Trivy filesystem scan (report)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -132,7 +142,7 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '0'
 
-      - name: Trivy image scan (gate on CRITICAL)
+      - name: Trivy blog image scan (report)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: kernel-notes-blog:ci
@@ -142,11 +152,32 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '0'
 
-      - name: Trivy image scan (strict gate on CRITICAL)
+      - name: Trivy Kernel Grep image scan (report)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: kernel-notes-search:ci
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Trivy blog strict gate on CRITICAL
         if: ${{ vars.TRIVY_STRICT == 'true' }}
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: kernel-notes-blog:ci
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL
+          exit-code: '1'
+
+      - name: Trivy Kernel Grep strict gate on CRITICAL
+        if: ${{ vars.TRIVY_STRICT == 'true' }}
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: kernel-notes-search:ci
           format: table
           ignore-unfixed: true
           vuln-type: os,library
