@@ -193,6 +193,29 @@ function normalizedSearchLimit(value) {
   return Math.min(12, Math.max(1, Number(value) || 8));
 }
 
+async function proxyKernelGrep(queryValue, limitValue, res) {
+  const query = String(queryValue || '').trim();
+  if (query.length < 2 || query.length > 300) {
+    res.status(400).json({ error: 'q must contain between 2 and 300 characters' });
+    return;
+  }
+
+  try {
+    const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
+    target.searchParams.set('q', query);
+    target.searchParams.set('limit', String(normalizedSearchLimit(limitValue)));
+    const upstream = await fetch(target, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(20_000)
+    });
+    const payload = await upstream.text();
+    res.status(upstream.status).type('application/json').send(payload);
+  } catch (error) {
+    console.error('Kernel Grep upstream unavailable:', error.message || error);
+    res.status(503).json({ error: 'Kernel Grep is temporarily unavailable' });
+  }
+}
+
 function createApp() {
   const app = express();
   app.disable('x-powered-by');
@@ -214,30 +237,11 @@ function createApp() {
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
 
   app.post('/api/search', async (req, res) => {
-    const query = String(req.body?.q || '').trim();
-    if (query.length < 2 || query.length > 300) {
-      res.status(400).json({ error: 'q must contain between 2 and 300 characters' });
-      return;
-    }
-
-    try {
-      const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
-      target.searchParams.set('q', query);
-      target.searchParams.set('limit', String(normalizedSearchLimit(req.body?.limit)));
-      const upstream = await fetch(target, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(20_000)
-      });
-      const payload = await upstream.text();
-      res.status(upstream.status).type('application/json').send(payload);
-    } catch (error) {
-      console.error('Kernel Grep upstream unavailable:', error.message || error);
-      res.status(503).json({ error: 'Kernel Grep is temporarily unavailable' });
-    }
+    await proxyKernelGrep(req.body?.q, req.body?.limit, res);
   });
 
-  app.get('/api/search', (_req, res) => {
-    res.status(405).json({ error: 'Use POST /api/search' });
+  app.get('/api/search', async (req, res) => {
+    await proxyKernelGrep(req.query.q, req.query.limit, res);
   });
 
   app.get('/script.js', async (_req, res) => {
@@ -368,6 +372,7 @@ module.exports = {
   addPrivacyNavigation,
   hardenHtml,
   normalizedSearchLimit,
+  proxyKernelGrep,
   createApp,
   startServer
 };
