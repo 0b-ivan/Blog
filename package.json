@@ -18,7 +18,10 @@
     "posts:proofread": "node scripts/proofread-posts.js",
     "posts:proofread:fix": "node scripts/proofread-posts.js --fix",
     "posts:sync-meta": "node scripts/sync-post-metadata.js",
-    "posts:validate-meta": "node scripts/validate-post-frontmatter.js"
+    "posts:validate-meta": "node scripts/validate-post-frontmatter.js",
+    "rag:index": "npm --prefix rag run index --",
+    "rag:search": "npm --prefix rag run search --",
+    "rag:test": "npm --prefix rag test"
   },
   "dependencies": {
     "express": "^5.2.1",
