@@ -78,13 +78,17 @@ async function main() {
     }
 
     const queryEmbedding = await embedder.embedQuery(options.query);
-    const results = rankChunks(chunks, queryEmbedding, options.limit);
+    const results = rankChunks(chunks, queryEmbedding, options.query, options.limit);
 
     console.log(`Query: ${options.query}`);
     console.log('');
+    if (results.length === 0) {
+      console.log('No relevant articles found.');
+      return;
+    }
+
     results.forEach((result, index) => {
-      const percent = `${(result.score * 100).toFixed(1)}%`.padStart(6);
-      console.log(`${String(index + 1).padStart(2)}. ${percent}  ${result.title}`);
+      console.log(`${String(index + 1).padStart(2)}. ${result.title}`);
       console.log(`    /posts/${result.slug}`);
       if (result.heading) {
         console.log(`    ${result.heading}`);
