@@ -326,7 +326,7 @@ function runPandoc(sourcePath, outputPath, options = {}) {
     '--standalone',
     '--toc',
     '--toc-depth=2',
-    '--epub-chapter-level=1',
+    '--split-level=1',
     '--metadata=title:Kernel Notes',
     '--metadata=subtitle:Praktische Technik statt Buzzword-Folien',
     '--metadata=author:Ivan Babayev',
