@@ -33,9 +33,20 @@ async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   const failures = [];
+  const thirdPartyRequests = new Set();
 
   page.on('pageerror', (error) => {
     failures.push(`pageerror: ${error.message}`);
+  });
+
+  page.on('request', (request) => {
+    const url = request.url();
+    if (!/^https?:/i.test(url)) {
+      return;
+    }
+    if (new URL(url).origin !== baseOrigin) {
+      thirdPartyRequests.add(url);
+    }
   });
 
   page.on('requestfailed', (request) => {
@@ -54,6 +65,19 @@ async function main() {
   });
 
   try {
+    const homeResponse = await page.request.get(baseUrl);
+    assert.ok(homeResponse.ok(), `Home request failed: ${homeResponse.status()}`);
+    assert.match(homeResponse.headers()['content-security-policy'] || '', /default-src 'self'/);
+    assert.equal(homeResponse.headers()['referrer-policy'], 'no-referrer');
+    assert.match(homeResponse.headers()['permissions-policy'] || '', /camera=\(\)/);
+    assert.equal(homeResponse.headers()['x-content-type-options'], 'nosniff');
+    assert.equal(homeResponse.headers()['x-frame-options'], 'DENY');
+
+    const packageResponse = await page.request.get(`${baseUrl}/package.json`);
+    assert.equal(packageResponse.status(), 404, 'package.json must not be public');
+    const serverSourceResponse = await page.request.get(`${baseUrl}/server.js`);
+    assert.equal(serverSourceResponse.status(), 404, 'server.js must not be public');
+
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#posts-list .post-card').first().waitFor({ state: 'visible' });
 
@@ -144,6 +168,18 @@ async function main() {
     await waitForSnippetLibrary(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await page.locator('a[href="/datenschutz"]').first().waitFor({ state: 'visible' });
+    await Promise.all([
+      page.waitForURL((url) => url.pathname === '/datenschutz'),
+      page.locator('a[href="/datenschutz"]').first().click()
+    ]);
+    await page.locator('.legal-card h1').waitFor({ state: 'visible' });
+    assert.equal((await page.locator('.legal-card h1').innerText()).trim(), 'Datenschutzhinweise');
+    assert.match(await page.locator('.legal-card').innerText(), /kein Werbetracking/i);
+    assert.match(await page.locator('.legal-card').innerText(), /Cloudflare/);
+    assert.match(await page.locator('.legal-card').innerText(), /Hetzner/);
+
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await Promise.all([
       page.waitForURL((url) => url.pathname === '/impressum' || url.pathname === '/impressum.html'),
       page.locator('a[href="impressum.html"]').first().click()
@@ -151,7 +187,12 @@ async function main() {
     await page.locator('.legal-card h1').waitFor({ state: 'visible' });
 
     assert.deepEqual(failures, [], failures.join('\n'));
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), graph on every post, hand-drawn roadmap rendered.`);
+    assert.deepEqual(
+      [...thirdPartyRequests],
+      [],
+      `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
+    );
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), privacy headers/page and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }
