@@ -13,6 +13,7 @@ config/glossary/
 ├── extended.json
 ├── git-ci.json
 ├── platform.json
+├── reader.json
 ├── search.json
 ├── security.json
 └── writing.json
