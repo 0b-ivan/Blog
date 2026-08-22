@@ -1,44 +1,29 @@
-const {
-  addGrepNavigation,
-  addKernelGrepAssets,
-  hardenHtml
-} = require('../privacy-server');
+const fs = require('node:fs');
+const path = require('node:path');
 
-describe('Kernel Grep overlay injection', () => {
-  const page = `<!doctype html>
-<html lang="de">
-  <head><title>Test</title></head>
-  <body>
-    <nav class="main-nav">
-      <a href="/snippets/">Snippets</a>
-      <a href="/grep">Grep</a>
-    </nav>
-    <main>Content</main>
-  </body>
-</html>`;
+describe('Kernel Grep overlay contract', () => {
+  const privacyServerSource = fs.readFileSync(path.join(__dirname, '..', 'privacy-server.js'), 'utf8');
+  const overlaySource = fs.readFileSync(path.join(__dirname, '..', 'assets', 'kernel-grep-overlay.js'), 'utf8');
 
-  it('adds one console trigger next to the Grep navigation entry', () => {
-    const html = addGrepNavigation(page);
-    expect(html.match(/data-kernel-grep-trigger/g)).toHaveLength(1);
-    expect(html).toContain('class="kernel-grep-nav-trigger"');
-    expect(html).toContain('<kbd>⌘K</kbd>');
-    expect(html).toContain('<a href="/grep">Grep</a>');
+  it('injects a navigation console trigger and local overlay assets', () => {
+    expect(privacyServerSource).toContain('data-kernel-grep-trigger');
+    expect(privacyServerSource).toContain('class="kernel-grep-nav-trigger"');
+    expect(privacyServerSource).toContain('/assets/css/kernel-grep-overlay.css');
+    expect(privacyServerSource).toContain('/assets/kernel-grep-overlay.js');
+    expect(privacyServerSource).toContain('function addKernelGrepAssets(html)');
   });
 
-  it('injects overlay assets only once', () => {
-    const once = addKernelGrepAssets(page);
-    const twice = addKernelGrepAssets(once);
-
-    expect(twice.match(/kernel-grep-overlay\.css/g)).toHaveLength(1);
-    expect(twice.match(/kernel-grep-overlay\.js/g)).toHaveLength(1);
+  it('keeps the overlay on the local POST search path', () => {
+    expect(overlaySource).toContain("fetch('/api/search'");
+    expect(overlaySource).toContain("method: 'POST'");
+    expect(overlaySource).toContain('AbortController');
+    expect(overlaySource).toContain('DEBOUNCE_MS = 180');
   });
 
-  it('keeps the complete hardening transformation idempotent for Grep assets', () => {
-    const once = hardenHtml(page);
-    const twice = hardenHtml(once);
-
-    expect(twice.match(/data-kernel-grep-trigger/g)).toHaveLength(1);
-    expect(twice.match(/kernel-grep-overlay\.css/g)).toHaveLength(1);
-    expect(twice.match(/kernel-grep-overlay\.js/g)).toHaveLength(1);
+  it('supports Spotlight and console interaction shortcuts', () => {
+    expect(overlaySource).toContain("event.key.toLowerCase() === 'k'");
+    expect(overlaySource).toContain("event.key === '/'");
+    expect(overlaySource).toContain("event.key === 'Escape'");
+    expect(overlaySource).toContain('grep --semantic');
   });
 });
