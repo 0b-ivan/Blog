@@ -29,6 +29,25 @@ async function waitForSnippetLibrary(page) {
   throw new Error('Snippet library did not render any content');
 }
 
+async function assertMetaLinksInFooter(page) {
+  const metaLinksInMainNav = page.locator([
+    '.main-nav a[href="#about"]',
+    '.main-nav a[href="/#about"]',
+    '.main-nav a[href="index.html#about"]',
+    '.main-nav a[href="/datenschutz"]',
+    '.main-nav a[href="datenschutz.html"]',
+    '.main-nav a[href="/impressum"]',
+    '.main-nav a[href="impressum.html"]'
+  ].join(', '));
+  assert.equal(await metaLinksInMainNav.count(), 0, 'Meta links must not appear in the main navigation');
+
+  const footer = page.locator('.site-footer .footer-links');
+  await footer.waitFor({ state: 'attached' });
+  assert.equal(await footer.locator('a[href="/#about"]').count(), 1, 'About must appear once in the footer');
+  assert.equal(await footer.locator('a[href="/datenschutz"]').count(), 1, 'Datenschutz must appear once in the footer');
+  assert.equal(await footer.locator('a[href="/impressum"]').count(), 1, 'Impressum must appear once in the footer');
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
@@ -80,6 +99,7 @@ async function main() {
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#posts-list .post-card').first().waitFor({ state: 'visible' });
+    await assertMetaLinksInFooter(page);
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
       cards.map((card) => card.dataset.href).filter(Boolean)
@@ -109,6 +129,7 @@ async function main() {
 
       await page.locator('.post-page h1').waitFor({ state: 'visible' });
       assert.ok((await page.locator('.post-page h1').innerText()).trim().length > 0, `Missing title for ${href}`);
+      await assertMetaLinksInFooter(page);
 
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
@@ -158,6 +179,7 @@ async function main() {
     assert.match(await roadmap.innerText(), /Meilenstein 1 — Vollwertige englische Version des Blogs/);
     assert.match(await roadmap.innerText(), /Definition of Done/);
     await roadmap.locator('.roadmap-loop-note').waitFor({ state: 'visible' });
+    await assertMetaLinksInFooter(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await Promise.all([
@@ -166,25 +188,29 @@ async function main() {
     ]);
     await page.locator('.snippet-library h1').waitFor({ state: 'visible' });
     await waitForSnippetLibrary(page);
+    await assertMetaLinksInFooter(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-    await page.locator('a[href="/datenschutz"]').first().waitFor({ state: 'visible' });
+    await page.locator('.site-footer a[href="/datenschutz"]').waitFor({ state: 'visible' });
     await Promise.all([
       page.waitForURL((url) => url.pathname === '/datenschutz'),
-      page.locator('a[href="/datenschutz"]').first().click()
+      page.locator('.site-footer a[href="/datenschutz"]').click()
     ]);
     await page.locator('.legal-card h1').waitFor({ state: 'visible' });
     assert.equal((await page.locator('.legal-card h1').innerText()).trim(), 'Datenschutzhinweise');
     assert.match(await page.locator('.legal-card').innerText(), /kein Werbetracking/i);
     assert.match(await page.locator('.legal-card').innerText(), /Cloudflare/);
     assert.match(await page.locator('.legal-card').innerText(), /Hetzner/);
+    await assertMetaLinksInFooter(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await page.locator('.site-footer a[href="/impressum"]').waitFor({ state: 'visible' });
     await Promise.all([
       page.waitForURL((url) => url.pathname === '/impressum' || url.pathname === '/impressum.html'),
-      page.locator('a[href="impressum.html"]').first().click()
+      page.locator('.site-footer a[href="/impressum"]').click()
     ]);
     await page.locator('.legal-card h1').waitFor({ state: 'visible' });
+    await assertMetaLinksInFooter(page);
 
     assert.deepEqual(failures, [], failures.join('\n'));
     assert.deepEqual(
@@ -192,7 +218,7 @@ async function main() {
       [],
       `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
     );
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), privacy headers/page and zero passive third-party requests.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), meta links only in footer, privacy headers/page and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }
