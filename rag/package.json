@@ -1,0 +1,16 @@
+{
+  "name": "kernel-notes-semantic-search",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local DuckDB semantic index for Kernel Notes",
+  "scripts": {
+    "index": "node index.js",
+    "search": "node search.js",
+    "test": "node --test tests/*.node.js"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.5.5",
+    "@huggingface/transformers": "3.8.1",
+    "gray-matter": "4.0.3"
+  }
+}
