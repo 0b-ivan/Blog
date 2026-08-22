@@ -10,13 +10,14 @@ test('splitIntoSections ignores markdown headings inside fenced code', () => {
   assert.match(sections[1].content, /# kein Heading/);
 });
 
-test('chunkMarkdown keeps fenced code together and splits long sections on blocks', () => {
+test('chunkMarkdown keeps fenced code intact while packing neighboring blocks', () => {
   const longParagraph = 'x'.repeat(420);
   const markdown = `## Test\n\n${longParagraph}\n\n\`\`\`js\nconst value = 42;\n\`\`\`\n\n${longParagraph}`;
   const chunks = chunkMarkdown(markdown, { maxChars: 500 });
 
-  assert.equal(chunks.length, 3);
-  assert.match(chunks[1].content, /const value = 42/);
+  assert.equal(chunks.length, 2);
+  assert.match(chunks[0].content, /```js\nconst value = 42;\n```/);
+  assert.equal((chunks[0].content.match(/```/g) || []).length, 2);
   assert.ok(chunks.every((chunk) => chunk.contentHash.length === 64));
 });
 
