@@ -3,6 +3,10 @@ coverage/
 *.log
 .DS_Store
 
+# Local semantic-search database and model cache
+.data/
+rag/node_modules/
+
 # Generated article history (rebuilt from Git in CI/CD)
 post-history/*
 !post-history/.gitkeep
