@@ -1,4 +1,29 @@
 services:
+  search:
+    image: ${SEARCH_IMAGE:?SEARCH_IMAGE must be set}
+    container_name: kernel-notes-search
+    volumes:
+      - blog-posts:/app/posts:ro
+      - kernel-search-data:/data
+      - kernel-search-models:/models
+    environment:
+      RAG_EMBEDDER_MODE: e5
+      RAG_MODEL: Xenova/multilingual-e5-small
+      RAG_DTYPE: q8
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8090/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
   blog:
     image: ${BLOG_IMAGE:?BLOG_IMAGE must be set}
     container_name: kernel-notes-blog
@@ -13,6 +38,10 @@ services:
     environment:
       ARCHIVE_DIR: /content/archive
       POST_HISTORY_DIR: /content/post-history
+      SEARCH_SERVICE_URL: http://search:8090/search
+    depends_on:
+      search:
+        condition: service_started
     logging:
       driver: local
       options:
@@ -32,3 +61,7 @@ volumes:
     name: kernel-notes-blog-archive
   blog-history:
     name: kernel-notes-blog-history
+  kernel-search-data:
+    name: kernel-notes-search-data
+  kernel-search-models:
+    name: kernel-notes-search-models
