@@ -3,6 +3,9 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const { embeddingText } = require('../lib/chunker');
+const { HashEmbedder } = require('../lib/hash-embedder');
+const { cosineSimilarity } = require('../lib/ranking');
 const { SemanticSearchEngine } = require('../lib/search-engine');
 
 async function writePost(directory, name, frontmatter, body) {
@@ -39,6 +42,23 @@ test('SemanticSearchEngine indexes posts and returns the best matching article',
   });
 
   try {
+    const directEmbedder = new HashEmbedder();
+    const queryEmbedding = await directEmbedder.embedQuery('docker compose container');
+    const directDocumentEmbedding = (await directEmbedder.embedDocuments([
+      embeddingText({
+        title: 'Docker Compose',
+        heading: 'Mehrere Container',
+        content: 'Docker Compose startet mehrere Container aus einer Compose-Datei.'
+      })
+    ]))[0];
+    assert.ok(cosineSimilarity(queryEmbedding, directDocumentEmbedding) > 0, 'Hash embedder must preserve token similarity');
+
+    const dockerChunk = engine.chunks.find((chunk) => chunk.slug === 'docker-compose');
+    assert.ok(dockerChunk, 'Docker chunk missing from DuckDB');
+    assert.ok(Array.isArray(dockerChunk.embedding), 'DuckDB embedding must deserialize as an array');
+    assert.equal(dockerChunk.embedding.length, queryEmbedding.length, 'DuckDB embedding dimensions must survive persistence');
+    assert.ok(cosineSimilarity(queryEmbedding, dockerChunk.embedding) > 0, 'Persisted DuckDB embedding must preserve similarity');
+
     const results = await engine.search('docker compose container', 5);
     assert.ok(results.length >= 1);
     assert.equal(results[0].slug, 'docker-compose');
