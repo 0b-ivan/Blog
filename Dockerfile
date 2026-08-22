@@ -33,6 +33,8 @@ COPY --from=deps /app/build-info.json ./build-info.json
 COPY index.html about.html grep.html impressum.html datenschutz.html roadmap.html roadmap.md script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets
+COPY config ./config
+COPY lib ./lib
 COPY server.js enhanced-server.js privacy-server.js ./
 
 # Current article content remains in the image as a bootstrap/fallback.
