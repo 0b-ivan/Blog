@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "description": "Static IT blog served via Node and containerized with Docker Compose",
-  "main": "enhanced-server.js",
+  "main": "privacy-server.js",
   "scripts": {
-    "start": "node enhanced-server.js",
+    "start": "node privacy-server.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
