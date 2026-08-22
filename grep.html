@@ -29,12 +29,11 @@
 
     <main class="grep-main">
       <section class="grep-search" aria-labelledby="grep-title">
-        <p class="grep-kicker">grep://kernel-notes</p>
-        <h1 id="grep-title">Kernel Grep</h1>
-        <p class="grep-headline">Alles in Kernel Notes.<br />Ein Befehl entfernt.</p>
-        <p class="grep-intro">
-          Semantische Suche durch alle Artikel. Einfach anfangen zu tippen – Kernel Grep sucht direkt mit.
-        </p>
+        <div class="grep-heading">
+          <p class="grep-kicker">grep://kernel-notes</p>
+          <h1 id="grep-title">Kernel Grep</h1>
+          <p>Semantisch durch die Artikel suchen. Tippen reicht.</p>
+        </div>
 
         <form class="grep-form" id="grep-form" role="search">
           <label class="sr-only" for="grep-query">Kernel Notes durchsuchen</label>
@@ -48,12 +47,11 @@
               maxlength="300"
               autocomplete="off"
               spellcheck="false"
-              placeholder="Artikel und Inhalte durchsuchen …"
+              placeholder="Docker Compose, RSS, Zugriff ohne Public IP …"
               aria-describedby="grep-status"
             />
             <button class="grep-command__clear" id="grep-clear" type="button" aria-label="Suche leeren" hidden>×</button>
             <kbd class="grep-command__shortcut" aria-label="Tastenkürzel Slash">/</kbd>
-            <button class="grep-command__submit" type="submit" aria-label="Suche sofort ausführen">↵</button>
           </div>
         </form>
 
@@ -62,21 +60,11 @@
           <button type="button" data-grep-query="Docker Container verwalten">docker</button>
           <button type="button" data-grep-query="AWS Zugriff ohne öffentliche IP">private aws</button>
           <button type="button" data-grep-query="Self Hosting RSS Reader">rss</button>
-          <button type="button" data-grep-query="Dependencies automatisch aktualisieren">dependencies</button>
-        </div>
-
-        <div class="grep-meta" aria-label="Suchtechnik">
-          <span>Artikel</span>
-          <span>DuckDB</span>
-          <span>multilingual-e5</span>
-          <span>lokal</span>
         </div>
       </section>
 
       <section class="grep-output" aria-label="Suchergebnisse">
-        <div class="grep-output__head">
-          <p class="grep-status" id="grep-status" data-state="idle" aria-live="polite">Tippe mindestens zwei Zeichen.</p>
-        </div>
+        <p class="grep-status" id="grep-status" data-state="idle" aria-live="polite">Tippe mindestens zwei Zeichen.</p>
         <div class="grep-results" id="grep-results" aria-live="polite"></div>
       </section>
     </main>

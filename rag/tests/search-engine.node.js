@@ -16,7 +16,7 @@ async function writePost(directory, name, frontmatter, body) {
   );
 }
 
-test('SemanticSearchEngine indexes posts and returns the best matching article', async () => {
+test('SemanticSearchEngine returns relevant articles and rejects garbage queries', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-grep-'));
   const postsDir = path.join(root, 'posts');
   await fs.mkdir(postsDir);
@@ -64,6 +64,10 @@ test('SemanticSearchEngine indexes posts and returns the best matching article',
     assert.equal(results[0].slug, 'docker-compose');
     assert.equal(results[0].url, '/posts/docker-compose');
     assert.ok(results[0].score > 0);
+
+    const garbageResults = await engine.search('aksdfnasdglvhnasdf', 5);
+    assert.deepEqual(garbageResults, []);
+
     assert.equal(engine.info().embedderMode, 'hash');
     assert.equal(engine.info().chunks, 2);
   } finally {
