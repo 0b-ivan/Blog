@@ -20,11 +20,39 @@ function stripManagedBlock(markdown) {
   return String(markdown || '').replace(pattern, '');
 }
 
+function stripFencedCode(markdown) {
+  const lines = String(markdown || '').split('\n');
+  let fence = null;
+
+  return lines.map((line) => {
+    if (!fence) {
+      const opening = line.match(/^\s*(`{3,}|~{3,})/);
+      if (!opening) {
+        return line;
+      }
+
+      fence = {
+        character: opening[1][0],
+        length: opening[1].length
+      };
+      return '';
+    }
+
+    const closing = line.match(/^\s*(`{3,}|~{3,})\s*$/);
+    if (closing
+      && closing[1][0] === fence.character
+      && closing[1].length >= fence.length) {
+      fence = null;
+    }
+
+    return '';
+  }).join('\n');
+}
+
 function searchableMarkdown(markdown) {
   let text = stripManagedBlock(markdown);
   text = text.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
-  text = text.replace(/```[\s\S]*?```/g, ' ');
-  text = text.replace(/~~~[\s\S]*?~~~/g, ' ');
+  text = stripFencedCode(text);
   text = text.replace(/`[^`\n]+`/g, ' ');
   text = text.replace(/^\*\[[^\]]+\]:.*$/gm, ' ');
   text = text.replace(/https?:\/\/[^\s)\]>]+/g, ' ');
@@ -145,6 +173,7 @@ module.exports = {
   renderManagedBlock,
   run,
   searchableMarkdown,
+  stripFencedCode,
   stripManagedBlock,
   syncMarkdown,
   usedGlossaryLabels
