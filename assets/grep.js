@@ -70,14 +70,8 @@
       meta.append(metaPart(result.tags.slice(0, 6).map((tag) => `#${tag}`).join(' ')));
     }
 
-    const score = document.createElement('div');
-    score.className = 'grep-result__score';
-    const percent = Math.max(0, Math.min(100, Number(result.score || 0) * 100));
-    score.textContent = `${percent.toFixed(0)}%`;
-    score.title = 'Semantische Ähnlichkeit';
-
     body.append(overline, heading, preview, meta);
-    article.append(position, body, score);
+    article.append(position, body);
     return article;
   }
 
@@ -86,7 +80,7 @@
     if (!Array.isArray(results) || results.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'grep-empty';
-      empty.textContent = 'Keine passenden Artikel gefunden.';
+      empty.textContent = 'Keine relevanten Artikel gefunden.';
       resultsRoot.append(empty);
       return;
     }
@@ -140,8 +134,14 @@
       }
 
       const elapsed = Math.round(window.performance.now() - startedAt);
-      renderResults(payload.results);
-      setStatus(`${payload.results.length} Treffer · ${elapsed} ms`, 'success');
+      const results = Array.isArray(payload.results) ? payload.results : [];
+      renderResults(results);
+      setStatus(
+        results.length === 0
+          ? `Keine relevanten Treffer · ${elapsed} ms`
+          : `${results.length} Treffer · ${elapsed} ms`,
+        'success'
+      );
     } catch (error) {
       if (error.name === 'AbortError') {
         return;
