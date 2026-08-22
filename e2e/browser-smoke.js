@@ -182,9 +182,9 @@ async function main() {
     await page.locator('#grep-title').waitFor({ state: 'visible' });
     assert.equal((await page.locator('#grep-title').innerText()).trim(), 'Kernel Grep');
     await page.locator('#grep-query').fill('docker compose container');
-    await page.locator('#grep-form button[type="submit"]').click();
     await page.locator('#grep-status[data-state="success"]').waitFor({ state: 'visible', timeout: 20_000 });
-    assert.ok(await page.locator('.grep-result').count() > 0, 'Kernel Grep returned no results');
+    assert.ok(await page.locator('.grep-result').count() > 0, 'Kernel Grep live search returned no results');
+    assert.equal(await page.locator('#grep-clear').isVisible(), true, 'Kernel Grep clear control should be visible after typing');
     const firstGrepHref = await page.locator('.grep-result h2 a').first().getAttribute('href');
     assert.ok(firstGrepHref?.startsWith('/posts/'), 'Kernel Grep result must link to an article');
     await assertMetaLinksInFooter(page);
@@ -263,7 +263,7 @@ async function main() {
       [],
       `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
     );
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep, standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep live search, standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }

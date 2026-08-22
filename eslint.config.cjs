@@ -55,7 +55,9 @@ module.exports = [
         window: 'readonly',
         document: 'readonly',
         fetch: 'readonly',
+        AbortController: 'readonly',
         Element: 'readonly',
+        HTMLElement: 'readonly',
         MutationObserver: 'readonly',
         IntersectionObserver: 'readonly'
       }

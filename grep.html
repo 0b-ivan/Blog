@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kernel Grep | Kernel Notes</title>
-    <meta name="description" content="Semantische Suche durch Kernel Notes." />
+    <meta name="description" content="Semantische Live-Suche durch Kernel Notes." />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/grep.css" />
@@ -28,51 +28,56 @@
     </header>
 
     <main class="grep-main">
-      <section class="grep-terminal" aria-labelledby="grep-title">
-        <div class="grep-terminal__chrome" aria-hidden="true">
-          <div class="grep-terminal__dots">
-            <span></span><span></span><span></span>
+      <section class="grep-search" aria-labelledby="grep-title">
+        <p class="grep-kicker">grep://kernel-notes</p>
+        <h1 id="grep-title">Kernel Grep</h1>
+        <p class="grep-headline">Alles in Kernel Notes.<br />Ein Befehl entfernt.</p>
+        <p class="grep-intro">
+          Semantische Suche durch alle Artikel. Einfach anfangen zu tippen – Kernel Grep sucht direkt mit.
+        </p>
+
+        <form class="grep-form" id="grep-form" role="search">
+          <label class="sr-only" for="grep-query">Kernel Notes durchsuchen</label>
+          <div class="grep-command">
+            <span class="grep-command__prompt" aria-hidden="true">$</span>
+            <input
+              id="grep-query"
+              name="q"
+              type="search"
+              minlength="2"
+              maxlength="300"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Artikel und Inhalte durchsuchen …"
+              aria-describedby="grep-status"
+            />
+            <button class="grep-command__clear" id="grep-clear" type="button" aria-label="Suche leeren" hidden>×</button>
+            <kbd class="grep-command__shortcut" aria-label="Tastenkürzel Slash">/</kbd>
+            <button class="grep-command__submit" type="submit" aria-label="Suche sofort ausführen">↵</button>
           </div>
-          <span class="grep-terminal__path">grep://kernel-notes</span>
+        </form>
+
+        <div class="grep-examples" aria-label="Beispielsuchen">
+          <span>try:</span>
+          <button type="button" data-grep-query="Docker Container verwalten">docker</button>
+          <button type="button" data-grep-query="AWS Zugriff ohne öffentliche IP">private aws</button>
+          <button type="button" data-grep-query="Self Hosting RSS Reader">rss</button>
+          <button type="button" data-grep-query="Dependencies automatisch aktualisieren">dependencies</button>
         </div>
 
-        <div class="grep-terminal__body">
-          <p class="grep-kicker">semantic search · local index</p>
-          <h1 id="grep-title">Kernel Grep</h1>
-          <p class="grep-intro">
-            Durchsucht die Artikel nach Bedeutung statt nur nach exakt gleichen Wörtern.
-            Die Suche läuft lokal auf dem Kernel-Notes-Server.
-          </p>
-
-          <form class="grep-form" id="grep-form" role="search">
-            <label for="grep-query">$ grep --semantic</label>
-            <div class="grep-command">
-              <span aria-hidden="true">&gt;</span>
-              <input
-                id="grep-query"
-                name="q"
-                type="search"
-                minlength="2"
-                maxlength="300"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="z. B. private EC2 ohne SSH"
-                required
-              />
-              <button type="submit">suchen</button>
-            </div>
-          </form>
-
-          <div class="grep-examples" aria-label="Beispielsuchen">
-            <span>Beispiele:</span>
-            <button type="button" data-grep-query="Docker Container verwalten">Docker</button>
-            <button type="button" data-grep-query="AWS Zugriff ohne öffentliche IP">AWS Zugriff</button>
-            <button type="button" data-grep-query="Self Hosting RSS Reader">Self-Hosting</button>
-          </div>
-
-          <p class="grep-status" id="grep-status" aria-live="polite">Bereit.</p>
-          <div class="grep-results" id="grep-results" aria-live="polite"></div>
+        <div class="grep-meta" aria-label="Suchtechnik">
+          <span>Artikel</span>
+          <span>DuckDB</span>
+          <span>multilingual-e5</span>
+          <span>lokal</span>
         </div>
+      </section>
+
+      <section class="grep-output" aria-label="Suchergebnisse">
+        <div class="grep-output__head">
+          <p class="grep-status" id="grep-status" data-state="idle" aria-live="polite">Tippe mindestens zwei Zeichen.</p>
+        </div>
+        <div class="grep-results" id="grep-results" aria-live="polite"></div>
       </section>
     </main>
 

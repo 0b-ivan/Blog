@@ -1,13 +1,18 @@
 (() => {
+  const DEBOUNCE_MS = 220;
   const form = document.querySelector('#grep-form');
   const input = document.querySelector('#grep-query');
+  const clearButton = document.querySelector('#grep-clear');
   const status = document.querySelector('#grep-status');
   const resultsRoot = document.querySelector('#grep-results');
-  const submit = form?.querySelector('button[type="submit"]');
 
-  if (!form || !input || !status || !resultsRoot || !submit) {
+  if (!form || !input || !clearButton || !status || !resultsRoot) {
     return;
   }
+
+  let debounceTimer = null;
+  let activeController = null;
+  let requestSequence = 0;
 
   function setStatus(message, state = 'idle') {
     status.textContent = message;
@@ -18,46 +23,61 @@
     resultsRoot.replaceChildren();
   }
 
+  function syncClearButton() {
+    clearButton.hidden = input.value.length === 0;
+  }
+
   function metaPart(value) {
     const span = document.createElement('span');
     span.textContent = value;
     return span;
   }
 
-  function renderResult(result) {
+  function renderResult(result, index) {
     const article = document.createElement('article');
     article.className = 'grep-result';
 
-    const score = document.createElement('div');
-    score.className = 'grep-result__score';
-    const percent = Math.max(0, Number(result.score || 0) * 100);
-    score.textContent = `${percent.toFixed(1)}%`;
+    const position = document.createElement('span');
+    position.className = 'grep-result__position';
+    position.textContent = String(index + 1).padStart(2, '0');
 
     const body = document.createElement('div');
+    body.className = 'grep-result__body';
+
+    const overline = document.createElement('div');
+    overline.className = 'grep-result__overline';
+    overline.append(metaPart('ARTICLE'));
+    if (result.category) {
+      overline.append(metaPart(result.category));
+    }
+
     const heading = document.createElement('h2');
     const link = document.createElement('a');
     link.href = result.url || `/posts/${result.slug}`;
     link.textContent = result.title || result.slug || 'Artikel';
     heading.append(link);
 
+    const preview = document.createElement('p');
+    preview.className = 'grep-result__preview';
+    preview.textContent = result.content || result.excerpt || '';
+
     const meta = document.createElement('div');
     meta.className = 'grep-result__meta';
     if (result.heading) {
       meta.append(metaPart(`# ${result.heading}`));
     }
-    if (result.category) {
-      meta.append(metaPart(result.category));
-    }
     if (Array.isArray(result.tags) && result.tags.length > 0) {
-      meta.append(metaPart(result.tags.map((tag) => `#${tag}`).join(' ')));
+      meta.append(metaPart(result.tags.slice(0, 6).map((tag) => `#${tag}`).join(' ')));
     }
 
-    const preview = document.createElement('p');
-    preview.className = 'grep-result__preview';
-    preview.textContent = result.content || result.excerpt || '';
+    const score = document.createElement('div');
+    score.className = 'grep-result__score';
+    const percent = Math.max(0, Math.min(100, Number(result.score || 0) * 100));
+    score.textContent = `${percent.toFixed(0)}%`;
+    score.title = 'Semantische Ähnlichkeit';
 
-    body.append(heading, meta, preview);
-    article.append(score, body);
+    body.append(overline, heading, preview, meta);
+    article.append(position, body, score);
     return article;
   }
 
@@ -74,17 +94,32 @@
     resultsRoot.append(...results.map(renderResult));
   }
 
+  function stopPendingSearch() {
+    if (debounceTimer) {
+      window.clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    if (activeController) {
+      activeController.abort();
+      activeController = null;
+    }
+  }
+
   async function search(query) {
     const normalized = String(query || '').trim();
     if (normalized.length < 2) {
-      input.focus();
       return;
     }
 
-    submit.disabled = true;
-    setStatus('Suche läuft …', 'loading');
-    clearResults();
+    if (activeController) {
+      activeController.abort();
+    }
+
+    const controller = new AbortController();
+    activeController = controller;
+    const sequence = ++requestSequence;
     const startedAt = window.performance.now();
+    setStatus(`Suche nach „${normalized}“ …`, 'loading');
 
     try {
       const response = await fetch('/api/search', {
@@ -93,32 +128,106 @@
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ q: normalized, limit: 8 })
+        body: JSON.stringify({ q: normalized, limit: 8 }),
+        signal: controller.signal
       });
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload.error || `HTTP ${response.status}`);
+      }
+      if (sequence !== requestSequence) {
+        return;
       }
 
       const elapsed = Math.round(window.performance.now() - startedAt);
       renderResults(payload.results);
       setStatus(`${payload.results.length} Treffer · ${elapsed} ms`, 'success');
     } catch (error) {
-      setStatus(`Suche nicht verfügbar: ${error.message}`, 'error');
+      if (error.name === 'AbortError') {
+        return;
+      }
+      if (sequence === requestSequence) {
+        setStatus(`Suche nicht verfügbar: ${error.message}`, 'error');
+      }
     } finally {
-      submit.disabled = false;
+      if (activeController === controller) {
+        activeController = null;
+      }
     }
+  }
+
+  function scheduleSearch(value, immediate = false) {
+    const normalized = String(value || '').trim();
+    syncClearButton();
+
+    if (debounceTimer) {
+      window.clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+
+    if (normalized.length < 2) {
+      if (activeController) {
+        activeController.abort();
+        activeController = null;
+      }
+      requestSequence += 1;
+      clearResults();
+      setStatus(normalized.length === 0 ? 'Tippe mindestens zwei Zeichen.' : 'Noch ein Zeichen …', 'idle');
+      return;
+    }
+
+    setStatus(`Suche nach „${normalized}“ …`, 'loading');
+    debounceTimer = window.setTimeout(() => {
+      debounceTimer = null;
+      search(normalized);
+    }, immediate ? 0 : DEBOUNCE_MS);
   }
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    search(input.value);
+    scheduleSearch(input.value, true);
+  });
+
+  input.addEventListener('input', () => {
+    scheduleSearch(input.value);
+  });
+
+  clearButton.addEventListener('click', () => {
+    stopPendingSearch();
+    requestSequence += 1;
+    input.value = '';
+    syncClearButton();
+    clearResults();
+    setStatus('Tippe mindestens zwei Zeichen.', 'idle');
+    input.focus();
   });
 
   document.querySelectorAll('[data-grep-query]').forEach((button) => {
     button.addEventListener('click', () => {
       input.value = button.dataset.grepQuery || '';
-      search(input.value);
+      input.focus();
+      scheduleSearch(input.value, true);
     });
   });
+
+  document.addEventListener('keydown', (event) => {
+    const target = event.target;
+    const isTyping = target instanceof HTMLElement && (
+      target.matches('input, textarea, select') || target.isContentEditable
+    );
+
+    if (event.key === '/' && !isTyping) {
+      event.preventDefault();
+      input.focus();
+      input.select();
+      return;
+    }
+
+    if (event.key === 'Escape' && document.activeElement === input) {
+      clearButton.click();
+    }
+  });
+
+  syncClearButton();
+  input.focus({ preventScroll: true });
 })();
