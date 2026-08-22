@@ -59,6 +59,7 @@ const FOOTER_META_LINKS = [
 ].join('\n        ');
 
 const META_LINK_PATTERN = /\s*<a\b[^>]*href="(?:#about|\/#about|index\.html#about|\/about|about\.html|\/datenschutz|datenschutz\.html|\/impressum|impressum\.html)"[^>]*>(?:About|Datenschutz|Impressum)<\/a>/gi;
+const GREP_TRIGGER = '<button type="button" class="kernel-grep-nav-trigger" data-kernel-grep-trigger aria-label="Kernel Grep als Konsole öffnen"><span>grep…</span><kbd>⌘K</kbd></button>';
 
 function stripExternalFontLinks(html) {
   return html
@@ -112,14 +113,42 @@ function stripMetaLinks(fragment) {
 }
 
 function addGrepNavigation(html) {
-  if (/class="[^"]*\bmain-nav\b[^"]*"[\s\S]*?href="\/grep"/i.test(html)) {
-    return html;
-  }
-
   return html.replace(
-    /(<a\b[^>]*href="\/snippets\/?"[^>]*>Snippets<\/a>)/i,
-    '$1\n        <a href="/grep">Grep</a>'
+    /(<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
+    (_match, openingTag, navigation, closingTag) => {
+      let content = navigation;
+      if (!/href="\/grep"/i.test(content)) {
+        content = content.replace(
+          /(<a\b[^>]*href="\/snippets\/?"[^>]*>Snippets<\/a>)/i,
+          '$1\n        <a href="/grep">Grep</a>'
+        );
+      }
+      if (!/data-kernel-grep-trigger/i.test(content)) {
+        content = content.replace(
+          /(<a\b[^>]*href="\/grep"[^>]*>Grep<\/a>)/i,
+          `$1\n        ${GREP_TRIGGER}`
+        );
+      }
+      return `${openingTag}${content}${closingTag}`;
+    }
   );
+}
+
+function addKernelGrepAssets(html) {
+  let output = html;
+  if (!/href="\/assets\/css\/kernel-grep-overlay\.css"/i.test(output)) {
+    output = output.replace(
+      '</head>',
+      '    <link rel="stylesheet" href="/assets/css/kernel-grep-overlay.css" />\n  </head>'
+    );
+  }
+  if (!/src="\/assets\/kernel-grep-overlay\.js"/i.test(output)) {
+    output = output.replace(
+      '</body>',
+      '    <script src="/assets/kernel-grep-overlay.js" defer></script>\n  </body>'
+    );
+  }
+  return output;
 }
 
 function moveMetaNavigationToFooter(html) {
@@ -167,7 +196,9 @@ function addPrivacyNavigation(html) {
 }
 
 function hardenHtml(html) {
-  return moveMetaNavigationToFooter(addGrepNavigation(localizeBrowserDependencies(html)));
+  return addKernelGrepAssets(
+    moveMetaNavigationToFooter(addGrepNavigation(localizeBrowserDependencies(html)))
+  );
 }
 
 function vendorStatic(relativePath) {
@@ -368,6 +399,7 @@ module.exports = {
   localizeClientScript,
   stripMetaLinks,
   addGrepNavigation,
+  addKernelGrepAssets,
   moveMetaNavigationToFooter,
   addPrivacyNavigation,
   hardenHtml,
