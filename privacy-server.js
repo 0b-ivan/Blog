@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { URL } = require('node:url');
 const enhanced = require('./enhanced-server');
 
 const port = process.env.PORT || 8080;
@@ -32,8 +33,10 @@ const BLOCKED_PATHS = [
   /^\/node_modules(?:\/|$)/,
   /^\/\.git(?:\/|$)/,
   /^\/\.github(?:\/|$)/,
+  /^\/\.data(?:\/|$)/,
   /^\/config(?:\/|$)/,
   /^\/e2e(?:\/|$)/,
+  /^\/rag(?:\/|$)/,
   /^\/tests(?:\/|$)/,
   /^\/scripts(?:\/|$)/,
   /^\/post-history(?:\/|$)/,
@@ -41,7 +44,7 @@ const BLOCKED_PATHS = [
   /^\/server\.js$/,
   /^\/enhanced-server\.js$/,
   /^\/privacy-server\.js$/,
-  /^\/Dockerfile$/,
+  /^\/Dockerfile(?:\.search)?$/,
   /^\/docker-compose(?:\.[^/]+)?\.ya?ml$/,
   /^\/eslint\.config\.cjs$/,
   /^\/VERSION$/,
@@ -108,6 +111,17 @@ function stripMetaLinks(fragment) {
   return fragment.replace(META_LINK_PATTERN, '');
 }
 
+function addGrepNavigation(html) {
+  if (/class="[^"]*\bmain-nav\b[^"]*"[\s\S]*?href="\/grep"/i.test(html)) {
+    return html;
+  }
+
+  return html.replace(
+    /(<a\b[^>]*href="\/snippets\/?"[^>]*>Snippets<\/a>)/i,
+    '$1\n        <a href="/grep">Grep</a>'
+  );
+}
+
 function moveMetaNavigationToFooter(html) {
   let output = html.replace(
     /(<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
@@ -153,7 +167,7 @@ function addPrivacyNavigation(html) {
 }
 
 function hardenHtml(html) {
-  return moveMetaNavigationToFooter(localizeBrowserDependencies(html));
+  return moveMetaNavigationToFooter(addGrepNavigation(localizeBrowserDependencies(html)));
 }
 
 function vendorStatic(relativePath) {
@@ -175,6 +189,10 @@ async function sendLocalizedScript(res, fileName) {
   res.type('application/javascript').send(localizeClientScript(source));
 }
 
+function normalizedSearchLimit(value) {
+  return Math.min(12, Math.max(1, Number(value) || 8));
+}
+
 function createApp() {
   const app = express();
   app.disable('x-powered-by');
@@ -192,6 +210,29 @@ function createApp() {
   app.use('/vendor/medium-zoom', vendorStatic('medium-zoom/dist'));
   app.use('/vendor/mermaid', vendorStatic('mermaid/dist'));
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
+
+  app.get('/api/search', async (req, res) => {
+    const query = String(req.query.q || '').trim();
+    if (query.length < 2 || query.length > 300) {
+      res.status(400).json({ error: 'q must contain between 2 and 300 characters' });
+      return;
+    }
+
+    try {
+      const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
+      target.searchParams.set('q', query);
+      target.searchParams.set('limit', String(normalizedSearchLimit(req.query.limit)));
+      const upstream = await fetch(target, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(20_000)
+      });
+      const payload = await upstream.text();
+      res.status(upstream.status).type('application/json').send(payload);
+    } catch (error) {
+      console.error('Kernel Grep upstream unavailable:', error.message || error);
+      res.status(503).json({ error: 'Kernel Grep is temporarily unavailable' });
+    }
+  });
 
   app.get('/script.js', async (_req, res) => {
     try {
@@ -227,6 +268,15 @@ function createApp() {
     } catch (error) {
       console.error(error);
       res.status(500).type('text').send('Could not load about page');
+    }
+  });
+
+  app.get(['/grep', '/grep.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'grep.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load Kernel Grep');
     }
   });
 
@@ -307,9 +357,11 @@ module.exports = {
   localizeBrowserDependencies,
   localizeClientScript,
   stripMetaLinks,
+  addGrepNavigation,
   moveMetaNavigationToFooter,
   addPrivacyNavigation,
   hardenHtml,
+  normalizedSearchLimit,
   createApp,
   startServer
 };
