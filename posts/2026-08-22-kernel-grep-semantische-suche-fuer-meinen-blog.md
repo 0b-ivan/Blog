@@ -1,6 +1,6 @@
 ---
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
-version: 2
+version: 3
 title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
 date: 2026-08-22
 published_at: 2026-08-22T19:51:00+02:00
@@ -459,6 +459,43 @@ $ grep --semantic "Docker Compose" posts/
 ```
 
 Öffnen geht per Navigation, `⌘K` beziehungsweise `Ctrl+K`. Mit `Esc` verschwindet das Overlay wieder.
+
+## Wo ich bei den Entscheidungen falsch lag
+
+Die einzelnen Bugs waren nur die sichtbaren Symptome. Interessanter sind die Annahmen dahinter, weil genau dort sich die Architektur geändert hat.
+
+| Falsche Annahme | Warum sie zunächst plausibel war | Was tatsächlich passiert ist | Konsequenz |
+| --- | --- | --- | --- |
+| **Top-K aus einer Vector Search sind automatisch relevante Treffer.** | Embeddings sortieren nach semantischer Nähe, also müssten die ersten Treffer doch passen. | Auch eine komplett sinnlose Query hat immer die „nächsten“ Vektoren. `aksdfnasdglvhnasdf` bekam deshalb acht Ergebnisse. | Top-K ist nur Ranking, kein Relevanzurteil. Deshalb kamen Relevanz-Gate, Mindestabstand und lexikalische Evidenz dazu. |
+| **Ein Cosine-Score lässt sich wie ein Prozentwert anzeigen.** | `0.83` sieht intuitiv wie „83 % passend“ aus. | Bei E5 ist der absolute Wert keine Wahrscheinlichkeit. Hohe Similarities können auch bei schwachen Treffern auftreten. | Rohscores bleiben intern. In der UI gibt es keine scheinpräzise Prozentanzeige mehr. |
+| **Einfache Testvektoren reichen, um DuckDB-Persistenz zu validieren.** | Mit `[0, 1, 0]` und ähnlichen Vektoren waren Schreiben, Lesen und Ranking grün. | Normalisierte Fließkomma-Embeddings wurden beim Parameter-Binding nicht zuverlässig als `FLOAT[]` behandelt. | Tests müssen reale Datenformen abbilden. Der Store bindet `LIST(FLOAT)` explizit und der Roundtrip-Test nutzt echte Fließkommawerte. |
+| **Ein Smoke-Test darf den Produktionspfad nur ungefähr nachbilden.** | GET und POST landeten am Ende beide in derselben Search-Logik. | Die UI war bereits auf `POST /api/search`, der Deployment-Smoke testete noch GET. Produktion konnte dadurch grün sein, während die echte UI `404` sah. | Ein Smoke-Test muss denselben Request-Pfad wie der echte Client benutzen. |
+| **Wenn die Funktion technisch läuft, ist die Oberfläche weitgehend erledigt.** | Live-Suche, Treffer und API funktionierten. | Die erste Grep-Seite war zu groß, kontrastarm und wirkte wie ein Fremdkörper im Blog. | UX ist Teil der Funktion. Die Suche wurde kompakter und zusätzlich als Spotlight-/Konsolen-Overlay in die Navigation integriert. |
+| **Bei Content-PRs reichen Frontmatter, ESLint, Rechtschreibung und Grammatik.** | Um Runner-Minuten zu sparen, wurden Docker und Chromium bei reinen Markdown-Änderungen bewusst übersprungen. | Ein Mermaid-Diagramm enthielt `Y[/grep + Console Overlay]`. ESLint sieht einen Mermaid-Fence nur als Text; der Syntaxfehler entstand erst beim Parsen im Browser. | Content-CI braucht kleine formatspezifische Checks. Mermaid muss separat geparst werden, ohne dafür jedes Mal den kompletten Browser-Stack zu starten. |
+
+Gerade der letzte Punkt ist wichtig, weil er aus einer eigentlich richtigen Optimierung entstanden ist. Die CI sollte weniger Ressourcen verbrauchen. Also habe ich schwere Docker- und Chromium-Tests für reine Content-Änderungen abgeschaltet. Das war sinnvoll – aber ich habe dabei stillschweigend angenommen, dass die verbleibenden Checks den gesamten Markdown-Inhalt abdecken.
+
+Das tun sie nicht.
+
+```text
+ESLint       -> JavaScript
+CSpell       -> Wörter
+LanguageTool -> Sprache
+Frontmatter  -> Metadaten
+Mermaid      -> eigener Parser nötig
+```
+
+Die eigentliche Regel, die ich aus diesen Fehlern mitnehme, ist deshalb nicht „mehr Tests“.
+
+Sie lautet eher:
+
+> **Jeder Test sollte genau die Annahme prüfen, auf der eine Entscheidung beruht.**
+
+Wenn die Annahme lautet „beliebiger Text ohne Bedeutung darf keine Treffer liefern“, brauche ich einen Müllquery-Test. Wenn die Annahme lautet „das Frontend benutzt POST“, muss der Production-Smoke POST benutzen. Und wenn Markdown ausführbare oder parsbare Teilsprachen wie Mermaid enthält, reicht ein JavaScript-Linter nicht.
+
+Ein zweiter Punkt war die Versuchung, zu früh mehr Architektur einzubauen. MotherDuck, Neo4j, Kafka und ein vollständiges RAG mit LLM sind technisch interessant. Für die erste Frage – **liefert mein Retrieval brauchbare Ergebnisse?** – hätten sie aber nur mehr bewegliche Teile erzeugt.
+
+Dass diese Komponenten noch nicht eingebaut sind, war deshalb keine ausgelassene Funktion, sondern eine bewusste Korrektur des üblichen Impulses, ein Problem sofort mit der späteren Zielarchitektur zu lösen.
 
 ## Warum kein MotherDuck?
 
