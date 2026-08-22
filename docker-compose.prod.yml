@@ -13,6 +13,12 @@ services:
     environment:
       ARCHIVE_DIR: /content/archive
       POST_HISTORY_DIR: /content/post-history
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
     restart: unless-stopped
 
 volumes:

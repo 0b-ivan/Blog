@@ -25,6 +25,12 @@ services:
       LEGAL_PHONE: ${LEGAL_PHONE:-[optional]}
       LEGAL_CONTENT_RESPONSIBLE: ${LEGAL_CONTENT_RESPONSIBLE:-Ivan Babayev}
       LEGAL_CONTENT_ADDRESS: ${LEGAL_CONTENT_ADDRESS:-[Anschrift wie oben]}
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
