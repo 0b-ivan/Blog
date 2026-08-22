@@ -47,6 +47,17 @@ describe('glossary', () => {
     expect(response.text).toContain('/assets/css/glossary.css');
   });
 
+  it('keeps the tooltip readable independently from the light site text variable', async () => {
+    const css = await fs.readFile(
+      path.join(__dirname, '..', 'assets', 'css', 'glossary.css'),
+      'utf8'
+    );
+
+    expect(css).toContain('background: #0b131f;');
+    expect(css).toContain('color: #eaf2ff;');
+    expect(css).not.toMatch(/\.glossary-tooltip\s*\{[\s\S]*?color:\s*var\(--text/);
+  });
+
   it('syncs only used glossary definitions into markdown and stays idempotent', () => {
     const markdown = `---\ntitle: Test\n---\n\nDie VPC verwendet CIDR.\n\n\`AWS\` bleibt Code.\n\n\`\`\`text\nRDS und SSH\n\`\`\`\n`;
     const synced = syncMarkdown(markdown);
