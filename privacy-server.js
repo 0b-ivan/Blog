@@ -59,7 +59,7 @@ const FOOTER_META_LINKS = [
 ].join('\n        ');
 
 const META_LINK_PATTERN = /\s*<a\b[^>]*href="(?:#about|\/#about|index\.html#about|\/about|about\.html|\/datenschutz|datenschutz\.html|\/impressum|impressum\.html)"[^>]*>(?:About|Datenschutz|Impressum)<\/a>/gi;
-const GREP_TRIGGER = '<button type="button" class="kernel-grep-nav-trigger" data-kernel-grep-trigger aria-label="Kernel Grep als Konsole öffnen"><span>grep…</span><kbd>⌘K</kbd></button>';
+const GREP_TRIGGER = '<button type="button" class="kernel-grep-nav-trigger" data-kernel-grep-trigger aria-label="Kernel Grep öffnen" title="Kernel Grep (⌘K)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg></button>';
 
 function stripExternalFontLinks(html) {
   return html
@@ -116,20 +116,12 @@ function addGrepNavigation(html) {
   return html.replace(
     /(<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
     (_match, openingTag, navigation, closingTag) => {
-      let content = navigation;
-      if (!/href="\/grep"/i.test(content)) {
-        content = content.replace(
-          /(<a\b[^>]*href="\/snippets\/?"[^>]*>Snippets<\/a>)/i,
-          '$1\n        <a href="/grep">Grep</a>'
-        );
-      }
-      if (!/data-kernel-grep-trigger/i.test(content)) {
-        content = content.replace(
-          /(<a\b[^>]*href="\/grep"[^>]*>Grep<\/a>)/i,
-          `$1\n        ${GREP_TRIGGER}`
-        );
-      }
-      return `${openingTag}${content}${closingTag}`;
+      const content = navigation
+        .replace(/\s*<a\b[^>]*href="\/grep\/?"[^>]*>Grep<\/a>/gi, '')
+        .replace(/\s*<button\b[^>]*data-kernel-grep-trigger[^>]*>[\s\S]*?<\/button>/gi, '')
+        .trimEnd();
+
+      return `${openingTag}${content}\n        ${GREP_TRIGGER}\n      ${closingTag}`;
     }
   );
 }

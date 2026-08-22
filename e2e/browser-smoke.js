@@ -50,6 +50,18 @@ async function assertMetaLinksInFooter(page) {
   assert.equal(await footer.locator('a[href="/impressum"]').count(), 1, 'Impressum must appear once in the footer');
 }
 
+async function assertKernelGrepTrigger(page) {
+  const trigger = page.locator('.main-nav > [data-kernel-grep-trigger]');
+  await trigger.waitFor({ state: 'visible' });
+  assert.equal(await trigger.locator('svg').count(), 1, 'Kernel Grep trigger must render as a search icon');
+  assert.equal(await page.locator('.main-nav a[href="/grep"]').count(), 0, 'Kernel Grep must not be duplicated as a visible navigation link');
+  assert.equal(
+    await trigger.evaluate((element) => element === element.parentElement?.lastElementChild),
+    true,
+    'Kernel Grep trigger must be the rightmost navigation item'
+  );
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
@@ -107,7 +119,7 @@ async function main() {
     assert.equal(await page.locator('.main-nav a[href="#newsletter"]').count(), 0, 'Abo must not appear in the main navigation');
     assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
     await page.locator('.hero-profile a[href="/about"]').waitFor({ state: 'visible' });
-    await page.locator('.main-nav a[href="/grep"]').waitFor({ state: 'visible' });
+    await assertKernelGrepTrigger(page);
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
       cards.map((card) => card.dataset.href).filter(Boolean)
@@ -138,7 +150,7 @@ async function main() {
       await page.locator('.post-page h1').waitFor({ state: 'visible' });
       assert.ok((await page.locator('.post-page h1').innerText()).trim().length > 0, `Missing title for ${href}`);
       await assertMetaLinksInFooter(page);
-      await page.locator('.main-nav a[href="/grep"]').waitFor({ state: 'visible' });
+      await assertKernelGrepTrigger(page);
 
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
@@ -175,10 +187,18 @@ async function main() {
     }
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-    await Promise.all([
-      page.waitForURL((url) => url.pathname === '/grep'),
-      page.locator('.main-nav a[href="/grep"]').click()
-    ]);
+    await assertKernelGrepTrigger(page);
+    const grepTrigger = page.locator('.main-nav > [data-kernel-grep-trigger]');
+    await grepTrigger.click();
+    const grepOverlay = page.locator('.kernel-grep-overlay');
+    await grepOverlay.waitFor({ state: 'visible' });
+    await grepOverlay.locator('.kernel-grep-console__input').fill('docker compose container');
+    await grepOverlay.locator('.kernel-grep-console__status[data-state="success"]').waitFor({ state: 'visible', timeout: 20_000 });
+    assert.ok(await grepOverlay.locator('.kernel-grep-console__result').count() > 0, 'Kernel Grep overlay search returned no results');
+    await page.keyboard.press('Escape');
+    await grepOverlay.waitFor({ state: 'hidden' });
+
+    await page.goto(`${baseUrl}/grep`, { waitUntil: 'domcontentloaded' });
     await page.locator('#grep-title').waitFor({ state: 'visible' });
     assert.equal((await page.locator('#grep-title').innerText()).trim(), 'Kernel Grep');
     await page.locator('#grep-query').fill('docker compose container');
@@ -263,7 +283,7 @@ async function main() {
       [],
       `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
     );
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep live search, standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep icon + overlay/live search, standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }

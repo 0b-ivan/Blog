@@ -1,38 +1,36 @@
 .kernel-grep-nav-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  min-height: 32px;
-  padding: 0.28rem 0.45rem 0.28rem 0.62rem;
-  border: 1px solid color-mix(in srgb, var(--line) 85%, var(--accent));
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  padding: 0;
+  border: 0;
   border-radius: 7px;
-  background: rgba(251, 250, 247, 0.72);
+  background: transparent;
   color: var(--accent);
   cursor: pointer;
-  font: 0.78rem/1 var(--typewriter-font, Menlo, Monaco, Consolas, monospace);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .kernel-grep-nav-trigger:hover,
 .kernel-grep-nav-trigger:focus-visible {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  background: var(--card, #fbfaf7);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: color-mix(in srgb, var(--accent) 82%, #000);
   outline: none;
 }
 
-.kernel-grep-nav-trigger::before {
-  content: '$';
-  color: var(--accent);
+.kernel-grep-nav-trigger:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
-.kernel-grep-nav-trigger kbd {
-  padding: 0.2rem 0.32rem;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: rgba(18, 19, 20, 0.035);
-  color: var(--muted);
-  font: inherit;
-  font-size: 0.66rem;
+.kernel-grep-nav-trigger svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 body.kernel-grep-overlay-open {
@@ -300,16 +298,9 @@ body.kernel-grep-overlay-open {
 
 @media (max-width: 760px) {
   .kernel-grep-nav-trigger {
-    padding-inline: 0.42rem;
-  }
-
-  .kernel-grep-nav-trigger > span,
-  .kernel-grep-nav-trigger kbd {
-    display: none;
-  }
-
-  .kernel-grep-nav-trigger::before {
-    content: '$?';
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
   }
 
   .kernel-grep-overlay {
