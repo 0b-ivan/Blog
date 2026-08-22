@@ -100,22 +100,35 @@ class RagStore {
       });
 
       for (const chunk of chunks) {
+        const values = {
+          chunk_id: chunk.chunkId,
+          post_id: document.postId,
+          ordinal: chunk.ordinal,
+          heading: chunk.heading || '',
+          content: chunk.content,
+          content_hash: chunk.contentHash,
+          embedding_model: embeddingModel,
+          embedding: this.duckdb.listValue(chunk.embedding)
+        };
+        const types = {
+          chunk_id: this.duckdb.VARCHAR,
+          post_id: this.duckdb.VARCHAR,
+          ordinal: this.duckdb.INTEGER,
+          heading: this.duckdb.VARCHAR,
+          content: this.duckdb.VARCHAR,
+          content_hash: this.duckdb.VARCHAR,
+          embedding_model: this.duckdb.VARCHAR,
+          embedding: this.duckdb.LIST(this.duckdb.FLOAT)
+        };
+
         await this.connection.run(
           `INSERT INTO rag_chunks (
              chunk_id, post_id, ordinal, heading, content, content_hash, embedding_model, embedding, indexed_at
            ) VALUES (
              $chunk_id, $post_id, $ordinal, $heading, $content, $content_hash, $embedding_model, $embedding, now()
            )`,
-          {
-            chunk_id: chunk.chunkId,
-            post_id: document.postId,
-            ordinal: chunk.ordinal,
-            heading: chunk.heading || '',
-            content: chunk.content,
-            content_hash: chunk.contentHash,
-            embedding_model: embeddingModel,
-            embedding: this.duckdb.listValue(chunk.embedding)
-          }
+          values,
+          types
         );
       }
 

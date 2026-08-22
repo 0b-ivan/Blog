@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kernel Grep | Kernel Notes</title>
+    <meta name="description" content="Semantische Suche durch Kernel Notes." />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/grep.css" />
+    <link rel="stylesheet" href="/assets/css/typewriter.css" data-kernel-typewriter />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="logo" href="/">Kernel Notes</a>
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <a href="/#posts">Artikel</a>
+        <a href="/#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
+        <a href="/grep" aria-current="page">Grep</a>
+        <a href="/roadmap">Roadmap</a>
+        <a href="/archive">Archiv</a>
+      </nav>
+    </header>
+
+    <main class="grep-main">
+      <section class="grep-terminal" aria-labelledby="grep-title">
+        <div class="grep-terminal__chrome" aria-hidden="true">
+          <div class="grep-terminal__dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="grep-terminal__path">grep://kernel-notes</span>
+        </div>
+
+        <div class="grep-terminal__body">
+          <p class="grep-kicker">semantic search · local index</p>
+          <h1 id="grep-title">Kernel Grep</h1>
+          <p class="grep-intro">
+            Durchsucht die Artikel nach Bedeutung statt nur nach exakt gleichen Wörtern.
+            Die Suche läuft lokal auf dem Kernel-Notes-Server.
+          </p>
+
+          <form class="grep-form" id="grep-form" role="search">
+            <label for="grep-query">$ grep --semantic</label>
+            <div class="grep-command">
+              <span aria-hidden="true">&gt;</span>
+              <input
+                id="grep-query"
+                name="q"
+                type="search"
+                minlength="2"
+                maxlength="300"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="z. B. private EC2 ohne SSH"
+                required
+              />
+              <button type="submit">suchen</button>
+            </div>
+          </form>
+
+          <div class="grep-examples" aria-label="Beispielsuchen">
+            <span>Beispiele:</span>
+            <button type="button" data-grep-query="Docker Container verwalten">Docker</button>
+            <button type="button" data-grep-query="AWS Zugriff ohne öffentliche IP">AWS Zugriff</button>
+            <button type="button" data-grep-query="Self Hosting RSS Reader">Self-Hosting</button>
+          </div>
+
+          <p class="grep-status" id="grep-status" aria-live="polite">Bereit.</p>
+          <div class="grep-results" id="grep-results" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 Kernel Notes</p>
+      <div class="footer-links">
+        <a href="/">Startseite</a>
+        <a href="/rss.xml">RSS</a>
+      </div>
+    </footer>
+
+    <script src="/assets/grep.js" defer></script>
+  </body>
+</html>

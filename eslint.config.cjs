@@ -24,13 +24,31 @@ module.exports = [
     }
   },
   {
+    files: ['privacy-server.js'],
+    languageOptions: {
+      globals: {
+        AbortSignal: 'readonly',
+        fetch: 'readonly'
+      }
+    }
+  },
+  {
+    files: ['rag/server.js'],
+    languageOptions: {
+      globals: {
+        setTimeout: 'readonly'
+      }
+    }
+  },
+  {
     files: [
       'script.js',
       'assets/newsletter-config.js',
       'assets/newsletter.js',
       'assets/tag-navigation.js',
       'assets/knowledge-graph.js',
-      'assets/roadmap.js'
+      'assets/roadmap.js',
+      'assets/grep.js'
     ],
     languageOptions: {
       globals: {

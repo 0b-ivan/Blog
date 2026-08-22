@@ -1,38 +1,37 @@
-# Semantic Search
+# Kernel Grep / Semantic Search
 
-Erster Baustein für semantische Suche und späteres GraphRAG in Kernel Notes.
+Lokale semantische Suche für Kernel Notes und Basis für späteres GraphRAG.
 
-## Was aktuell drin ist
+## Was drin ist
 
 - aktive Artikel aus `posts/*.md`
 - Markdown-aware Chunking; Überschriften bleiben als Kontext erhalten und Codeblöcke werden nicht auseinandergerissen
 - lokale Embeddings mit `Xenova/multilingual-e5-small`
-- DuckDB-Datei unter `.data/kernel-notes.duckdb`
+- DuckDB als lokaler Index
 - inkrementeller Index über SHA-256 des Artikels
 - CLI-Suche mit Cosine Similarity
+- interner HTTP-Suchdienst auf Port `8090`
+- Weboberfläche unter `/grep`
+- Blog-API unter `/api/search`
 - pro Ergebnis nur der beste Chunk eines Artikels
 
-Neo4j und Kafka sind bewusst noch nicht Teil dieses Schritts. Erst soll Retrieval auf den vorhandenen Artikeln stabil laufen.
+Neo4j und Kafka sind bewusst noch nicht Teil dieses Schritts.
 
-## Installation
+## Lokal per CLI
 
 ```bash
 npm install --prefix rag --package-lock=false
-```
-
-## Index bauen
-
-```bash
 npm run rag:index
+npm run rag:search -- "Wie greife ich auf private Systeme ohne SSH zu?"
 ```
 
-Beim ersten Lauf lädt Transformers.js das Embedding-Modell von Hugging Face und legt es unter `.data/huggingface` ab. Danach wird der lokale Cache verwendet.
+Beim ersten E5-Lauf lädt Transformers.js das Embedding-Modell und legt es im lokalen Modellcache ab. Danach wird der Cache verwendet.
 
 Erneutes Indexieren ist inkrementell:
 
 ```text
-Artikel unverändert  -> nichts tun
-Artikel geändert     -> Chunks neu erzeugen und neu embedden
+Artikel unverändert  -> Embedding behalten
+Artikel geändert     -> Chunks neu erzeugen und embedden
 Artikel gelöscht     -> aus DuckDB entfernen
 ```
 
@@ -42,38 +41,48 @@ Komplett neu aufbauen:
 npm run rag:index -- --force
 ```
 
-## Suchen
-
-```bash
-npm run rag:search -- "Wie greife ich auf private Systeme ohne SSH zu?"
-```
-
-Optional:
+Optional mit Limit:
 
 ```bash
 npm run rag:search -- "Docker Deployment" --limit 5
 ```
 
+## Kernel Grep Service
+
+Der Suchdienst läuft getrennt vom Blogprozess:
+
+```text
+Browser
+  -> POST /api/search
+  -> Blog Container
+  -> internes Docker-Netz
+  -> Kernel Grep Container
+  -> DuckDB + lokales Embedding-Modell
+```
+
+Der Search-Container wird nicht auf einen Host-Port veröffentlicht. In Produktion liegen DuckDB und Modellcache in persistenten Docker-Volumes. Nach einem Content-Deploy wird der Search-Container neu gestartet; der SHA-256-Abgleich berechnet dabei nur geänderte Artikel neu.
+
 ## Konfiguration
 
 | Variable | Default |
 | --- | --- |
-| `RAG_DB_PATH` | `.data/kernel-notes.duckdb` |
-| `RAG_MODEL_CACHE` | `.data/huggingface` |
+| `RAG_DB_PATH` | `.data/kernel-notes.duckdb` / im Container `/data/kernel-notes.duckdb` |
+| `RAG_MODEL_CACHE` | `.data/huggingface` / im Container `/models` |
+| `RAG_POSTS_DIR` | `posts` / im Container `/app/posts` |
 | `RAG_MODEL` | `Xenova/multilingual-e5-small` |
 | `RAG_DTYPE` | `q8` |
+| `RAG_EMBEDDER_MODE` | `e5` |
 | `RAG_CHUNK_MAX_CHARS` | `1800` |
 | `RAG_LIMIT` | `8` |
 
 Die E5-Prefixe `passage:` für Artikel und `query:` für Suchanfragen werden automatisch gesetzt.
 
-## Noch nicht enthalten
+Für CI gibt es zusätzlich `RAG_EMBEDDER_MODE=hash`. Damit wird die komplette DuckDB-/API-/Browser-Kette ohne Modelldownload getestet. Produktion verwendet immer `e5`.
 
-- `/brain` Web-UI
-- API-Endpoint für Semantic Search
-- DuckDB-VSS/HNSW-Index; bei der aktuellen Artikelmenge reicht Cosine Similarity im Node-Prozess
+## Noch offen
+
+- semantische Similarity als zusätzliche Kante im bestehenden Knowledge Graph
+- DuckDB-VSS/HNSW, falls die Artikelmenge groß genug wird
 - Neo4j für echte Graphbeziehungen und Multi-Hop-Abfragen
-- LLM-Antworten/RAG-Chat
-- Kafka
-
-Der nächste sinnvolle Schritt ist die Search-API plus `/brain`. Danach können semantische Kanten in den bestehenden Knowledge Graph einfließen; Neo4j wird erst interessant, wenn wir daraus echte Graph-Abfragen bauen.
+- LLM-Antworten mit Quellen
+- Kafka erst dann, wenn mehrere unabhängige Consumer für Content-Events existieren

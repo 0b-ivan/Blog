@@ -98,6 +98,8 @@ async function main() {
     assert.equal(packageResponse.status(), 404, 'package.json must not be public');
     const serverSourceResponse = await page.request.get(`${baseUrl}/server.js`);
     assert.equal(serverSourceResponse.status(), 404, 'server.js must not be public');
+    const ragSourceResponse = await page.request.get(`${baseUrl}/rag/server.js`);
+    assert.equal(ragSourceResponse.status(), 404, 'RAG source must not be public');
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#posts-list .post-card').first().waitFor({ state: 'visible' });
@@ -105,6 +107,7 @@ async function main() {
     assert.equal(await page.locator('.main-nav a[href="#newsletter"]').count(), 0, 'Abo must not appear in the main navigation');
     assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
     await page.locator('.hero-profile a[href="/about"]').waitFor({ state: 'visible' });
+    await page.locator('.main-nav a[href="/grep"]').waitFor({ state: 'visible' });
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
       cards.map((card) => card.dataset.href).filter(Boolean)
@@ -135,6 +138,7 @@ async function main() {
       await page.locator('.post-page h1').waitFor({ state: 'visible' });
       assert.ok((await page.locator('.post-page h1').innerText()).trim().length > 0, `Missing title for ${href}`);
       await assertMetaLinksInFooter(page);
+      await page.locator('.main-nav a[href="/grep"]').waitFor({ state: 'visible' });
 
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
@@ -169,6 +173,26 @@ async function main() {
         assert.ok(response.ok(), `Snippet failed for ${href}: ${downloadHref} (${response.status()})`);
       }
     }
+
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    await Promise.all([
+      page.waitForURL((url) => url.pathname === '/grep'),
+      page.locator('.main-nav a[href="/grep"]').click()
+    ]);
+    await page.locator('#grep-title').waitFor({ state: 'visible' });
+    assert.equal((await page.locator('#grep-title').innerText()).trim(), 'Kernel Grep');
+    await page.locator('#grep-query').fill('docker compose container');
+    await page.locator('#grep-form button[type="submit"]').click();
+    await page.locator('#grep-status[data-state="success"]').waitFor({ state: 'visible', timeout: 20_000 });
+    assert.ok(await page.locator('.grep-result').count() > 0, 'Kernel Grep returned no results');
+    const firstGrepHref = await page.locator('.grep-result h2 a').first().getAttribute('href');
+    assert.ok(firstGrepHref?.startsWith('/posts/'), 'Kernel Grep result must link to an article');
+    await assertMetaLinksInFooter(page);
+
+    const apiSearchResponse = await page.request.get(`${baseUrl}/api/search?q=docker%20compose&limit=2`);
+    assert.ok(apiSearchResponse.ok(), `Kernel Grep API failed: ${apiSearchResponse.status()}`);
+    const apiSearchPayload = await apiSearchResponse.json();
+    assert.ok(Array.isArray(apiSearchPayload.results) && apiSearchPayload.results.length > 0, 'Kernel Grep API returned no results');
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('a[href="/roadmap"]').first().waitFor({ state: 'visible' });
@@ -221,6 +245,7 @@ async function main() {
     assert.match(await page.locator('.legal-card').innerText(), /kein Werbetracking/i);
     assert.match(await page.locator('.legal-card').innerText(), /Cloudflare/);
     assert.match(await page.locator('.legal-card').innerText(), /Hetzner/);
+    assert.match(await page.locator('.legal-card').innerText(), /Kernel Grep/);
     await assertMetaLinksInFooter(page);
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
@@ -238,7 +263,7 @@ async function main() {
       [],
       `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
     );
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep, standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }

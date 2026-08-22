@@ -1,4 +1,31 @@
 services:
+  search:
+    build:
+      context: .
+      dockerfile: Dockerfile.search
+    container_name: kernel-notes-search
+    volumes:
+      - ./posts:/app/posts:ro
+      - kernel-search-data:/data
+      - kernel-search-models:/models
+    environment:
+      RAG_EMBEDDER_MODE: ${RAG_EMBEDDER_MODE:-e5}
+      RAG_MODEL: ${RAG_MODEL:-Xenova/multilingual-e5-small}
+      RAG_DTYPE: ${RAG_DTYPE:-q8}
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8090/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 5s
+
   blog:
     build:
       context: .
@@ -15,8 +42,9 @@ services:
     environment:
       ARCHIVE_DIR: /content/archive
       POST_HISTORY_DIR: /content/post-history
+      SEARCH_SERVICE_URL: http://search:8090/search
       LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Ivan Babayev}
-      LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-AWS Cloud Infrastructure Engineer bei e2n}
+      LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-Cloud Infrastructure Engineer}
       LEGAL_OPERATOR_LOCATION: ${LEGAL_OPERATOR_LOCATION:-Würzburg, Bayern, Deutschland}
       LEGAL_STREET: ${LEGAL_STREET:-[Straße und Hausnummer]}
       LEGAL_POSTAL_CITY: ${LEGAL_POSTAL_CITY:-[PLZ Ort]}
@@ -25,6 +53,9 @@ services:
       LEGAL_PHONE: ${LEGAL_PHONE:-[optional]}
       LEGAL_CONTENT_RESPONSIBLE: ${LEGAL_CONTENT_RESPONSIBLE:-Ivan Babayev}
       LEGAL_CONTENT_ADDRESS: ${LEGAL_CONTENT_ADDRESS:-[Anschrift wie oben]}
+    depends_on:
+      search:
+        condition: service_healthy
     logging:
       driver: local
       options:
@@ -38,3 +69,7 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+
+volumes:
+  kernel-search-data:
+  kernel-search-models:

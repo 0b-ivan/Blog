@@ -23,6 +23,7 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   BLOG_IMAGE_NAME: kernel-notes-blog
+  SEARCH_IMAGE_NAME: kernel-notes-search
 
 jobs:
   verify-main-origin:
@@ -63,6 +64,7 @@ jobs:
     needs: verify-main-origin
     outputs:
       blog_image: ${{ steps.meta.outputs.blog_image }}
+      search_image: ${{ steps.meta.outputs.search_image }}
       blog_version: ${{ steps.meta.outputs.blog_version }}
 
     steps:
@@ -74,7 +76,7 @@ jobs:
       - name: Build article version history
         run: node scripts/build-post-history.js
 
-      - name: Set image name and deployment version
+      - name: Set image names and deployment version
         id: meta
         run: |
           OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
@@ -87,6 +89,7 @@ jobs:
           echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
           echo "blog_version=${BLOG_VERSION}" >> "$GITHUB_OUTPUT"
           echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
           echo "Deployment version: ${BLOG_VERSION}"
 
       - name: Login to GHCR
@@ -108,6 +111,17 @@ jobs:
             ${{ steps.meta.outputs.blog_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:${{ steps.meta.outputs.blog_version }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:latest
+
+      - name: Build and push Kernel Grep image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile.search
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.search_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.SEARCH_IMAGE_NAME }}:${{ steps.meta.outputs.blog_version }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.SEARCH_IMAGE_NAME }}:latest
 
   deploy-to-hetzner:
     runs-on: ubuntu-latest
@@ -173,12 +187,13 @@ jobs:
             "${HETZNER_USER}@${HETZNER_HOST}" \
             "docker login ghcr.io -u '${GHCR_USER}' --password-stdin"
 
-      - name: Deploy exact main image
+      - name: Deploy exact main images
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
           HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
           BLOG_IMAGE: ${{ needs.build-and-push.outputs.blog_image }}
+          SEARCH_IMAGE: ${{ needs.build-and-push.outputs.search_image }}
         run: |
           PORT="${HETZNER_PORT:-22}"
           ssh \
@@ -187,35 +202,37 @@ jobs:
             -o BatchMode=yes \
             -o StrictHostKeyChecking=yes \
             "${HETZNER_USER}@${HETZNER_HOST}" \
-            bash -s -- "$BLOG_IMAGE" <<'REMOTE'
+            bash -s -- "$BLOG_IMAGE" "$SEARCH_IMAGE" <<'REMOTE'
           set -euo pipefail
 
           BLOG_IMAGE="$1"
+          SEARCH_IMAGE="$2"
           DEPLOY_DIR="/opt/Blog"
           COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.prod.yml"
           ENV_FILE="${DEPLOY_DIR}/.env.production"
-          CONTAINER_NAME="kernel-notes-blog"
+          BLOG_CONTAINER="kernel-notes-blog"
+          SEARCH_CONTAINER="kernel-notes-search"
           EXPECTED_HOST_PORT="1888"
 
           mkdir -p "$DEPLOY_DIR"
           mv /tmp/kernel-notes-compose.yml "$COMPOSE_FILE"
 
-          PREVIOUS_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
-          printf 'BLOG_IMAGE=%s\n' "$BLOG_IMAGE" > "$ENV_FILE"
+          PREVIOUS_BLOG_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$BLOG_CONTAINER" 2>/dev/null || true)"
+          PREVIOUS_SEARCH_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
+          printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "$BLOG_IMAGE" "$SEARCH_IMAGE" > "$ENV_FILE"
 
-          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog
+          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog search
           docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
 
           PUBLISHED="$(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" port blog 8080 2>/dev/null || true)"
           HEALTH_PORT="${PUBLISHED##*:}"
-
           echo "Published blog port: ${PUBLISHED:-<none>}"
 
-          healthy=false
+          blog_healthy=false
           if [ "$HEALTH_PORT" = "$EXPECTED_HOST_PORT" ]; then
-            for _ in $(seq 1 20); do
+            for _ in $(seq 1 30); do
               if curl -fsS "http://127.0.0.1:${HEALTH_PORT}/healthz" >/dev/null; then
-                healthy=true
+                blog_healthy=true
                 break
               fi
               sleep 2
@@ -224,21 +241,31 @@ jobs:
             echo "Unexpected production port: expected ${EXPECTED_HOST_PORT}, got ${HEALTH_PORT:-none}"
           fi
 
-          if [ "$healthy" != "true" ]; then
-            echo "Deployment health check failed"
-            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
-            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=100 blog || true
-
-            if [ -n "$PREVIOUS_IMAGE" ]; then
-              echo "Rolling back to $PREVIOUS_IMAGE"
-              printf 'BLOG_IMAGE=%s\n' "$PREVIOUS_IMAGE" > "$ENV_FILE"
-              docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
+          search_healthy=false
+          for _ in $(seq 1 180); do
+            SEARCH_HEALTH="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
+            if [ "$SEARCH_HEALTH" = "healthy" ]; then
+              search_healthy=true
+              break
             fi
+            sleep 2
+          done
 
+          if [ "$blog_healthy" != "true" ] || [ "$search_healthy" != "true" ]; then
+            echo "Deployment health check failed (blog=${blog_healthy}, search=${search_healthy})"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=100 blog search || true
+
+            ROLLBACK_BLOG_IMAGE="${PREVIOUS_BLOG_IMAGE:-$BLOG_IMAGE}"
+            ROLLBACK_SEARCH_IMAGE="${PREVIOUS_SEARCH_IMAGE:-$SEARCH_IMAGE}"
+            printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "$ROLLBACK_BLOG_IMAGE" "$ROLLBACK_SEARCH_IMAGE" > "$ENV_FILE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans || true
             exit 1
           fi
 
           curl -fsS "http://127.0.0.1:${HEALTH_PORT}/archive" >/dev/null
-          echo "Deployed $BLOG_IMAGE successfully on host port $HEALTH_PORT"
+          curl -fsS "http://127.0.0.1:${HEALTH_PORT}/grep" >/dev/null
+          curl -fsS "http://127.0.0.1:${HEALTH_PORT}/api/search?q=Docker&limit=1" >/dev/null
+          echo "Deployed blog and Kernel Grep successfully on host port $HEALTH_PORT"
           docker image prune -f >/dev/null
           REMOTE
