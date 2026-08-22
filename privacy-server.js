@@ -49,6 +49,14 @@ const BLOCKED_PATHS = [
   /^\/archive\/.*\.md$/
 ];
 
+const FOOTER_META_LINKS = [
+  '<a href="/#about">About</a>',
+  '<a href="/datenschutz">Datenschutz</a>',
+  '<a href="/impressum">Impressum</a>'
+].join('\n        ');
+
+const META_LINK_PATTERN = /\s*<a\b[^>]*href="(?:#about|\/#about|index\.html#about|\/datenschutz|datenschutz\.html|\/impressum|impressum\.html)"[^>]*>(?:About|Datenschutz|Impressum)<\/a>/gi;
+
 function stripExternalFontLinks(html) {
   return html
     .replace(/\s*<link\s+rel="preconnect"\s+href="https:\/\/fonts\.googleapis\.com"\s*\/?>/g, '')
@@ -96,31 +104,56 @@ function localizeClientScript(source) {
     );
 }
 
-function addPrivacyNavigation(html) {
-  if (html.includes('href="/datenschutz"')) {
-    return html;
-  }
+function stripMetaLinks(fragment) {
+  return fragment.replace(META_LINK_PATTERN, '');
+}
 
-  let output = html
-    .replaceAll(
-      '<a href="/impressum">Impressum</a>',
-      '<a href="/datenschutz">Datenschutz</a>\n        <a href="/impressum">Impressum</a>'
-    )
-    .replaceAll(
-      '<a href="impressum.html">Impressum</a>',
-      '<a href="/datenschutz">Datenschutz</a>\n        <a href="impressum.html">Impressum</a>'
-    );
-
-  output = output.replaceAll(
-    '<p><a class="read-more" href="/impressum">Zum Impressum</a></p>',
-    '<p><a class="read-more" href="/datenschutz">Zum Datenschutz</a></p>\n        <p><a class="read-more" href="/impressum">Zum Impressum</a></p>'
+function moveMetaNavigationToFooter(html) {
+  let output = html.replace(
+    /(<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
+    (_match, openingTag, navigation, closingTag) => `${openingTag}${stripMetaLinks(navigation)}${closingTag}`
   );
+
+  output = output
+    .replace(/\s*<p><a class="read-more" href="\/datenschutz">Zum Datenschutz<\/a><\/p>/gi, '')
+    .replace(/\s*<p><a class="read-more" href="\/impressum">Zum Impressum<\/a><\/p>/gi, '');
+
+  let footerFound = false;
+  output = output.replace(
+    /(<footer\b[^>]*class="[^"]*\bsite-footer\b[^"]*"[^>]*>)([\s\S]*?)(<\/footer>)/gi,
+    (_match, openingTag, footerContent, closingTag) => {
+      footerFound = true;
+      const cleanedFooter = stripMetaLinks(footerContent);
+
+      if (/class="[^"]*\bfooter-links\b[^"]*"/i.test(cleanedFooter)) {
+        const withMetaLinks = cleanedFooter.replace(
+          /(<div\b[^>]*class="[^"]*\bfooter-links\b[^"]*"[^>]*>)([\s\S]*?)(<\/div>)/i,
+          (_linksMatch, linksOpeningTag, links, linksClosingTag) =>
+            `${linksOpeningTag}${links.trimEnd()}\n        ${FOOTER_META_LINKS}\n      ${linksClosingTag}`
+        );
+        return `${openingTag}${withMetaLinks}${closingTag}`;
+      }
+
+      return `${openingTag}${cleanedFooter}\n      <div class="footer-links">\n        ${FOOTER_META_LINKS}\n      </div>\n    ${closingTag}`;
+    }
+  );
+
+  if (!footerFound) {
+    output = output.replace(
+      '</body>',
+      `    <footer class="site-footer">\n      <p>© 2026 Kernel Notes</p>\n      <div class="footer-links">\n        ${FOOTER_META_LINKS}\n      </div>\n    </footer>\n  </body>`
+    );
+  }
 
   return output;
 }
 
+function addPrivacyNavigation(html) {
+  return moveMetaNavigationToFooter(html);
+}
+
 function hardenHtml(html) {
-  return addPrivacyNavigation(localizeBrowserDependencies(html));
+  return moveMetaNavigationToFooter(localizeBrowserDependencies(html));
 }
 
 function vendorStatic(relativePath) {
@@ -216,8 +249,13 @@ function createApp() {
     }
   });
 
-  app.get(['/datenschutz', '/datenschutz.html'], (_req, res) => {
-    res.sendFile(path.join(root, 'datenschutz.html'));
+  app.get(['/datenschutz', '/datenschutz.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'datenschutz.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load privacy notice');
+    }
   });
 
   app.use((req, res, next) => {
@@ -259,6 +297,8 @@ module.exports = {
   stripExternalFontLinks,
   localizeBrowserDependencies,
   localizeClientScript,
+  stripMetaLinks,
+  moveMetaNavigationToFooter,
   addPrivacyNavigation,
   hardenHtml,
   createApp,
