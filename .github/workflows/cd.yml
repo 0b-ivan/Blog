@@ -265,7 +265,25 @@ jobs:
 
           curl -fsS "http://127.0.0.1:${HEALTH_PORT}/archive" >/dev/null
           curl -fsS "http://127.0.0.1:${HEALTH_PORT}/grep" >/dev/null
-          curl -fsS "http://127.0.0.1:${HEALTH_PORT}/api/search?q=Docker&limit=1" >/dev/null
+
+          SEARCH_RESPONSE="$(curl -fsS -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"q":"Docker","limit":1}' \
+            "http://127.0.0.1:${HEALTH_PORT}/api/search")"
+          printf '%s' "$SEARCH_RESPONSE" | grep -Eq '"results":\[[^]]' || {
+            echo "Production POST search returned no Docker result: $SEARCH_RESPONSE"
+            exit 1
+          }
+
+          NOISE_RESPONSE="$(curl -fsS -X POST \
+            -H 'Content-Type: application/json' \
+            --data '{"q":"aksdfnasdglvhnasdf","limit":8}' \
+            "http://127.0.0.1:${HEALTH_PORT}/api/search")"
+          printf '%s' "$NOISE_RESPONSE" | grep -q '"results":\[\]' || {
+            echo "Garbage query unexpectedly returned results: $NOISE_RESPONSE"
+            exit 1
+          }
+
           echo "Deployed blog and Kernel Grep successfully on host port $HEALTH_PORT"
           docker image prune -f >/dev/null
           REMOTE
