@@ -59,6 +59,21 @@ describe('glossary', () => {
     expect(html).toMatch(/<abbr[^>]+data-glossary-key="OPML"[^>]*>OPML<\/abbr>/);
   });
 
+  it('keeps prose after fenced code searchable even when the code contains fence syntax', () => {
+    const markdown = [
+      '```js',
+      'const fenceMatch = line.match(/^\\s*(```+|~~~+)/);',
+      'const example = "Kafka";',
+      '```',
+      '',
+      'Danach wäre GraphRAG interessant.'
+    ].join('\n');
+
+    const keys = new Set(usedGlossaryLabels(markdown).map(({ entry }) => entry.key));
+    expect(keys.has('Kafka')).toBe(false);
+    expect(keys.has('GraphRAG')).toBe(true);
+  });
+
   it('covers representative terms from the active blog posts', async () => {
     const root = path.join(__dirname, '..');
     const expectedByPost = {
