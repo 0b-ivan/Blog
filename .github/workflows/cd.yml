@@ -9,6 +9,8 @@ on:
       - 'archive/**'
       - 'snippets/**'
       - 'assets/**'
+      - 'config/**'
+      - 'lib/**'
       - '*.html'
       - '*.js'
       - 'rag/**'
@@ -271,6 +273,18 @@ jobs:
           HELPER_IMAGE="alpine:3.22"
           SEARCH_CONTAINER="kernel-notes-search"
 
+          retry_get() {
+            url="$1"
+            for attempt in $(seq 1 10); do
+              if curl -fsS --max-time 10 "$url" >/dev/null; then
+                return 0
+              fi
+              echo "GET retry ${attempt}/10: ${url}" >&2
+              sleep 2
+            done
+            return 1
+          }
+
           rm -rf "$STAGE"
           mkdir -p "$STAGE"
           tar -xzf "$ARCHIVE" -C "$STAGE"
@@ -301,9 +315,14 @@ jobs:
             [ "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$SEARCH_CONTAINER")" = healthy ] || exit 1
           fi
 
-          curl -fsS http://127.0.0.1:1888/healthz >/dev/null
-          curl -fsS http://127.0.0.1:1888/api/posts >/dev/null
-          curl -fsS http://127.0.0.1:1888/archive >/dev/null
+          if ! retry_get http://127.0.0.1:1888/healthz \
+            || ! retry_get http://127.0.0.1:1888/api/posts \
+            || ! retry_get http://127.0.0.1:1888/archive; then
+            echo 'Content deployment smoke check failed.'
+            docker logs --tail=100 kernel-notes-blog || true
+            exit 1
+          fi
+
           echo "Content ${COMMIT_SHA} deployed without rebuilding application images."
           REMOTE
 
@@ -334,6 +353,48 @@ jobs:
           SEARCH_CONTAINER="kernel-notes-search"
           EXPECTED_HOST_PORT="1888"
 
+          wait_for_health() {
+            container="$1"
+            attempts="$2"
+            for attempt in $(seq 1 "$attempts"); do
+              status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container" 2>/dev/null || true)"
+              if [ "$status" = healthy ]; then
+                return 0
+              fi
+              if [ "$status" = unhealthy ]; then
+                echo "${container} unhealthy (${attempt}/${attempts})" >&2
+              fi
+              sleep 2
+            done
+            return 1
+          }
+
+          retry_get() {
+            url="$1"
+            for attempt in $(seq 1 10); do
+              if curl -fsS --max-time 15 "$url" >/dev/null; then
+                return 0
+              fi
+              echo "GET retry ${attempt}/10: ${url}" >&2
+              sleep 2
+            done
+            return 1
+          }
+
+          retry_post() {
+            url="$1"
+            payload="$2"
+            for attempt in $(seq 1 10); do
+              response="$(curl -fsS --max-time 20 -X POST -H 'Content-Type: application/json' --data "$payload" "$url" 2>/dev/null)" && {
+                printf '%s' "$response"
+                return 0
+              }
+              echo "POST retry ${attempt}/10: ${url}" >&2
+              sleep 2
+            done
+            return 1
+          }
+
           mkdir -p "$DEPLOY_DIR"
           mv /tmp/kernel-notes-compose.yml "$COMPOSE_FILE"
 
@@ -341,6 +402,17 @@ jobs:
           PREVIOUS_SEARCH_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
           printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "$BLOG_IMAGE" "$SEARCH_IMAGE" > "$ENV_FILE"
           docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog search
+
+          rollback_deployment() {
+            reason="$1"
+            echo "Deployment failed: ${reason}"
+            echo 'Container status:'
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
+            echo 'Recent container logs:'
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=120 blog search || true
+            printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "${PREVIOUS_BLOG_IMAGE:-$BLOG_IMAGE}" "${PREVIOUS_SEARCH_IMAGE:-$SEARCH_IMAGE}" > "$ENV_FILE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans || true
+          }
 
           if [ "$CONTENT_CHANGED" = true ]; then
             ARCHIVE="/tmp/kernel-notes-content-${COMMIT_SHA}.tgz"
@@ -367,49 +439,58 @@ jobs:
             rm -rf "$STAGE" "$ARCHIVE"
           fi
 
+          for volume in \
+            kernel-notes-blog-posts \
+            kernel-notes-blog-snippets \
+            kernel-notes-blog-post-assets \
+            kernel-notes-blog-archive \
+            kernel-notes-blog-history; do
+            docker volume inspect "$volume" >/dev/null 2>&1 || docker volume create "$volume" >/dev/null
+          done
+
           docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
 
           PUBLISHED="$(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" port blog 8080 2>/dev/null || true)"
           HEALTH_PORT="${PUBLISHED##*:}"
-          blog_healthy=false
-          if [ "$HEALTH_PORT" = "$EXPECTED_HOST_PORT" ]; then
-            for _ in $(seq 1 30); do
-              if curl -fsS "http://127.0.0.1:${HEALTH_PORT}/healthz" >/dev/null; then
-                blog_healthy=true
-                break
-              fi
-              sleep 2
-            done
-          fi
-
-          search_healthy=false
-          for _ in $(seq 1 180); do
-            status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
-            if [ "$status" = healthy ]; then
-              search_healthy=true
-              break
-            fi
-            sleep 2
-          done
-
-          if [ "$blog_healthy" != true ] || [ "$search_healthy" != true ]; then
-            echo "Deployment health check failed (blog=${blog_healthy}, search=${search_healthy})"
-            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=100 blog search || true
-            printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "${PREVIOUS_BLOG_IMAGE:-$BLOG_IMAGE}" "${PREVIOUS_SEARCH_IMAGE:-$SEARCH_IMAGE}" > "$ENV_FILE"
-            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans || true
+          if [ "$HEALTH_PORT" != "$EXPECTED_HOST_PORT" ]; then
+            rollback_deployment "unexpected blog port: ${PUBLISHED:-not published}"
             exit 1
           fi
 
-          curl -fsS "http://127.0.0.1:${HEALTH_PORT}/archive" >/dev/null
-          curl -fsS "http://127.0.0.1:${HEALTH_PORT}/grep" >/dev/null
+          if ! wait_for_health "$BLOG_CONTAINER" 60; then
+            rollback_deployment 'blog container did not become healthy'
+            exit 1
+          fi
 
-          SEARCH_RESPONSE="$(curl -fsS -X POST -H 'Content-Type: application/json' \
-            --data '{"q":"Docker","limit":1}' "http://127.0.0.1:${HEALTH_PORT}/api/search")"
-          printf '%s' "$SEARCH_RESPONSE" | grep -Eq '"results":\[[^]]' || exit 1
+          if ! wait_for_health "$SEARCH_CONTAINER" 180; then
+            rollback_deployment 'search container did not become healthy'
+            exit 1
+          fi
 
-          NOISE_RESPONSE="$(curl -fsS -X POST -H 'Content-Type: application/json' \
-            --data '{"q":"aksdfnasdglvhnasdf","limit":8}' "http://127.0.0.1:${HEALTH_PORT}/api/search")"
-          printf '%s' "$NOISE_RESPONSE" | grep -q '"results":\[\]' || exit 1
+          if ! retry_get "http://127.0.0.1:${HEALTH_PORT}/healthz" \
+            || ! retry_get "http://127.0.0.1:${HEALTH_PORT}/archive" \
+            || ! retry_get "http://127.0.0.1:${HEALTH_PORT}/grep"; then
+            rollback_deployment 'HTTP smoke check failed'
+            exit 1
+          fi
+
+          if ! SEARCH_RESPONSE="$(retry_post "http://127.0.0.1:${HEALTH_PORT}/api/search" '{"q":"Docker","limit":1}')"; then
+            rollback_deployment 'Kernel Grep search request failed'
+            exit 1
+          fi
+          if ! printf '%s' "$SEARCH_RESPONSE" | grep -Eq '"results":\[[^]]'; then
+            rollback_deployment 'Kernel Grep returned no result for Docker'
+            exit 1
+          fi
+
+          if ! NOISE_RESPONSE="$(retry_post "http://127.0.0.1:${HEALTH_PORT}/api/search" '{"q":"aksdfnasdglvhnasdf","limit":8}')"; then
+            rollback_deployment 'Kernel Grep noise request failed'
+            exit 1
+          fi
+          if ! printf '%s' "$NOISE_RESPONSE" | grep -q '"results":\[\]'; then
+            rollback_deployment 'Kernel Grep returned results for the noise query'
+            exit 1
+          fi
 
           docker image prune -f >/dev/null
           echo "Full deployment ${COMMIT_SHA} completed on port ${HEALTH_PORT}."
