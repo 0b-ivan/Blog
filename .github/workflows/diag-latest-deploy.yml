@@ -1,0 +1,38 @@
+name: Diagnose latest production deploy
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/diag-latest-deploy.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show recent Deploy runs and failed log
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          echo '=== recent Deploy runs ==='
+          gh run list --repo "$GH_REPO" --workflow Deploy --branch main --limit 10 \
+            --json databaseId,status,conclusion,headSha,createdAt,displayTitle
+
+          RUN_ID="$(gh run list --repo "$GH_REPO" --workflow Deploy --branch main --limit 20 \
+            --json databaseId,conclusion \
+            --jq '[.[] | select(.conclusion == "failure")][0].databaseId // empty')"
+
+          if [ -z "$RUN_ID" ]; then
+            echo 'No failed Deploy run found.'
+            exit 0
+          fi
+
+          echo "=== failed Deploy run: ${RUN_ID} ==="
+          gh run view "$RUN_ID" --repo "$GH_REPO" --json databaseId,status,conclusion,headSha,url,jobs
+          echo '=== failed logs ==='
+          gh run view "$RUN_ID" --repo "$GH_REPO" --log-failed
