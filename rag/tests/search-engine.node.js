@@ -68,6 +68,21 @@ test('SemanticSearchEngine returns relevant articles and rejects garbage queries
     const garbageResults = await engine.search('aksdfnasdglvhnasdf', 5);
     assert.deepEqual(garbageResults, []);
 
+    const graphRag = await engine.retrieveGraphContext('docker compose container', {
+      seedLimit: 1,
+      neighborsPerSeed: 0,
+      maxChunks: 3,
+      maxChars: 4_000
+    });
+    assert.equal(graphRag.query, 'docker compose container');
+    assert.equal(graphRag.embeddingModel, engine.embeddingModel);
+    assert.equal(graphRag.strategy, 'semantic-search+1-hop-knowledge-graph');
+    assert.equal(graphRag.seeds[0].slug, 'docker-compose');
+    assert.equal(graphRag.context[0].citation, 'K1');
+    assert.equal(graphRag.context[0].slug, 'docker-compose');
+    assert.ok(graphRag.promptContext.includes('[K1] Docker Compose'));
+    assert.equal('embedding' in graphRag.context[0], false, 'GraphRAG context must not expose embeddings');
+
     const graph = engine.knowledgeGraph('docker-compose', 5);
     assert.ok(graph);
     assert.equal(graph.source.slug, 'docker-compose');
