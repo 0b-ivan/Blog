@@ -68,7 +68,6 @@ volumes:
     external: true
     name: kernel-notes-blog-post-assets
   blog-ebook:
-    external: true
     name: kernel-notes-blog-ebook
   blog-archive:
     external: true
