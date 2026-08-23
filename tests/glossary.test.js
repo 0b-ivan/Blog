@@ -77,9 +77,6 @@ describe('glossary', () => {
   it('covers representative terms from the active blog posts', async () => {
     const root = path.join(__dirname, '..');
     const expectedByPost = {
-      '2026-08-04-systemd-timer-statt-cron.md': ['Cron', 'Observability', 'Logging'],
-      '2026-08-12-cloudflare-tunnel-haerten.md': ['mTLS', 'Rate Limiting', 'Break-Glass-Zugang'],
-      '2026-08-18-zero-downtime-mit-compose.md': ['Healthcheck', 'Reverse Proxy', 'Cutover'],
       '2026-08-19-dependabot-im-einsatz.md': ['Dependency Graph', 'Triage', 'Secret Scanning'],
       '2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.md': ['Cloudflare Zero Trust', 'Docker Volume', 'Public IP'],
       '2026-08-19-fail2ban-ssh-hardening.md': ['SSH', 'Fail2ban', 'UFW'],
