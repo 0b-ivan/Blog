@@ -8,6 +8,7 @@ const contentDirs = [
   { label: 'archive', path: path.join(root, 'archive') }
 ];
 const requiredFields = ['id', 'version', 'created_at', 'updated_at', 'author', 'reviewed_by'];
+const allowedStatuses = new Set(['draft', 'publish']);
 
 function normalizeDateFromDateObject(value) {
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
@@ -100,6 +101,13 @@ async function main() {
     for (const field of requiredFields) {
       if (!isPresent(data[field])) {
         violations.push(`${displayPath}: missing required field '${field}'`);
+      }
+    }
+
+    if (isPresent(data.status)) {
+      const status = String(data.status).trim().toLowerCase();
+      if (!allowedStatuses.has(status)) {
+        violations.push(`${displayPath}: invalid status '${data.status}', expected draft or publish`);
       }
     }
 
