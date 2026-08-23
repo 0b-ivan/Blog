@@ -121,6 +121,44 @@ Die Syntax `*[VPC]: ...` ist eine Erweiterung von `markdown-it-abbr` und kein Be
 
 Renderer ohne diese Erweiterung koennen den verwalteten Definitionsblock weiterhin als Text in der Quelldatei lesen. Der eigentliche Artikelinhalt bleibt normales Markdown und ist nicht von Kernel Notes oder dem Tooltip-JavaScript abhaengig.
 
+## Automatische Vorschlaege fuer neue Begriffe
+
+Neue oder geaenderte Artikel werden in Pull Requests zusaetzlich auf moegliche noch unbekannte Fachbegriffe geprueft. Die Pruefung ist absichtlich heuristisch und nicht blockierend: Sie erstellt nur Vorschlaege und veraendert weder den Artikel noch die Glossar-Dateien.
+
+Die Erkennung entfernt zuerst bereits bekannte Glossar-Schluessel und Aliase. Frontmatter, Code-Bloecke, Inline-Code, URLs und der verwaltete Glossar-Block werden ebenfalls ignoriert. Danach werden vor allem zwei Klassen gesucht:
+
+- hohe Konfidenz: Akronyme, technische Grossschreibung und Mixed-Case-/Produktnamen wie `RRF` oder `OpenTelemetry`
+- mittlere Konfidenz: noch unbekannte Begriffe in einem technischen Verwendungskontext, beispielsweise `mit Kubernetes`
+
+Lokal kann die gleiche Pruefung ausgefuehrt werden:
+
+```bash
+npm run glossary:suggest -- posts/2026-08-23-mein-artikel.md
+```
+
+Alle Artikel pruefen:
+
+```bash
+npm run glossary:suggest
+```
+
+Maschinenlesbar oder als Markdown-Bericht:
+
+```bash
+npm run glossary:suggest -- --format json posts/2026-08-23-mein-artikel.md
+npm run glossary:suggest -- --format markdown posts/2026-08-23-mein-artikel.md
+```
+
+Der Workflow `.github/workflows/glossary-suggestions.yml` prueft bei einem Artikel-PR nur neu angelegte oder geaenderte Dateien unter `posts/`. Das Ergebnis landet im GitHub Job Summary und in einem einzelnen Bot-Kommentar am PR. Bei weiteren Pushes wird derselbe Kommentar aktualisiert statt ein neuer Kommentar erzeugt.
+
+Ein Vorschlag ist keine Pflicht zur Aufnahme. Wenn ein Begriff bewusst nicht ins Glossar soll und wiederholt vorgeschlagen wird, kann er dauerhaft in folgender Datei ignoriert werden:
+
+```text
+config/glossary-suggestion-ignore.json
+```
+
+Damit bleibt die Entscheidung ueber das Glossar beim Autor und die Heuristik fuellt das Glossar nicht automatisch mit schlechten oder mehrdeutigen Definitionen.
+
 ## Neue Begriffe pflegen
 
 Bei einem neuen Begriff:
