@@ -8,7 +8,7 @@ describe('blog container healthchecks', () => {
     '%s uses the distroless Node executable for the blog healthcheck',
     (fileName) => {
       const compose = fs.readFileSync(path.join(root, fileName), 'utf8');
-      const blogSection = compose.split(/\n  blog:\n/)[1];
+      const blogSection = compose.split(/\n {2}blog:\n/)[1];
 
       expect(blogSection).toBeDefined();
       expect(blogSection).toContain('/nodejs/bin/node');
