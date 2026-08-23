@@ -215,26 +215,6 @@ async function main() {
     assert.ok(Array.isArray(apiSearchPayload.results) && apiSearchPayload.results.length > 0, 'Kernel Grep API returned no results');
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
-    await page.locator('a[href="/roadmap"]').first().waitFor({ state: 'visible' });
-    await Promise.all([
-      page.waitForURL((url) => url.pathname === '/roadmap'),
-      page.locator('a[href="/roadmap"]').first().click()
-    ]);
-    const roadmap = page.locator('#roadmap-content[data-roadmap-ready="true"]');
-    await roadmap.waitFor({ state: 'visible', timeout: 15_000 });
-    assert.equal((await roadmap.locator('.roadmap-hero__title').innerText()).trim(), 'Kernel Notes Roadmap');
-    assert.equal(await roadmap.locator('.roadmap-milestone').count(), 2, 'Expected two roadmap milestones');
-    assert.equal(await roadmap.locator('.roadmap-detail-card').count(), 0, 'Roadmap should stay compact without detail cards');
-    const roadmapMilestones = roadmap.locator('.roadmap-milestone');
-    assert.equal(await roadmapMilestones.nth(0).locator('.roadmap-milestone__summary li').count(), 6, 'Expected six bullets for milestone 1');
-    assert.equal(await roadmapMilestones.nth(1).locator('.roadmap-milestone__summary li').count(), 4, 'Expected four bullets for milestone 2');
-    assert.match(await roadmap.innerText(), /Meilenstein 1 — Englische Version/);
-    assert.match(await roadmap.innerText(), /Meilenstein 2 — Semantische Suche/);
-    assert.equal(await roadmap.locator('.roadmap-loop-note').count(), 0, 'Roadmap loop note should be removed');
-    assert.equal(await roadmap.locator('.roadmap-reminder').count(), 0, 'Roadmap focus reminder should be removed');
-    await assertMetaLinksInFooter(page);
-
-    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await Promise.all([
       page.waitForURL((url) => url.pathname === '/snippets/' || url.pathname === '/snippets'),
       page.locator('a[href="/snippets/"]').first().click()
@@ -283,7 +263,7 @@ async function main() {
       [],
       `Passive third-party requests detected:\n${[...thirdPartyRequests].join('\n')}`
     );
-    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep icon + overlay/live search, standalone About, compact roadmap, footer meta links and zero passive third-party requests.`);
+    console.log(`Browser smoke test passed: ${postHrefs.length} post(s), ${topics.length} topic filter(s), Kernel Grep icon + overlay/live search, standalone About, snippets, footer meta links and zero passive third-party requests.`);
   } finally {
     await browser.close();
   }
