@@ -14,7 +14,6 @@ on:
       - '*.html'
       - '*.js'
       - 'rag/**'
-      - 'roadmap.md'
       - 'Dockerfile'
       - 'Dockerfile.search'
       - 'docker-compose.prod.yml'

@@ -30,7 +30,7 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/build-info.json ./build-info.json
-COPY index.html about.html grep.html impressum.html datenschutz.html roadmap.html roadmap.md script.js ./
+COPY index.html about.html grep.html impressum.html datenschutz.html script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets
 COPY config ./config
