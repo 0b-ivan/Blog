@@ -43,12 +43,33 @@ async function initialize() {
   console.log(`kernel-grep ready: ${info.chunks} chunks / ${info.postProfiles} article vectors via ${info.embeddingModel}`);
 }
 
+function boundedParam(url, name, fallback, min, max) {
+  const raw = url.searchParams.get(name);
+  if (raw === null || raw === '') {
+    return fallback;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
+
 function graphLimit(url) {
-  return Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8));
+  return boundedParam(url, 'limit', 8, 1, 12);
 }
 
 function globalGraphLimit(url) {
-  return Math.min(8, Math.max(1, Number(url.searchParams.get('limit')) || 4));
+  return boundedParam(url, 'limit', 4, 1, 8);
+}
+
+function graphRagOptions(url) {
+  return {
+    seedLimit: boundedParam(url, 'seedLimit', 3, 1, 6),
+    neighborsPerSeed: boundedParam(url, 'neighbors', 2, 0, 4),
+    maxChunks: boundedParam(url, 'limit', 8, 1, 12),
+    maxChars: boundedParam(url, 'maxChars', 12_000, 2_000, 24_000)
+  };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -88,6 +109,27 @@ const server = http.createServer(async (req, res) => {
     } catch (error) {
       console.error('kernel-grep search failed:', error.message || error);
       json(res, 500, { error: 'Semantic search failed' });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/graphrag') {
+    if (!ready || !engine) {
+      json(res, 503, { error: 'Semantic index is still starting' });
+      return;
+    }
+
+    const query = String(url.searchParams.get('q') || '').trim();
+    if (query.length < 2 || query.length > 300) {
+      json(res, 400, { error: 'q must contain between 2 and 300 characters' });
+      return;
+    }
+
+    try {
+      json(res, 200, await engine.retrieveGraphContext(query, graphRagOptions(url)));
+    } catch (error) {
+      console.error('kernel-grep GraphRAG retrieval failed:', error.message || error);
+      json(res, 500, { error: 'GraphRAG retrieval failed' });
     }
     return;
   }
@@ -161,5 +203,6 @@ server.listen(port, host, () => {
 });
 
 module.exports = {
+  graphRagOptions,
   preview
 };

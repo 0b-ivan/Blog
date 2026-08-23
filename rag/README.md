@@ -13,13 +13,17 @@ Lokale semantische Suche für Kernel Notes und Basis für GraphRAG.
 - interner HTTP-Suchdienst auf Port `8090`
 - Weboberfläche unter `/grep`
 - Blog-API unter `/api/search`
-- pro Ergebnis nur der beste Chunk eines Artikels
+- pro Suchergebnis nur der beste Chunk eines Artikels
 - Dokument-Vektoren als normalisierter Mittelwert der Chunk-Embeddings
 - semantische Artikelbeziehungen für das Wissensnetz
 - interner Artikel-Graph unter `GET /graph?slug=<slug>&limit=8`
 - globaler Artikel-Graph unter `GET /graph/all?limit=4`
 - öffentliche, bereinigte Blog-API unter `GET /api/knowledge?limit=4`
 - globale Wissensnetz-Seite unter `/knowledge`
+- GraphRAG-Retrieval mit semantischen Seeds + 1-Hop-Graph-Erweiterung
+- zitierbare Kontext-Chunks `K1`, `K2`, … ohne Roh-Embeddings
+- CLI für GraphRAG-Kontext über `npm run rag:context`
+- interner GraphRAG-Endpunkt `GET /graphrag`
 
 Neo4j und Kafka sind bewusst noch nicht Teil dieses Schritts.
 
@@ -52,6 +56,72 @@ Optional mit Limit:
 ```bash
 npm run rag:search -- "Docker Deployment" --limit 5
 ```
+
+## GraphRAG Context
+
+GraphRAG kombiniert die bestehende semantische Chunk-Suche mit dem Artikel-Wissensnetz.
+
+```text
+Frage
+  -> Query-Embedding
+  -> semantische Seed-Artikel
+  -> 1-Hop Artikel-Nachbarn
+  -> passende Chunks aus Seeds + Nachbarn
+  -> begrenztes Kontextpaket
+  -> K1/K2/... Quellen-IDs
+```
+
+Direkte Suchtreffer werden immer zuerst im Kontext repräsentiert. Graph-Nachbarn ergänzen den Kontext, dürfen die ursprünglichen Treffer aber nicht verdrängen. Dadurch bleibt das Retrieval auch dann nachvollziehbar, wenn eine semantische Artikelkante zusätzliche Themen einbringt.
+
+CLI:
+
+```bash
+npm run rag:context -- "Braucht eine private EC2 eine Public IP?"
+```
+
+Mit Tuning:
+
+```bash
+npm run rag:context -- \
+  "Wie komme ich sicher auf private AWS Systeme?" \
+  --seed-limit 3 \
+  --neighbors 2 \
+  --limit 8 \
+  --max-chars 12000
+```
+
+Maschinenlesbar:
+
+```bash
+npm run rag:context -- "Docker Deployment" --json
+```
+
+Der interne HTTP-Endpunkt verwendet dieselbe Pipeline:
+
+```text
+GET /graphrag?q=<frage>&seedLimit=3&neighbors=2&limit=8&maxChars=12000
+```
+
+Antwort enthält:
+
+- `seeds`: direkte semantische Treffer
+- `expandedArticles`: über das Wissensnetz hinzugekommene 1-Hop-Nachbarn
+- `context`: ausgewählte Chunks mit `K1`, `K2`, …
+- `sources`: deduplizierte Artikelquellen und ihre Citation-IDs
+- `promptContext`: bereits formatierter, zitierbarer Kontext für einen späteren LLM-Aufruf
+- `contextCharacters`: tatsächlich verwendetes Kontextbudget
+
+Roh-Embeddings verlassen den Search-Service weiterhin nicht.
+
+Die Grenzen sind absichtlich konservativ:
+
+- maximal 6 Seed-Artikel
+- maximal 4 Graph-Nachbarn je Seed
+- maximal 12 Kontext-Chunks
+- maximal 24.000 Zeichen Kontext
+- standardmäßig nur 1-Hop, kein rekursives Multi-Hop
+
+Damit lässt sich die Retrieval-Qualität unabhängig von einem konkreten LLM testen.
 
 ## Kernel Grep Service
 
@@ -98,7 +168,7 @@ Antworten enthalten unter anderem:
 - semantische Artikelkanten
 - Similarity Score
 - Semantic Lift gegenüber der jeweiligen Median-Baseline
-- gemeinsamen Tags
+- gemeinsame Tags
 - gleiche Kategorie ja/nein
 
 Roh-Vektoren werden nie an den Browser ausgegeben.
@@ -116,6 +186,7 @@ Markdown
      -> Artikel-Vektoren
         -> Artikel-Wissensnetz
         -> globales Wissensnetz
+        -> GraphRAG 1-Hop Expansion
 ```
 
 ## Konfiguration
@@ -137,8 +208,10 @@ Für CI gibt es zusätzlich `RAG_EMBEDDER_MODE=hash`. Damit wird die komplette D
 
 ## Noch offen
 
+- den GraphRAG-Endpunkt kontrolliert über den Blog-Container veröffentlichen
+- LLM-Antworten ausschließlich aus `promptContext` erzeugen und `K1...Kn` als Quellen erzwingen
+- Antwort-UI als echtes „Frag meinen Blog“ statt nur Trefferliste
+- Evaluation-Set mit Fragen und erwarteten Quellen für Retrieval-Regressionen
 - DuckDB-VSS/HNSW, falls die Artikelmenge groß genug wird
-- Neo4j erst für echte Graphbeziehungen und Multi-Hop-Abfragen
-- LLM-Antworten mit Quellen
-- GraphRAG: semantisches Retrieval plus strukturierte Nachbarschaft gemeinsam in den Prompt geben
+- Neo4j erst für echte persistente Graphbeziehungen und Multi-Hop-Abfragen
 - Kafka erst dann, wenn mehrere unabhängige Consumer für Content-Events existieren

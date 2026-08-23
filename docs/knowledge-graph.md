@@ -1,6 +1,6 @@
 # Knowledge graph
 
-Kernel Notes now has two graph views that use the same semantic vector foundation.
+Kernel Notes has two graph views and now a GraphRAG retrieval layer that use the same semantic vector foundation.
 
 ## Article graph
 
@@ -71,6 +71,50 @@ The global page exposes:
 - clickable article, tag and category nodes
 - edge tooltips with semantic similarity and metadata explanations
 
+## GraphRAG retrieval
+
+GraphRAG now combines chunk retrieval and the article graph in one bounded retrieval pipeline:
+
+```text
+question
+  -> query embedding
+  -> semantic seed articles
+  -> 1-hop article neighbors
+  -> query scoring inside selected articles
+  -> bounded context chunks
+  -> K1 / K2 / ... source ids
+```
+
+The implementation intentionally stops after one graph hop. This prevents weak semantic edges from recursively pulling unrelated articles into the prompt.
+
+Direct semantic hits have priority. At least the strongest chunk of every direct seed is selected before optional second chunks and graph-neighbor chunks are considered. Graph expansion can therefore add context without replacing the original retrieval result.
+
+The internal endpoint is:
+
+```text
+GET /graphrag?q=<question>&seedLimit=3&neighbors=2&limit=8&maxChars=12000
+```
+
+The same pipeline can be inspected locally without an LLM:
+
+```bash
+npm run rag:context -- "Wie komme ich sicher auf private AWS Systeme?"
+```
+
+Every returned context chunk has a stable request-local citation id such as `K1`. The response additionally contains a preformatted `promptContext`, so an answer generator can be introduced later without reimplementing retrieval or source tracking.
+
+The GraphRAG response contains no vector data. It exposes only scores, graph provenance, article URLs and selected text chunks.
+
+Default safety/quality bounds:
+
+- 3 direct seed articles
+- 2 graph neighbors per seed
+- 8 context chunks
+- 12,000 context characters
+- maximum 1 graph hop
+
+Hard limits prevent callers from expanding beyond 6 seeds, 4 neighbors per seed, 12 chunks and 24,000 context characters.
+
 ## Node types
 
 - article: blue
@@ -85,17 +129,17 @@ Both graph implementations use the pinned local browser build of `force-graph@1.
 
 Historical snapshots under `/history/.../vN` intentionally do not render the current article graph, so a historical article version is not mixed with today's relationships.
 
-## Next step: GraphRAG
+## Next step: grounded answers
 
-The next meaningful step is to combine both retrieval modes for answers:
+The next layer is deliberately separated from retrieval:
 
 ```text
-question
-  -> semantic chunk retrieval
-  -> source articles
-  -> graph neighbors / topics
-  -> expanded grounded context
-  -> LLM answer with citations
+GraphRAG promptContext
+  -> answer generator
+  -> answer that may cite only K1...Kn
+  -> source links back to Kernel Notes
 ```
 
-Neo4j is still not required for this. A graph database becomes useful once Kernel Notes needs explicit typed relationships, multi-hop traversal over persistent entities, or graph queries that cannot be expressed cleanly from the current DuckDB vector index and article metadata.
+Before adding that generator, the retrieval output can be evaluated independently with a small regression set of questions and expected source articles.
+
+Neo4j is still not required for this. A graph database becomes useful once Kernel Notes needs explicit typed relationships, persistent entities, or multi-hop traversal that cannot be expressed cleanly from the current DuckDB vector index and article metadata.

@@ -6,6 +6,7 @@
   "scripts": {
     "index": "node index.js",
     "search": "node search.js",
+    "context": "node context.js",
     "serve": "node server.js",
     "test": "node --test tests/*.node.js"
   },

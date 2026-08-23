@@ -23,6 +23,7 @@
     "glossary:check": "node scripts/sync-glossary.js --check",
     "rag:index": "npm --prefix rag run index --",
     "rag:search": "npm --prefix rag run search --",
+    "rag:context": "npm --prefix rag run context --",
     "rag:test": "npm --prefix rag test"
   },
   "dependencies": {
