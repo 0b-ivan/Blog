@@ -57,6 +57,7 @@ module.exports = [
         window: 'readonly',
         document: 'readonly',
         fetch: 'readonly',
+        URLSearchParams: 'readonly',
         AbortController: 'readonly',
         Element: 'readonly',
         HTMLElement: 'readonly',
