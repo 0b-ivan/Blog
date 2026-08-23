@@ -215,7 +215,7 @@ class GitHubGlossaryPublisher {
   }
 
   async request(endpoint, { method = 'GET', body = null, allow404 = false } = {}) {
-    const response = await fetch(`https://api.github.com${endpoint}`, {
+    const response = await globalThis.fetch(`https://api.github.com${endpoint}`, {
       method,
       headers: {
         Accept: 'application/vnd.github+json',
@@ -330,7 +330,7 @@ class GitHubGlossaryPublisher {
     try {
       data = JSON.parse(mainFile.content);
     } catch (error) {
-      throw new Error(`Glossary config '${filePath}' is invalid JSON: ${error.message}`);
+      throw new Error(`Glossary config '${filePath}' is invalid JSON: ${error.message}`, { cause: error });
     }
 
     const desired = `${JSON.stringify({ ...data, [term]: entry }, null, 2)}\n`;
@@ -523,7 +523,7 @@ async function runCycle({ vaultPath, tracker, publisher }) {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => globalThis.setTimeout(resolve, ms));
 }
 
 async function main() {
