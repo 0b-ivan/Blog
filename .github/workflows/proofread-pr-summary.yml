@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'posts/*.md'
+      - 'archive/*.md'
 
 permissions:
   contents: read
@@ -28,22 +29,26 @@ jobs:
           fetch-depth: 0
 
       - name: Geänderte Blogposts bestimmen
+        id: changed
         shell: bash
         run: |
           set -euo pipefail
           git diff --name-only --diff-filter=ACMR \
             "${{ github.event.pull_request.base.sha }}"...HEAD \
-            -- 'posts/*.md' > /tmp/changed-posts.txt
+            -- 'posts/*.md' 'archive/*.md' > /tmp/changed-posts.txt
 
-          echo 'Geänderte Blogposts:'
+          echo 'Prüfbare geänderte Blogposts:'
           cat /tmp/changed-posts.txt
 
-          if [ ! -s /tmp/changed-posts.txt ]; then
-            echo 'Keine geänderten Markdown-Posts gefunden.'
-            exit 1
+          if [ -s /tmp/changed-posts.txt ]; then
+            echo 'has_files=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_files=false' >> "$GITHUB_OUTPUT"
+            echo 'Keine prüfbaren Markdown-Posts vorhanden. Bei einem reinen Unpublish ist das erwartet.'
           fi
 
       - name: Setup Node.js
+        if: steps.changed.outputs.has_files == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -51,9 +56,11 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
+        if: steps.changed.outputs.has_files == 'true'
         run: npm ci
 
       - name: Rechtschreibung mit CSpell prüfen
+        if: steps.changed.outputs.has_files == 'true'
         id: spellcheck
         shell: bash
         run: |
@@ -76,6 +83,7 @@ jobs:
           fi
 
       - name: LanguageTool starten
+        if: steps.changed.outputs.has_files == 'true'
         run: |
           docker run -d \
             --name languagetool \
@@ -98,6 +106,7 @@ jobs:
           exit 1
 
       - name: Grammatik mit LanguageTool prüfen
+        if: steps.changed.outputs.has_files == 'true'
         id: proofread
         env:
           LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
@@ -128,17 +137,27 @@ jobs:
           fi
 
       - name: LanguageTool stoppen
-        if: always()
+        if: always() && steps.changed.outputs.has_files == 'true'
         run: docker rm -f languagetool >/dev/null 2>&1 || true
 
       - name: Detaillierten Textprüfungsbericht erzeugen
         if: always()
         shell: bash
         env:
+          HAS_FILES: ${{ steps.changed.outputs.has_files }}
           SPELLING_STATUS: ${{ steps.spellcheck.outputs.status }}
           GRAMMAR_STATUS: ${{ steps.proofread.outputs.status }}
         run: |
-          if { [ "$SPELLING_STATUS" = '0' ] || [ "$SPELLING_STATUS" = '1' ]; } \
+          if [ "$HAS_FILES" != 'true' ]; then
+            cat > /tmp/proofread-report.md <<'EOF'
+          <!-- kernel-notes-proofread-summary -->
+          ## 📝 Rechtschreibung & Grammatik
+
+          ✅ **Keine Textprüfung nötig.**
+
+          Dieser PR enthält keinen neu zu prüfenden Markdown-Artikel. Bei einem reinen Unpublish wird der Artikel nur aus `posts/` entfernt.
+          EOF
+          elif { [ "$SPELLING_STATUS" = '0' ] || [ "$SPELLING_STATUS" = '1' ]; } \
             && { [ "$GRAMMAR_STATUS" = '0' ] || [ "$GRAMMAR_STATUS" = '1' ]; }; then
             node scripts/build-proofread-pr-report.js \
               --cspell /tmp/cspell-output.txt \
