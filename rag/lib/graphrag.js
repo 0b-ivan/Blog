@@ -145,10 +145,10 @@ function chooseContextCandidates(chunks, selectedArticles, queryEmbedding, query
     }
 
     if (article.origin === 'direct') {
-      required.push(ranked[0]);
-      optional.push(...ranked.slice(1));
+      required.push({ ...ranked[0], required: true });
+      optional.push(...ranked.slice(1).map((candidate) => ({ ...candidate, required: false })));
     } else {
-      optional.push(...ranked);
+      optional.push(...ranked.map((candidate) => ({ ...candidate, required: false })));
     }
   }
 
@@ -189,15 +189,15 @@ function materializeContext(candidates, maxChars) {
 
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
-    const remainingDirectSeeds = candidates
+    const remainingRequiredSeeds = candidates
       .slice(index + 1)
-      .filter((entry) => entry.article.origin === 'direct')
+      .filter((entry) => entry.required)
       .length;
-    const reservedForDirectSeeds = remainingDirectSeeds * MIN_CONTEXT_CHARS_PER_DIRECT_SEED;
+    const reservedForDirectSeeds = remainingRequiredSeeds * MIN_CONTEXT_CHARS_PER_DIRECT_SEED;
     const available = maxChars - usedChars - reservedForDirectSeeds;
 
     if (available < MIN_CONTEXT_CHARS_PER_DIRECT_SEED) {
-      if (candidate.article.origin === 'direct') {
+      if (candidate.required) {
         continue;
       }
       break;
@@ -257,7 +257,7 @@ function buildSources(context) {
   return [...sources.values()];
 }
 
-function emptyRetrieval() {
+function emptyRetrieval(limits) {
   return {
     strategy: 'semantic-search+1-hop-knowledge-graph',
     seeds: [],
@@ -266,11 +266,7 @@ function emptyRetrieval() {
     sources: [],
     promptContext: '',
     contextCharacters: 0,
-    limits: {
-      neighborsPerSeed: 0,
-      maxChunks: 0,
-      maxChars: 0
-    }
+    limits
   };
 }
 
@@ -290,15 +286,22 @@ function retrieveGraphContext({
   const safeSeeds = Array.isArray(seeds) ? seeds : [];
 
   if (safeSeeds.length === 0) {
-    return emptyRetrieval();
+    return emptyRetrieval({
+      neighborsPerSeed: safeNeighbors,
+      maxChunks: requestedMaxChunks,
+      maxChars: safeMaxChars
+    });
   }
 
-  const effectiveMaxChunks = Math.min(12, Math.max(requestedMaxChunks, safeSeeds.length));
   const selectedArticles = buildArticleSelection(
     Array.isArray(profiles) ? profiles : [],
     safeSeeds,
     safeNeighbors
   );
+  const directArticleCount = [...selectedArticles.values()]
+    .filter((article) => article.origin === 'direct')
+    .length;
+  const effectiveMaxChunks = Math.min(12, Math.max(requestedMaxChunks, directArticleCount));
   const candidates = chooseContextCandidates(
     Array.isArray(chunks) ? chunks : [],
     selectedArticles,
