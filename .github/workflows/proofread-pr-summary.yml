@@ -8,8 +8,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: read
 
 concurrency:
   group: textpruefung-${{ github.event.pull_request.number }}
@@ -131,75 +129,40 @@ jobs:
         if: always()
         run: docker rm -f languagetool >/dev/null 2>&1 || true
 
-      - name: Textprüfungs-Kommentar erstellen oder aktualisieren
-        if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository }}
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const marker = '<!-- kernel-notes-proofread-summary -->';
-            const spelling = '${{ steps.spellcheck.outputs.status }}';
-            const grammar = '${{ steps.proofread.outputs.status }}';
+      - name: Ergebnis der Textprüfung zusammenfassen
+        if: always()
+        shell: bash
+        env:
+          SPELLING_STATUS: ${{ steps.spellcheck.outputs.status }}
+          GRAMMAR_STATUS: ${{ steps.proofread.outputs.status }}
+        run: |
+          {
+            echo '## 📝 Textprüfung'
+            echo
 
-            const spellingLine = spelling === '0'
-              ? '✅ Rechtschreibung (CSpell): keine Probleme gefunden'
-              : spelling === '1'
-                ? '⚠️ Rechtschreibung (CSpell): Hinweise gefunden'
-                : '❌ Rechtschreibung (CSpell): Prüfung konnte nicht abgeschlossen werden';
+            if [ "$SPELLING_STATUS" = '0' ] && [ "$GRAMMAR_STATUS" = '0' ]; then
+              echo '✅ **Keine Rechtschreib- oder Grammatikprobleme gefunden.**'
+            elif { [ "$SPELLING_STATUS" = '0' ] || [ "$SPELLING_STATUS" = '1' ]; } \
+              && { [ "$GRAMMAR_STATUS" = '0' ] || [ "$GRAMMAR_STATUS" = '1' ]; }; then
+              echo '⚠️ **Die Textprüfung hat Hinweise gefunden.**'
+            else
+              echo '❌ **Die Textprüfung konnte nicht vollständig abgeschlossen werden.**'
+            fi
 
-            const grammarLine = grammar === '0'
-              ? '✅ Grammatik (LanguageTool, de-DE): keine Probleme gefunden'
-              : grammar === '1'
-                ? '⚠️ Grammatik (LanguageTool, de-DE): Hinweise gefunden'
-                : '❌ Grammatik (LanguageTool, de-DE): Prüfung konnte nicht abgeschlossen werden';
+            echo
 
-            let headline;
-            if (spelling === '0' && grammar === '0') {
-              headline = '✅ **Keine Rechtschreib- oder Grammatikprobleme gefunden.**';
-            } else if (['0', '1'].includes(spelling) && ['0', '1'].includes(grammar)) {
-              headline = '⚠️ **Die Textprüfung hat Hinweise gefunden.**';
-            } else {
-              headline = '❌ **Die Textprüfung konnte nicht vollständig abgeschlossen werden.**';
-            }
+            case "$SPELLING_STATUS" in
+              0) echo '✅ Rechtschreibung (CSpell): keine Probleme gefunden' ;;
+              1) echo '⚠️ Rechtschreibung (CSpell): Hinweise gefunden' ;;
+              *) echo '❌ Rechtschreibung (CSpell): Prüfung konnte nicht abgeschlossen werden' ;;
+            esac
 
-            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const body = [
-              marker,
-              '## 📝 Textprüfung',
-              '',
-              headline,
-              '',
-              spellingLine,
-              grammarLine,
-              '',
-              `[Textprüfung ansehen](${runUrl})`,
-              '',
-              '<sub>Geprüft werden nur die in diesem PR geänderten Blogposts. Der Kommentar wird bei weiteren Änderungen aktualisiert.</sub>'
-            ].join('\n');
+            case "$GRAMMAR_STATUS" in
+              0) echo '✅ Grammatik (LanguageTool, de-DE): keine Probleme gefunden' ;;
+              1) echo '⚠️ Grammatik (LanguageTool, de-DE): Hinweise gefunden' ;;
+              *) echo '❌ Grammatik (LanguageTool, de-DE): Prüfung konnte nicht abgeschlossen werden' ;;
+            esac
 
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              per_page: 100
-            });
-
-            const existing = comments.find((comment) =>
-              comment.user?.login === 'github-actions[bot]' &&
-              comment.body?.includes(marker)
-            );
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body
-              });
-            }
+            echo
+            echo '_Geprüft werden nur die in diesem PR geänderten Blogposts. Details stehen in den einzelnen Steps dieses Checks._'
+          } >> "$GITHUB_STEP_SUMMARY"
