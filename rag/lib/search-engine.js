@@ -1,16 +1,18 @@
 const path = require('node:path');
 const { buildIndex, defaultOptions } = require('../index');
 const { createEmbedder } = require('./embedder-factory');
+const { buildPostProfiles, semanticRelations } = require('./knowledge-graph');
 const { rankChunks } = require('./ranking');
 const { RagStore } = require('./store');
 
 class SemanticSearchEngine {
-  constructor(options, embedder, embeddingModel, store, chunks, indexStats) {
+  constructor(options, embedder, embeddingModel, store, chunks, postProfiles, indexStats) {
     this.options = options;
     this.embedder = embedder;
     this.embeddingModel = embeddingModel;
     this.store = store;
     this.chunks = chunks;
+    this.postProfiles = postProfiles;
     this.indexStats = indexStats;
   }
 
@@ -35,12 +37,19 @@ class SemanticSearchEngine {
       throw new Error(`No semantic chunks available for ${created.embeddingModel}`);
     }
 
+    const postProfiles = buildPostProfiles(chunks);
+    if (postProfiles.length === 0) {
+      store.close();
+      throw new Error(`No semantic article profiles available for ${created.embeddingModel}`);
+    }
+
     return new SemanticSearchEngine(
       options,
       created.embedder,
       created.embeddingModel,
       store,
       chunks,
+      postProfiles,
       indexStats
     );
   }
@@ -68,6 +77,18 @@ class SemanticSearchEngine {
     }));
   }
 
+  knowledgeGraph(slug, limit = 8) {
+    const graph = semanticRelations(this.postProfiles, slug, limit);
+    if (!graph) {
+      return null;
+    }
+
+    return {
+      embeddingModel: this.embeddingModel,
+      ...graph
+    };
+  }
+
   info() {
     return {
       embeddingModel: this.embeddingModel,
@@ -76,6 +97,7 @@ class SemanticSearchEngine {
       unchangedPosts: this.indexStats.skipped,
       removedPosts: this.indexStats.removed,
       chunks: this.chunks.length,
+      postProfiles: this.postProfiles.length,
       database: path.basename(this.options.databasePath)
     };
   }
