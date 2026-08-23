@@ -1,19 +1,22 @@
 # Kernel Grep / Semantic Search
 
-Lokale semantische Suche für Kernel Notes und Basis für späteres GraphRAG.
+Lokale semantische Suche für Kernel Notes und Basis für GraphRAG.
 
 ## Was drin ist
 
 - aktive Artikel aus `posts/*.md`
 - Markdown-aware Chunking; Überschriften bleiben als Kontext erhalten und Codeblöcke werden nicht auseinandergerissen
 - lokale Embeddings mit `Xenova/multilingual-e5-small`
-- DuckDB als lokaler Index
+- DuckDB als lokaler Vector-Index
 - inkrementeller Index über SHA-256 des Artikels
 - CLI-Suche mit Cosine Similarity
 - interner HTTP-Suchdienst auf Port `8090`
 - Weboberfläche unter `/grep`
 - Blog-API unter `/api/search`
 - pro Ergebnis nur der beste Chunk eines Artikels
+- Dokument-Vektoren als normalisierter Mittelwert der Chunk-Embeddings
+- semantische Artikelbeziehungen für das Wissensnetz
+- interner Graph-Endpunkt `GET /graph?slug=<slug>&limit=8`
 
 Neo4j und Kafka sind bewusst noch nicht Teil dieses Schritts.
 
@@ -62,6 +65,41 @@ Browser
 
 Der Search-Container wird nicht auf einen Host-Port veröffentlicht. In Produktion liegen DuckDB und Modellcache in persistenten Docker-Volumes. Nach einem Content-Deploy wird der Search-Container neu gestartet; der SHA-256-Abgleich berechnet dabei nur geänderte Artikel neu.
 
+## Wissensnetz
+
+Das Wissensnetz verwendet jetzt dieselbe semantische Basis wie Kernel Grep.
+
+Für jeden Artikel werden die bereits vorhandenen Chunk-Embeddings zu einem normalisierten Dokument-Vektor zusammengefasst. Zwischen diesen Artikel-Vektoren wird Cosine Similarity berechnet. Gemeinsame Tags und Kategorien bleiben als kleine Zusatzsignale erhalten, damit die Verbindung im UI nachvollziehbar bleibt.
+
+Der interne Graph-Endpunkt liefert keine Roh-Vektoren aus:
+
+```text
+GET /graph?slug=2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog&limit=8
+```
+
+Antwort enthält unter anderem:
+
+- Quellartikel
+- semantisch verwandte Artikel
+- Similarity Score
+- Semantic Lift gegenüber der Median-Baseline
+- gemeinsame Tags
+- gleiche Kategorie ja/nein
+
+Im Browser nutzt das vorhandene Force-Graph-Wissensnetz die semantische Suche zur Auswahl der Nachbarartikel. Falls der Search-Service nicht verfügbar ist, fällt die Darstellung auf die bisherigen Tag-/Kategorie-Beziehungen zurück.
+
+Damit gibt es weiterhin nur eine Wissensbasis:
+
+```text
+Markdown
+  -> Chunks
+  -> E5 Embeddings
+  -> DuckDB
+     -> Kernel Grep
+     -> Artikel-Vektoren
+     -> semantisches Wissensnetz
+```
+
 ## Konfiguration
 
 | Variable | Default |
@@ -81,8 +119,10 @@ Für CI gibt es zusätzlich `RAG_EMBEDDER_MODE=hash`. Damit wird die komplette D
 
 ## Noch offen
 
-- semantische Similarity als zusätzliche Kante im bestehenden Knowledge Graph
+- den internen `/graph`-Endpunkt zusätzlich als dedizierte Blog-API veröffentlichen
+- globale Wissensnetz-Seite über alle Artikel statt nur pro Artikel
 - DuckDB-VSS/HNSW, falls die Artikelmenge groß genug wird
-- Neo4j für echte Graphbeziehungen und Multi-Hop-Abfragen
+- Neo4j erst für echte Graphbeziehungen und Multi-Hop-Abfragen
 - LLM-Antworten mit Quellen
+- GraphRAG: semantisches Retrieval plus strukturierte Nachbarschaft gemeinsam in den Prompt geben
 - Kafka erst dann, wenn mehrere unabhängige Consumer für Content-Events existieren
