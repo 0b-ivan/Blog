@@ -40,7 +40,11 @@ async function initialize() {
   });
   ready = true;
   const info = engine.info();
-  console.log(`kernel-grep ready: ${info.chunks} chunks via ${info.embeddingModel}`);
+  console.log(`kernel-grep ready: ${info.chunks} chunks / ${info.postProfiles} article vectors via ${info.embeddingModel}`);
+}
+
+function graphLimit(url) {
+  return Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8));
 }
 
 const server = http.createServer(async (req, res) => {
@@ -67,7 +71,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const limit = Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8));
+    const limit = graphLimit(url);
     try {
       const results = await engine.search(query, limit);
       json(res, 200, {
@@ -80,6 +84,32 @@ const server = http.createServer(async (req, res) => {
     } catch (error) {
       console.error('kernel-grep search failed:', error.message || error);
       json(res, 500, { error: 'Semantic search failed' });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/graph') {
+    if (!ready || !engine) {
+      json(res, 503, { error: 'Semantic index is still starting' });
+      return;
+    }
+
+    const slug = String(url.searchParams.get('slug') || '').trim();
+    if (slug.length < 1 || slug.length > 240) {
+      json(res, 400, { error: 'slug must contain between 1 and 240 characters' });
+      return;
+    }
+
+    try {
+      const graph = engine.knowledgeGraph(slug, graphLimit(url));
+      if (!graph) {
+        json(res, 404, { error: 'Article is not part of the semantic index' });
+        return;
+      }
+      json(res, 200, graph);
+    } catch (error) {
+      console.error('kernel-grep graph failed:', error.message || error);
+      json(res, 500, { error: 'Semantic knowledge graph failed' });
     }
     return;
   }
