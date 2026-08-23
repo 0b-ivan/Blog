@@ -18,6 +18,9 @@ if [ -n "$(git -C "$REPO_DIR" status --porcelain -- posts 2>/dev/null || true)" 
   exit 1
 fi
 
+echo "Building LiveSync CLI from pinned upstream source..."
+docker compose --profile headless build livesync-cli
+
 printf 'Setup URI: ' >&2
 IFS= read -r SETUP_URI
 

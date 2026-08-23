@@ -14,9 +14,10 @@ services:
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
     volumes:
       - couchdb-data:/opt/couchdb/data
-      # CouchDB only needs to read local.ini. Keep the bind mount read-only so
-      # the container entrypoint cannot chown/chmod the host-side deploy file.
-      - ./config/livesync.ini:/opt/couchdb/etc/local.ini:ro
+      # CouchDB's entrypoint chmods files under /opt/couchdb/etc at startup.
+      # Keep this writable; the deploy workflow replaces the host file atomically
+      # so ownership changes do not break the next deployment.
+      - ./config/livesync.ini:/opt/couchdb/etc/local.ini
     healthcheck:
       test:
         - CMD-SHELL
@@ -47,7 +48,11 @@ services:
       - livesync
 
   livesync-cli:
-    image: ghcr.io/vrtmrz/livesync-cli:edge@sha256:f5683b7265a19b255d4483639f1b5c081dceab7089f0e48921f592877d4ea882
+    # Build the official CLI ourselves instead of depending on anonymous access
+    # to the upstream GHCR package. Pin the source to the 1.0.17 release commit.
+    build:
+      context: "https://github.com/vrtmrz/obsidian-livesync.git#694371898a569442736aa1d3d35bb1198d3c0570"
+      dockerfile: src/apps/cli/Dockerfile
     container_name: kernel-notes-livesync-cli
     profiles: [headless]
     restart: unless-stopped
