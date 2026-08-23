@@ -1,6 +1,6 @@
 ---
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
-version: 4
+version: 5
 title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
 date: 2026-08-22
 published_at: 2026-08-22T19:51:00+02:00
@@ -136,13 +136,7 @@ Die Embeddings werden außerdem nicht bei jedem Start komplett neu berechnet. Je
 
 ## Der entscheidende Teil: Relevanz
 
-Die erste Version der Vector Search hatte ein grundsätzliches Problem. Eine Query wie
-
-```text
-aksdfnasdglvhnasdf
-```
-
-bekam trotzdem Ergebnisse.
+Die erste Version der Vector Search hatte ein grundsätzliches Problem: Selbst eine offensichtlich unsinnige Zeichenfolge bekam Ergebnisse.
 
 Das ist technisch logisch: Wenn ich alle Vektoren nach Ähnlichkeit sortiere und anschließend die besten acht nehme, gibt es immer acht "beste" Kandidaten. Das bedeutet aber nicht, dass einer davon gut ist.
 
