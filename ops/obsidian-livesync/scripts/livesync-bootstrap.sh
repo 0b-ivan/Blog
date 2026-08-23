@@ -3,6 +3,7 @@ set -eu
 
 STACK_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 REPO_DIR="$(CDPATH= cd -- "$STACK_DIR/../.." && pwd)"
+SETTINGS_PATH="/data/.livesync/settings.json"
 
 cd "$STACK_DIR"
 
@@ -42,15 +43,26 @@ if [ -z "$SETUP_PASSPHRASE" ]; then
   exit 1
 fi
 
+if docker compose --profile headless run --rm --entrypoint sh livesync-cli \
+  -c 'test -s /data/.livesync/settings.json'; then
+  echo "LiveSync CLI settings already exist; keeping them."
+else
+  echo "Initializing LiveSync CLI settings..."
+  docker compose --profile headless run --rm livesync-cli init-settings "$SETTINGS_PATH"
+fi
+
 echo "Applying encrypted LiveSync setup..."
 printf '%s\n' "$SETUP_PASSPHRASE" | \
-  docker compose --profile headless run --rm -T livesync-cli setup "$SETUP_URI"
+  docker compose --profile headless run --rm -T livesync-cli \
+    --settings "$SETTINGS_PATH" setup "$SETUP_URI"
 
 echo "Synchronising CouchDB into the local CLI database..."
-docker compose --profile headless run --rm livesync-cli sync
+docker compose --profile headless run --rm livesync-cli \
+  --settings "$SETTINGS_PATH" sync
 
 echo "Mirroring the existing repository posts and remote vault in both directions..."
-docker compose --profile headless run --rm livesync-cli mirror /vault
+docker compose --profile headless run --rm livesync-cli \
+  --settings "$SETTINGS_PATH" mirror /vault
 
 echo "Starting continuous headless LiveSync..."
 docker compose --profile headless up -d livesync-cli
