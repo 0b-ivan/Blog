@@ -68,8 +68,16 @@ test('SemanticSearchEngine returns relevant articles and rejects garbage queries
     const garbageResults = await engine.search('aksdfnasdglvhnasdf', 5);
     assert.deepEqual(garbageResults, []);
 
+    const graph = engine.knowledgeGraph('docker-compose', 5);
+    assert.ok(graph);
+    assert.equal(graph.source.slug, 'docker-compose');
+    assert.equal(graph.embeddingModel, engine.embeddingModel);
+    assert.ok(Array.isArray(graph.related));
+    assert.equal('embedding' in graph.source, false, 'article vectors must stay inside the RAG service');
+
     assert.equal(engine.info().embedderMode, 'hash');
     assert.equal(engine.info().chunks, 2);
+    assert.equal(engine.info().postProfiles, 2);
   } finally {
     engine.close();
     await fs.rm(root, { recursive: true, force: true });
