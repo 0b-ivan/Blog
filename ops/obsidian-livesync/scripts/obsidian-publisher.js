@@ -248,17 +248,15 @@ class GitHubPublisher {
       throw new Error(`Base branch '${this.baseBranch}' not found`);
     }
 
-    let branchSha = await this.branchSha(branch);
+    const branchSha = await this.branchSha(branch);
     if (!pullRequest) {
       if (!branchSha) {
         await this.createBranch(branch, baseSha);
       } else if (branchSha !== baseSha) {
         await this.resetBranch(branch, baseSha);
       }
-      branchSha = baseSha;
     } else if (!branchSha) {
       await this.createBranch(branch, baseSha);
-      branchSha = baseSha;
     }
 
     const branchFile = await this.file(filePath, branch);
