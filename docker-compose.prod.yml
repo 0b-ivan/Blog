@@ -33,7 +33,7 @@ services:
       - blog-posts:/app/posts:ro
       - blog-snippets:/app/snippets:ro
       - blog-post-assets:/app/assets/posts:ro
-      - blog-ebook:/app/assets/posts/downloads:ro
+      - blog-ebook:/app/assets/downloads:ro
       - blog-archive:/content/archive:ro
       - blog-history:/content/post-history:ro
     environment:

@@ -1,3 +1,6 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
 const {
   parseFrontmatter,
   rewriteBody,
@@ -84,5 +87,13 @@ describe('ebook build', () => {
     expect(markdown).toContain('# Glossar {#glossar}');
     expect(markdown).toContain('### VPC {#glossary-vpc}');
     expect(markdown).toContain('**Virtual Private Cloud**');
+  });
+
+  it('mounts the ebook outside the read-only post-assets volume', () => {
+    const compose = fs.readFileSync(path.join(__dirname, '..', 'docker-compose.prod.yml'), 'utf8');
+
+    expect(compose).toContain('blog-post-assets:/app/assets/posts:ro');
+    expect(compose).toContain('blog-ebook:/app/assets/downloads:ro');
+    expect(compose).not.toContain('blog-ebook:/app/assets/posts/downloads:ro');
   });
 });
