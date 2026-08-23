@@ -14,8 +14,9 @@ services:
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
     volumes:
       - couchdb-data:/opt/couchdb/data
-      # Do not mount this read-only. The CouchDB entrypoint adjusts its mode on startup.
-      - ./config/livesync.ini:/opt/couchdb/etc/local.ini
+      # CouchDB only needs to read local.ini. Keep the bind mount read-only so
+      # the container entrypoint cannot chown/chmod the host-side deploy file.
+      - ./config/livesync.ini:/opt/couchdb/etc/local.ini:ro
     healthcheck:
       test:
         - CMD-SHELL
