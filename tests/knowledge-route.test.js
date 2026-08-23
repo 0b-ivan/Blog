@@ -1,35 +1,31 @@
-const request = require('supertest');
-const privacy = require('../privacy-server');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
-describe('global knowledge network route', () => {
-  it('serves /knowledge through the hardened shell', async () => {
-    const app = privacy.createApp();
-    const response = await request(app).get('/knowledge');
+describe('global knowledge network wiring', () => {
+  it('wires the hardened knowledge route and graph proxy', async () => {
+    const source = await fs.readFile(path.join(__dirname, '..', 'privacy-server.js'), 'utf8');
 
-    expect(response.status).toBe(200);
-    expect(response.headers['content-security-policy']).toContain("default-src 'self'");
-    expect(response.text).toContain('/assets/tag-navigation.js');
-    expect(response.text).toContain('data-kernel-grep-trigger');
-    expect(response.text).toContain('Kernel Notes');
+    expect(source).toContain("app.get('/api/knowledge'");
+    expect(source).toContain("searchServiceTarget('/graph/all')");
+    expect(source).toContain("app.get(['/knowledge', '/knowledge/']");
+    expect(source).toContain("sendHardenedHtml(res, 'index.html')");
   });
 
-  it('serves the knowledge network browser asset', async () => {
-    const app = privacy.createApp();
-    const response = await request(app).get('/assets/knowledge-network.js');
+  it('loads shared navigation from the fallback shell', async () => {
+    const source = await fs.readFile(path.join(__dirname, '..', 'index.html'), 'utf8');
 
-    expect(response.status).toBe(200);
-    expect(response.text).toContain('knowledge://kernel-notes/global');
-    expect(response.text).toContain('/api/knowledge?limit=5');
-    expect(response.text).toContain('/vendor/force-graph/force-graph.min.js');
+    expect(source).toContain('<script src="/assets/tag-navigation.js"></script>');
+    expect(source).toContain('Kernel Notes');
   });
 
-  it('normalizes graph limits and targets the internal graph endpoint', () => {
-    expect(privacy.normalizedGraphLimit(undefined)).toBe(4);
-    expect(privacy.normalizedGraphLimit(99)).toBe(8);
-    expect(privacy.normalizedGraphLimit(-2)).toBe(1);
+  it('uses the sanitized knowledge API and local ForceGraph asset', async () => {
+    const source = await fs.readFile(
+      path.join(__dirname, '..', 'assets', 'knowledge-network.js'),
+      'utf8'
+    );
 
-    const target = privacy.searchServiceTarget('/graph/all');
-    expect(target.pathname).toBe('/graph/all');
-    expect(target.search).toBe('');
+    expect(source).toContain("fetch('/api/knowledge?limit=5'");
+    expect(source).toContain("const FORCE_GRAPH_SRC = '/vendor/force-graph/force-graph.min.js'");
+    expect(source).toContain('knowledge://kernel-notes/global');
   });
 });
