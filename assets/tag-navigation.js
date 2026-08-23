@@ -72,6 +72,44 @@
     nav.append(link);
   }
 
+  function ensureKnowledgeNavigation() {
+    const nav = document.querySelector('.main-nav');
+    if (!nav || nav.querySelector('a[href="/knowledge"]')) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = '/knowledge';
+    link.textContent = 'Wissensnetz';
+
+    const glossary = nav.querySelector('a[href="/glossary"]');
+    const roadmap = nav.querySelector('a[href="/roadmap"]');
+    const anchor = glossary || roadmap;
+
+    if (anchor) {
+      anchor.insertAdjacentElement('afterend', link);
+      return;
+    }
+
+    nav.append(link);
+  }
+
+  function loadKnowledgeNetwork() {
+    if (window.location.pathname !== '/knowledge') {
+      return;
+    }
+
+    if (document.querySelector('script[data-knowledge-network]')) {
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = '/assets/knowledge-network.js';
+    script.defer = true;
+    script.dataset.knowledgeNetwork = 'true';
+    document.body.append(script);
+  }
+
   function loadKnowledgeGraph() {
     if (!document.querySelector('.post-page .terminal-post')) {
       return;
@@ -95,6 +133,8 @@
   upgradeTagChips();
   ensureRoadmapNavigation();
   ensureGlossaryNavigation();
+  ensureKnowledgeNavigation();
+  loadKnowledgeNetwork();
   loadKnowledgeGraph();
 
   const observer = new MutationObserver((mutations) => {

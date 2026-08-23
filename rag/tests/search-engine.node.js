@@ -75,6 +75,12 @@ test('SemanticSearchEngine returns relevant articles and rejects garbage queries
     assert.ok(Array.isArray(graph.related));
     assert.equal('embedding' in graph.source, false, 'article vectors must stay inside the RAG service');
 
+    const globalGraph = engine.globalKnowledgeGraph(3);
+    assert.equal(globalGraph.embeddingModel, engine.embeddingModel);
+    assert.equal(globalGraph.articles.length, 2);
+    assert.ok(Array.isArray(globalGraph.edges));
+    assert.equal('embedding' in globalGraph.articles[0], false, 'global graph must not expose article vectors');
+
     assert.equal(engine.info().embedderMode, 'hash');
     assert.equal(engine.info().chunks, 2);
     assert.equal(engine.info().postProfiles, 2);

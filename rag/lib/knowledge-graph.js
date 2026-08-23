@@ -179,9 +179,46 @@ function semanticRelations(profiles, requestedSlug, limit = 8) {
   };
 }
 
+function globalSemanticRelations(profiles, neighborsPerArticle = 4) {
+  const safeProfiles = Array.isArray(profiles) ? profiles : [];
+  const safeLimit = Math.min(8, Math.max(1, Number(neighborsPerArticle) || 4));
+  const edges = new Map();
+
+  for (const profile of safeProfiles) {
+    const relations = semanticRelations(safeProfiles, profile.slug, safeLimit);
+    if (!relations) {
+      continue;
+    }
+
+    for (const related of relations.related) {
+      const slugs = [profile.slug, related.slug].sort();
+      const key = slugs.join('::');
+      const candidate = {
+        source: slugs[0],
+        target: slugs[1],
+        similarity: related.similarity,
+        semanticLift: related.semanticLift,
+        relationScore: related.relationScore,
+        sharedTags: related.sharedTags,
+        sameCategory: related.sameCategory
+      };
+      const existing = edges.get(key);
+      if (!existing || candidate.relationScore > existing.relationScore) {
+        edges.set(key, candidate);
+      }
+    }
+  }
+
+  return {
+    articles: safeProfiles.map(publicProfile),
+    edges: [...edges.values()].sort((left, right) => right.relationScore - left.relationScore)
+  };
+}
+
 module.exports = {
   averageEmbedding,
   buildPostProfiles,
+  globalSemanticRelations,
   resolveProfile,
   semanticRelations,
   sharedTags

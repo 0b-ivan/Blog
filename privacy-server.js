@@ -216,6 +216,17 @@ function normalizedSearchLimit(value) {
   return Math.min(12, Math.max(1, Number(value) || 8));
 }
 
+function normalizedGraphLimit(value) {
+  return Math.min(8, Math.max(1, Number(value) || 4));
+}
+
+function searchServiceTarget(pathname) {
+  const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
+  target.pathname = pathname;
+  target.search = '';
+  return target;
+}
+
 async function proxyKernelGrep(queryValue, limitValue, res) {
   const query = String(queryValue || '').trim();
   if (query.length < 2 || query.length > 300) {
@@ -224,7 +235,7 @@ async function proxyKernelGrep(queryValue, limitValue, res) {
   }
 
   try {
-    const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
+    const target = searchServiceTarget('/search');
     target.searchParams.set('q', query);
     target.searchParams.set('limit', String(normalizedSearchLimit(limitValue)));
     const upstream = await fetch(target, {
@@ -236,6 +247,22 @@ async function proxyKernelGrep(queryValue, limitValue, res) {
   } catch (error) {
     console.error('Kernel Grep upstream unavailable:', error.message || error);
     res.status(503).json({ error: 'Kernel Grep is temporarily unavailable' });
+  }
+}
+
+async function proxyKnowledgeGraph(limitValue, res) {
+  try {
+    const target = searchServiceTarget('/graph/all');
+    target.searchParams.set('limit', String(normalizedGraphLimit(limitValue)));
+    const upstream = await fetch(target, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(20_000)
+    });
+    const payload = await upstream.text();
+    res.status(upstream.status).type('application/json').send(payload);
+  } catch (error) {
+    console.error('Global knowledge graph upstream unavailable:', error.message || error);
+    res.status(503).json({ error: 'Global knowledge graph is temporarily unavailable' });
   }
 }
 
@@ -265,6 +292,19 @@ function createApp() {
 
   app.get('/api/search', async (req, res) => {
     await proxyKernelGrep(req.query.q, req.query.limit, res);
+  });
+
+  app.get('/api/knowledge', async (req, res) => {
+    await proxyKnowledgeGraph(req.query.limit, res);
+  });
+
+  app.get(['/knowledge', '/knowledge/'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'index.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load knowledge network');
+    }
   });
 
   app.get('/script.js', async (_req, res) => {
@@ -396,7 +436,10 @@ module.exports = {
   addPrivacyNavigation,
   hardenHtml,
   normalizedSearchLimit,
+  normalizedGraphLimit,
+  searchServiceTarget,
   proxyKernelGrep,
+  proxyKnowledgeGraph,
   createApp,
   startServer
 };

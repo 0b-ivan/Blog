@@ -16,7 +16,10 @@ Lokale semantische Suche für Kernel Notes und Basis für GraphRAG.
 - pro Ergebnis nur der beste Chunk eines Artikels
 - Dokument-Vektoren als normalisierter Mittelwert der Chunk-Embeddings
 - semantische Artikelbeziehungen für das Wissensnetz
-- interner Graph-Endpunkt `GET /graph?slug=<slug>&limit=8`
+- interner Artikel-Graph unter `GET /graph?slug=<slug>&limit=8`
+- globaler Artikel-Graph unter `GET /graph/all?limit=4`
+- öffentliche, bereinigte Blog-API unter `GET /api/knowledge?limit=4`
+- globale Wissensnetz-Seite unter `/knowledge`
 
 Neo4j und Kafka sind bewusst noch nicht Teil dieses Schritts.
 
@@ -56,7 +59,7 @@ Der Suchdienst läuft getrennt vom Blogprozess:
 
 ```text
 Browser
-  -> POST /api/search
+  -> /api/search oder /api/knowledge
   -> Blog Container
   -> internes Docker-Netz
   -> Kernel Grep Container
@@ -67,26 +70,40 @@ Der Search-Container wird nicht auf einen Host-Port veröffentlicht. In Produkti
 
 ## Wissensnetz
 
-Das Wissensnetz verwendet jetzt dieselbe semantische Basis wie Kernel Grep.
+Das Wissensnetz verwendet dieselbe semantische Basis wie Kernel Grep.
 
 Für jeden Artikel werden die bereits vorhandenen Chunk-Embeddings zu einem normalisierten Dokument-Vektor zusammengefasst. Zwischen diesen Artikel-Vektoren wird Cosine Similarity berechnet. Gemeinsame Tags und Kategorien bleiben als kleine Zusatzsignale erhalten, damit die Verbindung im UI nachvollziehbar bleibt.
 
-Der interne Graph-Endpunkt liefert keine Roh-Vektoren aus:
+Der einzelne Artikel-Graph:
 
 ```text
 GET /graph?slug=2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog&limit=8
 ```
 
-Antwort enthält unter anderem:
+Der globale Graph:
 
-- Quellartikel
-- semantisch verwandte Artikel
+```text
+GET /graph/all?limit=4
+```
+
+Der Blog proxyt den globalen Graph kontrolliert nach außen:
+
+```text
+GET /api/knowledge?limit=4
+```
+
+Antworten enthalten unter anderem:
+
+- Artikelmetadaten
+- semantische Artikelkanten
 - Similarity Score
-- Semantic Lift gegenüber der Median-Baseline
-- gemeinsame Tags
+- Semantic Lift gegenüber der jeweiligen Median-Baseline
+- gemeinsamen Tags
 - gleiche Kategorie ja/nein
 
-Im Browser nutzt das vorhandene Force-Graph-Wissensnetz die semantische Suche zur Auswahl der Nachbarartikel. Falls der Search-Service nicht verfügbar ist, fällt die Darstellung auf die bisherigen Tag-/Kategorie-Beziehungen zurück.
+Roh-Vektoren werden nie an den Browser ausgegeben.
+
+Die globale Seite `/knowledge` liest diese vorberechneten Artikelbeziehungen direkt aus DuckDB. Dadurch werden beim Öffnen der Seite keine neuen Query-Embeddings erzeugt.
 
 Damit gibt es weiterhin nur eine Wissensbasis:
 
@@ -97,7 +114,8 @@ Markdown
   -> DuckDB
      -> Kernel Grep
      -> Artikel-Vektoren
-     -> semantisches Wissensnetz
+        -> Artikel-Wissensnetz
+        -> globales Wissensnetz
 ```
 
 ## Konfiguration
@@ -119,8 +137,6 @@ Für CI gibt es zusätzlich `RAG_EMBEDDER_MODE=hash`. Damit wird die komplette D
 
 ## Noch offen
 
-- den internen `/graph`-Endpunkt zusätzlich als dedizierte Blog-API veröffentlichen
-- globale Wissensnetz-Seite über alle Artikel statt nur pro Artikel
 - DuckDB-VSS/HNSW, falls die Artikelmenge groß genug wird
 - Neo4j erst für echte Graphbeziehungen und Multi-Hop-Abfragen
 - LLM-Antworten mit Quellen
