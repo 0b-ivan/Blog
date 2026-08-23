@@ -298,6 +298,15 @@ function createApp() {
     await proxyKnowledgeGraph(req.query.limit, res);
   });
 
+  app.get(['/knowledge', '/knowledge/'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'index.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load knowledge network');
+    }
+  });
+
   app.get('/script.js', async (_req, res) => {
     try {
       await sendLocalizedScript(res, 'script.js');
