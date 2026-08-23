@@ -33,7 +33,6 @@ services:
       - blog-posts:/app/posts:ro
       - blog-snippets:/app/snippets:ro
       - blog-post-assets:/app/assets/posts:ro
-      - blog-ebook:/app/assets/downloads:ro
       - blog-archive:/content/archive:ro
       - blog-history:/content/post-history:ro
     environment:
@@ -67,8 +66,6 @@ volumes:
   blog-post-assets:
     external: true
     name: kernel-notes-blog-post-assets
-  blog-ebook:
-    name: kernel-notes-blog-ebook
   blog-archive:
     external: true
     name: kernel-notes-blog-archive
