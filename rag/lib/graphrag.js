@@ -44,6 +44,10 @@ function buildArticleSelection(profiles, seeds, neighborsPerSeed) {
     });
   }
 
+  if (neighborsPerSeed <= 0) {
+    return selected;
+  }
+
   for (const seed of seeds) {
     const relations = semanticRelations(profiles, seed.slug, neighborsPerSeed);
     if (!relations) {
