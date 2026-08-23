@@ -4,10 +4,10 @@ const endpoint = process.env.RAG_REINDEX_URL || 'http://127.0.0.1:8090/reindex';
 const timeoutMs = Number(process.env.RAG_REINDEX_TIMEOUT_MS || 180_000);
 
 async function main() {
-  const response = await fetch(endpoint, {
+  const response = await globalThis.fetch(endpoint, {
     method: 'POST',
     headers: { Accept: 'application/json' },
-    signal: AbortSignal.timeout(timeoutMs)
+    signal: globalThis.AbortSignal.timeout(timeoutMs)
   });
   const payload = await response.text();
 
