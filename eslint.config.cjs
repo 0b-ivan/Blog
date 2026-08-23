@@ -33,6 +33,15 @@ module.exports = [
     }
   },
   {
+    files: ['ops/obsidian-livesync/scripts/obsidian-publisher.js'],
+    languageOptions: {
+      globals: {
+        fetch: 'readonly',
+        setTimeout: 'readonly'
+      }
+    }
+  },
+  {
     files: ['rag/server.js'],
     languageOptions: {
       globals: {
