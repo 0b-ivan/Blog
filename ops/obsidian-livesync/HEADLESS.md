@@ -14,7 +14,15 @@ Obsidian
   -> Deployment
 ```
 
-Ein normaler Save in Obsidian veroeffentlicht nichts. `status: publish` und `status: draft` beschreiben den gewuenschten Veroeffentlichungszustand; live aendert sich dieser erst nach Merge des entsprechenden PR.
+Ein normaler Save in Obsidian veroeffentlicht nichts. Der Frontmatter-Status beschreibt den gewuenschten Zustand:
+
+```text
+draft     -> nur Obsidian/LiveSync, nicht oeffentlich
+publish   -> posts/, normale Artikelliste
+archived  -> archive/, nur im oeffentlichen Archiv
+```
+
+Live aendert sich dieser Zustand erst nach Merge des entsprechenden PR.
 
 ## Voraussetzungen
 
@@ -88,7 +96,7 @@ Neue Obsidian-Artikel starten mit:
 status: draft
 ```
 
-Solange der Artikel noch nie veroeffentlicht wurde, bleibt er damit nur in Obsidian/LiveSync und erzeugt keinen Unpublish-PR.
+Solange der Artikel noch nie veroeffentlicht wurde, bleibt er damit nur in Obsidian/LiveSync.
 
 Wenn der Artikel bereit fuer die Freigabe ist:
 
@@ -101,7 +109,7 @@ Danach wartet der Publisher standardmaessig 5 Minuten, in denen der Dateiinhalt 
 ```text
 status: publish
   -> obsidian/<artikel-slug>
-  -> Commit des Artikels
+  -> posts/<artikel>.md
   -> Pull Request gegen main
 ```
 
@@ -109,41 +117,69 @@ Weitere Aenderungen am gleichen Artikel erzeugen keinen zweiten PR. Nach erneut 
 
 Nach dem Merge bleibt `status: publish` im Artikel stehen. Solange der lokale Inhalt mit `main` identisch ist, tut der Publisher nichts.
 
-## Einen veroeffentlichten Artikel offline nehmen
+## Einen Artikel auf Draft zuruecksetzen
 
-Bei einem bereits veroeffentlichten Artikel wird:
+Bei einem bereits oeffentlichen Artikel wird:
 
 ```yaml
 status: draft
 ```
 
-als bewusster Unpublish-Wunsch behandelt. Nach dem Debounce-Fenster erzeugt der Publisher einen deterministischen PR:
+als bewusster Unpublish-Wunsch behandelt. Der Publisher entfernt den Artikel im PR sowohl aus `posts/` als auch aus `archive/`:
 
 ```text
 status: draft
   -> obsidian/<artikel-slug>
-  -> posts/<artikel>.md wird im Branch geloescht
+  -> posts/<artikel>.md und archive/<artikel>.md werden entfernt
   -> PR "Unpublish: <Titel>"
   -> Merge
-  -> Content-Deploy
-  -> Artikel offline
+  -> Artikel nicht mehr oeffentlich
 ```
 
-Die Markdown-Datei bleibt im Obsidian-Vault erhalten. Git verliert den Inhalt ebenfalls nicht, weil die bisherige Version weiter in der Git-Historie liegt.
+Die Markdown-Datei bleibt im Obsidian-Vault erhalten. Git verliert den Inhalt nicht, weil die bisherigen Versionen in der Git-Historie bleiben.
 
-Wird der Artikel spaeter wieder auf:
+## Einen Artikel archivieren
+
+Soll ein Artikel aus der normalen Artikelliste verschwinden, aber weiterhin oeffentlich im Archiv lesbar bleiben:
+
+```yaml
+status: archived
+```
+
+Nach dem Debounce-Fenster erzeugt der Publisher einen Archivierungs-PR:
+
+```text
+status: archived
+  -> obsidian/<artikel-slug>
+  -> posts/<artikel>.md wird entfernt
+  -> archive/<artikel>.md wird mit dem aktuellen Obsidian-Stand angelegt
+  -> PR "Archive: <Titel>"
+  -> Merge
+  -> Artikel nur noch unter /archive
+```
+
+Das vorhandene Blog-Archiv liest direkt aus `archive/`. Der Artikel ist danach nicht mehr in der normalen Artikelliste, bleibt aber unter `/archive/<slug>` und im Versionsverlauf erreichbar.
+
+## Archivierten Artikel wieder veroeffentlichen
+
+Ein archivierter Artikel wird mit:
 
 ```yaml
 status: publish
 ```
 
-gesetzt, erstellt der Publisher wieder einen Publish-PR und legt den aktuellen Obsidian-Stand erneut unter `posts/` an.
+wiederhergestellt. Der Publisher erzeugt dann einen Publish-PR, legt den aktuellen Obsidian-Stand wieder unter `posts/` an und entfernt die Datei aus `archive/`.
 
-Wenn ein Publish-PR noch offen ist und der Artikel vor dem Merge wieder auf `draft` gesetzt wird, schliesst bzw. wandelt der Publisher den offenen Vorgang so um, dass der Artikel nicht versehentlich spaeter veroeffentlicht wird.
+Damit sind die drei Zustaende jederzeit ueber Obsidian wechselbar:
 
-Wichtig: `draft` nimmt einen bereits veroeffentlichten Artikel nicht sofort ohne GitHub-Grenze live vom Netz. Offline wird er nach Merge des Unpublish-PR. Dadurch bleiben CI, Review und Deployment nachvollziehbar.
+```text
+draft <-> publish <-> archived
+  \_____________________/
+```
 
-Soll ein bereits veroeffentlichter Artikel nur ueberarbeitet werden, waehrend die aktuelle Live-Version online bleiben soll, bleibt `status: publish` gesetzt. Die Aenderungen landen dann in einem normalen Update-PR; bis zu dessen Merge bleibt die bisherige Version live.
+Wenn fuer denselben Artikel bereits ein offener Publisher-PR existiert, wird derselbe deterministische Branch auf den neuen gewuenschten Zustand umgestellt. Dadurch entsteht kein Stapel widerspruechlicher Publish-, Unpublish- oder Archive-PRs.
+
+Wichtig: Kein Statuswechsel veraendert die Live-Seite ohne GitHub-Grenze. Oeffentlich wirksam wird der Wechsel erst nach Merge und Deployment.
 
 ## Publisher auf Hetzner deployen
 
@@ -216,7 +252,8 @@ CouchDB bleibt dabei aktiv.
 
 - Nicht gleichzeitig einen zweiten Datei-Sync wie iCloud, Dropbox oder Obsidian Sync auf dasselbe Vault-Verzeichnis loslassen.
 - Der Publisher arbeitet nur mit Markdown-Dateien direkt unter `posts/`.
-- `status: draft` bei einem neuen, nie veroeffentlichten Artikel bleibt lokal/LiveSync-only.
-- `status: draft` bei einem bereits veroeffentlichten Artikel erzeugt einen Unpublish-PR.
-- `status: publish` ist eine explizite Freigabe fuer GitHub, aber noch keine Live-Veroeffentlichung. Live wird der Artikel erst nach Merge nach `main`.
-- Ein erster bidirektionaler Mirror kann Dateien aus CouchDB nach `posts/` importieren. Deshalb den ersten Sync kontrollieren, bevor Artikel auf `status: publish` gesetzt werden.
+- `status: draft` bedeutet nicht oeffentlich.
+- `status: publish` bedeutet normale Veroeffentlichung unter `posts/`.
+- `status: archived` bedeutet oeffentliche Archivierung unter `archive/`.
+- Statuswechsel werden erst nach PR-Merge und Deployment live wirksam.
+- Ein erster bidirektionaler Mirror kann Dateien aus CouchDB nach `posts/` importieren. Deshalb den ersten Sync kontrollieren, bevor Artikel auf `status: publish` oder `status: archived` gesetzt werden.

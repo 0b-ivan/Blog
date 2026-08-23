@@ -74,6 +74,16 @@ function encodePath(value) {
     .join('/');
 }
 
+function modeTitle(mode, title) {
+  if (mode === 'unpublish') {
+    return `Unpublish: ${title}`;
+  }
+  if (mode === 'archive') {
+    return `Archive: ${title}`;
+  }
+  return `Publish: ${title}`;
+}
+
 class StableTracker {
   constructor(debounceMs) {
     this.debounceMs = debounceMs;
@@ -195,10 +205,11 @@ class GitHubPublisher {
     return Array.isArray(pulls) && pulls.length > 0 ? pulls[0] : null;
   }
 
-  async writeFile(filePath, branch, raw, title) {
+  async writeFile(filePath, branch, raw, title, mode = 'publish') {
     const current = await this.file(filePath, branch);
+    const verb = mode === 'archive' ? 'Archive' : 'Publish';
     const body = {
-      message: `Publish ${title}`,
+      message: `${verb} ${title}`,
       content: Buffer.from(raw, 'utf8').toString('base64'),
       branch
     };
@@ -213,16 +224,17 @@ class GitHubPublisher {
     });
   }
 
-  async deleteFile(filePath, branch, title) {
+  async deleteFile(filePath, branch, title, mode = 'unpublish') {
     const current = await this.file(filePath, branch);
     if (!current?.sha) {
       return false;
     }
 
+    const verb = mode === 'archive' ? 'Archive' : mode === 'publish' ? 'Restore' : 'Unpublish';
     await this.request(`/repos/${this.repository}/contents/${encodePath(filePath)}`, {
       method: 'DELETE',
       body: {
-        message: `Unpublish ${title}`,
+        message: `${verb} ${title}`,
         sha: current.sha,
         branch
       }
@@ -237,10 +249,24 @@ class GitHubPublisher {
         '',
         `- Artikel: \`${filePath}\``,
         '- Status: `draft`',
-        '- Der Artikel wird aus `posts/` entfernt und dadurch aus Blog, RSS und Suche genommen.',
-        '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter erneut auf `publish` gesetzt werden.',
+        '- Der Artikel wird aus `posts/` und `archive/` entfernt und dadurch vollstaendig privat.',
+        '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter erneut auf `publish` oder `archived` gesetzt werden.',
         '',
         'Der Artikel wird erst nach Merge dieses PR offline genommen.'
+      ].join('\n');
+    }
+
+    if (mode === 'archive') {
+      return [
+        'Automatisch aus Obsidian erstellt.',
+        '',
+        `- Artikel: \`${filePath}\``,
+        '- Status: `archived`',
+        '- Der Artikel wird aus `posts/` nach `archive/` verschoben.',
+        '- Er verschwindet aus der normalen Artikelliste, bleibt aber unter `/archive` lesbar.',
+        '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter wieder auf `publish` gesetzt werden.',
+        '',
+        'Der Artikel wird erst nach Merge dieses PR archiviert.'
       ].join('\n');
     }
 
@@ -249,6 +275,7 @@ class GitHubPublisher {
       '',
       `- Artikel: \`${filePath}\``,
       '- Freigabe: `status: publish`',
+      '- Falls der Artikel archiviert ist, wird er aus `archive/` wieder nach `posts/` geholt.',
       '- Weitere Aenderungen in Obsidian aktualisieren diesen PR nach dem Debounce-Fenster.',
       '',
       'Der Artikel wird erst nach Merge nach `main` veroeffentlicht.'
@@ -259,7 +286,7 @@ class GitHubPublisher {
     return this.request(`/repos/${this.repository}/pulls`, {
       method: 'POST',
       body: {
-        title: mode === 'unpublish' ? `Unpublish: ${title}` : `Publish: ${title}`,
+        title: modeTitle(mode, title),
         head: branch,
         base: this.baseBranch,
         body: this.pullRequestBody(mode, title, filePath)
@@ -271,7 +298,7 @@ class GitHubPublisher {
     return this.request(`/repos/${this.repository}/pulls/${pullRequest.number}`, {
       method: 'PATCH',
       body: {
-        title: mode === 'unpublish' ? `Unpublish: ${title}` : `Publish: ${title}`,
+        title: modeTitle(mode, title),
         body: this.pullRequestBody(mode, title, filePath)
       }
     });
@@ -304,11 +331,13 @@ class GitHubPublisher {
 
   async publish({ fileName, raw, title }) {
     const filePath = `posts/${fileName}`;
+    const archivePath = `archive/${fileName}`;
     const branch = branchForFile(fileName);
     const mainFile = await this.file(filePath, this.baseBranch);
+    const mainArchiveFile = await this.file(archivePath, this.baseBranch);
     let pullRequest = await this.openPullRequest(branch);
 
-    if (mainFile?.content === raw) {
+    if (mainFile?.content === raw && !mainArchiveFile) {
       if (pullRequest) {
         await this.closePullRequest(pullRequest);
         return { action: 'closed-stale-pr', branch, pullRequest };
@@ -320,8 +349,9 @@ class GitHubPublisher {
 
     const branchFile = await this.file(filePath, branch);
     if (branchFile?.content !== raw) {
-      await this.writeFile(filePath, branch, raw, title);
+      await this.writeFile(filePath, branch, raw, title, 'publish');
     }
+    await this.deleteFile(archivePath, branch, title, 'publish');
 
     if (!pullRequest) {
       pullRequest = await this.createPullRequest(branch, title, filePath, 'publish');
@@ -334,11 +364,13 @@ class GitHubPublisher {
 
   async unpublish({ fileName, title }) {
     const filePath = `posts/${fileName}`;
+    const archivePath = `archive/${fileName}`;
     const branch = branchForFile(fileName);
     const mainFile = await this.file(filePath, this.baseBranch);
+    const mainArchiveFile = await this.file(archivePath, this.baseBranch);
     let pullRequest = await this.openPullRequest(branch);
 
-    if (!mainFile) {
+    if (!mainFile && !mainArchiveFile) {
       if (pullRequest) {
         await this.closePullRequest(pullRequest);
         return { action: 'closed-pending-publish', branch, pullRequest };
@@ -347,7 +379,8 @@ class GitHubPublisher {
     }
 
     await this.ensureBranch(branch, pullRequest);
-    await this.deleteFile(filePath, branch, title);
+    await this.deleteFile(filePath, branch, title, 'unpublish');
+    await this.deleteFile(archivePath, branch, title, 'unpublish');
 
     if (!pullRequest) {
       pullRequest = await this.createPullRequest(branch, title, filePath, 'unpublish');
@@ -356,6 +389,39 @@ class GitHubPublisher {
 
     pullRequest = await this.updatePullRequest(pullRequest, title, filePath, 'unpublish');
     return { action: 'updated-unpublish-pr', branch, pullRequest };
+  }
+
+  async archive({ fileName, raw, title }) {
+    const filePath = `posts/${fileName}`;
+    const archivePath = `archive/${fileName}`;
+    const branch = branchForFile(fileName);
+    const mainFile = await this.file(filePath, this.baseBranch);
+    const mainArchiveFile = await this.file(archivePath, this.baseBranch);
+    let pullRequest = await this.openPullRequest(branch);
+
+    if (!mainFile && mainArchiveFile?.content === raw) {
+      if (pullRequest) {
+        await this.closePullRequest(pullRequest);
+        return { action: 'closed-stale-pr', branch, pullRequest };
+      }
+      return { action: 'already-archived', branch, pullRequest: null };
+    }
+
+    await this.ensureBranch(branch, pullRequest);
+
+    const branchArchiveFile = await this.file(archivePath, branch);
+    if (branchArchiveFile?.content !== raw) {
+      await this.writeFile(archivePath, branch, raw, title, 'archive');
+    }
+    await this.deleteFile(filePath, branch, title, 'archive');
+
+    if (!pullRequest) {
+      pullRequest = await this.createPullRequest(branch, title, filePath, 'archive');
+      return { action: 'created-archive-pr', branch, pullRequest };
+    }
+
+    pullRequest = await this.updatePullRequest(pullRequest, title, filePath, 'archive');
+    return { action: 'updated-archive-pr', branch, pullRequest };
   }
 }
 
@@ -392,7 +458,7 @@ async function runCycle({ vaultPath, tracker, publisher }) {
     const status = String(article.frontmatter.status || '').trim().toLowerCase();
     seen.add(article.fileName);
 
-    if (status !== 'publish' && status !== 'draft') {
+    if (!['publish', 'draft', 'archived'].includes(status)) {
       tracker.forget(article.fileName);
       continue;
     }
@@ -404,16 +470,25 @@ async function runCycle({ vaultPath, tracker, publisher }) {
 
     const title = String(article.frontmatter.title || article.fileName.replace(/\.md$/i, '')).trim();
     try {
-      const result = status === 'publish'
-        ? await publisher.publish({
+      let result;
+      if (status === 'publish') {
+        result = await publisher.publish({
           fileName: article.fileName,
           raw: article.raw,
           title
-        })
-        : await publisher.unpublish({
+        });
+      } else if (status === 'archived') {
+        result = await publisher.archive({
+          fileName: article.fileName,
+          raw: article.raw,
+          title
+        });
+      } else {
+        result = await publisher.unpublish({
           fileName: article.fileName,
           title
         });
+      }
 
       tracker.markProcessed(article.fileName, hash);
 
@@ -421,10 +496,12 @@ async function runCycle({ vaultPath, tracker, publisher }) {
         console.log(`[publisher] ${article.fileName}: already matches ${publisher.baseBranch}`);
       } else if (result.action === 'already-offline') {
         console.log(`[publisher] ${article.fileName}: draft and already offline`);
+      } else if (result.action === 'already-archived') {
+        console.log(`[publisher] ${article.fileName}: already archived`);
       } else if (result.action === 'closed-pending-publish') {
         console.log(`[publisher] ${article.fileName}: draft closed pending publish PR`);
       } else if (result.action === 'closed-stale-pr') {
-        console.log(`[publisher] ${article.fileName}: publish matches ${publisher.baseBranch}; closed stale PR`);
+        console.log(`[publisher] ${article.fileName}: desired state already matches ${publisher.baseBranch}; closed stale PR`);
       } else {
         console.log(`[publisher] ${article.fileName}: ${result.action} ${result.pullRequest?.html_url || result.branch}`);
       }
@@ -484,6 +561,7 @@ module.exports = {
   StableTracker,
   branchForFile,
   contentHash,
+  modeTitle,
   parseFrontmatter,
   parsePositiveInteger,
   runCycle,
