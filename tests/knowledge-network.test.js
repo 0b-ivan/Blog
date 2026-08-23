@@ -33,7 +33,7 @@ describe('global knowledge network', () => {
 
   it('builds stable semantic queries from article metadata', () => {
     expect(semanticQuery(posts[0])).toContain('Docker Compose');
-    expect(semanticQuery(posts[0])).toContain('Docker Compose');
+    expect(semanticQuery(posts[0])).toContain('Container');
     expect(semanticQuery(posts[0]).length).toBeLessThanOrEqual(280);
   });
 
@@ -79,7 +79,7 @@ describe('global knowledge network', () => {
     const result = await mapWithConcurrency([1, 2, 3, 4, 5], 2, async (value) => {
       active += 1;
       peak = Math.max(peak, active);
-      await new Promise((resolve) => setTimeout(resolve, 2));
+      await Promise.resolve();
       active -= 1;
       return value * 2;
     });
