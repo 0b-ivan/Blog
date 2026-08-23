@@ -19,6 +19,7 @@ class SemanticSearchEngine {
     this.chunks = chunks;
     this.postProfiles = postProfiles;
     this.indexStats = indexStats;
+    this.reindexPromise = null;
   }
 
   static async create(inputOptions = {}) {
@@ -29,34 +30,37 @@ class SemanticSearchEngine {
       dtype: options.dtype,
       cacheDir: options.cacheDir
     });
-
-    const indexStats = await buildIndex(
-      { ...options, quiet: true },
-      created
-    );
     const store = await RagStore.open(options.databasePath);
-    const chunks = await store.allChunks(created.embeddingModel);
 
-    if (chunks.length === 0) {
+    try {
+      const indexStats = await buildIndex(
+        { ...options, quiet: true },
+        { ...created, store }
+      );
+      const chunks = await store.allChunks(created.embeddingModel);
+
+      if (chunks.length === 0) {
+        throw new Error(`No semantic chunks available for ${created.embeddingModel}`);
+      }
+
+      const postProfiles = buildPostProfiles(chunks);
+      if (postProfiles.length === 0) {
+        throw new Error(`No semantic article profiles available for ${created.embeddingModel}`);
+      }
+
+      return new SemanticSearchEngine(
+        options,
+        created.embedder,
+        created.embeddingModel,
+        store,
+        chunks,
+        postProfiles,
+        indexStats
+      );
+    } catch (error) {
       store.close();
-      throw new Error(`No semantic chunks available for ${created.embeddingModel}`);
+      throw error;
     }
-
-    const postProfiles = buildPostProfiles(chunks);
-    if (postProfiles.length === 0) {
-      store.close();
-      throw new Error(`No semantic article profiles available for ${created.embeddingModel}`);
-    }
-
-    return new SemanticSearchEngine(
-      options,
-      created.embedder,
-      created.embeddingModel,
-      store,
-      chunks,
-      postProfiles,
-      indexStats
-    );
   }
 
   async search(query, limit = 8) {
@@ -128,6 +132,57 @@ class SemanticSearchEngine {
     };
   }
 
+  async reindex() {
+    if (this.reindexPromise) {
+      return this.reindexPromise;
+    }
+
+    const run = this.performReindex();
+    this.reindexPromise = run;
+
+    try {
+      return await run;
+    } finally {
+      if (this.reindexPromise === run) {
+        this.reindexPromise = null;
+      }
+    }
+  }
+
+  async performReindex() {
+    const indexStats = await buildIndex(
+      { ...this.options, quiet: true },
+      {
+        embedder: this.embedder,
+        embeddingModel: this.embeddingModel,
+        mode: this.options.embedderMode,
+        store: this.store
+      }
+    );
+    const chunks = await this.store.allChunks(this.embeddingModel);
+
+    if (chunks.length === 0) {
+      throw new Error(`No semantic chunks available for ${this.embeddingModel}`);
+    }
+
+    const postProfiles = buildPostProfiles(chunks);
+    if (postProfiles.length === 0) {
+      throw new Error(`No semantic article profiles available for ${this.embeddingModel}`);
+    }
+
+    // Search requests continue to use the previous arrays while DuckDB is updated.
+    // Once the replacement data is complete, swap both references synchronously.
+    this.chunks = chunks;
+    this.postProfiles = postProfiles;
+    this.indexStats = indexStats;
+
+    return indexStats;
+  }
+
+  waitForReindex() {
+    return this.reindexPromise || Promise.resolve();
+  }
+
   info() {
     return {
       embeddingModel: this.embeddingModel,
@@ -137,6 +192,7 @@ class SemanticSearchEngine {
       removedPosts: this.indexStats.removed,
       chunks: this.chunks.length,
       postProfiles: this.postProfiles.length,
+      reindexing: Boolean(this.reindexPromise),
       database: path.basename(this.options.databasePath)
     };
   }
