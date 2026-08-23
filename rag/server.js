@@ -47,6 +47,10 @@ function graphLimit(url) {
   return Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8));
 }
 
+function globalGraphLimit(url) {
+  return Math.min(8, Math.max(1, Number(url.searchParams.get('limit')) || 4));
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -84,6 +88,21 @@ const server = http.createServer(async (req, res) => {
     } catch (error) {
       console.error('kernel-grep search failed:', error.message || error);
       json(res, 500, { error: 'Semantic search failed' });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/graph/all') {
+    if (!ready || !engine) {
+      json(res, 503, { error: 'Semantic index is still starting' });
+      return;
+    }
+
+    try {
+      json(res, 200, engine.globalKnowledgeGraph(globalGraphLimit(url)));
+    } catch (error) {
+      console.error('kernel-grep global graph failed:', error.message || error);
+      json(res, 500, { error: 'Global semantic knowledge graph failed' });
     }
     return;
   }
