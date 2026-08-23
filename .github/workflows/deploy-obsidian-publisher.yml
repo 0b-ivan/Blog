@@ -1,0 +1,124 @@
+name: Deploy Obsidian Publisher
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ops/obsidian-livesync/docker-compose.yml"
+      - "ops/obsidian-livesync/scripts/obsidian-publisher.js"
+      - ".github/workflows/deploy-obsidian-publisher.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: obsidian-publisher-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      REMOTE_DIR: /opt/Blog/ops/obsidian-livesync
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate deployment secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+          OBSIDIAN_PUBLISHER_GITHUB_TOKEN: ${{ secrets.OBSIDIAN_PUBLISHER_GITHUB_TOKEN }}
+        run: |
+          test -n "$HETZNER_HOST" || { echo "HETZNER_HOST is missing"; exit 1; }
+          test -n "$HETZNER_USER" || { echo "HETZNER_USER is missing"; exit 1; }
+          test -n "$HETZNER_SSH_KEY" || { echo "HETZNER_SSH_KEY is missing"; exit 1; }
+          test -n "$HETZNER_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
+          test -n "$OBSIDIAN_PUBLISHER_GITHUB_TOKEN" || { echo "OBSIDIAN_PUBLISHER_GITHUB_TOKEN is missing"; exit 1; }
+
+      - name: Configure SSH
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Copy publisher files
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            "mkdir -p '${REMOTE_DIR}/scripts'"
+
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            ops/obsidian-livesync/docker-compose.yml \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/docker-compose.yml"
+
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            ops/obsidian-livesync/scripts/obsidian-publisher.js \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/obsidian-publisher.js"
+
+      - name: Write publisher environment
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          OBSIDIAN_PUBLISHER_GITHUB_TOKEN: ${{ secrets.OBSIDIAN_PUBLISHER_GITHUB_TOKEN }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          case "$OBSIDIAN_PUBLISHER_GITHUB_TOKEN" in
+            *$'\n'*) echo "OBSIDIAN_PUBLISHER_GITHUB_TOKEN must not contain newlines"; exit 1 ;;
+          esac
+
+          {
+            printf 'OBSIDIAN_PUBLISHER_GITHUB_TOKEN=%s\n' "$OBSIDIAN_PUBLISHER_GITHUB_TOKEN"
+            printf 'PUBLISHER_GITHUB_REPOSITORY=0b-ivan/Blog\n'
+            printf 'PUBLISHER_BASE_BRANCH=main\n'
+            printf 'PUBLISHER_DEBOUNCE_SECONDS=300\n'
+            printf 'PUBLISHER_POLL_SECONDS=30\n'
+          } | ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            "umask 077; cat > '${REMOTE_DIR}/.publisher.env'"
+
+      - name: Deploy publisher
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_DIR" <<'REMOTE'
+          set -euo pipefail
+          REMOTE_DIR="$1"
+          cd "$REMOTE_DIR"
+
+          test -f .env || { echo "LiveSync .env is missing; deploy LiveSync first"; exit 1; }
+          test -f .publisher.env || { echo "Publisher environment is missing"; exit 1; }
+
+          docker compose --env-file .env --env-file .publisher.env --profile publisher config >/dev/null
+          docker compose --env-file .env --env-file .publisher.env --profile publisher pull publisher
+          docker compose --env-file .env --env-file .publisher.env --profile publisher up -d --force-recreate publisher
+
+          sleep 2
+          running="$(docker inspect -f '{{.State.Running}}' kernel-notes-obsidian-publisher 2>/dev/null || true)"
+          if [ "$running" != "true" ]; then
+            echo "Obsidian publisher is not running"
+            docker compose --env-file .env --env-file .publisher.env --profile publisher ps
+            docker compose --env-file .env --env-file .publisher.env --profile publisher logs --tail=100 publisher || true
+            exit 1
+          fi
+
+          docker compose --env-file .env --env-file .publisher.env --profile publisher ps publisher
+          REMOTE
