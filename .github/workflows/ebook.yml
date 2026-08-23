@@ -12,9 +12,7 @@ on:
       - 'scripts/build-ebook-full.js'
       - 'package.json'
       - '.github/workflows/ebook.yml'
-  push:
-    branches:
-      - main
+      - 'docker-compose.prod.yml'
   workflow_run:
     workflows:
       - Deploy
@@ -59,14 +57,13 @@ jobs:
 
   publish:
     if: >-
-      github.event_name == 'push' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
     steps:
-      - name: Checkout revision
+      - name: Checkout deployed revision
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
@@ -130,7 +127,7 @@ jobs:
             "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$REMOTE_FILE" <<'REMOTE'
           set -euo pipefail
           SOURCE="$1"
-          VOLUME='kernel-notes-blog-post-assets'
+          VOLUME='kernel-notes-blog-ebook'
           HELPER_IMAGE='alpine:3.22'
 
           docker volume inspect "$VOLUME" >/dev/null 2>&1 || docker volume create "$VOLUME" >/dev/null
@@ -139,10 +136,10 @@ jobs:
             -v "${VOLUME}:/target" \
             -v "${SOURCE}:/source.epub:ro" \
             "$HELPER_IMAGE" \
-            sh -c 'set -eu; mkdir -p /target/downloads; cp /source.epub /target/downloads/kernel-notes.epub.new; mv /target/downloads/kernel-notes.epub.new /target/downloads/kernel-notes.epub'
+            sh -c 'set -eu; cp /source.epub /target/kernel-notes.epub.new; mv /target/kernel-notes.epub.new /target/kernel-notes.epub'
           rm -f "$SOURCE"
 
-          size="$(docker run --rm -v "${VOLUME}:/target:ro" "$HELPER_IMAGE" sh -c 'wc -c < /target/downloads/kernel-notes.epub')"
+          size="$(docker run --rm -v "${VOLUME}:/target:ro" "$HELPER_IMAGE" sh -c 'wc -c < /target/kernel-notes.epub')"
           test "$size" -gt 1000
           curl -fsS --max-time 20 http://127.0.0.1:1888/assets/posts/downloads/kernel-notes.epub -o /dev/null
           echo "E-Book published successfully (${size} bytes)."
