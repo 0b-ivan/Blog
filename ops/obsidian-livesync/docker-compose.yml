@@ -14,9 +14,10 @@ services:
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
     volumes:
       - couchdb-data:/opt/couchdb/data
-      # CouchDB only needs to read local.ini. Keep the bind mount read-only so
-      # the container entrypoint cannot chown/chmod the host-side deploy file.
-      - ./config/livesync.ini:/opt/couchdb/etc/local.ini:ro
+      # CouchDB's entrypoint chmods files under /opt/couchdb/etc at startup.
+      # Keep this writable; the deploy workflow replaces the host file atomically
+      # so ownership changes do not break the next deployment.
+      - ./config/livesync.ini:/opt/couchdb/etc/local.ini
     healthcheck:
       test:
         - CMD-SHELL
@@ -47,7 +48,10 @@ services:
       - livesync
 
   livesync-cli:
-    image: ghcr.io/vrtmrz/livesync-cli:edge@sha256:f5683b7265a19b255d4483639f1b5c081dceab7089f0e48921f592877d4ea882
+    # Upstream publishes the public rolling CLI image under the edge tag.
+    # Avoid pinning the OCI index digest: GHCR currently denies that digest pull
+    # while the public edge tag remains the documented installation path.
+    image: ghcr.io/vrtmrz/livesync-cli:edge
     container_name: kernel-notes-livesync-cli
     profiles: [headless]
     restart: unless-stopped
