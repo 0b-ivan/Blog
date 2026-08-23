@@ -1,7 +1,5 @@
 (() => {
   const FORCE_GRAPH_SRC = '/vendor/force-graph/force-graph.min.js';
-  const SEMANTIC_NEIGHBORS = 5;
-  const SEMANTIC_CONCURRENCY = 3;
   const COLORS = {
     article: '#5b9cf6',
     tag: '#ef6a6a',
@@ -16,55 +14,6 @@
 
   function normalized(value) {
     return String(value || '').trim().toLocaleLowerCase('de');
-  }
-
-  function semanticQuery(post) {
-    return [
-      post?.title,
-      post?.category,
-      normalizeTags(post?.tags).join(' '),
-      post?.excerpt
-    ]
-      .filter(Boolean)
-      .join(' · ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 280);
-  }
-
-  function semanticEdgeKey(leftSlug, rightSlug) {
-    return [String(leftSlug), String(rightSlug)].sort().join('::');
-  }
-
-  function mergeSemanticResults(posts, resultsBySlug) {
-    const known = new Set((Array.isArray(posts) ? posts : []).map((post) => post.slug));
-    const edges = new Map();
-
-    for (const [sourceSlug, results] of Object.entries(resultsBySlug || {})) {
-      if (!known.has(sourceSlug)) {
-        continue;
-      }
-
-      for (const result of Array.isArray(results) ? results : []) {
-        if (!result?.slug || result.slug === sourceSlug || !known.has(result.slug)) {
-          continue;
-        }
-
-        const score = Number(result.score) || 0;
-        if (score <= 0) {
-          continue;
-        }
-
-        const key = semanticEdgeKey(sourceSlug, result.slug);
-        const existing = edges.get(key);
-        if (!existing || score > existing.score) {
-          const [source, target] = [sourceSlug, result.slug].sort();
-          edges.set(key, { source, target, score });
-        }
-      }
-    }
-
-    return [...edges.values()].sort((left, right) => right.score - left.score);
   }
 
   function buildGraphData(posts, semanticEdges) {
@@ -97,7 +46,7 @@
         id: postId,
         label: post.title || post.slug,
         type: 'article',
-        href: `/posts/${post.slug}`,
+        href: post.url || `/posts/${post.slug}`,
         color: COLORS.article,
         category: post.category || '',
         tags: normalizeTags(post.tags)
@@ -141,7 +90,11 @@
         source,
         target,
         type: 'semantic',
-        score: Number(edge.score) || 0
+        score: Number(edge.relationScore) || Number(edge.similarity) || 0,
+        similarity: Number(edge.similarity) || 0,
+        semanticLift: Number(edge.semanticLift) || 0,
+        sharedTags: normalizeTags(edge.sharedTags),
+        sameCategory: Boolean(edge.sameCategory)
       });
     }
 
@@ -163,27 +116,6 @@
     });
 
     return { nodes, links };
-  }
-
-  async function mapWithConcurrency(items, concurrency, worker) {
-    const safeItems = Array.isArray(items) ? items : [];
-    const output = new Array(safeItems.length);
-    let cursor = 0;
-
-    async function run() {
-      while (cursor < safeItems.length) {
-        const index = cursor;
-        cursor += 1;
-        output[index] = await worker(safeItems[index], index);
-      }
-    }
-
-    const workers = Array.from(
-      { length: Math.min(Math.max(1, concurrency), Math.max(1, safeItems.length)) },
-      () => run()
-    );
-    await Promise.all(workers);
-    return output;
   }
 
   function ensureStyles() {
@@ -254,7 +186,7 @@
           <div>
             <p class="eyebrow">RAG · VECTOR DB · WISSENSNETZ</p>
             <h1 id="knowledge-network-title">Das Wissen hinter Kernel Notes</h1>
-            <p>Artikel werden semantisch über Kernel Grep verbunden. Wiederkehrende Tags und Kategorien machen sichtbar, warum Themen zusammengehören.</p>
+            <p>Die Artikel-Vektoren kommen direkt aus DuckDB. Semantische Kanten verbinden ähnliche Beiträge; Tags und Kategorien zeigen die fachlichen Überschneidungen.</p>
           </div>
           <div class="knowledge-network__stats" aria-live="polite">
             <span><strong data-stat="articles">–</strong> Artikel</span>
@@ -282,51 +214,13 @@
             <code>knowledge://kernel-notes/global</code>
           </div>
           <div class="knowledge-network__canvas" data-knowledge-canvas>
-            <p class="knowledge-network__status" data-knowledge-status>Artikel und semantische Beziehungen werden geladen…</p>
+            <p class="knowledge-network__status" data-knowledge-status>Artikel-Vektoren und Beziehungen werden aus DuckDB geladen…</p>
           </div>
         </div>
-        <p class="knowledge-network__note">Semantische Kanten stammen aus derselben lokalen Suche wie Kernel Grep. Die Anfragen werden gedrosselt, damit das Embedding-Modell nicht unnötig parallel belastet wird.</p>
+        <p class="knowledge-network__note">Beim Öffnen dieser Seite werden keine neuen Embeddings berechnet. Das Netz wird aus den bereits indexierten Artikel-Vektoren aufgebaut; Roh-Vektoren verlassen den RAG-Service nicht.</p>
       </section>`;
 
     return main.querySelector('.knowledge-network');
-  }
-
-  async function loadSemanticEdges(posts, status) {
-    const resultsBySlug = {};
-    let completed = 0;
-
-    await mapWithConcurrency(posts, SEMANTIC_CONCURRENCY, async (post) => {
-      const query = semanticQuery(post);
-      if (query.length < 2) {
-        resultsBySlug[post.slug] = [];
-        return;
-      }
-
-      try {
-        const params = new URLSearchParams({
-          q: query,
-          limit: String(SEMANTIC_NEIGHBORS + 1)
-        });
-        const response = await fetch(`/api/search?${params.toString()}`, {
-          headers: { Accept: 'application/json' }
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        const payload = await response.json();
-        resultsBySlug[post.slug] = Array.isArray(payload.results) ? payload.results : [];
-      } catch (error) {
-        console.warn(`Knowledge relation failed for ${post.slug}:`, error.message || error);
-        resultsBySlug[post.slug] = [];
-      } finally {
-        completed += 1;
-        if (status) {
-          status.textContent = `Semantische Beziehungen: ${completed}/${posts.length} Artikel analysiert…`;
-        }
-      }
-    });
-
-    return mergeSemanticResults(posts, resultsBySlug);
   }
 
   function connectedTo(link, node) {
@@ -346,6 +240,21 @@
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#30353b';
     ctx.fillText(label, node.x + radius + (4 / globalScale), node.y);
+  }
+
+  function semanticLinkLabel(link) {
+    if (link.type !== 'semantic') {
+      return link.type === 'tag' ? 'gemeinsamer Tag' : 'Kategorie';
+    }
+
+    const parts = [`Vektorähnlichkeit ${Number(link.similarity || 0).toFixed(3)}`];
+    if (link.sharedTags?.length) {
+      parts.push(`Tags: ${link.sharedTags.join(', ')}`);
+    }
+    if (link.sameCategory) {
+      parts.push('gleiche Kategorie');
+    }
+    return parts.join(' · ');
   }
 
   function renderGraph(section, graphData) {
@@ -380,6 +289,7 @@
         const matches = !filterValue || normalized(node.label).includes(filterValue);
         if (matches) drawNodeLabel(node, ctx, globalScale);
       })
+      .linkLabel(semanticLinkLabel)
       .linkColor((link) => {
         if (hoveredNode) {
           return connectedTo(link, hoveredNode) ? 'rgba(0, 71, 62, 0.75)' : 'rgba(42, 48, 54, 0.05)';
@@ -425,20 +335,21 @@
     const status = section.querySelector('[data-knowledge-status]');
 
     try {
-      const [postsResponse] = await Promise.all([
-        fetch('/api/posts', { headers: { Accept: 'application/json' } }),
+      const [response] = await Promise.all([
+        fetch('/api/knowledge?limit=5', { headers: { Accept: 'application/json' } }),
         loadForceGraph()
       ]);
-      if (!postsResponse.ok) {
-        throw new Error(`Artikel konnten nicht geladen werden (${postsResponse.status}).`);
+      if (!response.ok) {
+        throw new Error(`Wissensdaten konnten nicht geladen werden (${response.status}).`);
       }
 
-      const posts = await postsResponse.json();
-      if (!Array.isArray(posts) || posts.length === 0) {
-        throw new Error('Keine Artikel für das Wissensnetz vorhanden.');
+      const payload = await response.json();
+      const posts = Array.isArray(payload.articles) ? payload.articles : [];
+      const semanticEdges = Array.isArray(payload.edges) ? payload.edges : [];
+      if (posts.length === 0) {
+        throw new Error('Keine Artikel-Vektoren für das Wissensnetz vorhanden.');
       }
 
-      const semanticEdges = await loadSemanticEdges(posts, status);
       const graphData = buildGraphData(posts, semanticEdges);
       section.querySelector('[data-stat="articles"]').textContent = String(posts.length);
       section.querySelector('[data-stat="semantic"]').textContent = String(semanticEdges.length);
@@ -446,6 +357,7 @@
         graphData.nodes.filter((node) => node.type !== 'article').length
       );
       section.dataset.knowledgeReady = 'true';
+      section.dataset.embeddingModel = String(payload.embeddingModel || '');
       renderGraph(section, graphData);
     } catch (error) {
       if (status) {
@@ -458,10 +370,7 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       buildGraphData,
-      mapWithConcurrency,
-      mergeSemanticResults,
-      semanticEdgeKey,
-      semanticQuery
+      semanticLinkLabel
     };
   }
 
