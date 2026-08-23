@@ -85,6 +85,12 @@ const seed = {
   relevanceScore: 1.08,
   lexicalScore: 1
 };
+const secondSeed = {
+  ...chunks[2],
+  score: 0.96,
+  relevanceScore: 1.02,
+  lexicalScore: 0.8
+};
 
 test('GraphRAG keeps direct hits and expands one hop through semantic article relations', () => {
   const result = retrieveGraphContext({
@@ -128,6 +134,26 @@ test('GraphRAG can run in direct-only mode and obeys the context chunk cap', () 
   assert.equal(result.context.length, 1);
   assert.equal(result.context[0].origin, 'direct');
   assert.equal(result.sources.length, 1);
+});
+
+test('GraphRAG raises the effective chunk cap to preserve every direct seed article', () => {
+  const result = retrieveGraphContext({
+    chunks,
+    profiles,
+    query: 'docker container',
+    queryEmbedding: [1, 0, 0],
+    seeds: [seed, secondSeed],
+    neighborsPerSeed: 0,
+    maxChunks: 1,
+    maxChars: 2_000
+  });
+
+  assert.equal(result.limits.maxChunks, 2);
+  assert.deepEqual(
+    new Set(result.context.map((entry) => entry.slug)),
+    new Set(['docker-compose', 'docker-deployment'])
+  );
+  assert.equal(result.context.every((entry) => entry.origin === 'direct'), true);
 });
 
 test('GraphRAG returns an empty, LLM-safe context when semantic search has no seeds', () => {
