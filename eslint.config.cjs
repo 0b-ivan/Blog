@@ -47,6 +47,7 @@ module.exports = [
       'assets/newsletter.js',
       'assets/tag-navigation.js',
       'assets/knowledge-graph.js',
+      'assets/knowledge-network.js',
       'assets/roadmap.js',
       'assets/grep.js',
       'assets/kernel-grep-overlay.js',
