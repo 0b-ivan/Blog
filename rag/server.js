@@ -43,20 +43,32 @@ async function initialize() {
   console.log(`kernel-grep ready: ${info.chunks} chunks / ${info.postProfiles} article vectors via ${info.embeddingModel}`);
 }
 
+function boundedParam(url, name, fallback, min, max) {
+  const raw = url.searchParams.get(name);
+  if (raw === null || raw === '') {
+    return fallback;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(parsed)));
+}
+
 function graphLimit(url) {
-  return Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8));
+  return boundedParam(url, 'limit', 8, 1, 12);
 }
 
 function globalGraphLimit(url) {
-  return Math.min(8, Math.max(1, Number(url.searchParams.get('limit')) || 4));
+  return boundedParam(url, 'limit', 4, 1, 8);
 }
 
 function graphRagOptions(url) {
   return {
-    seedLimit: Math.min(6, Math.max(1, Number(url.searchParams.get('seedLimit')) || 3)),
-    neighborsPerSeed: Math.min(4, Math.max(0, Number(url.searchParams.get('neighbors')) ?? 2)),
-    maxChunks: Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8)),
-    maxChars: Math.min(24_000, Math.max(2_000, Number(url.searchParams.get('maxChars')) || 12_000))
+    seedLimit: boundedParam(url, 'seedLimit', 3, 1, 6),
+    neighborsPerSeed: boundedParam(url, 'neighbors', 2, 0, 4),
+    maxChunks: boundedParam(url, 'limit', 8, 1, 12),
+    maxChars: boundedParam(url, 'maxChars', 12_000, 2_000, 24_000)
   };
 }
 
