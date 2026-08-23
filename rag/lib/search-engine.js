@@ -1,6 +1,7 @@
 const path = require('node:path');
 const { buildIndex, defaultOptions } = require('../index');
 const { createEmbedder } = require('./embedder-factory');
+const { retrieveGraphContext: buildGraphRagContext } = require('./graphrag');
 const {
   buildPostProfiles,
   globalSemanticRelations,
@@ -79,6 +80,33 @@ class SemanticSearchEngine {
       tags: result.tags || [],
       excerpt: result.excerpt || ''
     }));
+  }
+
+  async retrieveGraphContext(query, options = {}) {
+    const normalizedQuery = String(query || '').trim();
+    if (normalizedQuery.length < 2) {
+      throw new Error('Query must contain at least two characters');
+    }
+
+    const seedLimit = Math.min(6, Math.max(1, Number(options.seedLimit) || 3));
+    const queryEmbedding = await this.embedder.embedQuery(normalizedQuery);
+    const seeds = rankChunks(this.chunks, queryEmbedding, normalizedQuery, seedLimit);
+    const retrieval = buildGraphRagContext({
+      chunks: this.chunks,
+      profiles: this.postProfiles,
+      query: normalizedQuery,
+      queryEmbedding,
+      seeds,
+      neighborsPerSeed: options.neighborsPerSeed,
+      maxChunks: options.maxChunks,
+      maxChars: options.maxChars
+    });
+
+    return {
+      query: normalizedQuery,
+      embeddingModel: this.embeddingModel,
+      ...retrieval
+    };
   }
 
   knowledgeGraph(slug, limit = 8) {
