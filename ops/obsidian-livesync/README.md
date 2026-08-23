@@ -144,10 +144,18 @@ docker compose up -d
 
 ## 4. Deployment ueber GitHub Actions
 
-Das Repository enthaelt den manuellen Workflow:
+Das Repository enthaelt den Workflow:
 
 ```text
 .github/workflows/deploy-obsidian-livesync.yml
+```
+
+Aenderungen unter `ops/obsidian-livesync/**` werden nach einem Merge nach `main` automatisch deployed. Auch Aenderungen am Deployment-Workflow selbst loesen den LiveSync-Deploy aus.
+
+Der Workflow kann weiterhin manuell gestartet werden:
+
+```text
+Actions -> Deploy Obsidian LiveSync -> Run workflow
 ```
 
 Er verwendet dasselbe GitHub Environment `production` und dieselben Hetzner-SSH-Secrets wie das Blog-Deployment.
@@ -171,15 +179,7 @@ Der Cloudflare-Token wird nur ausgewertet, wenn beim manuellen Workflow die Opti
 deploy_cloudflared = true
 ```
 
-aktiviert wird.
-
-Standard ist:
-
-```text
-deploy_cloudflared = false
-```
-
-Damit deployt der Workflow nur CouchDB + Init und laesst deinen bestehenden Cloudflare-Dienst unangetastet.
+aktiviert wird. Automatische Deployments nach `main` verwenden standardmaessig den bereits auf dem Host laufenden `cloudflared`-Dienst.
 
 Der Workflow kopiert das Stack-Setup nach:
 
@@ -187,13 +187,19 @@ Der Workflow kopiert das Stack-Setup nach:
 /opt/Blog/ops/obsidian-livesync
 ```
 
-Start in GitHub:
+Beim Deployment wird CouchDB neu erstellt, auf Health geprueft und zusaetzlich kontrolliert, dass Port `5984` wirklich nur auf
 
 ```text
-Actions -> Deploy Obsidian LiveSync -> Run workflow
+127.0.0.1:5984
 ```
 
-Der Workflow ist bewusst `workflow_dispatch` und wird nicht bei jedem Blog-Deployment gestartet.
+veroeffentlicht ist. Danach prueft der Workflow den oeffentlichen Endpunkt
+
+```text
+https://obsidian-sync.obivan.org/_up
+```
+
+Ein `502` laesst das Deployment fehlschlagen. `200` oder `401` gelten als erreichbarer CouchDB-Origin.
 
 ## 5. Status pruefen
 
