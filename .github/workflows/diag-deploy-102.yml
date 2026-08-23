@@ -1,0 +1,36 @@
+name: Diagnose deploy 102
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/diag-deploy-102.yml'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect production runs for merged PR 102
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TARGET_SHA: 6afd2a2f95f7e612e1af855c16bfd5e3e9b16a1d
+        run: |
+          set -euo pipefail
+          echo '=== Deploy run ==='
+          DEPLOY_ID="$(gh run list --repo "$GH_REPO" --workflow Deploy --branch main --limit 30 --json databaseId,headSha --jq '.[] | select(.headSha == env.TARGET_SHA) | .databaseId' | head -n1)"
+          if [ -z "$DEPLOY_ID" ]; then
+            echo 'No Deploy run found for target SHA.'
+          else
+            gh run view "$DEPLOY_ID" --repo "$GH_REPO" --json databaseId,status,conclusion,headSha,url,jobs
+            if [ "$(gh run view "$DEPLOY_ID" --repo "$GH_REPO" --json conclusion --jq .conclusion)" = failure ]; then
+              echo '=== Deploy failed log ==='
+              gh run view "$DEPLOY_ID" --repo "$GH_REPO" --log-failed
+            fi
+          fi
+
+          echo '=== E-Book runs ==='
+          gh run list --repo "$GH_REPO" --workflow 'Build E-Book' --limit 30 --json databaseId,event,status,conclusion,headSha,createdAt,url --jq '.[] | select(.headSha == env.TARGET_SHA)'
