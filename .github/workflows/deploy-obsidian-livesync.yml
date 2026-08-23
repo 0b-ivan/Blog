@@ -1,6 +1,12 @@
 name: Deploy Obsidian LiveSync
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ops/obsidian-livesync/**"
+      - ".github/workflows/deploy-obsidian-livesync.yml"
   workflow_dispatch:
     inputs:
       deploy_cloudflared:
@@ -19,7 +25,7 @@ jobs:
     environment: production
     env:
       REMOTE_DIR: /opt/Blog/ops/obsidian-livesync
-      DEPLOY_CLOUDFLARED: ${{ inputs.deploy_cloudflared }}
+      DEPLOY_CLOUDFLARED: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_cloudflared || false }}
 
     steps:
       - name: Checkout
@@ -132,11 +138,11 @@ jobs:
           if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
             docker compose --env-file .env --profile cloudflare config >/dev/null
             docker compose --env-file .env --profile cloudflare pull
-            docker compose --env-file .env --profile cloudflare up -d --remove-orphans
+            docker compose --env-file .env --profile cloudflare up -d --force-recreate --remove-orphans
           else
             docker compose --env-file .env config >/dev/null
             docker compose --env-file .env pull couchdb couchdb-init
-            docker compose --env-file .env up -d couchdb couchdb-init
+            docker compose --env-file .env up -d --force-recreate couchdb couchdb-init
           fi
 
           healthy=false
@@ -156,6 +162,19 @@ jobs:
             exit 1
           fi
 
+          published="$(docker port kernel-notes-livesync-couchdb 5984/tcp 2>/dev/null || true)"
+          if ! printf '%s\n' "$published" | grep -Fxq '127.0.0.1:5984'; then
+            echo "CouchDB is not published on 127.0.0.1:5984"
+            echo "Published mapping: ${published:-<none>}"
+            docker compose --env-file .env ps
+            exit 1
+          fi
+
+          if ! timeout 5 bash -c '</dev/tcp/127.0.0.1/5984'; then
+            echo "CouchDB host loopback port 127.0.0.1:5984 is not reachable"
+            exit 1
+          fi
+
           if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
             if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cloudflared 2>/dev/null || true)" != "true" ]; then
               echo "cloudflared is not running"
@@ -168,3 +187,21 @@ jobs:
             docker compose --env-file .env ps
           fi
           REMOTE
+
+      - name: Verify public LiveSync endpoint
+        run: |
+          code=""
+          for _ in $(seq 1 10); do
+            code="$(curl -sS -o /tmp/livesync-up -w '%{http_code}' https://obsidian-sync.obivan.org/_up || true)"
+            case "$code" in
+              200|401)
+                echo "Public LiveSync endpoint is reachable (HTTP $code)"
+                exit 0
+                ;;
+            esac
+            sleep 3
+          done
+
+          echo "Public LiveSync endpoint check failed with HTTP ${code:-unknown}"
+          cat /tmp/livesync-up 2>/dev/null || true
+          exit 1
