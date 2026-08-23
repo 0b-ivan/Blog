@@ -21,6 +21,7 @@
     "posts:validate-meta": "node scripts/validate-post-frontmatter.js",
     "glossary:sync": "node scripts/sync-glossary.js",
     "glossary:check": "node scripts/sync-glossary.js --check",
+    "glossary:suggest": "node scripts/suggest-glossary-terms.js",
     "rag:index": "npm --prefix rag run index --",
     "rag:search": "npm --prefix rag run search --",
     "rag:context": "npm --prefix rag run context --",
