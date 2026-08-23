@@ -98,7 +98,25 @@ obsidian-sync.obivan.org
 
 Port `5984` muss dafuer nicht oeffentlich freigegeben werden.
 
-Wenn `cloudflared` nicht als Container, sondern direkt auf dem Host laeuft, braucht der Host einen lokalen Zugriffspfad auf CouchDB. In diesem Fall sollte CouchDB nur an `127.0.0.1` gebunden werden und **nicht** an `0.0.0.0`; das kann bei Bedarf ueber ein lokales Compose-Override erfolgen.
+Wenn `cloudflared` direkt auf dem Hetzner-Host als systemd-Service laeuft, wird CouchDB vom Compose-Stack nur auf dem Host-Loopback veroeffentlicht:
+
+```text
+127.0.0.1:5984 -> CouchDB:5984
+```
+
+Der Tunnel-Origin muss in diesem Fall auf folgenden lokalen Endpunkt zeigen:
+
+```text
+http://127.0.0.1:5984
+```
+
+Damit kann der Host-Dienst CouchDB erreichen, ohne Port `5984` auf einer externen Netzwerkschnittstelle zu oeffnen.
+
+Test direkt auf dem Host:
+
+```bash
+curl -i http://127.0.0.1:5984/_up
+```
 
 ### Cloudflare Access
 

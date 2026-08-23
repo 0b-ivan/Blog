@@ -5,6 +5,10 @@ services:
     image: couchdb:3
     container_name: kernel-notes-livesync-couchdb
     restart: unless-stopped
+    ports:
+      # cloudflared runs as a systemd service on the Hetzner host.
+      # Keep CouchDB private and expose it only on the host loopback interface.
+      - "127.0.0.1:5984:5984"
     environment:
       COUCHDB_USER: ${COUCHDB_USER:?Set COUCHDB_USER in .env}
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD:?Set COUCHDB_PASSWORD in .env}
