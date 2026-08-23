@@ -1,6 +1,6 @@
 # Knowledge graph
 
-Kernel Notes now has two graph views that use the same semantic search foundation.
+Kernel Notes now has two graph views that use the same semantic vector foundation.
 
 ## Article graph
 
@@ -15,13 +15,13 @@ Markdown article
   -> chunks
   -> E5 embeddings
   -> DuckDB vector index
-  -> semantic search / article vectors
+  -> article vectors
   -> knowledge graph
 ```
 
-The RAG service also derives one document vector per article by averaging and normalizing the already stored chunk embeddings. This makes article-to-article similarity available without introducing a second vector store.
+The RAG service derives one document vector per article by averaging and normalizing the already stored chunk embeddings. This makes article-to-article similarity available without introducing a second vector store.
 
-The internal RAG endpoint is:
+The internal per-article endpoint is:
 
 ```text
 GET /graph?slug=<article-slug>&limit=8
@@ -29,7 +29,7 @@ GET /graph?slug=<article-slug>&limit=8
 
 It returns relation scores and explanatory metadata, but never raw embeddings.
 
-The browser article graph currently uses `/api/search` to select semantic neighbors because that API is already exposed by the blog container. Shared tags and categories are then added as visible topic nodes so the relation stays understandable to readers. If Kernel Grep is unavailable, the graph falls back to the previous metadata-only selection.
+The browser article graph can still fall back to the existing `/api/search` path for semantic neighbors, while shared tags and categories remain visible topic nodes.
 
 ## Global graph
 
@@ -41,13 +41,27 @@ The global knowledge network is available at:
 
 It shows all active articles together with recurring tags, categories and semantic article-to-article edges.
 
-The page intentionally reuses the existing hardened fallback shell instead of adding another server-side page renderer. `assets/tag-navigation.js` detects `/knowledge` and lazy-loads `assets/knowledge-network.js`, which replaces the main content area with the global graph.
+The global relation set is calculated directly from the already indexed article vectors:
 
-For semantic enrichment, the page builds a compact query from each article's title, category, tags and excerpt and sends it through the existing `/api/search` proxy. Requests are limited to three concurrent searches so the local E5 model is not hit by all articles at once. Bidirectional results are deduplicated and the stronger similarity score is kept.
+```text
+GET /graph/all?limit=4
+```
+
+The search container remains internal. The blog container exposes only the sanitized graph payload:
+
+```text
+GET /api/knowledge?limit=4
+```
+
+No raw embedding vector leaves the RAG service. The browser receives article metadata and explainable edges containing similarity, semantic lift, shared tags and whether both articles use the same category.
+
+The page intentionally reuses the existing hardened fallback shell instead of adding another server-side HTML renderer. `assets/tag-navigation.js` detects `/knowledge` and lazy-loads `assets/knowledge-network.js`, which replaces the main content area with the global graph.
+
+Because `/knowledge` reads existing article vectors, opening the page does not trigger new E5 inference.
 
 Only tags that occur in at least two active articles become global tag nodes. This keeps the graph readable while categories remain fully visible.
 
-The global page also exposes:
+The global page exposes:
 
 - number of active articles
 - number of deduplicated semantic edges
@@ -55,6 +69,7 @@ The global page also exposes:
 - text filtering for nodes
 - zoom-to-fit reset
 - clickable article, tag and category nodes
+- edge tooltips with semantic similarity and metadata explanations
 
 ## Node types
 
