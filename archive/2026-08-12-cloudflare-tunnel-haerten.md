@@ -2,8 +2,8 @@
 id: 2026-08-12-cloudflare-tunnel-haerten
 version: 1
 title: "Cloudflare Tunnel härten: Die 7 wichtigsten Checks"
+status: archived
 date: 2026-08-12
-published_at: 2026-08-19T10:58:26+02:00
 created_at: 2026-08-12
 updated_at: 2026-08-12
 author: obivan
