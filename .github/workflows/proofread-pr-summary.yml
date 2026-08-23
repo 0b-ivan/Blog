@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  issues: write
+  pull-requests: write
 
 concurrency:
   group: textpruefung-${{ github.event.pull_request.number }}
@@ -58,8 +60,8 @@ jobs:
           mapfile -t files < /tmp/changed-posts.txt
 
           set +e
-          npm run posts:spellcheck -- "${files[@]}"
-          status=$?
+          npm run posts:spellcheck -- "${files[@]}" 2>&1 | tee /tmp/cspell-output.txt
+          status=${PIPESTATUS[0]}
           set -e
 
           echo "status=$status" >> "$GITHUB_OUTPUT"
@@ -105,8 +107,8 @@ jobs:
           mapfile -t files < /tmp/changed-posts.txt
 
           set +e
-          npm run posts:proofread -- "${files[@]}"
-          status=$?
+          npm run posts:proofread -- "${files[@]}" 2>&1 | tee /tmp/languagetool-output.txt
+          status=${PIPESTATUS[0]}
           set -e
 
           echo "status=$status" >> "$GITHUB_OUTPUT"
@@ -129,40 +131,69 @@ jobs:
         if: always()
         run: docker rm -f languagetool >/dev/null 2>&1 || true
 
-      - name: Ergebnis der Textprüfung zusammenfassen
+      - name: Detaillierten Textprüfungsbericht erzeugen
         if: always()
         shell: bash
         env:
           SPELLING_STATUS: ${{ steps.spellcheck.outputs.status }}
           GRAMMAR_STATUS: ${{ steps.proofread.outputs.status }}
         run: |
-          {
-            echo '## 📝 Textprüfung'
-            echo
+          if { [ "$SPELLING_STATUS" = '0' ] || [ "$SPELLING_STATUS" = '1' ]; } \
+            && { [ "$GRAMMAR_STATUS" = '0' ] || [ "$GRAMMAR_STATUS" = '1' ]; }; then
+            node scripts/build-proofread-pr-report.js \
+              --cspell /tmp/cspell-output.txt \
+              --languagetool /tmp/languagetool-output.txt \
+              --files /tmp/changed-posts.txt \
+              --output /tmp/proofread-report.md
+          else
+            cat > /tmp/proofread-report.md <<'EOF'
+          <!-- kernel-notes-proofread-summary -->
+          ## 📝 Rechtschreibung & Grammatik
 
-            if [ "$SPELLING_STATUS" = '0' ] && [ "$GRAMMAR_STATUS" = '0' ]; then
-              echo '✅ **Keine Rechtschreib- oder Grammatikprobleme gefunden.**'
-            elif { [ "$SPELLING_STATUS" = '0' ] || [ "$SPELLING_STATUS" = '1' ]; } \
-              && { [ "$GRAMMAR_STATUS" = '0' ] || [ "$GRAMMAR_STATUS" = '1' ]; }; then
-              echo '⚠️ **Die Textprüfung hat Hinweise gefunden.**'
-            else
-              echo '❌ **Die Textprüfung konnte nicht vollständig abgeschlossen werden.**'
-            fi
+          ❌ **Die Textprüfung konnte nicht vollständig abgeschlossen werden.**
 
-            echo
+          Details stehen im Check **Textprüfung**.
+          EOF
+          fi
 
-            case "$SPELLING_STATUS" in
-              0) echo '✅ Rechtschreibung (CSpell): keine Probleme gefunden' ;;
-              1) echo '⚠️ Rechtschreibung (CSpell): Hinweise gefunden' ;;
-              *) echo '❌ Rechtschreibung (CSpell): Prüfung konnte nicht abgeschlossen werden' ;;
-            esac
+          cat /tmp/proofread-report.md >> "$GITHUB_STEP_SUMMARY"
 
-            case "$GRAMMAR_STATUS" in
-              0) echo '✅ Grammatik (LanguageTool, de-DE): keine Probleme gefunden' ;;
-              1) echo '⚠️ Grammatik (LanguageTool, de-DE): Hinweise gefunden' ;;
-              *) echo '❌ Grammatik (LanguageTool, de-DE): Prüfung konnte nicht abgeschlossen werden' ;;
-            esac
+      - name: PR-Kommentar zur Textprüfung aktualisieren
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('node:fs');
+            const marker = '<!-- kernel-notes-proofread-summary -->';
+            const body = fs.readFileSync('/tmp/proofread-report.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.login === 'github-actions[bot]'
+              && comment.body?.includes(marker)
+            );
 
-            echo
-            echo '_Geprüft werden nur die in diesem PR geänderten Blogposts. Details stehen in den einzelnen Steps dieses Checks._'
-          } >> "$GITHUB_STEP_SUMMARY"
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated proofreading comment ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+              core.info(`Created proofreading comment ${created.data.id}`);
+            }
