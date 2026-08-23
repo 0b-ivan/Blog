@@ -13,18 +13,21 @@
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
   <header class="site-header">
-    <a class="logo" href="/">Kernel Notes</a>
+    <a class="logo" href="/" aria-label="Kernel Notes – Startseite">Kernel Notes</a>
     <nav class="main-nav" aria-label="Hauptnavigation">
       <a href="/#posts">Artikel</a>
       <a href="/#topics">Themen</a>
       <a href="/snippets/" aria-current="page">Snippets</a>
-      <a href="/#about">About</a>
+      <a href="/glossary">Glossar</a>
+      <a href="/archive">Archiv</a>
     </nav>
   </header>
   <main class="snippet-library">
-    <p class="eyebrow">CODE LIBRARY</p>
-    <h1>Code Snippets</h1>
-    <p>Code aus den Artikeln separat versioniert, vollständig lesbar und direkt kopierbar.</p>
+    <header class="snippet-library__intro">
+      <p class="eyebrow">CODE LIBRARY</p>
+      <h1>Snippets zum Mitnehmen.</h1>
+      <p>Code aus den Artikeln – separat versioniert, vollständig lesbar und direkt kopierbar.</p>
+    </header>
     <div id="snippet-root"></div>
   </main>
   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
