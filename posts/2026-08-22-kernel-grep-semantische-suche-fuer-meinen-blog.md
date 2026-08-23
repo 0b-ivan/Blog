@@ -1,100 +1,88 @@
 ---
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
-version: 3
+version: 4
 title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
 date: 2026-08-22
 published_at: 2026-08-22T19:51:00+02:00
 created_at: 2026-08-22
-updated_at: 2026-08-22
+updated_at: 2026-08-23
 author: obivan
 reviewed_by: pending
 category: Engineering
-excerpt: Kernel Grep durchsucht meine Blogartikel semantisch mit einem lokalen E5-Modell, DuckDB und einem hybriden Ranking. Hier zeige ich die Architektur, den Code, die Entscheidungen dahinter und die Fehler, die beim Bau passiert sind.
+excerpt: Kernel Grep durchsucht meine Blogartikel lokal mit E5, DuckDB und einem hybriden Ranking. Entscheidend war weniger das Embedding selbst als die Frage, wann ein Treffer wirklich relevant ist.
 tags: Semantic Search, DuckDB, Embeddings, Transformers.js, Node.js, Docker, Self-Hosting
 ---
 
-Eine normale Volltextsuche ist simpel: Ich tippe `Docker` ein und bekomme Texte zurück, in denen `Docker` vorkommt.
+Eine normale Volltextsuche ist gut darin, Wörter wiederzufinden. Ich tippe `Docker` ein und bekomme Artikel zurück, in denen `Docker` steht.
 
-Spannender wird es bei einer Suche wie:
+Interessanter wird eine Frage wie:
 
 ```text
 Wie komme ich ohne öffentliche IP auf einen Server?
 ```
 
-Der passende Artikel muss diesen Satz nicht exakt enthalten. Trotzdem möchte ich genau dort landen, wo es um private Systeme, Session Manager, Bastion Hosts oder ähnliche Themen geht.
-
-Dafür habe ich **Kernel Grep** gebaut: eine lokale semantische Suche für Kernel Notes. Sie läuft auf meinem eigenen Host, durchsucht die Markdown-Artikel mit Embeddings und zeigt die Ergebnisse entweder auf `/grep` oder als Spotlight-artige Konsole über `⌘K` beziehungsweise `Ctrl+K` direkt über jeder Seite.
+Der passende Artikel muss diesen Satz nicht enthalten. Er kann stattdessen über Session Manager, private EC2-Instanzen oder Bastion Hosts sprechen. Genau dafür habe ich **Kernel Grep** gebaut: eine lokale semantische Suche für Kernel Notes.
 
 ![Kernel Grep – semantische Suche als Terminal-Overlay](/assets/posts/kernel-grep/kernel-grep-hero.svg)
 
-Der interessante Teil war am Ende nicht das erste Embedding. Der interessante Teil war alles danach: Chunking, Datenhaltung, Ranking, Live-Suche, Deployment und vor allem die Frage, wann eine semantische Ähnlichkeit **wirklich ein Treffer** ist.
+Die Suche läuft auf meinem eigenen Host. Sie indexiert die Markdown-Artikel, erzeugt Embeddings und liefert Ergebnisse über `/grep` sowie über die Suche mit `⌘K` beziehungsweise `Ctrl+K`.
 
-## Die Inspiration
+Der schwierige Teil war nicht, ein Embedding-Modell aufzurufen. Schwieriger war es, aus den Ähnlichkeitswerten eine Suche zu bauen, die auch **keinen Treffer** zurückgeben kann.
 
-Der Ausgangspunkt war ein Artikel von Simon Späti über ein lokales RAG für Obsidian mit DuckDB. Dort werden Markdown-Dateien in Chunks zerlegt, eingebettet und semantisch durchsucht. Später kommen Graph-Beziehungen und eine Weboberfläche dazu.
+## Bewusst klein anfangen
 
-Das Grundprinzip fand ich passend für meinen Blog. Ich wollte aber bewusst kleiner anfangen.
+Die Grundidee kam aus dem Umfeld lokaler RAG-Systeme für Markdown und Obsidian. Für meinen Blog wollte ich aber nicht sofort einen großen Stack aufziehen.
 
-Kein MotherDuck. Kein Neo4j. Kein Kafka. Kein LLM-Chat.
+Kein Kafka, kein Neo4j, kein GraphRAG, kein LLM-Chat und kein eigener Vector-Database-Cluster. Für ein paar Blogartikel wäre das vor allem zusätzliche Infrastruktur gewesen.
 
-Erst einmal nur die Frage:
+Mein erstes Ziel war kleiner:
 
-> Kann ich meine vorhandenen Markdown-Artikel lokal so indexieren, dass eine semantische Suche zuverlässig brauchbare Treffer liefert?
+> Markdown sinnvoll zerlegen, lokal einbetten und zuverlässig die passenden Artikel finden.
 
-Das war die erste wichtige Entscheidung. **Retrieval zuerst. Alles andere später.**
+## Architektur
 
-## Die heutige Architektur
+Die Suche läuft getrennt vom eigentlichen Blogprozess.
 
 ```mermaid
 flowchart LR
-    A[posts/*.md] --> B[Markdown-aware Chunker]
-    B --> C[passage: Text]
-    C --> D[multilingual-e5-small]
-    D --> E[Embeddings]
-    E --> F[(DuckDB)]
+    A[posts/*.md] --> B[Markdown Chunker]
+    B --> C[multilingual-e5-small]
+    C --> D[Embeddings]
+    D --> E[(DuckDB)]
 
-    Q[Suchanfrage] --> R[query: Text]
-    R --> S[multilingual-e5-small]
-    S --> T[Query Embedding]
-
-    F --> U[SemanticSearchEngine]
-    T --> U
-    U --> V[Hybrid Ranking]
-    V --> W["Kernel Grep Service :8090"]
-    W --> X["Blog /api/search"]
-    X --> Y["/grep + Console Overlay"]
+    Q[Suchanfrage] --> F[Query Embedding]
+    E --> G[Hybrid Ranking]
+    F --> G
+    G --> H[Kernel Grep :8090]
+    H --> I[Blog /api/search]
+    I --> J[/grep + Such-Overlay]
 ```
 
-Der Blogprozess selbst führt das Embedding-Modell nicht aus. Dafür gibt es einen eigenen internen Search-Container.
+Der Browser spricht nur mit dem Blog:
 
 ```text
 Browser
   -> POST /api/search
   -> Blog Container
   -> internes Docker-Netz
-  -> Kernel Grep Container
-  -> DuckDB + lokales E5-Modell
+  -> Search Container
+  -> DuckDB + E5
 ```
 
-Der Search-Container veröffentlicht keinen eigenen Host-Port. Die Browseranfrage bleibt am Blog und wird intern weitergereicht.
+Der Search-Container hat keinen öffentlichen Host-Port. Dadurch bleibt das Modell intern und der Blog kann unabhängig davon ausgeliefert werden.
 
-Das macht zwei Dinge einfacher: Der eigentliche Blog bleibt schlank und der Search-Service kann sein Modell, seinen Cache und DuckDB unabhängig verwalten.
+## Warum DuckDB reicht
 
-## Warum DuckDB?
+Für die aktuelle Datenmenge ist eine lokale DuckDB-Datei völlig ausreichend. Darin liegen die Artikel-Metadaten und die Vektoren der einzelnen Textabschnitte.
 
-Für den aktuellen Umfang brauche ich keinen eigenen Vector-Database-Cluster.
-
-DuckDB passt gut, weil ich Metadaten und Vektoren in einer lokalen Datei halten kann. Der offizielle Node-Client `@duckdb/node-api` arbeitet Promise-basiert und lässt sich direkt in den bestehenden Node-Stack integrieren.
-
-Die beiden Tabellen sind bewusst unspektakulär:
+Vereinfacht brauche ich zwei Arten von Daten:
 
 ```sql
 CREATE TABLE rag_documents (
     post_id VARCHAR PRIMARY KEY,
     slug VARCHAR NOT NULL,
     title VARCHAR NOT NULL,
-    source_hash VARCHAR NOT NULL,
-    indexed_at TIMESTAMP NOT NULL
+    source_hash VARCHAR NOT NULL
 );
 
 CREATE TABLE rag_chunks (
@@ -102,48 +90,19 @@ CREATE TABLE rag_chunks (
     post_id VARCHAR NOT NULL,
     heading VARCHAR,
     content VARCHAR NOT NULL,
-    embedding_model VARCHAR NOT NULL,
     embedding FLOAT[] NOT NULL
 );
 ```
 
-Für die aktuelle Artikelmenge brauche ich noch keinen HNSW-Index. Die Chunks werden geladen und per Cosine Similarity im Node-Prozess verglichen. Wenn der Bestand irgendwann groß genug wird, kann DuckDB-VSS später dazukommen.
+Einen HNSW-Index brauche ich bei der aktuellen Menge ebenfalls noch nicht. Die Chunks werden geladen und im Node-Prozess per Cosine Similarity verglichen. Wenn der Datenbestand irgendwann deutlich größer wird, kann ich die Suche immer noch anders skalieren.
 
-## Markdown nicht einfach irgendwo durchschneiden
+## Markdown wird in Abschnitte zerlegt
 
-Der erste Indexer nimmt nicht den kompletten Artikel als einen einzigen Vektor.
+Ein kompletter Artikel als einzelner Vektor wäre zu grob. Ein längerer Beitrag kann gleichzeitig über Docker, Deployment, Security und Monitoring sprechen. Deshalb wird Markdown anhand von Überschriften und Absätzen in Chunks zerlegt.
 
-Ein längerer Artikel enthält mehrere Themen. Würde ich alles als einen Vektor speichern, verliert die Suche viel Kontext. Deshalb zerlege ich Markdown anhand von Überschriften und Absätzen in kleinere Chunks.
+Codeblöcke bleiben dabei zusammen. Eine Markdown-Überschrift innerhalb eines Code-Fences darf den Text beispielsweise nicht versehentlich teilen.
 
-Wichtig war mir dabei: **Codeblöcke dürfen nicht mitten drin zerschnitten werden.**
-
-Vereinfacht sieht der Chunker so aus:
-
-```js
-for (const line of lines) {
-  const fenceMatch = line.match(/^\s*(```+|~~~+)/);
-
-  if (fenceMatch) {
-    // Fence öffnen oder schließen.
-    // Innerhalb eines Fence werden Überschriften ignoriert.
-    body.push(line);
-    continue;
-  }
-
-  if (!fence) {
-    const heading = line.match(/^(#{1,4})\s+(.+?)\s*$/);
-    if (heading) {
-      flush();
-      currentHeading = heading[2];
-      continue;
-    }
-  }
-
-  body.push(line);
-}
-```
-
-Ein Chunk bekommt anschließend nicht nur den Fließtext. Titel und Abschnitt werden als Kontext vorangestellt:
+Für das Embedding bekommt jeder Chunk zusätzlich Titel und Abschnittsüberschrift als Kontext:
 
 ```js
 function embeddingText({ title, heading, content }) {
@@ -153,44 +112,13 @@ function embeddingText({ title, heading, content }) {
 }
 ```
 
-Das Ergebnis sieht ungefähr so aus:
+Damit bleibt der Zusammenhang zum Artikel erhalten, auch wenn ein Treffer aus einem Abschnitt weit unten im Text stammt.
 
-```text
-RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung
+## Lokale Embeddings mit E5
 
-Self-Hosting statt Cloud-Dienst
+Als Modell läuft `Xenova/multilingual-e5-small` über Transformers.js. Das Modell ist mehrsprachig, was für deutsche Texte mit vielen englischen Fachbegriffen gut passt.
 
-Natürlich gibt es zahlreiche gehostete RSS Reader ...
-```
-
-Der Titel bleibt damit auch dann Teil des semantischen Signals, wenn der eigentliche Chunk weit unten im Artikel liegt.
-
-## Embeddings lokal mit E5
-
-Als Modell läuft aktuell `Xenova/multilingual-e5-small` über Transformers.js.
-
-Ich wollte bewusst ein mehrsprachiges Modell, weil die Artikel zwar überwiegend deutsch sind, technische Begriffe aber ständig Englisch enthalten.
-
-Die Implementierung ist klein:
-
-```js
-const { env, pipeline } = await import('@huggingface/transformers');
-
-env.cacheDir = cacheDir;
-
-const extractor = await pipeline(
-  'feature-extraction',
-  'Xenova/multilingual-e5-small',
-  { dtype: 'q8' }
-);
-
-const output = await extractor(values, {
-  pooling: 'mean',
-  normalize: true
-});
-```
-
-Bei E5 ist noch ein Detail wichtig: Queries und Dokumente bekommen unterschiedliche Prefixe.
+E5 erwartet unterschiedliche Prefixe für Dokumente und Suchanfragen:
 
 ```js
 embedDocuments(texts) {
@@ -202,123 +130,23 @@ embedQuery(text) {
 }
 ```
 
-Das steht nicht nur aus optischen Gründen im Code. Das Modell wurde so trainiert. Ohne `query:` und `passage:` verschlechtert sich das Retrieval.
+Das ist Teil der vorgesehenen Nutzung des Modells und nicht nur Formatierung.
 
-## Inkrementell statt jedes Mal alles neu
+Die Embeddings werden außerdem nicht bei jedem Start komplett neu berechnet. Jeder Artikel bekommt einen Hash seines Quelltexts. Ist Hash und Modell unverändert, bleiben die vorhandenen Chunks bestehen. Geänderte Artikel werden neu indexiert, gelöschte Artikel aus DuckDB entfernt.
 
-Embeddings kosten mehr als ein Markdown-Parse. Deshalb wollte ich beim Content-Deploy nicht jedes Mal den kompletten Blog neu einbetten.
+## Der entscheidende Teil: Relevanz
 
-Jeder Artikel bekommt einen SHA-256-Hash des Quelltexts.
-
-```mermaid
-flowchart TD
-    A[Artikel lesen] --> B[SHA-256 bilden]
-    B --> C{Hash bekannt?}
-    C -->|Ja| D[Embedding behalten]
-    C -->|Nein| E[Markdown neu chunken]
-    E --> F[Chunks neu embedden]
-    F --> G[DuckDB aktualisieren]
-    H[Artikel gelöscht] --> I[Dokument + Chunks entfernen]
-```
-
-Im Indexer ist die Entscheidung entsprechend einfach:
-
-```js
-const unchanged = state
-  && state.source_hash === document.sourceHash
-  && state.embedding_model === options.model
-  && Number(state.chunk_count) > 0;
-
-if (unchanged && !options.force) {
-  continue;
-}
-```
-
-Das passt inzwischen auch zum Deployment: Ein reiner Content-Deploy baut keine Docker-Images neu. Die Markdown-Dateien werden synchronisiert, der Search-Container startet neu und berechnet nur das, was sich tatsächlich verändert hat.
-
-## Von der Eingabe bis zum Treffer
-
-Die Suche soll sich nicht wie ein Formular anfühlen. Sobald ich tippe, sollen Ergebnisse auftauchen.
-
-```mermaid
-sequenceDiagram
-    participant U as Nutzer
-    participant O as Kernel Grep Overlay
-    participant B as Blog API
-    participant S as Search Service
-    participant D as DuckDB
-
-    U->>O: tippt "Self Hosting RSS"
-    O->>O: 180 ms Debounce
-    O->>B: POST /api/search
-    B->>S: interne Search-Anfrage
-    S->>S: Query mit E5 embedden
-    S->>D: Chunks laden
-    D-->>S: Artikel + Embeddings
-    S->>S: Semantic + lexical Ranking
-    S-->>B: relevante Treffer
-    B-->>O: JSON
-    O-->>U: Konsolenausgabe aktualisieren
-```
-
-Im Browser läuft dafür ein Debounce von 180 Millisekunden. Gleichzeitig wird eine alte Anfrage abgebrochen, sobald eine neue Eingabe relevanter ist.
-
-```js
-const DEBOUNCE_MS = 180;
-let activeController = null;
-
-async function search(query) {
-  activeController?.abort();
-
-  const controller = new AbortController();
-  activeController = controller;
-
-  const response = await fetch('/api/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ q: query, limit: 6 }),
-    signal: controller.signal
-  });
-}
-```
-
-Das verhindert einen typischen Live-Search-Fehler: Eine ältere, langsamere Anfrage darf nicht später eintreffen und die Ergebnisse einer neueren Query überschreiben.
-
-## Der größte Denkfehler: Vector Search liefert immer irgendwas
-
-Die erste Version hat technisch funktioniert und war trotzdem falsch.
-
-Ich konnte so etwas eingeben:
+Die erste Version der Vector Search hatte ein grundsätzliches Problem. Eine Query wie
 
 ```text
 aksdfnasdglvhnasdf
 ```
 
-und bekam acht Artikel zurück.
+bekam trotzdem Ergebnisse.
 
-Warum?
+Das ist technisch logisch: Wenn ich alle Vektoren nach Ähnlichkeit sortiere und anschließend die besten acht nehme, gibt es immer acht "beste" Kandidaten. Das bedeutet aber nicht, dass einer davon gut ist.
 
-Weil eine Vektorsuche immer Abstände vergleichen kann. Wenn ich sage „gib mir die acht besten“, bekomme ich acht Ergebnisse – selbst wenn alle schlecht sind.
-
-```mermaid
-flowchart LR
-    A[Müllquery] --> B[Embedding]
-    B --> C[Alle Chunks vergleichen]
-    C --> D[Top 8 sortieren]
-    D --> E[8 scheinbare Treffer]
-
-    F[Müllquery] --> G[Embedding]
-    G --> H[Semantic + lexical Ranking]
-    H --> I{Relevanz-Gate}
-    I -->|zu schwach| J[0 Treffer]
-    I -->|relevant| K[Ergebnisse]
-```
-
-Das war der Punkt, an dem aus einer reinen Vector Search ein **hybrides Ranking** wurde.
-
-## Semantik allein reicht nicht
-
-Heute berechne ich zusätzlich einen lexikalischen Score. Treffer in Titel oder Tags sind stärker als ein zufälliges Wort tief im Artikel.
+Deshalb ist Kernel Grep heute keine reine Vector Search mehr. Zusätzlich zum semantischen Score gibt es einen lexikalischen Score. Ein Treffer im Titel zählt stärker als ein Wort irgendwo tief im Fließtext:
 
 ```js
 const fields = [
@@ -331,14 +159,14 @@ const fields = [
 ];
 ```
 
-Der kombinierte Chunk-Score ist aktuell:
+Beide Signale werden kombiniert:
 
 ```js
 const chunkRankScore = semanticScore
   + (lexicalScore * 0.12);
 ```
 
-Danach kommt ein Relevanz-Gate. Ein Artikel muss entweder genügend echte Wort-Evidenz besitzen oder semantisch klar über dem restlichen Index liegen.
+Danach entscheidet ein Relevanz-Gate, ob ein Kandidat überhaupt angezeigt wird. Aktuell gelten unter anderem diese Grenzen:
 
 ```js
 const DEFAULT_RELEVANCE = {
@@ -347,41 +175,27 @@ const DEFAULT_RELEVANCE = {
   minLexicalScore: 0.22,
   lexicalBoost: 0.12
 };
-
-const semanticQualified =
-  candidate.semanticScore >= minSemanticScore
-  && semanticLift >= minSemanticLift;
-
-const relevant = lexicalQualified || semanticQualified;
 ```
 
-`semanticLift` ist dabei der Abstand zum Median der übrigen Artikel. Ein hoher absoluter Wert allein reicht also nicht.
+`semanticLift` vergleicht einen Kandidaten mit dem Median der übrigen Artikel. Ein hoher Cosine-Similarity-Wert reicht also nicht allein; der Treffer muss sich auch vom restlichen Index abheben oder lexikalisch überzeugend sein.
 
-Das ist gerade bei E5 wichtig. Die Modellkarte weist ausdrücklich darauf hin, dass Cosine-Similarities bei E5 häufig relativ hoch liegen und die **Reihenfolge** wichtiger ist als eine Interpretation als Prozentwert.
+Das ist für mich der wichtigste Teil der gesamten Suche: **Top-K ist noch keine Relevanzentscheidung.**
 
-## Fehlversuch Nummer zwei: 83 % sah aus wie eine Wahrscheinlichkeit
+## Drei Fehler, die dabei wirklich geholfen haben
 
-Die erste Oberfläche zeigte den rohen Cosine-Score ungefähr so an:
+Ein paar Fehler waren nützlicher als jede theoretische Planung.
 
-```text
-83%
-```
+### Cosine Similarity ist keine Wahrscheinlichkeit
 
-Das sah aus wie:
+Die erste Oberfläche zeigte Werte wie `83 %`. Das sah so aus, als würde ein Artikel mit 83 Prozent Wahrscheinlichkeit zur Anfrage passen.
 
-> Dieser Artikel passt mit 83 Prozent Wahrscheinlichkeit.
+Das stimmt nicht. Der Wert beschreibt die Ähnlichkeit der Vektoren. Deshalb zeigt die Oberfläche heute keine Prozentzahl mehr. Intern bleibt der Score für das Ranking nützlich, aber er wird nicht als Scheingenauigkeit an den Nutzer verkauft.
 
-Genau das sagt der Wert aber nicht.
+### DuckDB brauchte einen expliziten Typ
 
-Es war nur die Ähnlichkeit zweier normalisierter Vektoren. Deshalb ist die Prozentanzeige wieder verschwunden. Das Ranking darf intern mit solchen Werten arbeiten, die Oberfläche sollte daraus aber keine Scheingenauigkeit bauen.
+Beim Schreiben der Embeddings in `FLOAT[]` waren die Werte korrekt, nach dem Lesen aber teilweise falsch. Ursache war das Parameter Binding.
 
-## Fehlversuch Nummer drei: FLOAT[] war nicht so banal wie gedacht
-
-Ein weiterer Fehler war deutlich technischer.
-
-Die Embeddings waren vor dem Schreiben korrekt. Nach dem Lesen aus DuckDB kamen bei normalisierten Fließkomma-Vektoren aber falsche Werte zurück. Die ersten Tests hatten das nicht entdeckt, weil sie nur mit sehr einfachen `0`- und `1`-Vektoren gearbeitet hatten.
-
-Die Lösung war, beim Parameter-Binding nicht auf Typinferenz zu vertrauen:
+Die Lösung war, den Typ ausdrücklich anzugeben:
 
 ```js
 const values = {
@@ -395,205 +209,54 @@ const types = {
 await connection.run(sql, values, types);
 ```
 
-Seitdem gibt es einen Roundtrip-Test, der normalisierte Embeddings vor und nach DuckDB miteinander vergleicht.
+Seitdem prüft ein Roundtrip-Test echte normalisierte Fließkomma-Vektoren statt nur einfache Testwerte aus Nullen und Einsen.
 
-Das war eine gute Erinnerung daran, dass ein Test mit unrealistisch einfachen Daten sehr beruhigend grün sein kann.
+### Frontend und API müssen gemeinsam getestet werden
 
-## Fehlversuch Nummer vier: UI und Backend waren kurz nicht auf demselben Stand
+Die Suche wurde von GET auf POST umgestellt. Kurzzeitig war die API bereits geändert, während ein Client noch das alte Verhalten erwartete.
 
-Die Live-Suche wurde irgendwann von GET auf POST umgestellt, damit die Suchphrase nicht unnötig in der öffentlichen URL steht.
+Das war kein Problem der semantischen Suche, sondern ein klassischer Integrationsfehler. Seitdem gehören die Browser-Smoke-Tests und die API-Tests für mich genauso zur Suche wie das Ranking selbst.
 
-Der Browser machte also:
+## Live-Suche im Browser
 
-```http
-POST /api/search
-Content-Type: application/json
+Die Oberfläche wartet nicht auf einen Submit-Button. Nach kurzer Verzögerung wird die aktuelle Eingabe gesucht. Läuft noch eine ältere Anfrage, wird sie abgebrochen.
 
-{"q":"Docker","limit":6}
+```js
+const DEBOUNCE_MS = 180;
+let activeController = null;
+
+async function search(query) {
+  activeController?.abort();
+
+  const controller = new AbortController();
+  activeController = controller;
+
+  return fetch('/api/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ q: query, limit: 6 }),
+    signal: controller.signal
+  });
+}
 ```
 
-Der Production-Smoke-Test prüfte aber noch:
+Damit kann eine alte, langsame Anfrage nicht nachträglich die Ergebnisse einer neueren Suche überschreiben.
 
-```text
-GET /api/search?q=Docker
-```
+## Deployment
 
-Damit konnte der Deployment-Test grün sein, obwohl die echte UI auf dem laufenden System einen `HTTP 404` bekam.
+Blog und Search-Service laufen als getrennte Container. Das Modell und sein Cache liegen beim Search-Service, während der Blog die API nur intern weiterleitet.
 
-Der Smoke-Test prüft inzwischen bewusst den gleichen Pfad wie der Browser – inklusive einer Müllquery, die **keine Ergebnisse** liefern darf.
+Bei Content-Änderungen werden die Markdown-Dateien synchronisiert. Der Indexer erkennt über die gespeicherten Hashes, welche Artikel wirklich neu eingebettet werden müssen. Dadurch muss nicht bei jedem neuen Blogpost der komplette Index neu entstehen.
 
-```bash
-curl -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{"q":"Docker","limit":1}' \
-  http://127.0.0.1:1888/api/search
+## Was ich daraus mitnehme
 
-curl -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{"q":"aksdfnasdglvhnasdf","limit":8}' \
-  http://127.0.0.1:1888/api/search
-```
+Die Embeddings selbst waren der einfache Teil. Die Qualität der Suche hängt stärker an den Dingen drumherum:
 
-Die zweite Antwort muss `"results":[]` enthalten. Sonst gilt das Deployment als fehlerhaft.
+- sinnvolles Chunking,
+- saubere Metadaten,
+- Kombination aus semantischen und lexikalischen Signalen,
+- ein Relevanz-Gate für schlechte Queries,
+- realistische Tests,
+- und eine klare Trennung zwischen Blog und Search-Service.
 
-## Fehlversuch Nummer fünf: Funktioniert, sieht aber schlecht aus
-
-Die erste `/grep`-Seite war viel zu groß, dunkel und dekorativ. Überschrift und Ergebnisse hatten auf dem hellen Bloghintergrund teilweise zu wenig Kontrast.
-
-Technisch lief die Suche. Visuell wirkte sie trotzdem wie ein Fremdkörper.
-
-Daraufhin habe ich die Vollansicht zurückgebaut und die eigentliche Idee stärker in die Navigation verlagert: ein kleiner `grep…`-Trigger öffnet eine Spotlight-artige Konsole über der aktuellen Seite.
-
-Die Ausgabe sieht bewusst nicht wie eine typische Search-Card aus:
-
-```text
-$ grep --semantic "Docker Compose" posts/
-3 matches · 92 ms
-
-[01] ./posts/docker-hetzner#deployment
-> Docker + Hetzner + Cloudflare Zero Trust
-  ...
-
-[02] ./posts/...
-> ...
-```
-
-Öffnen geht per Navigation, `⌘K` beziehungsweise `Ctrl+K`. Mit `Esc` verschwindet das Overlay wieder.
-
-## Wo ich bei den Entscheidungen falsch lag
-
-Die einzelnen Bugs waren nur die sichtbaren Symptome. Interessanter sind die Annahmen dahinter, weil genau dort sich die Architektur geändert hat.
-
-| Falsche Annahme | Warum sie zunächst plausibel war | Was tatsächlich passiert ist | Konsequenz |
-| --- | --- | --- | --- |
-| **Top-K aus einer Vector Search sind automatisch relevante Treffer.** | Embeddings sortieren nach semantischer Nähe, also müssten die ersten Treffer doch passen. | Auch eine komplett sinnlose Query hat immer die „nächsten“ Vektoren. `aksdfnasdglvhnasdf` bekam deshalb acht Ergebnisse. | Top-K ist nur Ranking, kein Relevanzurteil. Deshalb kamen Relevanz-Gate, Mindestabstand und lexikalische Evidenz dazu. |
-| **Ein Cosine-Score lässt sich wie ein Prozentwert anzeigen.** | `0.83` sieht intuitiv wie „83 % passend“ aus. | Bei E5 ist der absolute Wert keine Wahrscheinlichkeit. Hohe Similarities können auch bei schwachen Treffern auftreten. | Rohscores bleiben intern. In der UI gibt es keine scheinpräzise Prozentanzeige mehr. |
-| **Einfache Testvektoren reichen, um DuckDB-Persistenz zu validieren.** | Mit `[0, 1, 0]` und ähnlichen Vektoren waren Schreiben, Lesen und Ranking grün. | Normalisierte Fließkomma-Embeddings wurden beim Parameter-Binding nicht zuverlässig als `FLOAT[]` behandelt. | Tests müssen reale Datenformen abbilden. Der Store bindet `LIST(FLOAT)` explizit und der Roundtrip-Test nutzt echte Fließkommawerte. |
-| **Ein Smoke-Test darf den Produktionspfad nur ungefähr nachbilden.** | GET und POST landeten am Ende beide in derselben Search-Logik. | Die UI war bereits auf `POST /api/search`, der Deployment-Smoke testete noch GET. Produktion konnte dadurch grün sein, während die echte UI `404` sah. | Ein Smoke-Test muss denselben Request-Pfad wie der echte Client benutzen. |
-| **Wenn die Funktion technisch läuft, ist die Oberfläche weitgehend erledigt.** | Live-Suche, Treffer und API funktionierten. | Die erste Grep-Seite war zu groß, kontrastarm und wirkte wie ein Fremdkörper im Blog. | UX ist Teil der Funktion. Die Suche wurde kompakter und zusätzlich als Spotlight-/Konsolen-Overlay in die Navigation integriert. |
-| **Bei Content-PRs reichen Frontmatter, ESLint, Rechtschreibung und Grammatik.** | Um Runner-Minuten zu sparen, wurden Docker und Chromium bei reinen Markdown-Änderungen bewusst übersprungen. | Ein Mermaid-Diagramm enthielt `Y[/grep + Console Overlay]`. ESLint sieht einen Mermaid-Fence nur als Text; der Syntaxfehler entstand erst beim Parsen im Browser. | Content-CI braucht kleine formatspezifische Checks. Mermaid muss separat geparst werden, ohne dafür jedes Mal den kompletten Browser-Stack zu starten. |
-
-Gerade der letzte Punkt ist wichtig, weil er aus einer eigentlich richtigen Optimierung entstanden ist. Die CI sollte weniger Ressourcen verbrauchen. Also habe ich schwere Docker- und Chromium-Tests für reine Content-Änderungen abgeschaltet. Das war sinnvoll – aber ich habe dabei stillschweigend angenommen, dass die verbleibenden Checks den gesamten Markdown-Inhalt abdecken.
-
-Das tun sie nicht.
-
-```text
-ESLint       -> JavaScript
-CSpell       -> Wörter
-LanguageTool -> Sprache
-Frontmatter  -> Metadaten
-Mermaid      -> eigener Parser nötig
-```
-
-Die eigentliche Regel, die ich aus diesen Fehlern mitnehme, ist deshalb nicht „mehr Tests“.
-
-Sie lautet eher:
-
-> **Jeder Test sollte genau die Annahme prüfen, auf der eine Entscheidung beruht.**
-
-Wenn die Annahme lautet „beliebiger Text ohne Bedeutung darf keine Treffer liefern“, brauche ich einen Müllquery-Test. Wenn die Annahme lautet „das Frontend benutzt POST“, muss der Production-Smoke POST benutzen. Und wenn Markdown ausführbare oder parsbare Teilsprachen wie Mermaid enthält, reicht ein JavaScript-Linter nicht.
-
-Ein zweiter Punkt war die Versuchung, zu früh mehr Architektur einzubauen. MotherDuck, Neo4j, Kafka und ein vollständiges RAG mit LLM sind technisch interessant. Für die erste Frage – **liefert mein Retrieval brauchbare Ergebnisse?** – hätten sie aber nur mehr bewegliche Teile erzeugt.
-
-Dass diese Komponenten noch nicht eingebaut sind, war deshalb keine ausgelassene Funktion, sondern eine bewusste Korrektur des üblichen Impulses, ein Problem sofort mit der späteren Zielarchitektur zu lösen.
-
-## Warum kein MotherDuck?
-
-MotherDuck wäre eine mögliche Cloud-Schicht für DuckDB. Für meine aktuelle Architektur bringt sie aber wenig.
-
-Ich habe einen Blog, einen Search-Service und einen Host. Die Datenbank kann deshalb schlicht als persistente DuckDB-Datei neben dem Search-Container liegen.
-
-MotherDuck würde zusätzliche Infrastruktur und einen weiteren Datenverarbeiter einführen, ohne dass ich aktuell horizontale Skalierung oder einen gemeinsam genutzten Cloud-Datenbestand brauche.
-
-## Warum noch kein Neo4j?
-
-Neo4j finde ich weiterhin interessant – aber für einen anderen Teil des Problems.
-
-DuckDB beantwortet aktuell:
-
-> Welche Chunks sind semantisch ähnlich zu meiner Query?
-
-Neo4j wäre später interessant für:
-
-```text
-Artikel -> Tag -> Artikel
-Artikel -> verlinkt auf -> Artikel
-Artikel -> ähnlich zu -> Artikel
-Artikel -> Thema -> Artikel
-```
-
-Damit ließen sich Multi-Hop-Beziehungen und echtes GraphRAG bauen. Der bestehende Knowledge Graph ist dafür ein guter Kandidat.
-
-Aber: Erst wenn das Retrieval stabil ist, lohnt sich die zusätzliche Datenbank.
-
-## Und Kafka?
-
-Kafka wäre momentan reines Overengineering.
-
-Der aktuelle Content-Flow ist klein:
-
-```mermaid
-flowchart LR
-    A[Markdown Merge] --> B[Content Deploy]
-    B --> C[Dateien synchronisieren]
-    C --> D[Search Container neu starten]
-    D --> E[SHA-256 prüfen]
-    E --> F[nur geänderte Artikel embedden]
-```
-
-Dafür brauche ich keinen Event-Streaming-Cluster.
-
-Kafka wird erst interessant, wenn irgendwann mehrere unabhängige Consumer gleichzeitig auf Events wie `article.published` reagieren sollen.
-
-## Datenschutz war Teil der Architektur
-
-Kernel Grep schickt Suchanfragen nicht an einen externen LLM- oder Embedding-Dienst.
-
-Das Modell läuft im Search-Container. DuckDB liegt lokal. Der Browser spricht ausschließlich mit `/api/search` auf derselben Website und der Blog proxyt intern weiter.
-
-Das ist für mich nicht nur eine Datenschutzentscheidung, sondern hält auch die Architektur verständlich.
-
-```text
-Browser -> eigener Blog -> eigener Search-Service
-```
-
-statt:
-
-```text
-Browser -> Blog -> externe Embedding API -> externe Vector DB -> ...
-```
-
-## Was als Nächstes kommt
-
-Die Suche ist für mich jetzt an dem Punkt, an dem die Basis sinnvoll funktioniert. Der nächste logische Schritt ist nicht sofort ein Chatbot.
-
-Interessanter finde ich zunächst, die semantischen Beziehungen in den bestehenden Knowledge Graph zu übernehmen.
-
-Dann könnten Artikel nicht nur über Tags und Kategorien verbunden sein, sondern auch über echte inhaltliche Ähnlichkeit.
-
-Danach wird Neo4j wieder interessant. Und erst wenn Retrieval und Graph sauber genug sind, kommt ein mögliches LLM darüber.
-
-Die Reihenfolge bleibt also:
-
-```text
-Search
-  -> bessere Relevanz
-  -> semantische Graph-Kanten
-  -> Graph-Abfragen
-  -> eventuell RAG-Antworten mit Quellen
-```
-
-Kafka darf noch etwas warten.
-
-## Quellen
-
-Die wichtigsten technischen und konzeptionellen Quellen für den Aufbau waren:
-
-- [Building an Obsidian RAG with DuckDB and MotherDuck – ssp.sh](https://www.ssp.sh/blog/obsidian-rag-duckdb-sql/)
-- [Search – ssp.sh](https://www.ssp.sh/search/)
-- [DuckDB Node.js Client (Neo)](https://duckdb.org/docs/stable/clients/node_neo/overview)
-- [Transformers.js Pipeline API](https://huggingface.co/docs/transformers.js/en/pipelines)
-- [multilingual-e5-small Model Card](https://huggingface.co/intfloat/multilingual-e5-small)
-- [Text Embeddings by Weakly-Supervised Contrastive Pre-training](https://arxiv.org/abs/2212.03533)
-
-Der wichtigste Teil kam aber erst beim Benutzen: Eine Suche ist nicht dann fertig, wenn sie Ergebnisse liefert. Sie ist erst brauchbar, wenn sie auch zuverlässig sagen kann: **Dazu habe ich nichts Passendes.**
+Kernel Grep bleibt bewusst klein. Wenn der Blog irgendwann so groß wird, dass DuckDB und lineare Vektorvergleiche nicht mehr reichen, kann die Architektur weiter wachsen. Im Moment löst sie genau das Problem, das ich hatte: nicht nur Wörter finden, sondern den passenden Artikel.
