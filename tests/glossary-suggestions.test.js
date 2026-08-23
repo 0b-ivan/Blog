@@ -45,7 +45,7 @@ describe('glossary suggestions', () => {
     expect(byTerm.get('Kubernetes')?.confidence).toBe('medium');
     expect(byTerm.get('Kubernetes')?.occurrences[0]).toMatchObject({
       file: 'posts/test.md',
-      line: 8
+      line: 7
     });
   });
 
