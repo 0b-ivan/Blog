@@ -51,6 +51,15 @@ function globalGraphLimit(url) {
   return Math.min(8, Math.max(1, Number(url.searchParams.get('limit')) || 4));
 }
 
+function graphRagOptions(url) {
+  return {
+    seedLimit: Math.min(6, Math.max(1, Number(url.searchParams.get('seedLimit')) || 3)),
+    neighborsPerSeed: Math.min(4, Math.max(0, Number(url.searchParams.get('neighbors')) ?? 2)),
+    maxChunks: Math.min(12, Math.max(1, Number(url.searchParams.get('limit')) || 8)),
+    maxChars: Math.min(24_000, Math.max(2_000, Number(url.searchParams.get('maxChars')) || 12_000))
+  };
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
@@ -88,6 +97,27 @@ const server = http.createServer(async (req, res) => {
     } catch (error) {
       console.error('kernel-grep search failed:', error.message || error);
       json(res, 500, { error: 'Semantic search failed' });
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && url.pathname === '/graphrag') {
+    if (!ready || !engine) {
+      json(res, 503, { error: 'Semantic index is still starting' });
+      return;
+    }
+
+    const query = String(url.searchParams.get('q') || '').trim();
+    if (query.length < 2 || query.length > 300) {
+      json(res, 400, { error: 'q must contain between 2 and 300 characters' });
+      return;
+    }
+
+    try {
+      json(res, 200, await engine.retrieveGraphContext(query, graphRagOptions(url)));
+    } catch (error) {
+      console.error('kernel-grep GraphRAG retrieval failed:', error.message || error);
+      json(res, 500, { error: 'GraphRAG retrieval failed' });
     }
     return;
   }
@@ -161,5 +191,6 @@ server.listen(port, host, () => {
 });
 
 module.exports = {
+  graphRagOptions,
   preview
 };
