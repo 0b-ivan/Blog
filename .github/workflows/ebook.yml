@@ -141,14 +141,14 @@ jobs:
 
           size="$(docker run --rm -v "${VOLUME}:/target:ro" "$HELPER_IMAGE" sh -c 'wc -c < /target/kernel-notes.epub')"
           test "$size" -gt 1000
-          curl -fsS --max-time 20 http://127.0.0.1:1888/assets/posts/downloads/kernel-notes.epub -o /dev/null
+          curl -fsS --max-time 20 http://127.0.0.1:1888/assets/downloads/kernel-notes.epub -o /dev/null
           echo "E-Book published successfully (${size} bytes)."
           REMOTE
 
       - name: Verify public EPUB download
         run: |
           set -euo pipefail
-          URL='https://blog.obivan.org/assets/posts/downloads/kernel-notes.epub'
+          URL='https://blog.obivan.org/assets/downloads/kernel-notes.epub'
           TARGET='/tmp/kernel-notes-public.epub'
 
           for attempt in $(seq 1 20); do
