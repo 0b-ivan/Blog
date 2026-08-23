@@ -81,12 +81,22 @@ jobs:
           HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
         run: |
           PORT="${HETZNER_PORT:-22}"
+          CONFIG_TMP="${REMOTE_DIR}/config/.livesync.ini.${GITHUB_RUN_ID}.tmp"
+
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/docker-compose.yml \
             "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/docker-compose.yml"
+
+          # CouchDB's entrypoint may have changed ownership of an older bind-mounted
+          # livesync.ini. Upload a new inode into the writable directory and replace
+          # the old file atomically instead of trying to overwrite that inode via SCP.
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/config/livesync.ini \
-            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/config/livesync.ini"
+            "${HETZNER_USER}@${HETZNER_HOST}:${CONFIG_TMP}"
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" \
+            "mv -f '${CONFIG_TMP}' '${REMOTE_DIR}/config/livesync.ini'"
+
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/scripts/couchdb-init.sh \
             "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/couchdb-init.sh"
