@@ -213,36 +213,78 @@ class GitHubPublisher {
     });
   }
 
-  async createPullRequest(branch, title, filePath) {
+  async deleteFile(filePath, branch, title) {
+    const current = await this.file(filePath, branch);
+    if (!current?.sha) {
+      return false;
+    }
+
+    await this.request(`/repos/${this.repository}/contents/${encodePath(filePath)}`, {
+      method: 'DELETE',
+      body: {
+        message: `Unpublish ${title}`,
+        sha: current.sha,
+        branch
+      }
+    });
+    return true;
+  }
+
+  pullRequestBody(mode, title, filePath) {
+    if (mode === 'unpublish') {
+      return [
+        'Automatisch aus Obsidian erstellt.',
+        '',
+        `- Artikel: \`${filePath}\``,
+        '- Status: `draft`',
+        '- Der Artikel wird aus `posts/` entfernt und dadurch aus Blog, RSS und Suche genommen.',
+        '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter erneut auf `publish` gesetzt werden.',
+        '',
+        'Der Artikel wird erst nach Merge dieses PR offline genommen.'
+      ].join('\n');
+    }
+
+    return [
+      'Automatisch aus Obsidian erstellt.',
+      '',
+      `- Artikel: \`${filePath}\``,
+      '- Freigabe: `status: publish`',
+      '- Weitere Aenderungen in Obsidian aktualisieren diesen PR nach dem Debounce-Fenster.',
+      '',
+      'Der Artikel wird erst nach Merge nach `main` veroeffentlicht.'
+    ].join('\n');
+  }
+
+  async createPullRequest(branch, title, filePath, mode = 'publish') {
     return this.request(`/repos/${this.repository}/pulls`, {
       method: 'POST',
       body: {
-        title: `Publish: ${title}`,
+        title: mode === 'unpublish' ? `Unpublish: ${title}` : `Publish: ${title}`,
         head: branch,
         base: this.baseBranch,
-        body: [
-          'Automatisch aus Obsidian erstellt.',
-          '',
-          `- Artikel: \`${filePath}\``,
-          '- Freigabe: `status: publish`',
-          '- Weitere Aenderungen in Obsidian aktualisieren diesen PR nach dem Debounce-Fenster.',
-          '',
-          'Der Artikel wird erst nach Merge nach `main` veroeffentlicht.'
-        ].join('\n')
+        body: this.pullRequestBody(mode, title, filePath)
       }
     });
   }
 
-  async publish({ fileName, raw, title }) {
-    const filePath = `posts/${fileName}`;
-    const branch = branchForFile(fileName);
-    const mainFile = await this.file(filePath, this.baseBranch);
+  async updatePullRequest(pullRequest, title, filePath, mode) {
+    return this.request(`/repos/${this.repository}/pulls/${pullRequest.number}`, {
+      method: 'PATCH',
+      body: {
+        title: mode === 'unpublish' ? `Unpublish: ${title}` : `Publish: ${title}`,
+        body: this.pullRequestBody(mode, title, filePath)
+      }
+    });
+  }
 
-    if (mainFile?.content === raw) {
-      return { action: 'up-to-date', branch, pullRequest: null };
-    }
+  async closePullRequest(pullRequest) {
+    await this.request(`/repos/${this.repository}/pulls/${pullRequest.number}`, {
+      method: 'PATCH',
+      body: { state: 'closed' }
+    });
+  }
 
-    let pullRequest = await this.openPullRequest(branch);
+  async ensureBranch(branch, pullRequest) {
     const baseSha = await this.branchSha(this.baseBranch);
     if (!baseSha) {
       throw new Error(`Base branch '${this.baseBranch}' not found`);
@@ -258,6 +300,23 @@ class GitHubPublisher {
     } else if (!branchSha) {
       await this.createBranch(branch, baseSha);
     }
+  }
+
+  async publish({ fileName, raw, title }) {
+    const filePath = `posts/${fileName}`;
+    const branch = branchForFile(fileName);
+    const mainFile = await this.file(filePath, this.baseBranch);
+    let pullRequest = await this.openPullRequest(branch);
+
+    if (mainFile?.content === raw) {
+      if (pullRequest) {
+        await this.closePullRequest(pullRequest);
+        return { action: 'closed-stale-pr', branch, pullRequest };
+      }
+      return { action: 'up-to-date', branch, pullRequest: null };
+    }
+
+    await this.ensureBranch(branch, pullRequest);
 
     const branchFile = await this.file(filePath, branch);
     if (branchFile?.content !== raw) {
@@ -265,11 +324,38 @@ class GitHubPublisher {
     }
 
     if (!pullRequest) {
-      pullRequest = await this.createPullRequest(branch, title, filePath);
+      pullRequest = await this.createPullRequest(branch, title, filePath, 'publish');
       return { action: 'created-pr', branch, pullRequest };
     }
 
+    pullRequest = await this.updatePullRequest(pullRequest, title, filePath, 'publish');
     return { action: 'updated-pr', branch, pullRequest };
+  }
+
+  async unpublish({ fileName, title }) {
+    const filePath = `posts/${fileName}`;
+    const branch = branchForFile(fileName);
+    const mainFile = await this.file(filePath, this.baseBranch);
+    let pullRequest = await this.openPullRequest(branch);
+
+    if (!mainFile) {
+      if (pullRequest) {
+        await this.closePullRequest(pullRequest);
+        return { action: 'closed-pending-publish', branch, pullRequest };
+      }
+      return { action: 'already-offline', branch, pullRequest: null };
+    }
+
+    await this.ensureBranch(branch, pullRequest);
+    await this.deleteFile(filePath, branch, title);
+
+    if (!pullRequest) {
+      pullRequest = await this.createPullRequest(branch, title, filePath, 'unpublish');
+      return { action: 'created-unpublish-pr', branch, pullRequest };
+    }
+
+    pullRequest = await this.updatePullRequest(pullRequest, title, filePath, 'unpublish');
+    return { action: 'updated-unpublish-pr', branch, pullRequest };
   }
 }
 
@@ -306,7 +392,7 @@ async function runCycle({ vaultPath, tracker, publisher }) {
     const status = String(article.frontmatter.status || '').trim().toLowerCase();
     seen.add(article.fileName);
 
-    if (status !== 'publish') {
+    if (status !== 'publish' && status !== 'draft') {
       tracker.forget(article.fileName);
       continue;
     }
@@ -318,15 +404,27 @@ async function runCycle({ vaultPath, tracker, publisher }) {
 
     const title = String(article.frontmatter.title || article.fileName.replace(/\.md$/i, '')).trim();
     try {
-      const result = await publisher.publish({
-        fileName: article.fileName,
-        raw: article.raw,
-        title
-      });
+      const result = status === 'publish'
+        ? await publisher.publish({
+          fileName: article.fileName,
+          raw: article.raw,
+          title
+        })
+        : await publisher.unpublish({
+          fileName: article.fileName,
+          title
+        });
+
       tracker.markProcessed(article.fileName, hash);
 
       if (result.action === 'up-to-date') {
         console.log(`[publisher] ${article.fileName}: already matches ${publisher.baseBranch}`);
+      } else if (result.action === 'already-offline') {
+        console.log(`[publisher] ${article.fileName}: draft and already offline`);
+      } else if (result.action === 'closed-pending-publish') {
+        console.log(`[publisher] ${article.fileName}: draft closed pending publish PR`);
+      } else if (result.action === 'closed-stale-pr') {
+        console.log(`[publisher] ${article.fileName}: publish matches ${publisher.baseBranch}; closed stale PR`);
       } else {
         console.log(`[publisher] ${article.fileName}: ${result.action} ${result.pullRequest?.html_url || result.branch}`);
       }
