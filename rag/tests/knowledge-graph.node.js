@@ -3,6 +3,7 @@ const test = require('node:test');
 const {
   averageEmbedding,
   buildPostProfiles,
+  globalSemanticRelations,
   semanticRelations,
   sharedTags
 } = require('../lib/knowledge-graph');
@@ -71,4 +72,13 @@ test('semanticRelations combines vector similarity with explainable metadata sig
   assert.equal(graph.related[0].sameCategory, true);
   assert.ok(graph.related[0].relationScore > graph.related[1].relationScore);
   assert.equal('embedding' in graph.related[0], false, 'raw vectors must never leave the service');
+
+  const globalGraph = globalSemanticRelations(profiles, 2);
+  assert.equal(globalGraph.articles.length, 3);
+  assert.ok(globalGraph.edges.length >= 1);
+  assert.equal(globalGraph.edges[0].source, 'docker-compose');
+  assert.equal(globalGraph.edges[0].target, 'docker-deployment');
+  assert.ok(globalGraph.edges[0].similarity > 0.9);
+  assert.deepEqual(globalGraph.edges[0].sharedTags, ['Docker']);
+  assert.equal('embedding' in globalGraph.articles[0], false, 'global API must not expose raw vectors');
 });
