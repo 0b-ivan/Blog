@@ -48,10 +48,11 @@ services:
       - livesync
 
   livesync-cli:
-    # Upstream publishes the public rolling CLI image under the edge tag.
-    # Avoid pinning the OCI index digest: GHCR currently denies that digest pull
-    # while the public edge tag remains the documented installation path.
-    image: ghcr.io/vrtmrz/livesync-cli:edge
+    # Build the official CLI ourselves instead of depending on anonymous access
+    # to the upstream GHCR package. Pin the source to the 1.0.17 release commit.
+    build:
+      context: "https://github.com/vrtmrz/obsidian-livesync.git#694371898a569442736aa1d3d35bb1198d3c0570"
+      dockerfile: src/apps/cli/Dockerfile
     container_name: kernel-notes-livesync-cli
     profiles: [headless]
     restart: unless-stopped
