@@ -55,7 +55,7 @@ flowchart LR
     F --> G
     G --> H[Kernel Grep :8090]
     H --> I[Blog /api/search]
-    I --> J[/grep + Such-Overlay]
+    I --> J["/grep + Such-Overlay"]
 ```
 
 Der Browser spricht nur mit dem Blog:
