@@ -47,6 +47,7 @@
       title,
       category,
       tags,
+      excerpt: '',
       archived: window.location.pathname.startsWith('/archive/')
     };
   }
@@ -82,16 +83,101 @@
     return score;
   }
 
-  function selectPosts(posts, currentPost) {
-    const related = posts
+  function metadataFallback(posts, currentPost) {
+    return posts
       .filter((post) => post.slug !== currentPost.slug)
       .map((post) => ({ post, score: relationshipScore(currentPost, post) }))
       .filter(({ score }) => score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, MAX_RELATED_POSTS)
       .map(({ post }) => ({ ...post, archived: false }));
+  }
 
-    return [currentPost, ...related];
+  function semanticQuery(post) {
+    return [
+      post.title,
+      post.category,
+      normalizeTags(post.tags).join(' '),
+      post.excerpt
+    ]
+      .filter(Boolean)
+      .join(' · ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 280);
+  }
+
+  async function semanticRelatedPosts(posts, currentPost) {
+    const query = semanticQuery(currentPost);
+    if (query.length < 2 || currentPost.archived) {
+      return [];
+    }
+
+    const params = new URLSearchParams({
+      q: query,
+      limit: String(Math.min(12, MAX_RELATED_POSTS + 2))
+    });
+    const response = await fetch(`/api/search?${params.toString()}`, {
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`Semantische Beziehungen konnten nicht geladen werden (${response.status}).`);
+    }
+
+    const payload = await response.json();
+    const postsBySlug = new Map(posts.map((post) => [post.slug, post]));
+    const selected = [];
+    const seen = new Set([currentPost.slug]);
+
+    for (const result of Array.isArray(payload.results) ? payload.results : []) {
+      if (!result?.slug || seen.has(result.slug)) {
+        continue;
+      }
+      const post = postsBySlug.get(result.slug);
+      if (!post) {
+        continue;
+      }
+      seen.add(result.slug);
+      selected.push({
+        ...post,
+        archived: false,
+        semanticScore: Number(result.score) || 0,
+        semanticRelevanceScore: Number(result.relevanceScore) || Number(result.score) || 0
+      });
+      if (selected.length >= MAX_RELATED_POSTS) {
+        break;
+      }
+    }
+
+    return selected;
+  }
+
+  function selectPosts(posts, currentPost, semanticPosts) {
+    const selected = [{ ...currentPost, semanticScore: 1 }];
+    const seen = new Set([currentPost.slug]);
+
+    for (const post of semanticPosts) {
+      if (seen.has(post.slug)) {
+        continue;
+      }
+      selected.push(post);
+      seen.add(post.slug);
+      if (selected.length >= MAX_RELATED_POSTS + 1) {
+        return selected;
+      }
+    }
+
+    for (const post of metadataFallback(posts, currentPost)) {
+      if (seen.has(post.slug)) {
+        continue;
+      }
+      selected.push(post);
+      seen.add(post.slug);
+      if (selected.length >= MAX_RELATED_POSTS + 1) {
+        break;
+      }
+    }
+
+    return selected;
   }
 
   function buildGraphData(selectedPosts, currentPost) {
@@ -100,6 +186,7 @@
     const nodeIds = new Set();
     const tagFrequency = new Map();
     const currentTags = new Set(normalizeTags(currentPost.tags).map(normalized));
+    const currentPostId = `post:${currentPost.slug}`;
 
     selectedPosts.forEach((post) => {
       normalizeTags(post.tags).forEach((tag) => {
@@ -126,8 +213,19 @@
         label: post.title,
         type: isCurrent ? 'current' : 'article',
         href: post.archived ? `/archive/${post.slug}` : `/posts/${post.slug}`,
-        color: isCurrent ? COLORS.current : COLORS.article
+        color: isCurrent ? COLORS.current : COLORS.article,
+        semanticScore: Number(post.semanticScore) || 0
       });
+
+      if (!isCurrent && Number(post.semanticScore) > 0) {
+        links.push({
+          source: currentPostId,
+          target: postId,
+          type: 'semantic',
+          score: Number(post.semanticScore),
+          current: true
+        });
+      }
 
       const categoryLabel = String(post.category || 'IT').trim();
       const categoryId = `category:${normalized(categoryLabel)}`;
@@ -171,8 +269,10 @@
 
     const degree = new Map();
     links.forEach((link) => {
-      degree.set(link.source, (degree.get(link.source) || 0) + 1);
-      degree.set(link.target, (degree.get(link.target) || 0) + 1);
+      const source = typeof link.source === 'object' ? link.source.id : link.source;
+      const target = typeof link.target === 'object' ? link.target.id : link.target;
+      degree.set(source, (degree.get(source) || 0) + 1);
+      degree.set(target, (degree.get(target) || 0) + 1);
     });
 
     nodes.forEach((node) => {
@@ -227,8 +327,8 @@
       <div class="knowledge-graph__head">
         <div>
           <p class="eyebrow">Wissensnetz</p>
-          <h2 id="knowledge-graph-title">Verwandte Artikel & Themen</h2>
-          <p class="knowledge-graph__hint">Ziehen zum Bewegen · Scrollen zum Zoomen · Knoten anklicken zum Öffnen</p>
+          <h2 id="knowledge-graph-title">Semantisch verwandte Artikel & Themen</h2>
+          <p class="knowledge-graph__hint">Vektorähnlichkeit aus Kernel Grep · Tags und Kategorien erklären die Verbindung · Ziehen, zoomen, anklicken</p>
         </div>
         <div class="knowledge-graph__legend" aria-label="Legende">
           <span><i style="--node-color:${COLORS.current}"></i>Dieser Artikel</span>
@@ -237,7 +337,7 @@
           <span><i style="--node-color:${COLORS.category}"></i>Kategorie</span>
         </div>
       </div>
-      <div class="knowledge-graph__canvas" role="img" aria-label="Interaktiver Wissensgraph zu diesem Artikel">
+      <div class="knowledge-graph__canvas" role="img" aria-label="Interaktiver semantischer Wissensgraph zu diesem Artikel">
         <p class="knowledge-graph__status">Graph wird geladen…</p>
       </div>`;
 
@@ -296,6 +396,20 @@
     ctx.fillText(label, node.x + radius + (4 / globalScale), node.y);
   }
 
+  function nodeDescription(node) {
+    const type = node.type === 'current'
+      ? 'Dieser Artikel'
+      : node.type === 'article'
+        ? 'Artikel'
+        : node.type === 'tag'
+          ? 'Tag'
+          : 'Kategorie';
+    if (node.type === 'article' && Number(node.semanticScore) > 0) {
+      return `${type}: ${node.label} · Vektorähnlichkeit ${Number(node.semanticScore).toFixed(3)}`;
+    }
+    return `${type}: ${node.label}`;
+  }
+
   function renderGraph(canvas, graphData) {
     const height = window.matchMedia('(max-width: 720px)').matches ? 360 : 440;
     let hoveredNode = null;
@@ -312,18 +426,24 @@
       .nodeVal('val')
       .nodeRelSize(2.35)
       .nodeColor((node) => node.color)
-      .nodeLabel((node) => `${node.type === 'current' ? 'Dieser Artikel' : node.type === 'article' ? 'Artikel' : node.type === 'tag' ? 'Tag' : 'Kategorie'}: ${node.label}`)
+      .nodeLabel(nodeDescription)
       .nodeCanvasObjectMode(() => 'after')
       .nodeCanvasObject(drawNodeLabel)
       .linkColor((link) => {
         if (hoveredNode) {
           return connectedTo(link, hoveredNode) ? 'rgba(0, 71, 62, 0.72)' : 'rgba(42, 48, 54, 0.08)';
         }
+        if (link.type === 'semantic') {
+          return 'rgba(91, 156, 246, 0.42)';
+        }
         return link.current ? 'rgba(242, 145, 61, 0.5)' : 'rgba(42, 48, 54, 0.16)';
       })
       .linkWidth((link) => {
         if (hoveredNode && connectedTo(link, hoveredNode)) {
           return 2.4;
+        }
+        if (link.type === 'semantic') {
+          return Math.min(3, 1 + (Number(link.score) || 0) * 2);
         }
         return link.current ? 1.8 : 0.9;
       })
@@ -349,7 +469,10 @@
     const charge = graph.d3Force('charge');
     charge?.strength?.(-125);
     const linkForce = graph.d3Force('link');
-    linkForce?.distance?.((link) => link.type === 'category' ? 88 : 72);
+    linkForce?.distance?.((link) => {
+      if (link.type === 'semantic') return 108;
+      return link.type === 'category' ? 88 : 72;
+    });
 
     window.addEventListener('resize', () => {
       graph.width(Math.max(280, canvas.clientWidth));
@@ -373,7 +496,17 @@
       const posts = await response.json();
       const fallbackCurrent = currentPostFromDom();
       const currentPost = resolveCurrentPost(posts, fallbackCurrent);
-      const selectedPosts = selectPosts(posts, currentPost);
+      let semanticPosts = [];
+
+      try {
+        semanticPosts = await semanticRelatedPosts(posts, currentPost);
+        section.dataset.relationshipSource = semanticPosts.length ? 'rag' : 'metadata';
+      } catch (error) {
+        console.warn('Semantic knowledge graph fallback:', error.message || error);
+        section.dataset.relationshipSource = 'metadata-fallback';
+      }
+
+      const selectedPosts = selectPosts(posts, currentPost, semanticPosts);
       const graphData = buildGraphData(selectedPosts, currentPost);
 
       if (!graphData.nodes.length) {
