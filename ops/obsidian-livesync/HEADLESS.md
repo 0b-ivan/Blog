@@ -1,13 +1,12 @@
 # Headless LiveSync fuer Blog-Posts
 
-Der optionale `livesync-cli`-Service spiegelt den Obsidian-LiveSync-Vault auf das lokale `posts/`-Verzeichnis. Der zusaetzliche `publisher`-Service uebernimmt nur Artikel, die in Obsidian bewusst mit `status: publish` freigegeben wurden.
+Der optionale `livesync-cli`-Service spiegelt den Obsidian-LiveSync-Vault auf das lokale `posts/`-Verzeichnis. Der zusaetzliche `publisher`-Service uebernimmt Artikel anhand ihres Frontmatter-Status und haelt GitHub als Publishing-Grenze bei.
 
 ```text
 Obsidian
   -> CouchDB
   -> livesync-cli
   -> posts/*.md
-  -> status: publish
   -> publisher
   -> Artikel-Branch + PR
   -> CI
@@ -15,7 +14,7 @@ Obsidian
   -> Deployment
 ```
 
-Git bleibt damit die Publishing-Grenze. Ein normaler Save in Obsidian veroeffentlicht nichts.
+Ein normaler Save in Obsidian veroeffentlicht nichts. `status: publish` und `status: draft` beschreiben den gewuenschten Veroeffentlichungszustand; live aendert sich dieser erst nach Merge des entsprechenden PR.
 
 ## Voraussetzungen
 
@@ -89,7 +88,7 @@ Neue Obsidian-Artikel starten mit:
 status: draft
 ```
 
-In diesem Zustand kann beliebig gespeichert und synchronisiert werden. Der Publisher ignoriert den Artikel vollstaendig.
+Solange der Artikel noch nie veroeffentlicht wurde, bleibt er damit nur in Obsidian/LiveSync und erzeugt keinen Unpublish-PR.
 
 Wenn der Artikel bereit fuer die Freigabe ist:
 
@@ -108,9 +107,43 @@ status: publish
 
 Weitere Aenderungen am gleichen Artikel erzeugen keinen zweiten PR. Nach erneut 5 Minuten Ruhe wird derselbe Artikel-Branch aktualisiert und damit derselbe offene PR erweitert.
 
-Nach dem Merge bleibt `status: publish` im Artikel stehen. Solange der lokale Inhalt mit `main` identisch ist, tut der Publisher nichts. Fuer groessere spaetere Ueberarbeitungen kann der Artikel zuerst wieder auf `status: draft` gesetzt werden. Nach der Bearbeitung wird erneut `status: publish` gesetzt.
+Nach dem Merge bleibt `status: publish` im Artikel stehen. Solange der lokale Inhalt mit `main` identisch ist, tut der Publisher nichts.
 
-Abbrechen: Soll ein offener Publishing-Vorgang nicht weiter aktualisiert werden, zuerst den Artikel in Obsidian wieder auf `status: draft` setzen und danach den PR schliessen.
+## Einen veroeffentlichten Artikel offline nehmen
+
+Bei einem bereits veroeffentlichten Artikel wird:
+
+```yaml
+status: draft
+```
+
+als bewusster Unpublish-Wunsch behandelt. Nach dem Debounce-Fenster erzeugt der Publisher einen deterministischen PR:
+
+```text
+status: draft
+  -> obsidian/<artikel-slug>
+  -> posts/<artikel>.md wird im Branch geloescht
+  -> PR "Unpublish: <Titel>"
+  -> Merge
+  -> Content-Deploy
+  -> Artikel offline
+```
+
+Die Markdown-Datei bleibt im Obsidian-Vault erhalten. Git verliert den Inhalt ebenfalls nicht, weil die bisherige Version weiter in der Git-Historie liegt.
+
+Wird der Artikel spaeter wieder auf:
+
+```yaml
+status: publish
+```
+
+gesetzt, erstellt der Publisher wieder einen Publish-PR und legt den aktuellen Obsidian-Stand erneut unter `posts/` an.
+
+Wenn ein Publish-PR noch offen ist und der Artikel vor dem Merge wieder auf `draft` gesetzt wird, schliesst bzw. wandelt der Publisher den offenen Vorgang so um, dass der Artikel nicht versehentlich spaeter veroeffentlicht wird.
+
+Wichtig: `draft` nimmt einen bereits veroeffentlichten Artikel nicht sofort ohne GitHub-Grenze live vom Netz. Offline wird er nach Merge des Unpublish-PR. Dadurch bleiben CI, Review und Deployment nachvollziehbar.
+
+Soll ein bereits veroeffentlichter Artikel nur ueberarbeitet werden, waehrend die aktuelle Live-Version online bleiben soll, bleibt `status: publish` gesetzt. Die Aenderungen landen dann in einem normalen Update-PR; bis zu dessen Merge bleibt die bisherige Version live.
 
 ## Publisher auf Hetzner deployen
 
@@ -183,6 +216,7 @@ CouchDB bleibt dabei aktiv.
 
 - Nicht gleichzeitig einen zweiten Datei-Sync wie iCloud, Dropbox oder Obsidian Sync auf dasselbe Vault-Verzeichnis loslassen.
 - Der Publisher arbeitet nur mit Markdown-Dateien direkt unter `posts/`.
-- `status: draft` erzeugt niemals einen PR.
+- `status: draft` bei einem neuen, nie veroeffentlichten Artikel bleibt lokal/LiveSync-only.
+- `status: draft` bei einem bereits veroeffentlichten Artikel erzeugt einen Unpublish-PR.
 - `status: publish` ist eine explizite Freigabe fuer GitHub, aber noch keine Live-Veroeffentlichung. Live wird der Artikel erst nach Merge nach `main`.
 - Ein erster bidirektionaler Mirror kann Dateien aus CouchDB nach `posts/` importieren. Deshalb den ersten Sync kontrollieren, bevor Artikel auf `status: publish` gesetzt werden.
