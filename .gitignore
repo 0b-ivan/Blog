@@ -26,3 +26,7 @@ assets/posts/downloads/*.epub
 ops/obsidian-livesync/.env
 ops/obsidian-livesync/.publisher.env
 ops/obsidian-livesync/backups/
+
+# Generated/editable glossary mirror inside the LiveSync vault.
+# The canonical published data remains config/glossary*.json.
+posts/_Glossar/

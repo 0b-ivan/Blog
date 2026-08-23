@@ -87,6 +87,25 @@ services:
     networks:
       - livesync
 
+  glossary-publisher:
+    image: node:24-alpine
+    container_name: kernel-notes-obsidian-glossary-publisher
+    profiles: [publisher]
+    restart: unless-stopped
+    environment:
+      OBSIDIAN_PUBLISHER_GITHUB_TOKEN: ${OBSIDIAN_PUBLISHER_GITHUB_TOKEN:-}
+      PUBLISHER_GITHUB_REPOSITORY: ${PUBLISHER_GITHUB_REPOSITORY:-0b-ivan/Blog}
+      PUBLISHER_BASE_BRANCH: ${PUBLISHER_BASE_BRANCH:-main}
+      PUBLISHER_VAULT_PATH: /vault
+      PUBLISHER_DEBOUNCE_SECONDS: ${PUBLISHER_DEBOUNCE_SECONDS:-300}
+      PUBLISHER_POLL_SECONDS: ${PUBLISHER_POLL_SECONDS:-30}
+    command: ["node", "/app/obsidian-glossary-publisher.js"]
+    volumes:
+      - ./scripts/obsidian-glossary-publisher.js:/app/obsidian-glossary-publisher.js:ro
+      - ${OBSIDIAN_VAULT_PATH:-../../posts}:/vault
+    networks:
+      - livesync
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: kernel-notes-livesync-cloudflared

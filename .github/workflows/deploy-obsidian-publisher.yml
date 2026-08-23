@@ -7,6 +7,7 @@ on:
     paths:
       - "ops/obsidian-livesync/docker-compose.yml"
       - "ops/obsidian-livesync/scripts/obsidian-publisher.js"
+      - "ops/obsidian-livesync/scripts/obsidian-glossary-publisher.js"
       - ".github/workflows/deploy-obsidian-publisher.yml"
   workflow_dispatch:
 
@@ -67,7 +68,8 @@ jobs:
 
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/scripts/obsidian-publisher.js \
-            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/obsidian-publisher.js"
+            ops/obsidian-livesync/scripts/obsidian-glossary-publisher.js \
+            "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/"
 
       - name: Write publisher environment
         env:
@@ -91,7 +93,7 @@ jobs:
             "${HETZNER_USER}@${HETZNER_HOST}" \
             "umask 077; cat > '${REMOTE_DIR}/.publisher.env'"
 
-      - name: Deploy publisher
+      - name: Deploy publishers
         env:
           HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
           HETZNER_USER: ${{ secrets.HETZNER_USER }}
@@ -108,17 +110,19 @@ jobs:
           test -f .publisher.env || { echo "Publisher environment is missing"; exit 1; }
 
           docker compose --env-file .env --env-file .publisher.env --profile publisher config >/dev/null
-          docker compose --env-file .env --env-file .publisher.env --profile publisher pull publisher
-          docker compose --env-file .env --env-file .publisher.env --profile publisher up -d --force-recreate publisher
+          docker compose --env-file .env --env-file .publisher.env --profile publisher pull publisher glossary-publisher
+          docker compose --env-file .env --env-file .publisher.env --profile publisher up -d --force-recreate publisher glossary-publisher
 
           sleep 2
-          running="$(docker inspect -f '{{.State.Running}}' kernel-notes-obsidian-publisher 2>/dev/null || true)"
-          if [ "$running" != "true" ]; then
-            echo "Obsidian publisher is not running"
+          article_running="$(docker inspect -f '{{.State.Running}}' kernel-notes-obsidian-publisher 2>/dev/null || true)"
+          glossary_running="$(docker inspect -f '{{.State.Running}}' kernel-notes-obsidian-glossary-publisher 2>/dev/null || true)"
+
+          if [ "$article_running" != "true" ] || [ "$glossary_running" != "true" ]; then
+            echo "One or more Obsidian publishers are not running"
             docker compose --env-file .env --env-file .publisher.env --profile publisher ps
-            docker compose --env-file .env --env-file .publisher.env --profile publisher logs --tail=100 publisher || true
+            docker compose --env-file .env --env-file .publisher.env --profile publisher logs --tail=100 publisher glossary-publisher || true
             exit 1
           fi
 
-          docker compose --env-file .env --env-file .publisher.env --profile publisher ps publisher
+          docker compose --env-file .env --env-file .publisher.env --profile publisher ps publisher glossary-publisher
           REMOTE
