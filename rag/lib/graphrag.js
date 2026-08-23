@@ -1,6 +1,8 @@
 const { semanticRelations } = require('./knowledge-graph');
 const { cosineSimilarity, lexicalMatchScore } = require('./ranking');
 
+const MIN_CONTEXT_CHARS_PER_DIRECT_SEED = 160;
+
 function clamp(value, fallback, min, max) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
@@ -185,15 +187,25 @@ function materializeContext(candidates, maxChars) {
   const context = [];
   let usedChars = 0;
 
-  for (const candidate of candidates) {
-    const remaining = maxChars - usedChars;
-    if (remaining < 160) {
+  for (let index = 0; index < candidates.length; index += 1) {
+    const candidate = candidates[index];
+    const remainingDirectSeeds = candidates
+      .slice(index + 1)
+      .filter((entry) => entry.article.origin === 'direct')
+      .length;
+    const reservedForDirectSeeds = remainingDirectSeeds * MIN_CONTEXT_CHARS_PER_DIRECT_SEED;
+    const available = maxChars - usedChars - reservedForDirectSeeds;
+
+    if (available < MIN_CONTEXT_CHARS_PER_DIRECT_SEED) {
+      if (candidate.article.origin === 'direct') {
+        continue;
+      }
       break;
     }
 
-    const content = fitContent(candidate.chunk.content, remaining);
+    const content = fitContent(candidate.chunk.content, available);
     if (!content) {
-      break;
+      continue;
     }
 
     const citation = `K${context.length + 1}`;
@@ -245,6 +257,23 @@ function buildSources(context) {
   return [...sources.values()];
 }
 
+function emptyRetrieval() {
+  return {
+    strategy: 'semantic-search+1-hop-knowledge-graph',
+    seeds: [],
+    expandedArticles: [],
+    context: [],
+    sources: [],
+    promptContext: '',
+    contextCharacters: 0,
+    limits: {
+      neighborsPerSeed: 0,
+      maxChunks: 0,
+      maxChars: 0
+    }
+  };
+}
+
 function retrieveGraphContext({
   chunks,
   profiles,
@@ -256,22 +285,15 @@ function retrieveGraphContext({
   maxChars = 12_000
 }) {
   const safeNeighbors = clamp(neighborsPerSeed, 2, 0, 4);
-  const safeMaxChunks = clamp(maxChunks, 8, 1, 12);
+  const requestedMaxChunks = clamp(maxChunks, 8, 1, 12);
   const safeMaxChars = clamp(maxChars, 12_000, 2_000, 24_000);
   const safeSeeds = Array.isArray(seeds) ? seeds : [];
 
   if (safeSeeds.length === 0) {
-    return {
-      strategy: 'semantic-search+1-hop-knowledge-graph',
-      seeds: [],
-      expandedArticles: [],
-      context: [],
-      sources: [],
-      promptContext: '',
-      contextCharacters: 0
-    };
+    return emptyRetrieval();
   }
 
+  const effectiveMaxChunks = Math.min(12, Math.max(requestedMaxChunks, safeSeeds.length));
   const selectedArticles = buildArticleSelection(
     Array.isArray(profiles) ? profiles : [],
     safeSeeds,
@@ -282,7 +304,7 @@ function retrieveGraphContext({
     selectedArticles,
     queryEmbedding,
     query,
-    safeMaxChunks
+    effectiveMaxChunks
   );
   const materialized = materializeContext(candidates, safeMaxChars);
 
@@ -299,7 +321,12 @@ function retrieveGraphContext({
     context: materialized.context,
     sources: buildSources(materialized.context),
     promptContext: buildPromptContext(materialized.context),
-    contextCharacters: materialized.usedChars
+    contextCharacters: materialized.usedChars,
+    limits: {
+      neighborsPerSeed: safeNeighbors,
+      maxChunks: effectiveMaxChunks,
+      maxChars: safeMaxChars
+    }
   };
 }
 
