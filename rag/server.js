@@ -28,6 +28,12 @@ function preview(value, maxLength = 520) {
   return `${normalized.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
+function isLoopback(address) {
+  return address === '127.0.0.1'
+    || address === '::1'
+    || address === '::ffff:127.0.0.1';
+}
+
 async function initialize() {
   engine = await SemanticSearchEngine.create({
     databasePath: process.env.RAG_DB_PATH || '/data/kernel-notes.duckdb',
@@ -81,6 +87,36 @@ const server = http.createServer(async (req, res) => {
       ready,
       ...(ready ? { index: engine.info() } : {})
     });
+    return;
+  }
+
+  if (req.method === 'POST' && url.pathname === '/reindex') {
+    if (!isLoopback(req.socket.remoteAddress)) {
+      json(res, 403, { error: 'Reindex is only available from inside the search container' });
+      return;
+    }
+    if (!ready || !engine) {
+      json(res, 503, { error: 'Semantic index is still starting' });
+      return;
+    }
+
+    const before = engine.info();
+    try {
+      const stats = await engine.reindex();
+      const after = engine.info();
+      console.log(
+        `kernel-grep reindexed live: ${after.chunks} chunks / ${after.postProfiles} article vectors `
+        + `(${stats.indexed} indexed, ${stats.skipped} unchanged, ${stats.removed} removed)`
+      );
+      json(res, 200, {
+        status: 'ok',
+        before,
+        index: after
+      });
+    } catch (error) {
+      console.error('kernel-grep live reindex failed:', error.message || error);
+      json(res, 500, { error: 'Semantic reindex failed' });
+    }
     return;
   }
 
@@ -184,10 +220,18 @@ async function shutdown() {
   }
   shuttingDown = true;
   ready = false;
-  if (engine) {
-    engine.close();
-  }
-  server.close(() => process.exit(0));
+
+  server.close(async () => {
+    if (engine) {
+      try {
+        await engine.waitForReindex();
+      } catch (error) {
+        console.error('kernel-grep reindex was interrupted during shutdown:', error.message || error);
+      }
+      engine.close();
+    }
+    process.exit(0);
+  });
   setTimeout(() => process.exit(0), 5_000).unref();
 }
 
@@ -204,5 +248,6 @@ server.listen(port, host, () => {
 
 module.exports = {
   graphRagOptions,
+  isLoopback,
   preview
 };
