@@ -2,6 +2,7 @@
 id: {{title}}
 version: 1
 title:
+status: draft
 date: {{date:YYYY-MM-DD}}
 created_at: {{date:YYYY-MM-DD}}
 updated_at: {{date:YYYY-MM-DD}}
