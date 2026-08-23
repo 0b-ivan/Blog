@@ -24,4 +24,5 @@ assets/posts/downloads/*.epub
 
 # Obsidian LiveSync server-local state
 ops/obsidian-livesync/.env
+ops/obsidian-livesync/.publisher.env
 ops/obsidian-livesync/backups/
