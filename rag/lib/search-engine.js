@@ -1,7 +1,11 @@
 const path = require('node:path');
 const { buildIndex, defaultOptions } = require('../index');
 const { createEmbedder } = require('./embedder-factory');
-const { buildPostProfiles, semanticRelations } = require('./knowledge-graph');
+const {
+  buildPostProfiles,
+  globalSemanticRelations,
+  semanticRelations
+} = require('./knowledge-graph');
 const { rankChunks } = require('./ranking');
 const { RagStore } = require('./store');
 
@@ -86,6 +90,13 @@ class SemanticSearchEngine {
     return {
       embeddingModel: this.embeddingModel,
       ...graph
+    };
+  }
+
+  globalKnowledgeGraph(limit = 4) {
+    return {
+      embeddingModel: this.embeddingModel,
+      ...globalSemanticRelations(this.postProfiles, limit)
     };
   }
 
