@@ -115,6 +115,7 @@ jobs:
           docker compose -f ops/obsidian-livesync/docker-compose.yml config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile headless config
+          docker compose -f ops/obsidian-livesync/docker-compose.yml --profile publisher config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare --profile headless config
 
       - name: Setup Docker Buildx
