@@ -25,7 +25,9 @@
     "rag:index": "npm --prefix rag run index --",
     "rag:search": "npm --prefix rag run search --",
     "rag:context": "npm --prefix rag run context --",
-    "rag:test": "npm --prefix rag test"
+    "rag:test": "npm --prefix rag test",
+    "rag:test:regression": "npm --prefix rag run test:regression",
+    "rag:test:all": "npm --prefix rag run test:all"
   },
   "dependencies": {
     "express": "^5.2.1",
