@@ -18,7 +18,7 @@ describe('central sources', () => {
     expect(res.type).toMatch(/json/);
     expect(res.body['docker-compose']).toMatchObject({
       publisher: 'Docker Docs',
-      url: 'https://docs.docker.com/compose/compose-file/'
+      url: 'https://docs.docker.com/reference/compose-file/'
     });
     expect(res.body['github-dependabot-alerts']).toBeDefined();
   });
