@@ -114,7 +114,8 @@ async function buildIndex(inputOptions = {}, dependencies = {}) {
         cacheDir: options.cacheDir
       });
 
-  const store = await RagStore.open(options.databasePath);
+  const ownsStore = !dependencies.store;
+  const store = dependencies.store || await RagStore.open(options.databasePath);
   const files = await postFiles(options.postsDir);
   const activePostIds = [];
   let indexed = 0;
@@ -181,7 +182,9 @@ async function buildIndex(inputOptions = {}, dependencies = {}) {
       chunkCount
     };
   } finally {
-    store.close();
+    if (ownsStore) {
+      store.close();
+    }
   }
 }
 
