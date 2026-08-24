@@ -1,0 +1,270 @@
+name: Textprüfung
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'posts/*.md'
+      - 'archive/*.md'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: textpruefung-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  text-check:
+    name: Rechtschreibung & Grammatik
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Geänderte Blogposts bestimmen
+        id: changed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="${{ github.event.pull_request.base.sha }}"
+          : > /tmp/changed-posts.txt
+          : > /tmp/skipped-archive-posts.txt
+
+          git diff --name-only --diff-filter=ACMR \
+            "$base"...HEAD \
+            -- 'posts/*.md' 'archive/*.md' > /tmp/candidate-posts.txt
+
+          normalize_status() {
+            sed -E 's/^status:[[:space:]].*$/status: __STATE__/'
+          }
+
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+
+            if [[ "$file" == archive/*.md ]]; then
+              file_name="${file#archive/}"
+
+              if git cat-file -e "$base:posts/$file_name" 2>/dev/null \
+                && git cat-file -e "HEAD:archive/$file_name" 2>/dev/null \
+                && diff -q \
+                  <(git show "$base:posts/$file_name" | normalize_status) \
+                  <(git show "HEAD:archive/$file_name" | normalize_status) >/dev/null; then
+                echo "$file" >> /tmp/skipped-archive-posts.txt
+                continue
+              fi
+            fi
+
+            echo "$file" >> /tmp/changed-posts.txt
+          done < /tmp/candidate-posts.txt
+
+          echo 'Prüfbare geänderte Blogposts:'
+          cat /tmp/changed-posts.txt
+
+          if [ -s /tmp/skipped-archive-posts.txt ]; then
+            echo 'Reine Archiv-Moves ohne Textänderung (Textprüfung übersprungen):'
+            cat /tmp/skipped-archive-posts.txt
+          fi
+
+          if [ -s /tmp/changed-posts.txt ]; then
+            echo 'has_files=true' >> "$GITHUB_OUTPUT"
+            echo 'skip_reason=none' >> "$GITHUB_OUTPUT"
+          else
+            echo 'has_files=false' >> "$GITHUB_OUTPUT"
+            if [ -s /tmp/skipped-archive-posts.txt ]; then
+              echo 'skip_reason=archive' >> "$GITHUB_OUTPUT"
+              echo 'Keine Textprüfung nötig: Artikel wurde nur ins Archiv verschoben.'
+            else
+              echo 'skip_reason=unpublish' >> "$GITHUB_OUTPUT"
+              echo 'Keine prüfbaren Markdown-Posts vorhanden. Bei einem reinen Unpublish ist das erwartet.'
+            fi
+          fi
+
+      - name: Setup Node.js
+        if: steps.changed.outputs.has_files == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        if: steps.changed.outputs.has_files == 'true'
+        run: npm ci
+
+      - name: Rechtschreibung mit CSpell prüfen
+        if: steps.changed.outputs.has_files == 'true'
+        id: spellcheck
+        shell: bash
+        run: |
+          mapfile -t files < /tmp/changed-posts.txt
+
+          set +e
+          npm run posts:spellcheck -- "${files[@]}" 2>&1 | tee /tmp/cspell-output.txt
+          status=${PIPESTATUS[0]}
+          set -e
+
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+          if [ "$status" -gt 1 ]; then
+            echo 'CSpell konnte nicht ausgeführt werden.'
+            exit "$status"
+          fi
+
+          if [ "$status" -eq 1 ]; then
+            echo 'CSpell hat Hinweise gefunden. Die Hinweise sind non-blocking.'
+          fi
+
+      - name: LanguageTool starten
+        if: steps.changed.outputs.has_files == 'true'
+        run: |
+          docker run -d \
+            --name languagetool \
+            -p 127.0.0.1:8010:8081 \
+            meyay/languagetool:latest
+
+          for _ in $(seq 1 60); do
+            if curl -fsS -X POST \
+              -d 'language=de-DE' \
+              -d 'text=Das ist ein Test.' \
+              http://127.0.0.1:8010/v2/check >/dev/null; then
+              echo 'LanguageTool ist bereit.'
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs languagetool || true
+          echo 'LanguageTool wurde nicht rechtzeitig bereit.'
+          exit 1
+
+      - name: Grammatik mit LanguageTool prüfen
+        if: steps.changed.outputs.has_files == 'true'
+        id: proofread
+        env:
+          LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
+          PROOFREAD_LANGUAGE: de-DE
+        shell: bash
+        run: |
+          mapfile -t files < /tmp/changed-posts.txt
+
+          set +e
+          npm run posts:proofread -- "${files[@]}" 2>&1 | tee /tmp/languagetool-output.txt
+          status=${PIPESTATUS[0]}
+          set -e
+
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+          if [ "$status" -eq 2 ]; then
+            echo 'LanguageTool oder das Proofread-Skript konnte nicht ausgeführt werden.'
+            exit 2
+          fi
+
+          if [ "$status" -gt 2 ]; then
+            echo 'Die Textprüfung ist unerwartet fehlgeschlagen.'
+            exit "$status"
+          fi
+
+          if [ "$status" -eq 1 ]; then
+            echo 'LanguageTool hat Hinweise gefunden. Die Hinweise sind non-blocking.'
+          fi
+
+      - name: LanguageTool stoppen
+        if: always() && steps.changed.outputs.has_files == 'true'
+        run: docker rm -f languagetool >/dev/null 2>&1 || true
+
+      - name: Detaillierten Textprüfungsbericht erzeugen
+        if: always()
+        shell: bash
+        env:
+          HAS_FILES: ${{ steps.changed.outputs.has_files }}
+          SKIP_REASON: ${{ steps.changed.outputs.skip_reason }}
+          SPELLING_STATUS: ${{ steps.spellcheck.outputs.status }}
+          GRAMMAR_STATUS: ${{ steps.proofread.outputs.status }}
+        run: |
+          if [ "$HAS_FILES" != 'true' ]; then
+            if [ "$SKIP_REASON" = 'archive' ]; then
+              cat > /tmp/proofread-report.md <<'EOF'
+          <!-- kernel-notes-proofread-summary -->
+          ## 📝 Rechtschreibung & Grammatik
+
+          ✅ **Keine Textprüfung nötig.**
+
+          Der Artikel wurde nur von `posts/` nach `archive/` verschoben. Abgesehen vom Veröffentlichungsstatus ist der Inhalt unverändert und wurde bereits zuvor geprüft.
+          EOF
+            else
+              cat > /tmp/proofread-report.md <<'EOF'
+          <!-- kernel-notes-proofread-summary -->
+          ## 📝 Rechtschreibung & Grammatik
+
+          ✅ **Keine Textprüfung nötig.**
+
+          Dieser PR enthält keinen neu zu prüfenden Markdown-Artikel. Bei einem reinen Unpublish wird der Artikel nur aus `posts/` entfernt.
+          EOF
+            fi
+          elif { [ "$SPELLING_STATUS" = '0' ] || [ "$SPELLING_STATUS" = '1' ]; } \
+            && { [ "$GRAMMAR_STATUS" = '0' ] || [ "$GRAMMAR_STATUS" = '1' ]; }; then
+            node scripts/build-proofread-pr-report.js \
+              --cspell /tmp/cspell-output.txt \
+              --languagetool /tmp/languagetool-output.txt \
+              --files /tmp/changed-posts.txt \
+              --output /tmp/proofread-report.md
+          else
+            cat > /tmp/proofread-report.md <<'EOF'
+          <!-- kernel-notes-proofread-summary -->
+          ## 📝 Rechtschreibung & Grammatik
+
+          ❌ **Die Textprüfung konnte nicht vollständig abgeschlossen werden.**
+
+          Details stehen im Check **Textprüfung**.
+          EOF
+          fi
+
+          cat /tmp/proofread-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: PR-Kommentar zur Textprüfung aktualisieren
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('node:fs');
+            const marker = '<!-- kernel-notes-proofread-summary -->';
+            const body = fs.readFileSync('/tmp/proofread-report.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.login === 'github-actions[bot]'
+              && comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated proofreading comment ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+              core.info(`Created proofreading comment ${created.data.id}`);
+            }

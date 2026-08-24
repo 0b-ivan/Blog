@@ -147,8 +147,9 @@ async function main() {
         card.click()
       ]);
 
-      await page.locator('.post-page h1').waitFor({ state: 'visible' });
-      assert.ok((await page.locator('.post-page h1').innerText()).trim().length > 0, `Missing title for ${href}`);
+      const pageTitle = page.locator('.post-page > h1');
+      await pageTitle.waitFor({ state: 'visible' });
+      assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
       await assertMetaLinksInFooter(page);
       await assertKernelGrepTrigger(page);
 

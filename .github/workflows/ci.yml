@@ -34,7 +34,6 @@ jobs:
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "heavy=true" >> "$GITHUB_OUTPUT"
-            echo "proofread=true" >> "$GITHUB_OUTPUT"
             echo "security=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -44,16 +43,9 @@ jobs:
           cat /tmp/changed-files.txt
 
           heavy=false
-          proofread=false
           security=false
 
           while IFS= read -r file; do
-            case "$file" in
-              posts/*.md|config/proofread-words.txt|cspell.json|scripts/spellcheck-posts.js|scripts/proofread-posts.js)
-                proofread=true
-                ;;
-            esac
-
             case "$file" in
               package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
                 security=true
@@ -70,9 +62,8 @@ jobs:
           done < /tmp/changed-files.txt
 
           echo "heavy=$heavy" >> "$GITHUB_OUTPUT"
-          echo "proofread=$proofread" >> "$GITHUB_OUTPUT"
           echo "security=$security" >> "$GITHUB_OUTPUT"
-          echo "Classification: heavy=$heavy proofread=$proofread security=$security"
+          echo "Classification: heavy=$heavy security=$security"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -95,69 +86,6 @@ jobs:
 
       - name: Unit and API tests with coverage
         run: npm run test:coverage
-
-      - name: Spellcheck changed blog content
-        if: steps.changes.outputs.proofread == 'true'
-        run: |
-          set +e
-          npm run posts:spellcheck
-          status=$?
-          set -e
-
-          if [ "$status" -gt 1 ]; then
-            echo 'CSpell failed to run.'
-            exit "$status"
-          fi
-
-          if [ "$status" -eq 1 ]; then
-            echo 'CSpell found spelling suggestions. This check is intentionally non-blocking.'
-          fi
-
-      - name: Start LanguageTool
-        if: steps.changes.outputs.proofread == 'true'
-        run: |
-          docker run -d \
-            --name languagetool \
-            -p 127.0.0.1:8010:8081 \
-            meyay/languagetool:latest
-
-          for _ in $(seq 1 60); do
-            if curl -fsS -X POST \
-              -d 'language=de-DE' \
-              -d 'text=Das ist ein Test.' \
-              http://127.0.0.1:8010/v2/check >/dev/null; then
-              echo 'LanguageTool is ready'
-              exit 0
-            fi
-            sleep 2
-          done
-
-          docker logs languagetool || true
-          exit 1
-
-      - name: Proofread changed blog content
-        if: steps.changes.outputs.proofread == 'true'
-        env:
-          LANGUAGETOOL_URL: http://127.0.0.1:8010/v2/check
-          PROOFREAD_LANGUAGE: de-DE
-        run: |
-          set +e
-          npm run posts:proofread
-          status=$?
-          set -e
-
-          if [ "$status" -eq 2 ]; then
-            echo 'Proofreading failed because LanguageTool or the script could not run.'
-            exit 2
-          fi
-
-          if [ "$status" -eq 1 ]; then
-            echo 'LanguageTool found suggestions. This check is intentionally non-blocking.'
-          fi
-
-      - name: Stop LanguageTool
-        if: always() && steps.changes.outputs.proofread == 'true'
-        run: docker rm -f languagetool >/dev/null 2>&1 || true
 
       - name: Install semantic search dependencies
         if: steps.changes.outputs.heavy == 'true'
@@ -187,6 +115,7 @@ jobs:
           docker compose -f ops/obsidian-livesync/docker-compose.yml config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile headless config
+          docker compose -f ops/obsidian-livesync/docker-compose.yml --profile publisher config
           docker compose -f ops/obsidian-livesync/docker-compose.yml --profile cloudflare --profile headless config
 
       - name: Setup Docker Buildx

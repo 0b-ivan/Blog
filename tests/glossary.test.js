@@ -74,27 +74,30 @@ describe('glossary', () => {
     expect(keys.has('GraphRAG')).toBe(true);
   });
 
-  it('covers representative terms from the active blog posts', async () => {
+  it('covers representative terms from active and archived blog posts', async () => {
     const root = path.join(__dirname, '..');
     const expectedByPost = {
-      '2026-08-19-dependabot-im-einsatz.md': ['Dependency Graph', 'Triage', 'Secret Scanning'],
-      '2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.md': ['Cloudflare Zero Trust', 'Docker Volume', 'Public IP'],
-      '2026-08-19-fail2ban-ssh-hardening.md': ['SSH', 'Fail2ban', 'UFW'],
-      '2026-08-19-markdown-features-im-blog.md': ['Markdown', 'Admonition', 'Frontmatter'],
-      '2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.md': ['RSS', 'OPML', 'Self-Hosting'],
-      '2026-08-19-systemd-services-sauber-betreiben.md': ['Daemon', 'Runbook', 'Healthcheck'],
-      '2026-08-19-wie-dieser-blog-gebaut-ist.md': ['Node.js', 'Docker Compose', 'Audit-Trail'],
-      '2026-08-21-docker-vs-docker-compose.md': ['Docker Compose', 'Port-Mapping', 'Cluster-Orchestrator'],
-      '2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md': ['CSpell', 'LanguageTool', 'False Positive'],
-      '2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.md': ['Kafka', 'Embedding-Modell', 'Vector-Database-Cluster', 'Cosine Similarity', 'GraphRAG']
+      'archive/2026-08-04-systemd-timer-statt-cron.md': ['Cron', 'Observability', 'Logging'],
+      'archive/2026-08-12-cloudflare-tunnel-haerten.md': ['mTLS', 'Rate Limiting', 'Break-Glass-Zugang'],
+      'archive/2026-08-18-zero-downtime-mit-compose.md': ['Healthcheck', 'Reverse Proxy', 'Cutover'],
+      'posts/2026-08-19-dependabot-im-einsatz.md': ['Dependency Graph', 'Triage', 'Secret Scanning'],
+      'posts/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.md': ['Cloudflare Zero Trust', 'Docker Volume', 'Public IP'],
+      'posts/2026-08-19-fail2ban-ssh-hardening.md': ['SSH', 'Fail2ban', 'UFW'],
+      'posts/2026-08-19-markdown-features-im-blog.md': ['Markdown', 'Admonition', 'Frontmatter'],
+      'posts/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.md': ['RSS', 'OPML', 'Self-Hosting'],
+      'posts/2026-08-19-systemd-services-sauber-betreiben.md': ['Daemon', 'Runbook', 'Healthcheck'],
+      'posts/2026-08-19-wie-dieser-blog-gebaut-ist.md': ['Node.js', 'Docker Compose', 'Audit-Trail'],
+      'posts/2026-08-21-docker-vs-docker-compose.md': ['Docker Compose', 'Port-Mapping', 'Cluster-Orchestrator'],
+      'posts/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md': ['CSpell', 'LanguageTool', 'False Positive'],
+      'posts/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.md': ['Kafka', 'Embedding-Modell', 'Vector-Database-Cluster', 'Cosine Similarity', 'GraphRAG']
     };
 
-    for (const [filename, expectedKeys] of Object.entries(expectedByPost)) {
-      const markdown = await fs.readFile(path.join(root, 'posts', filename), 'utf8');
+    for (const [relativePath, expectedKeys] of Object.entries(expectedByPost)) {
+      const markdown = await fs.readFile(path.join(root, relativePath), 'utf8');
       const keys = new Set(usedGlossaryLabels(markdown).map(({ entry }) => entry.key));
 
       for (const key of expectedKeys) {
-        expect(keys.has(key), `${filename} should use glossary key ${key}`).toBe(true);
+        expect(keys.has(key), `${relativePath} should use glossary key ${key}`).toBe(true);
       }
     }
   });

@@ -99,6 +99,38 @@ test('SemanticSearchEngine returns relevant articles and rejects garbage queries
     assert.equal(engine.info().embedderMode, 'hash');
     assert.equal(engine.info().chunks, 2);
     assert.equal(engine.info().postProfiles, 2);
+    assert.equal(engine.info().reindexing, false);
+
+    const previousChunks = engine.chunks;
+    await fs.rm(path.join(postsDir, 'rss.md'));
+    await writePost(
+      postsDir,
+      'kubernetes',
+      'title: Kubernetes Deployment\ncategory: Container\ntags:\n  - kubernetes',
+      '## Rollout\n\nKubernetes aktualisiert Deployments mit kontrollierten Rollouts.'
+    );
+
+    const reindex = engine.reindex();
+    assert.equal(engine.info().reindexing, true);
+
+    const duringReindex = await engine.search('FreshRSS selbst gehosteter Feed Reader', 5);
+    assert.ok(
+      duringReindex.some((result) => result.slug === 'rss'),
+      'Search must keep serving the previous in-memory index while reindexing'
+    );
+
+    await reindex;
+
+    assert.equal(engine.info().reindexing, false);
+    assert.notEqual(engine.chunks, previousChunks, 'Reindex must swap in a new chunk snapshot');
+    assert.equal(engine.chunks.some((chunk) => chunk.slug === 'rss'), false);
+    assert.ok(engine.chunks.some((chunk) => chunk.slug === 'kubernetes'));
+    assert.equal(engine.info().indexedPosts, 1);
+    assert.equal(engine.info().unchangedPosts, 1);
+    assert.equal(engine.info().removedPosts, 1);
+
+    const afterReindex = await engine.search('kubernetes deployment rollout', 5);
+    assert.ok(afterReindex.some((result) => result.slug === 'kubernetes'));
   } finally {
     engine.close();
     await fs.rm(root, { recursive: true, force: true });

@@ -305,13 +305,12 @@ jobs:
           rm -rf "$STAGE" "$ARCHIVE"
 
           if docker inspect "$SEARCH_CONTAINER" >/dev/null 2>&1; then
-            docker restart "$SEARCH_CONTAINER" >/dev/null
-            for _ in $(seq 1 90); do
-              status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
-              [ "$status" = healthy ] && break
-              sleep 2
-            done
-            [ "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$SEARCH_CONTAINER")" = healthy ] || exit 1
+            echo 'Refreshing Kernel Grep index without restarting the search container.'
+            if ! docker exec "$SEARCH_CONTAINER" node reindex.js; then
+              echo 'Kernel Grep live reindex failed.'
+              docker logs --tail=120 "$SEARCH_CONTAINER" || true
+              exit 1
+            fi
           fi
 
           if ! retry_get http://127.0.0.1:1888/healthz \
@@ -322,7 +321,7 @@ jobs:
             exit 1
           fi
 
-          echo "Content ${COMMIT_SHA} deployed without rebuilding application images."
+          echo "Content ${COMMIT_SHA} deployed without rebuilding application images or restarting Kernel Grep."
           REMOTE
 
       - name: Deploy full application

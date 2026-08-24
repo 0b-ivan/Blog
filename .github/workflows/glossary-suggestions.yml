@@ -1,0 +1,123 @@
+name: Glossary Suggestions
+
+on:
+  pull_request:
+    paths:
+      - 'posts/**/*.md'
+      - 'config/glossary.json'
+      - 'config/glossary/**'
+      - 'config/glossary-suggestion-ignore.json'
+      - 'lib/glossary-suggestions.js'
+      - 'scripts/suggest-glossary-terms.js'
+      - '.github/workflows/glossary-suggestions.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: glossary-suggestions-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suggestions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Collect changed articles
+        id: articles
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            find posts -maxdepth 1 -type f -name '*.md' -print | sort > /tmp/glossary-articles.txt
+          else
+            git diff \
+              --diff-filter=AMR \
+              --name-only \
+              "${{ github.event.pull_request.base.sha }}"...HEAD \
+              -- 'posts/*.md' \
+              > /tmp/glossary-articles.txt
+          fi
+
+          count=$(grep -c . /tmp/glossary-articles.txt || true)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Articles selected for glossary suggestions: $count"
+          cat /tmp/glossary-articles.txt || true
+
+      - name: Generate glossary suggestion report
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -s /tmp/glossary-articles.txt ]; then
+            mapfile -t articles < /tmp/glossary-articles.txt
+            node scripts/suggest-glossary-terms.js \
+              --format markdown \
+              --output /tmp/glossary-suggestions.md \
+              "${articles[@]}"
+          else
+            cat > /tmp/glossary-suggestions.md <<'EOF'
+          <!-- kernel-notes-glossary-suggestions -->
+          ## Glossar-Vorschläge
+
+          In diesem PR wurden keine Artikel unter `posts/` neu angelegt oder geändert.
+          EOF
+          fi
+
+          cat /tmp/glossary-suggestions.md
+          cat /tmp/glossary-suggestions.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Update PR glossary comment
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('node:fs');
+            const marker = '<!-- kernel-notes-glossary-suggestions -->';
+            const body = fs.readFileSync('/tmp/glossary-suggestions.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.user?.login === 'github-actions[bot]'
+              && comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+              core.info(`Updated glossary suggestion comment ${existing.id}`);
+            } else {
+              const created = await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body
+              });
+              core.info(`Created glossary suggestion comment ${created.data.id}`);
+            }
