@@ -8,7 +8,7 @@ Jede Quelle hat eine stabile ID, zum Beispiel:
 "docker-compose": {
   "title": "Compose file reference",
   "publisher": "Docker Docs",
-  "url": "https://docs.docker.com/compose/compose-file/",
+  "url": "https://docs.docker.com/reference/compose-file/",
   "accessed_at": "2026-08-24"
 }
 ```
