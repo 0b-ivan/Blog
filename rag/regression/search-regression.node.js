@@ -4,6 +4,12 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { SemanticSearchEngine } = require('../lib/search-engine');
+const {
+  DEFAULT_RELEVANCE,
+  cosineSimilarity,
+  lexicalMatchScore,
+  median
+} = require('../lib/ranking');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const postsDir = path.join(repoRoot, 'posts');
@@ -86,6 +92,64 @@ async function regressionSuite() {
   return { activeSlugs, archivedSlugs, fixtures, noResultQueries };
 }
 
+function fixed(value) {
+  return Number(value || 0).toFixed(4);
+}
+
+async function diagnoseQuery(engine, query, expectedSlug = '') {
+  const queryEmbedding = await engine.embedder.embedQuery(query);
+  const bestByPost = new Map();
+
+  for (const chunk of engine.chunks) {
+    const semanticScore = cosineSimilarity(queryEmbedding, chunk.embedding);
+    const lexicalScore = lexicalMatchScore(query, chunk);
+    const chunkRankScore = semanticScore + (lexicalScore * DEFAULT_RELEVANCE.lexicalBoost);
+    const existing = bestByPost.get(chunk.post_id);
+
+    if (!existing || chunkRankScore > existing.chunkRankScore) {
+      bestByPost.set(chunk.post_id, {
+        slug: chunk.slug,
+        semanticScore,
+        lexicalScore,
+        chunkRankScore
+      });
+    }
+  }
+
+  const candidates = [...bestByPost.values()];
+  const semanticBaseline = median(candidates.map((candidate) => candidate.semanticScore));
+  const diagnosed = candidates.map((candidate) => {
+    const semanticLift = candidate.semanticScore - semanticBaseline;
+    const lexicalQualified = candidate.lexicalScore >= DEFAULT_RELEVANCE.minLexicalScore;
+    const semanticQualified = candidate.semanticScore >= DEFAULT_RELEVANCE.minSemanticScore
+      && semanticLift >= DEFAULT_RELEVANCE.minSemanticLift;
+
+    return {
+      ...candidate,
+      semanticLift,
+      relevanceScore: candidate.chunkRankScore + Math.max(0, semanticLift),
+      relevant: lexicalQualified || semanticQualified
+    };
+  }).sort((left, right) => right.relevanceScore - left.relevanceScore);
+
+  const formatCandidate = (candidate) => {
+    if (!candidate) {
+      return '<missing>';
+    }
+    return `${candidate.slug}{sem=${fixed(candidate.semanticScore)},lift=${fixed(candidate.semanticLift)},lex=${fixed(candidate.lexicalScore)},rel=${fixed(candidate.relevanceScore)},gate=${candidate.relevant ? 'pass' : 'reject'}}`;
+  };
+
+  const expected = expectedSlug
+    ? diagnosed.find((candidate) => candidate.slug === expectedSlug)
+    : null;
+
+  return [
+    `baseline=${fixed(semanticBaseline)}`,
+    expectedSlug ? `expected=${formatCandidate(expected)}` : '',
+    `top=${diagnosed.slice(0, 5).map(formatCandidate).join(' | ')}`
+  ].filter(Boolean).join(' ; ');
+}
+
 test('search regression fixtures cover every active article', async () => {
   const { activeSlugs, archivedSlugs, fixtures } = await regressionSuite();
   const knownSlugs = new Set([...activeSlugs, ...archivedSlugs]);
@@ -135,7 +199,8 @@ test('Kernel Grep keeps expected semantic search results stable', { timeout: 20 
 
         if (rankIndex < 0 || rankIndex + 1 > maxRank) {
           const actual = results.map((result, index) => `${index + 1}:${result.slug}`).join(', ') || '<no results>';
-          failures.push(`POSITIVE | "${regressionCase.query}" | expected ${slug} at rank <= ${maxRank} | got ${actual}`);
+          const diagnostic = await diagnoseQuery(engine, regressionCase.query, slug);
+          failures.push(`POSITIVE | "${regressionCase.query}" | expected ${slug} at rank <= ${maxRank} | got ${actual} | ${diagnostic}`);
         }
       }
     }
@@ -143,7 +208,8 @@ test('Kernel Grep keeps expected semantic search results stable', { timeout: 20 
     for (const query of noResultQueries) {
       const results = await engine.search(query, 5);
       if (results.length > 0) {
-        failures.push(`NEGATIVE | "${query}" | expected no results | got ${results.map((result, index) => `${index + 1}:${result.slug}`).join(', ')}`);
+        const diagnostic = await diagnoseQuery(engine, query);
+        failures.push(`NEGATIVE | "${query}" | expected no results | got ${results.map((result, index) => `${index + 1}:${result.slug}`).join(', ')} | ${diagnostic}`);
       }
     }
 

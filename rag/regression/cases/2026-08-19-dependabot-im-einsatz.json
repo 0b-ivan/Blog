@@ -2,7 +2,7 @@
   "post": "2026-08-19-dependabot-im-einsatz",
   "queries": [
     {
-      "query": "GitHub soll mich bei Sicherheitslücken in Libraries warnen",
+      "query": "Wie finde ich verwundbare Dependencies in GitHub?",
       "maxRank": 1
     },
     {

@@ -1,13 +1,20 @@
 const STOP_WORDS = new Set([
-  'aber', 'als', 'am', 'an', 'auch', 'auf', 'aus', 'bei', 'bin', 'bis', 'da', 'das', 'dass', 'dem', 'den', 'der', 'des',
-  'die', 'ein', 'eine', 'einer', 'eines', 'für', 'hat', 'ich', 'im', 'in', 'ist', 'mit', 'nach', 'nicht', 'oder', 'ohne',
-  'sind', 'so', 'und', 'vom', 'von', 'vor', 'was', 'wie', 'wir', 'zu', 'zum', 'zur'
+  'aber', 'alle', 'allem', 'allen', 'aller', 'alles', 'als', 'also', 'am', 'an', 'andere', 'anderen', 'anderer', 'anderes',
+  'auch', 'auf', 'aus', 'bei', 'bin', 'bis', 'da', 'dann', 'das', 'dass', 'dein', 'deine', 'deinen', 'deinem', 'deiner',
+  'deines', 'dem', 'den', 'der', 'des', 'die', 'du', 'ein', 'eine', 'einem', 'einen', 'einer', 'eines', 'er', 'es', 'etwas',
+  'euch', 'für', 'habe', 'haben', 'hat', 'hatte', 'ich', 'ihr', 'ihre', 'ihren', 'ihrem', 'ihrer', 'ihres', 'ihnen', 'im',
+  'in', 'ist', 'kann', 'können', 'koennen', 'könnte', 'koennte', 'mein', 'meine', 'meinen', 'meinem', 'meiner', 'meines',
+  'mich', 'mir', 'mit', 'möchte', 'moechte', 'muss', 'müssen', 'muessen', 'nach', 'nicht', 'oder', 'ohne', 'sein', 'seine',
+  'seinen', 'seinem', 'seiner', 'seines', 'sie', 'sind', 'so', 'soll', 'sollen', 'sollte', 'über', 'ueber', 'und', 'uns',
+  'unser', 'unsere', 'unseren', 'unserem', 'unserer', 'unseres', 'vom', 'von', 'vor', 'was', 'welche', 'welcher', 'welches',
+  'welchem', 'welchen', 'wenn', 'werden', 'wie', 'wir', 'wird', 'zu', 'zum', 'zur'
 ]);
 
 const DEFAULT_RELEVANCE = Object.freeze({
   minSemanticScore: 0.84,
   minSemanticLift: 0.025,
   minLexicalScore: 0.22,
+  minLexicalSemanticScore: 0.65,
   lexicalBoost: 0.12
 });
 
@@ -128,7 +135,8 @@ function rankChunks(chunks, queryEmbedding, query, limit = 8, relevanceOptions =
   return candidates
     .map((candidate) => {
       const semanticLift = candidate.semanticScore - semanticBaseline;
-      const lexicalQualified = candidate.lexicalScore >= options.minLexicalScore;
+      const lexicalQualified = candidate.lexicalScore >= options.minLexicalScore
+        && candidate.semanticScore >= options.minLexicalSemanticScore;
       const semanticQualified = candidate.semanticScore >= options.minSemanticScore
         && semanticLift >= options.minSemanticLift;
       const relevanceScore = candidate.chunkRankScore + Math.max(0, semanticLift);
