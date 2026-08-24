@@ -1,0 +1,13 @@
+{
+  "post": "2026-08-19-wie-dieser-blog-gebaut-ist",
+  "queries": [
+    {
+      "query": "Warum braucht dieser Blog keine Datenbank?",
+      "maxRank": 1
+    },
+    {
+      "query": "Wie ist die Architektur dieses Blogs aufgebaut?",
+      "maxRank": 1
+    }
+  ]
+}
