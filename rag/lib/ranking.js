@@ -14,7 +14,7 @@ const DEFAULT_RELEVANCE = Object.freeze({
   minSemanticScore: 0.84,
   minSemanticLift: 0.025,
   minLexicalScore: 0.22,
-  minLexicalSemanticScore: 0.80,
+  minLexicalSemanticScore: 0.65,
   lexicalBoost: 0.12
 });
 
