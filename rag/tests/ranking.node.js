@@ -59,9 +59,9 @@ test('rankChunks rejects uniformly weak semantic matches without lexical evidenc
 
 test('rankChunks rejects lexical-only matches when semantic similarity is too weak', () => {
   const chunks = [
-    { post_id: 'a', chunk_id: 'a1', title: 'Käsekuchen Docker', embedding: [0.75, 0.6614] },
-    { post_id: 'b', chunk_id: 'b1', title: 'RSS', embedding: [0.74, 0.6726] },
-    { post_id: 'c', chunk_id: 'c1', title: 'AWS', embedding: [0.73, 0.6834] }
+    { post_id: 'a', chunk_id: 'a1', title: 'Käsekuchen Docker', embedding: [0.6, 0.8] },
+    { post_id: 'b', chunk_id: 'b1', title: 'RSS', embedding: [0.59, 0.8074] },
+    { post_id: 'c', chunk_id: 'c1', title: 'AWS', embedding: [0.58, 0.8146] }
   ];
 
   const results = rankChunks(chunks, [1, 0], 'Käsekuchen', 8);
