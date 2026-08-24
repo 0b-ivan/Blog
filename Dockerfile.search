@@ -4,7 +4,9 @@ WORKDIR /app/rag
 
 COPY rag/package.json ./
 RUN npm install --omit=dev --no-audit --no-fund \
-  && npm cache clean --force
+  && npm cache clean --force \
+  && rm -rf /usr/local/lib/node_modules/npm \
+  && rm -f /usr/local/bin/npm /usr/local/bin/npx
 
 COPY rag ./
 COPY posts /app/posts
