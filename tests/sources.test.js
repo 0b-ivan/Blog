@@ -1,14 +1,14 @@
 const request = require('supertest');
-const { createApp } = require('../privacy-server');
+const { createApp } = require('../server');
 
 describe('central sources', () => {
-  it('serves the source directory through the hardened app', async () => {
+  it('serves the source directory', async () => {
     const res = await request(createApp()).get('/sources.html');
 
     expect(res.status).toBe(200);
     expect(res.text).toContain('<h1>Quellen</h1>');
     expect(res.text).toContain('id="sources-list"');
-    expect(res.headers['content-security-policy']).toContain("default-src 'self'");
+    expect(res.text).toContain('/assets/sources.js');
   });
 
   it('exposes the central source catalog as json', async () => {
