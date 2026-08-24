@@ -57,7 +57,6 @@ module.exports = [
       'assets/tag-navigation.js',
       'assets/knowledge-graph.js',
       'assets/knowledge-network.js',
-      'assets/roadmap.js',
       'assets/grep.js',
       'assets/kernel-grep-overlay.js',
       'assets/glossary.js'
