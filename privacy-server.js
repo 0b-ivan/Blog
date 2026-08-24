@@ -362,15 +362,6 @@ function createApp() {
     }
   });
 
-  app.get(['/roadmap', '/roadmap.html'], async (_req, res) => {
-    try {
-      await sendHardenedHtml(res, 'roadmap.html');
-    } catch (error) {
-      console.error(error);
-      res.status(500).type('text').send('Could not load roadmap');
-    }
-  });
-
   app.get(['/snippets', '/snippets/', '/snippets/index.html'], async (_req, res) => {
     try {
       const html = await fs.readFile(path.join(root, 'snippets', 'index.html'), 'utf8');

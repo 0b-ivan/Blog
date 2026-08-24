@@ -10,7 +10,8 @@ const navigationSources = [
   'grep.html',
   'snippets/index.html',
   'server.js',
-  'enhanced-server.js'
+  'enhanced-server.js',
+  'lib/glossary.js'
 ];
 
 const expectedNavigation = [
@@ -37,5 +38,13 @@ describe('primary navigation', () => {
     const source = await fs.readFile(path.join(repoRoot, file), 'utf8');
     expect(extractNavigation(source)).toEqual(expectedNavigation);
   });
-});
 
+  it('does not recreate the removed roadmap navigation', async () => {
+    const files = ['assets/tag-navigation.js', 'privacy-server.js', 'lib/glossary.js'];
+    const sources = await Promise.all(
+      files.map((file) => fs.readFile(path.join(repoRoot, file), 'utf8'))
+    );
+
+    expect(sources.join('\n')).not.toMatch(/roadmap/i);
+  });
+});

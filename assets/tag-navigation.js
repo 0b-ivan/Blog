@@ -1,4 +1,13 @@
 (() => {
+  const PRIMARY_NAVIGATION = [
+    ['Artikel', '/#posts'],
+    ['Themen', '/#topics'],
+    ['Snippets', '/snippets/'],
+    ['Glossar', '/glossary'],
+    ['Wissensnetz', '/knowledge'],
+    ['Archiv', '/archive']
+  ];
+
   function tagHref(label) {
     return `/tags/${encodeURIComponent(String(label || '').trim())}`;
   }
@@ -31,67 +40,34 @@
     root.querySelectorAll?.('.tag-chip').forEach(upgradeTagChip);
   }
 
-  function ensureRoadmapNavigation() {
-    const nav = document.querySelector('.main-nav');
-    if (!nav || nav.querySelector('a[href="/roadmap"]')) {
-      return;
+  function isCurrentNavigation(href) {
+    const path = window.location.pathname.replace(/\/$/, '') || '/';
+
+    if (href === '/snippets/') {
+      return path === '/snippets';
     }
 
-    const link = document.createElement('a');
-    link.href = '/roadmap';
-    link.textContent = 'Roadmap';
-
-    const snippets = nav.querySelector('a[href="/snippets/"]');
-    if (snippets) {
-      snippets.insertAdjacentElement('afterend', link);
-      return;
-    }
-
-    nav.append(link);
+    return !href.includes('#') && path === href;
   }
 
-  function ensureGlossaryNavigation() {
+  function ensurePrimaryNavigation() {
     const nav = document.querySelector('.main-nav');
-    if (!nav || nav.querySelector('a[href="/glossary"]')) {
+    if (!nav) {
       return;
     }
 
-    const link = document.createElement('a');
-    link.href = '/glossary';
-    link.textContent = 'Glossar';
+    const links = PRIMARY_NAVIGATION.map(([label, href]) => {
+      const link = document.createElement('a');
+      link.href = href;
+      link.textContent = label;
+      if (isCurrentNavigation(href)) {
+        link.setAttribute('aria-current', 'page');
+      }
+      return link;
+    });
 
-    const roadmap = nav.querySelector('a[href="/roadmap"]');
-    const snippets = nav.querySelector('a[href="/snippets/"]');
-    const anchor = roadmap || snippets;
-
-    if (anchor) {
-      anchor.insertAdjacentElement('afterend', link);
-      return;
-    }
-
-    nav.append(link);
-  }
-
-  function ensureKnowledgeNavigation() {
-    const nav = document.querySelector('.main-nav');
-    if (!nav || nav.querySelector('a[href="/knowledge"]')) {
-      return;
-    }
-
-    const link = document.createElement('a');
-    link.href = '/knowledge';
-    link.textContent = 'Wissensnetz';
-
-    const glossary = nav.querySelector('a[href="/glossary"]');
-    const roadmap = nav.querySelector('a[href="/roadmap"]');
-    const anchor = glossary || roadmap;
-
-    if (anchor) {
-      anchor.insertAdjacentElement('afterend', link);
-      return;
-    }
-
-    nav.append(link);
+    nav.querySelectorAll('a').forEach((link) => link.remove());
+    nav.prepend(...links);
   }
 
   function loadKnowledgeNetwork() {
@@ -131,9 +107,7 @@
   }
 
   upgradeTagChips();
-  ensureRoadmapNavigation();
-  ensureGlossaryNavigation();
-  ensureKnowledgeNavigation();
+  ensurePrimaryNavigation();
   loadKnowledgeNetwork();
   loadKnowledgeGraph();
 
