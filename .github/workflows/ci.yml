@@ -252,24 +252,94 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '0'
 
-      - name: Trivy blog strict gate on CRITICAL
+      - name: Create blog CRITICAL report
         if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.BLOG_IMAGE }}
-          format: table
+          format: json
+          output: trivy-blog-critical.json
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL
-          exit-code: '1'
+          exit-code: '0'
 
-      - name: Trivy Kernel Grep strict gate on CRITICAL
+      - name: Enforce blog CRITICAL gate
+        if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          report = json.loads(Path('trivy-blog-critical.json').read_text(encoding='utf-8'))
+          vulnerabilities = []
+          for result in report.get('Results') or []:
+              target = result.get('Target', '')
+              for vuln in result.get('Vulnerabilities') or []:
+                  vulnerabilities.append((
+                      target,
+                      vuln.get('VulnerabilityID', ''),
+                      vuln.get('PkgName', ''),
+                      vuln.get('InstalledVersion', ''),
+                      vuln.get('FixedVersion', ''),
+                  ))
+
+          if not vulnerabilities:
+              print('No CRITICAL vulnerabilities found in blog image.')
+              sys.exit(0)
+
+          print('CRITICAL vulnerabilities in blog image:')
+          for target, vuln_id, package, installed, fixed in vulnerabilities:
+              fixed_display = fixed or '<none>'
+              print(f'{vuln_id} | {package} | installed={installed} | fixed={fixed_display} | target={target}')
+              print(f'::error title={vuln_id}::{package} installed={installed} fixed={fixed_display} target={target}')
+          sys.exit(1)
+          PY
+
+      - name: Create Kernel Grep CRITICAL report
         if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.SEARCH_IMAGE }}
-          format: table
+          format: json
+          output: trivy-search-critical.json
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL
-          exit-code: '1'
+          exit-code: '0'
+
+      - name: Enforce Kernel Grep CRITICAL gate
+        if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          report = json.loads(Path('trivy-search-critical.json').read_text(encoding='utf-8'))
+          vulnerabilities = []
+          for result in report.get('Results') or []:
+              target = result.get('Target', '')
+              for vuln in result.get('Vulnerabilities') or []:
+                  vulnerabilities.append((
+                      target,
+                      vuln.get('VulnerabilityID', ''),
+                      vuln.get('PkgName', ''),
+                      vuln.get('InstalledVersion', ''),
+                      vuln.get('FixedVersion', ''),
+                  ))
+
+          if not vulnerabilities:
+              print('No CRITICAL vulnerabilities found in Kernel Grep image.')
+              sys.exit(0)
+
+          print('CRITICAL vulnerabilities in Kernel Grep image:')
+          for target, vuln_id, package, installed, fixed in vulnerabilities:
+              fixed_display = fixed or '<none>'
+              print(f'{vuln_id} | {package} | installed={installed} | fixed={fixed_display} | target={target}')
+              print(f'::error title={vuln_id}::{package} installed={installed} fixed={fixed_display} target={target}')
+          sys.exit(1)
+          PY
