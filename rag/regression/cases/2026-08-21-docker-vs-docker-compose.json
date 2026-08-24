@@ -1,0 +1,13 @@
+{
+  "post": "2026-08-21-docker-vs-docker-compose",
+  "queries": [
+    {
+      "query": "Ich will mir lange docker run Befehle nicht merken",
+      "maxRank": 1
+    },
+    {
+      "query": "Webserver Datenbank und Redis zusammen verwalten",
+      "maxRank": 1
+    }
+  ]
+}
