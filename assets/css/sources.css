@@ -1,0 +1,74 @@
+.sources-page {
+  max-width: 980px;
+}
+
+.sources-intro {
+  max-width: 760px;
+}
+
+.sources-filter-label {
+  display: block;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.85rem;
+}
+
+.sources-filter {
+  width: 100%;
+  max-width: 620px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  background: rgba(8, 12, 18, 0.72);
+  color: inherit;
+  font: inherit;
+}
+
+.sources-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.source-card {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  border-radius: 10px;
+  background: rgba(8, 12, 18, 0.58);
+  scroll-margin-top: 7rem;
+}
+
+.source-card h2 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.source-card h2 a {
+  color: inherit;
+}
+
+.source-meta,
+.source-details,
+.source-url {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+}
+
+.source-meta,
+.source-details {
+  opacity: 0.72;
+}
+
+.source-url {
+  margin-top: 0.6rem;
+  overflow-wrap: anywhere;
+  opacity: 0.55;
+}
+
+.source-card-target,
+.source-card:target {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}

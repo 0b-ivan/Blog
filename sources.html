@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quellen | Kernel Notes</title>
+    <meta name="description" content="Zentrales Quellenverzeichnis für die Beiträge auf Kernel Notes." />
+    <link rel="stylesheet" href="/styles.css?v=20260819-2" />
+    <link rel="stylesheet" href="/assets/css/sources.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="logo" href="/" aria-label="Kernel Notes – Startseite">Kernel Notes</a>
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <a href="/#posts">Artikel</a>
+        <a href="/#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
+        <a href="/glossary">Glossar</a>
+        <a href="/knowledge">Wissensnetz</a>
+        <a href="/archive">Archiv</a>
+      </nav>
+    </header>
+
+    <main>
+      <article class="post-page sources-page">
+        <p class="eyebrow">Referenzen</p>
+        <h1>Quellen</h1>
+        <p class="sources-intro">
+          Die Quellen der Blogbeiträge werden zentral gepflegt. Beiträge verweisen auf eine Quellen-ID;
+          URL, Herausgeber und Abrufdatum stehen nur einmal in diesem Verzeichnis.
+        </p>
+
+        <label class="sources-filter-label" for="sources-filter">Quellen durchsuchen</label>
+        <input id="sources-filter" class="sources-filter" type="search" placeholder="z. B. Docker, GitHub, systemd …" autocomplete="off" />
+
+        <p id="sources-status" class="meta" aria-live="polite">Quellen werden geladen …</p>
+        <div id="sources-list" class="sources-list"></div>
+
+        <noscript>
+          <p>Für das dynamische Quellenverzeichnis muss JavaScript aktiviert sein.</p>
+        </noscript>
+      </article>
+    </main>
+
+    <script src="/assets/sources.js" defer></script>
+  </body>
+</html>

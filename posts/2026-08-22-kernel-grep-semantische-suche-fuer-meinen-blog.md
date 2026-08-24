@@ -1,11 +1,11 @@
 ---
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
-version: 5
+version: 6
 title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
 date: 2026-08-22
 published_at: 2026-08-22T19:51:00+02:00
 created_at: 2026-08-22
-updated_at: 2026-08-23
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Engineering
@@ -254,3 +254,16 @@ Die Embeddings selbst waren der einfache Teil. Die Qualität der Suche hängt st
 - und eine klare Trennung zwischen Blog und Search-Service.
 
 Kernel Grep bleibt bewusst klein. Wenn der Blog irgendwann so groß wird, dass DuckDB und lineare Vektorvergleiche nicht mehr reichen, kann die Architektur weiter wachsen. Im Moment löst sie genau das Problem, das ich hatte: nicht nur Wörter finden, sondern den passenden Artikel.
+
+## Querverweise
+
+- [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
+- [[markdown-features-im-blog|Markdown-Features im Blog nutzen]]
+- [[docker-vs-docker-compose|Docker vs. Docker Compose]]
+
+## Quellen
+
+- [multilingual-e5-small Model Card](/sources.html#e5-multilingual-small)
+- [Transformers.js Dokumentation](/sources.html#transformers-js)
+- [DuckDB Node.js Neo Client](/sources.html#duckdb-node-neo)
+- [DuckDB LIST Datentyp](/sources.html#duckdb-list-type)

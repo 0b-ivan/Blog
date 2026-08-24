@@ -51,6 +51,7 @@ jobs:
             --verbose
             --no-progress
             './posts/**/*.md'
+            './posts/_sources.json'
             './archive/**/*.md'
             './*.html'
             './README.md'

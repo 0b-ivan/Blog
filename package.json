@@ -19,6 +19,7 @@
     "posts:proofread:fix": "node scripts/proofread-posts.js --fix",
     "posts:sync-meta": "node scripts/sync-post-metadata.js",
     "posts:validate-meta": "node scripts/validate-post-frontmatter.js",
+    "references:check": "node scripts/check-references.js",
     "glossary:sync": "node scripts/sync-glossary.js",
     "glossary:check": "node scripts/sync-glossary.js --check",
     "glossary:suggest": "node scripts/suggest-glossary-terms.js",

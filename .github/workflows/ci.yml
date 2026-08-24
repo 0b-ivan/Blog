@@ -90,6 +90,9 @@ jobs:
       - name: Validate post frontmatter metadata
         run: npm run posts:validate-meta
 
+      - name: Validate sources and internal references
+        run: npm run references:check
+
       - name: Lint
         run: npm run lint
 

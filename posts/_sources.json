@@ -1,0 +1,188 @@
+{
+  "github-dependabot-alerts": {
+    "title": "Dependabot alerts",
+    "publisher": "GitHub Docs",
+    "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts",
+    "accessed_at": "2026-08-24"
+  },
+  "github-dependabot-security-updates": {
+    "title": "Dependabot security updates",
+    "publisher": "GitHub Docs",
+    "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-security-updates",
+    "accessed_at": "2026-08-24"
+  },
+  "github-dependabot-yml": {
+    "title": "About the dependabot.yml file",
+    "publisher": "GitHub Docs",
+    "url": "https://docs.github.com/en/code-security/concepts/supply-chain-security/about-the-dependabot-yml-file",
+    "accessed_at": "2026-08-24"
+  },
+  "github-actions-docs": {
+    "title": "GitHub Actions documentation",
+    "publisher": "GitHub Docs",
+    "url": "https://docs.github.com/en/actions",
+    "accessed_at": "2026-08-24"
+  },
+  "github-actions-manual-workflows": {
+    "title": "Manually running a workflow",
+    "publisher": "GitHub Docs",
+    "url": "https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow",
+    "accessed_at": "2026-08-24"
+  },
+  "cloudflare-tunnel": {
+    "title": "Cloudflare Tunnel",
+    "publisher": "Cloudflare Docs",
+    "url": "https://developers.cloudflare.com/tunnel/",
+    "accessed_at": "2026-08-24"
+  },
+  "cloudflare-access": {
+    "title": "Cloudflare Access applications",
+    "publisher": "Cloudflare Docs",
+    "url": "https://developers.cloudflare.com/cloudflare-one/access-controls/applications/",
+    "accessed_at": "2026-08-24"
+  },
+  "hetzner-cloud": {
+    "title": "Hetzner Cloud documentation",
+    "publisher": "Hetzner Docs",
+    "url": "https://docs.hetzner.com/cloud/",
+    "accessed_at": "2026-08-24"
+  },
+  "docker-compose": {
+    "title": "Compose file reference",
+    "publisher": "Docker Docs",
+    "url": "https://docs.docker.com/reference/compose-file/",
+    "accessed_at": "2026-08-24"
+  },
+  "docker-compose-production": {
+    "title": "Use Compose in production",
+    "publisher": "Docker Docs",
+    "url": "https://docs.docker.com/compose/how-tos/production/",
+    "accessed_at": "2026-08-24"
+  },
+  "docker-run": {
+    "title": "docker container run",
+    "publisher": "Docker Docs",
+    "url": "https://docs.docker.com/reference/cli/docker/container/run/",
+    "accessed_at": "2026-08-24"
+  },
+  "dockerfile": {
+    "title": "Dockerfile reference",
+    "publisher": "Docker Docs",
+    "url": "https://docs.docker.com/reference/dockerfile/",
+    "accessed_at": "2026-08-24"
+  },
+  "openssh-sshd-config": {
+    "title": "sshd_config manual",
+    "publisher": "OpenBSD Manual Pages",
+    "url": "https://man.openbsd.org/sshd_config",
+    "accessed_at": "2026-08-24"
+  },
+  "fail2ban": {
+    "title": "Fail2Ban project documentation",
+    "publisher": "Fail2Ban",
+    "url": "https://github.com/fail2ban/fail2ban",
+    "accessed_at": "2026-08-24"
+  },
+  "ubuntu-ufw": {
+    "title": "Firewall and UFW",
+    "publisher": "Ubuntu Server documentation",
+    "url": "https://ubuntu.com/server/docs/how-to/security/firewalls/",
+    "accessed_at": "2026-08-24"
+  },
+  "systemd-service": {
+    "title": "systemd.service",
+    "publisher": "systemd documentation",
+    "url": "https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html",
+    "accessed_at": "2026-08-24"
+  },
+  "journalctl": {
+    "title": "journalctl",
+    "publisher": "systemd documentation",
+    "url": "https://www.freedesktop.org/software/systemd/man/latest/journalctl.html",
+    "accessed_at": "2026-08-24"
+  },
+  "markdown-it": {
+    "title": "markdown-it documentation",
+    "publisher": "markdown-it",
+    "url": "https://markdown-it.github.io/",
+    "accessed_at": "2026-08-24"
+  },
+  "markdown-it-footnote": {
+    "title": "markdown-it-footnote",
+    "publisher": "markdown-it",
+    "url": "https://github.com/markdown-it/markdown-it-footnote",
+    "accessed_at": "2026-08-24"
+  },
+  "mermaid": {
+    "title": "Mermaid documentation",
+    "publisher": "Mermaid",
+    "url": "https://mermaid.js.org/intro/",
+    "accessed_at": "2026-08-24"
+  },
+  "express": {
+    "title": "Express documentation",
+    "publisher": "Express",
+    "url": "https://expressjs.com/",
+    "accessed_at": "2026-08-24"
+  },
+  "gray-matter": {
+    "title": "gray-matter",
+    "publisher": "jonschlinkert",
+    "url": "https://github.com/jonschlinkert/gray-matter",
+    "accessed_at": "2026-08-24"
+  },
+  "freshrss-docs": {
+    "title": "FreshRSS documentation",
+    "publisher": "FreshRSS",
+    "url": "https://freshrss.github.io/FreshRSS/en/",
+    "accessed_at": "2026-08-24"
+  },
+  "freshrss-api": {
+    "title": "FreshRSS Google Reader compatible API",
+    "publisher": "FreshRSS",
+    "url": "https://freshrss.github.io/FreshRSS/en/developers/06_GoogleReader_API.html",
+    "accessed_at": "2026-08-24"
+  },
+  "miniflux-docs": {
+    "title": "Miniflux documentation",
+    "publisher": "Miniflux",
+    "url": "https://miniflux.app/docs/",
+    "accessed_at": "2026-08-24"
+  },
+  "cspell": {
+    "title": "CSpell documentation",
+    "publisher": "CSpell",
+    "url": "https://cspell.org/docs/getting-started",
+    "accessed_at": "2026-08-24"
+  },
+  "languagetool-http-server": {
+    "title": "LanguageTool HTTP server",
+    "publisher": "LanguageTool",
+    "url": "https://dev.languagetool.org/http-server",
+    "accessed_at": "2026-08-24"
+  },
+  "e5-multilingual-small": {
+    "title": "multilingual-e5-small model card",
+    "publisher": "Hugging Face / intfloat",
+    "url": "https://huggingface.co/intfloat/multilingual-e5-small",
+    "accessed_at": "2026-08-24"
+  },
+  "transformers-js": {
+    "title": "Transformers.js documentation",
+    "publisher": "Hugging Face",
+    "url": "https://huggingface.co/docs/transformers.js/index",
+    "accessed_at": "2026-08-24"
+  },
+  "duckdb-node-neo": {
+    "title": "DuckDB Node.js Neo client",
+    "publisher": "DuckDB",
+    "url": "https://duckdb.org/docs/stable/clients/node_neo/overview",
+    "accessed_at": "2026-08-24"
+  },
+  "duckdb-list-type": {
+    "title": "LIST data type",
+    "publisher": "DuckDB",
+    "url": "https://duckdb.org/docs/stable/sql/data_types/list",
+    "accessed_at": "2026-08-24"
+  }
+}

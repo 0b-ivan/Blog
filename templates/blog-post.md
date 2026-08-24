@@ -22,3 +22,11 @@ Kurze Einleitung.
 ## Umsetzung
 
 ## Fazit
+
+## Querverweise
+
+- [[bestehender-post-slug|Lesbarer Titel]]
+
+## Quellen
+
+- [Name der Quelle](/sources.html#quellen-id)

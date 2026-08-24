@@ -1,11 +1,11 @@
 ---
 id: 2026-08-21-docker-vs-docker-compose
-version: 1
+version: 2
 title: "Docker vs. Docker Compose: Was ist der Unterschied?"
 date: 2026-08-21
 published_at: 2026-08-21T07:12:56+02:00
 created_at: 2026-08-21
-updated_at: 2026-08-21
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -206,3 +206,14 @@ Ein eigenes Image bauen?        → Dockerfile
 ```
 
 Damit ist auch die Rollenverteilung klar: Docker führt Container aus, Dockerfile baut Images und Docker Compose beschreibt, wie die Container einer Anwendung zusammen betrieben werden.
+
+## Querverweise
+
+- [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
+- [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
+
+## Quellen
+
+- [docker container run](/sources.html#docker-run)
+- [Docker Compose Referenz](/sources.html#docker-compose)
+- [Dockerfile Referenz](/sources.html#dockerfile)

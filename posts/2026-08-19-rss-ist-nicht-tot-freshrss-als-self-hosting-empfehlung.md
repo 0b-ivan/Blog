@@ -1,11 +1,11 @@
 ---
 id: 2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung
-version: 1
+version: 2
 title: RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung
 date: 2026-08-19
 published_at: 2026-08-19T23:57:52+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-19
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Self-Hosting
@@ -152,3 +152,15 @@ Es lässt sich gut in eine bestehende Docker-Infrastruktur integrieren, ist nich
 Vor allem bekommt man damit etwas zurück, das bei vielen modernen Plattformen verloren gegangen ist:
 
 **Die Kontrolle darüber, welche Inhalte man eigentlich sehen möchte.**
+
+## Querverweise
+
+- [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
+- [[docker-vs-docker-compose|Docker vs. Docker Compose]]
+
+## Quellen
+
+- [FreshRSS Dokumentation](/sources.html#freshrss-docs)
+- [FreshRSS API](/sources.html#freshrss-api)
+- [Miniflux Dokumentation](/sources.html#miniflux-docs)
+- [Docker Compose Referenz](/sources.html#docker-compose)

@@ -1,11 +1,11 @@
 ---
 id: 2026-08-19-fail2ban-ssh-hardening
-version: 1
+version: 2
 title: SSH absichern mit Fail2ban und sauberen Defaults
 date: 2026-08-19
 published_at: 2026-08-19T12:05:52+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-19
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Security
@@ -66,3 +66,15 @@ Fail2ban und SSH-Logs regelmäßig prüfen:[^logs]
 ## Fazit
 
 Sicherheit muss nicht kompliziert sein. Schon mit Key-Only, Root-Login aus, Fail2ban und enger Firewall schließt du viele triviale Angriffe aus.
+
+## Querverweise
+
+- [[systemd-services-sauber-betreiben|systemd Services sauber betreiben]]
+- [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
+
+## Quellen
+
+- [OpenSSH: sshd_config](/sources.html#openssh-sshd-config)
+- [Fail2Ban Projekt](/sources.html#fail2ban)
+- [Ubuntu Server: Firewall und UFW](/sources.html#ubuntu-ufw)
+- [systemd: journalctl](/sources.html#journalctl)
