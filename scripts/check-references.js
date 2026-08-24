@@ -1,5 +1,6 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { URL } = require('node:url');
 
 const root = path.resolve(__dirname, '..');
 const sourceFile = path.join(root, 'posts', '_sources.json');
