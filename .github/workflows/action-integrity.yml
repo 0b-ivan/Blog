@@ -1,0 +1,73 @@
+name: Action Integrity
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: action-integrity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-actions:
+    name: Pinned actions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Require immutable action references
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          sha = re.compile(r'^[0-9a-fA-F]{40}$')
+          uses = re.compile(r'^\s*uses:\s*([^\s#]+)')
+          violations = []
+
+          for path in sorted(Path('.github/workflows').glob('*.y*ml')):
+              for line_number, line in enumerate(path.read_text(encoding='utf-8').splitlines(), start=1):
+                  match = uses.match(line)
+                  if not match:
+                      continue
+
+                  reference = match.group(1).strip('"\'')
+
+                  # Local actions/workflows are part of this repository and do not need a remote SHA.
+                  if reference.startswith('./'):
+                      continue
+
+                  # Container actions must be pinned by digest rather than a mutable tag.
+                  if reference.startswith('docker://'):
+                      if '@sha256:' not in reference:
+                          violations.append((path, line_number, reference))
+                      continue
+
+                  if '@' not in reference:
+                      violations.append((path, line_number, reference))
+                      continue
+
+                  _, version = reference.rsplit('@', 1)
+                  if not sha.fullmatch(version):
+                      violations.append((path, line_number, reference))
+
+          if violations:
+              print('Unpinned GitHub Actions found:')
+              for path, line_number, reference in violations:
+                  print(f'  {path}:{line_number}: {reference}')
+              print('\nUse a full 40-character commit SHA. Keep the readable version as a comment, e.g.:')
+              print('  uses: actions/checkout@<40-char-sha> # v7.0.1')
+              sys.exit(1)
+
+          print('All external GitHub Actions are pinned to immutable references.')
+          PY
