@@ -1,11 +1,11 @@
 ---
 id: 2026-08-21-rechtschreib-pipeline-trotz-legasthenie
-version: 1
+version: 2
 title: "Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline"
 date: 2026-08-21
 published_at: 2026-08-21T09:24:57+02:00
 created_at: 2026-08-21
-updated_at: 2026-08-21
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Automation
@@ -248,3 +248,15 @@ veröffentlichen
 Die Pipeline soll Fehler früh finden und mir Arbeit abnehmen. Sie soll aber nicht entscheiden, was ich geschrieben haben wollte.
 
 Für mich ist das die passende Mischung aus Accessibility und Engineering: **Technik reduziert die Fehlerquote, der Mensch behält die Kontrolle.**
+
+## Querverweise
+
+- [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
+- [[dependabot-im-einsatz|Dependabot im Einsatz]]
+
+## Quellen
+
+- [CSpell Dokumentation](/sources.html#cspell)
+- [LanguageTool HTTP Server](/sources.html#languagetool-http-server)
+- [GitHub Actions](/sources.html#github-actions-docs)
+- [Manuell gestartete GitHub-Actions-Workflows](/sources.html#github-actions-manual-workflows)
