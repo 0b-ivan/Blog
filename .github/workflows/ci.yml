@@ -35,6 +35,7 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "heavy=true" >> "$GITHUB_OUTPUT"
             echo "security=true" >> "$GITHUB_OUTPUT"
+            echo "semantic=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -44,11 +45,18 @@ jobs:
 
           heavy=false
           security=false
+          semantic=false
 
           while IFS= read -r file; do
             case "$file" in
               package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
                 security=true
+                ;;
+            esac
+
+            case "$file" in
+              posts/*|archive/*|rag/*)
+                semantic=true
                 ;;
             esac
 
@@ -63,7 +71,8 @@ jobs:
 
           echo "heavy=$heavy" >> "$GITHUB_OUTPUT"
           echo "security=$security" >> "$GITHUB_OUTPUT"
-          echo "Classification: heavy=$heavy security=$security"
+          echo "semantic=$semantic" >> "$GITHUB_OUTPUT"
+          echo "Classification: heavy=$heavy security=$security semantic=$semantic"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -88,12 +97,28 @@ jobs:
         run: npm run test:coverage
 
       - name: Install semantic search dependencies
-        if: steps.changes.outputs.heavy == 'true'
+        if: steps.changes.outputs.heavy == 'true' || steps.changes.outputs.semantic == 'true'
         run: npm install --prefix rag --package-lock=false --no-audit --no-fund
 
       - name: Semantic search unit tests
         if: steps.changes.outputs.heavy == 'true'
         run: npm run rag:test
+
+      - name: Cache Kernel Grep embedding model
+        if: steps.changes.outputs.semantic == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .cache/kernel-grep-models
+          key: kernel-grep-e5-${{ runner.os }}-${{ hashFiles('rag/package.json') }}
+          restore-keys: |
+            kernel-grep-e5-${{ runner.os }}-
+
+      - name: Semantic search regression tests
+        if: steps.changes.outputs.semantic == 'true'
+        env:
+          RAG_MODEL_CACHE: ${{ github.workspace }}/.cache/kernel-grep-models
+          RAG_REGRESSION_EMBEDDER_MODE: e5
+        run: npm run rag:test:regression
 
       - name: Validate Docker Compose
         run: docker compose config
