@@ -24,13 +24,13 @@ RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
 		RELEASE_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
 		printf '{"version":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_DATE" > /app/build-info.json
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot
+FROM gcr.io/distroless/nodejs22-debian13:nonroot
 
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/build-info.json ./build-info.json
-COPY index.html about.html grep.html impressum.html datenschutz.html script.js ./
+COPY index.html about.html grep.html sources.html impressum.html datenschutz.html script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets
 COPY config ./config
