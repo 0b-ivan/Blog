@@ -1,5 +1,5 @@
 .history-page {
-  padding: 4.5rem 0 6rem;
+  padding: 4rem 0 6rem;
 }
 
 .history-panel {
@@ -9,6 +9,8 @@
 
 .history-panel > h1 {
   margin: 0 0 1.1rem;
+  font-size: clamp(2.1rem, 5vw, 4.1rem);
+  line-height: 1.12;
 }
 
 .archive-grid {
@@ -18,22 +20,7 @@
 }
 
 .archive-card {
-  display: block;
-  padding: 1.25rem;
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-card);
-  background: var(--card);
-  box-shadow: var(--shadow-soft);
-  color: inherit;
-  text-decoration: none;
-}
-
-.archive-card:hover {
-  border-color: var(--accent);
-}
-
-.archive-card h2 {
-  margin: 6px 0 10px;
+  cursor: default;
 }
 
 .post-version-footer {
