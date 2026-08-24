@@ -1,11 +1,11 @@
 ---
 id: 2026-08-19-systemd-services-sauber-betreiben
-version: 1
+version: 2
 title: systemd Services sauber betreiben
 date: 2026-08-19
 published_at: 2026-08-19T12:05:52+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-19
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Linux
@@ -46,7 +46,7 @@ journalctl -u kernel-notes -n 200 --no-pager
 
 Wenn dein Service externe Abhängigkeiten hat (DB, Cache, API), dokumentiere sie im Unit-File und in Runbooks.
 
-Siehe auch: [[Systemd Timer Statt Cron]]
+Siehe auch: [[fail2ban-ssh-hardening|SSH absichern mit Fail2ban und sauberen Defaults]]
 
 ## Mermaid: Lebenszyklus
 
@@ -62,3 +62,13 @@ flowchart TD
 ## Fazit
 
 Mit sauberem Unit-File, Restart-Strategie und klaren Logs wird `systemd` zum soliden Betriebsfundament statt Blackbox.
+
+## Querverweise
+
+- [[fail2ban-ssh-hardening|SSH absichern mit Fail2ban und sauberen Defaults]]
+- [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
+
+## Quellen
+
+- [systemd.service](/sources.html#systemd-service)
+- [journalctl](/sources.html#journalctl)
