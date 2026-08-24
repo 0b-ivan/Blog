@@ -50,7 +50,7 @@
   "docker-compose": {
     "title": "Compose file reference",
     "publisher": "Docker Docs",
-    "url": "https://docs.docker.com/compose/compose-file/",
+    "url": "https://docs.docker.com/reference/compose-file/",
     "accessed_at": "2026-08-24"
   },
   "docker-compose-production": {
@@ -86,7 +86,7 @@
   "ubuntu-ufw": {
     "title": "Firewall and UFW",
     "publisher": "Ubuntu Server documentation",
-    "url": "https://documentation.ubuntu.com/server/how-to/security/firewalls/",
+    "url": "https://ubuntu.com/server/docs/how-to/security/firewalls/",
     "accessed_at": "2026-08-24"
   },
   "systemd-service": {
@@ -182,7 +182,7 @@
   "duckdb-list-type": {
     "title": "LIST data type",
     "publisher": "DuckDB",
-    "url": "https://duckdb.org/docs/stable/sql/data_types/list.html",
+    "url": "https://duckdb.org/docs/stable/sql/data_types/list",
     "accessed_at": "2026-08-24"
   }
 }
