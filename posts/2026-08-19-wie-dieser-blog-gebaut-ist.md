@@ -1,11 +1,11 @@
 ---
 id: 2026-08-19-wie-dieser-blog-gebaut-ist
-version: 2
+version: 3
 title: Wie dieser Blog gebaut ist
 date: 2026-08-19
 published_at: 2026-08-19T12:39:19+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-20
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Engineering
@@ -133,3 +133,19 @@ Der Stack ist bewusst nicht maximal komplex, sondern maximal nützlich.
 Markdown + Node + Docker + CI/CD liefert für einen technischen Blog bereits sehr viel: schnelle Iteration, gute Lesbarkeit im Repo, saubere Deployments und nachvollziehbare Änderungen.
 
 Wenn sich Anforderungen ändern, lässt sich diese Basis schrittweise erweitern, ohne alles neu bauen zu müssen.
+
+## Querverweise
+
+- [[markdown-features-im-blog|Markdown-Features im Blog nutzen]]
+- [[dependabot-im-einsatz|Dependabot im Einsatz]]
+- [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
+- [[kernel-grep-semantische-suche-fuer-meinen-blog|Kernel Grep]]
+
+## Quellen
+
+- [Express Dokumentation](/sources.html#express)
+- [gray-matter](/sources.html#gray-matter)
+- [markdown-it Dokumentation](/sources.html#markdown-it)
+- [Docker Compose Referenz](/sources.html#docker-compose)
+- [GitHub Actions](/sources.html#github-actions-docs)
+- [GitHub Dependabot](/sources.html#github-dependabot-yml)
