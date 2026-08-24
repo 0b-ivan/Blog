@@ -8,6 +8,7 @@ const navigationSources = [
   'impressum.html',
   'datenschutz.html',
   'grep.html',
+  'sources.html',
   'snippets/index.html',
   'server.js',
   'enhanced-server.js',
