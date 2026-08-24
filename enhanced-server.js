@@ -100,6 +100,18 @@ function formatDate(value) {
   }).format(parsed);
 }
 
+function formatPostDate(value) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value || '');
+  }
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(parsed);
+}
+
 function addArchiveNavigation(html) {
   if (html.includes('href="/archive"')) {
     return html;
@@ -218,11 +230,14 @@ function pageShell(title, body) {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/assets/css/typewriter.css" data-kernel-typewriter />
     <link rel="stylesheet" href="/assets/css/history.css" />
     <link rel="stylesheet" href="/assets/css/tag-links.css" />
   </head>
   <body>
     <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
     <header class="site-header">
       <a class="logo" href="/" aria-label="Kernel Notes – Startseite">Kernel Notes</a>
       <nav class="main-nav" aria-label="Hauptnavigation">
@@ -242,11 +257,11 @@ function pageShell(title, body) {
 
 function collectionCard(post, href) {
   const tags = legacy.normalizeTags(post.tags).slice(0, 10).map(tagLink).join('');
-  return `<article class="archive-card collection-card">
-      <p class="meta">${escapeHtml(post.category)} · ${escapeHtml(post.date)}</p>
-      <h2><a class="collection-card__title" href="${href}">${escapeHtml(post.title)}</a></h2>
+  return `<article class="post-card archive-card collection-card">
+      <p class="meta">${escapeHtml(post.category)} · ${escapeHtml(formatPostDate(post.date))}</p>
+      <h3><a class="collection-card__title" href="${href}">${escapeHtml(post.title)}</a></h3>
       <p>${escapeHtml(post.excerpt)}</p>
-      ${tags ? `<div class="tag-list">${tags}</div>` : ''}
+      ${tags ? `<div class="post-tags">${tags}</div>` : ''}
       <a class="read-more" href="${href}">Artikel lesen</a>
     </article>`;
 }
@@ -261,11 +276,11 @@ async function renderArchiveIndex() {
     const manifest = await readManifest(post.slug);
     const href = `/archive/${post.slug}`;
     const tags = legacy.normalizeTags(post.tags).slice(0, 10).map(tagLink).join('');
-    return `<article class="archive-card collection-card">
-      <p class="meta">${escapeHtml(post.category)} · ${escapeHtml(post.date)}${manifest?.currentVersion ? ` · v${manifest.currentVersion}` : ''}</p>
-      <h2><a class="collection-card__title" href="${href}">${escapeHtml(post.title)}</a></h2>
+    return `<article class="post-card archive-card collection-card">
+      <p class="meta">${escapeHtml(post.category)} · ${escapeHtml(formatPostDate(post.date))}${manifest?.currentVersion ? ` · v${manifest.currentVersion}` : ''}</p>
+      <h3><a class="collection-card__title" href="${href}">${escapeHtml(post.title)}</a></h3>
       <p>${escapeHtml(post.excerpt)}</p>
-      ${tags ? `<div class="tag-list">${tags}</div>` : ''}
+      ${tags ? `<div class="post-tags">${tags}</div>` : ''}
       <a class="read-more" href="${href}">Archivierten Artikel lesen</a>
     </article>`;
   }));
