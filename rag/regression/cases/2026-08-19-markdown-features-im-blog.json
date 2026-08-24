@@ -1,0 +1,13 @@
+{
+  "post": "2026-08-19-markdown-features-im-blog",
+  "queries": [
+    {
+      "query": "Architekturdiagramm direkt im Markdown schreiben",
+      "maxRank": 1
+    },
+    {
+      "query": "Ich möchte einen Warnkasten in einem Artikel anzeigen",
+      "maxRank": 1
+    }
+  ]
+}

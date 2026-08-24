@@ -1,0 +1,13 @@
+{
+  "post": "2026-08-19-systemd-services-sauber-betreiben",
+  "queries": [
+    {
+      "query": "Mein Linux Dienst soll nach einem Absturz automatisch neu starten",
+      "maxRank": 1
+    },
+    {
+      "query": "Wie betreibe ich einen eigenen Prozess dauerhaft unter Linux?",
+      "maxRank": 1
+    }
+  ]
+}
