@@ -1,11 +1,11 @@
 ---
 id: 2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust
-version: 1
+version: 2
 title: Deployment mit Hetzner, Docker und Cloudflare Zero Trust
 date: 2026-08-19
 published_at: 2026-08-19T23:57:52+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-19
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -226,3 +226,16 @@ Dazu kommt ein wichtiger Vorteil: Viele Dienste müssen überhaupt nicht mehr di
 Für kleinere Projekte, interne Anwendungen und Self-Hosting ist die Kombination aus **Hetzner + Docker + Cloudflare Zero Trust** deshalb ein sehr interessantes Setup.
 
 Man bekommt eine überschaubare Infrastruktur, einfache Deployments und kann trotzdem sehr genau kontrollieren, welche Dienste öffentlich und welche nur nach Authentifizierung erreichbar sind.
+
+## Querverweise
+
+- [[docker-vs-docker-compose|Docker vs. Docker Compose]]
+- [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
+
+## Quellen
+
+- [Hetzner Cloud Dokumentation](/sources.html#hetzner-cloud)
+- [Docker Compose Referenz](/sources.html#docker-compose)
+- [Docker Compose in Produktion](/sources.html#docker-compose-production)
+- [Cloudflare Tunnel](/sources.html#cloudflare-tunnel)
+- [Cloudflare Access](/sources.html#cloudflare-access)
