@@ -73,6 +73,10 @@ function renderPost({ id, title, date, publishedAt, category, tags, excerpt }) {
   return `---\nid: ${id}\nversion: 1\ntitle: ${yamlString(title)}\ndate: ${date}\npublished_at: ${publishedAt}\ncreated_at: ${date}\nupdated_at: ${date}\nauthor: obivan\nreviewed_by: pending\ncategory: ${yamlString(category)}\nexcerpt: ${yamlString(excerpt)}\ntags:${tagsYaml}\n---\n\n# ${title}\n\n`;
 }
 
+function renderSearchRegressionFixture(id) {
+  return `${JSON.stringify({ post: id, queries: [] }, null, 2)}\n`;
+}
+
 async function main() {
   const options = parseOptions(process.argv.slice(2));
 
@@ -91,8 +95,11 @@ async function main() {
   const date = localDateString(now);
   const publishedAt = now.toISOString();
   const id = `${date}-${slug}`;
-  const postsDir = path.join(__dirname, '..', 'posts');
+  const repoRoot = path.join(__dirname, '..');
+  const postsDir = path.join(repoRoot, 'posts');
   const targetPath = path.join(postsDir, `${id}.md`);
+  const regressionDir = path.join(repoRoot, 'rag', 'regression', 'cases');
+  const regressionPath = path.join(regressionDir, `${id}.json`);
 
   try {
     await fs.access(targetPath);
@@ -115,7 +122,12 @@ async function main() {
   });
 
   await fs.writeFile(targetPath, content, 'utf-8');
-  console.log(`Created ${path.relative(path.join(__dirname, '..'), targetPath)}`);
+  await fs.mkdir(regressionDir, { recursive: true });
+  await fs.writeFile(regressionPath, renderSearchRegressionFixture(id), { encoding: 'utf-8', flag: 'wx' });
+
+  console.log(`Created ${path.relative(repoRoot, targetPath)}`);
+  console.log(`Created ${path.relative(repoRoot, regressionPath)}`);
+  console.log('Add at least one semantic search query to the regression fixture before merging.');
 }
 
 if (require.main === module) {
@@ -129,5 +141,6 @@ module.exports = {
   slugifyTitle,
   localDateString,
   parseOptions,
-  renderPost
+  renderPost,
+  renderSearchRegressionFixture
 };
