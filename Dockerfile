@@ -24,7 +24,7 @@ RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
 		RELEASE_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
 		printf '{"version":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_DATE" > /app/build-info.json
 
-FROM gcr.io/distroless/nodejs22-debian12:nonroot
+FROM gcr.io/distroless/nodejs22-debian13:nonroot
 
 WORKDIR /app
 
