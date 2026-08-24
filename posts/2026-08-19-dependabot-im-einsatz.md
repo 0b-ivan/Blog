@@ -1,11 +1,11 @@
 ---
 id: 2026-08-19-dependabot-im-einsatz
-version: 3
+version: 4
 title: "Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?"
 date: 2026-08-19
 published_at: 2026-08-19T18:10:45+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-20
+updated_at: 2026-08-24
 author: obivan
 reviewed_by: pending
 category: Security
@@ -164,9 +164,14 @@ Der eigentliche Mehrwert ist die Kette aus **Dependency Graph → Alert → Upda
 
 Damit werden veraltete und verwundbare Dependencies sichtbar, bevor sie irgendwann zufällig bei einem Incident oder manuellen Audit auffallen.
 
-### Weiterführend
+## Querverweise
 
-- [GitHub Docs: Dependabot Alerts](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-alerts)
-- [GitHub Docs: Dependabot Security Updates](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-security-updates)
-- [GitHub Docs: dependabot.yml](https://docs.github.com/en/code-security/concepts/supply-chain-security/about-the-dependabot-yml-file)
-- [GitHub Docs: Dependabot Optionen](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference)
+- [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
+- [[rechtschreib-pipeline-trotz-legasthenie|Rechtschreib-Pipeline mit GitHub Actions]]
+
+## Quellen
+
+- [GitHub Docs: Dependabot Alerts](/sources.html#github-dependabot-alerts)
+- [GitHub Docs: Dependabot Security Updates](/sources.html#github-dependabot-security-updates)
+- [GitHub Docs: dependabot.yml](/sources.html#github-dependabot-yml)
+- [GitHub Docs: GitHub Actions](/sources.html#github-actions-docs)
