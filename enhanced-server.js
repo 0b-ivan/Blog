@@ -224,14 +224,14 @@ function pageShell(title, body) {
   <body>
     <div class="bg-grid" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="logo" href="/">Kernel Notes</a>
+      <a class="logo" href="/" aria-label="Kernel Notes – Startseite">Kernel Notes</a>
       <nav class="main-nav" aria-label="Hauptnavigation">
         <a href="/#posts">Artikel</a>
         <a href="/#topics">Themen</a>
         <a href="/snippets/">Snippets</a>
-        <a href="/#about">About</a>
+        <a href="/glossary">Glossar</a>
+        <a href="/knowledge">Wissensnetz</a>
         <a href="/archive">Archiv</a>
-        <a href="/impressum">Impressum</a>
       </nav>
     </header>
     <main class="history-page">${body}</main>

@@ -579,6 +579,7 @@ function renderPostPage(post, relatedPosts = []) {
         <a href="/#topics">Themen</a>
         <a href="/snippets/">Snippets</a>
         <a href="/glossary">Glossar</a>
+        <a href="/knowledge">Wissensnetz</a>
         <a href="/archive">Archiv</a>
       </nav>
     </header>
