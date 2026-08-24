@@ -1,0 +1,13 @@
+{
+  "post": "2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog",
+  "queries": [
+    {
+      "query": "Wie verhindere ich unsinnige Treffer bei einer semantischen Suche?",
+      "maxRank": 1
+    },
+    {
+      "query": "Wie kann eine Suche ähnliche Inhalte statt nur gleiche Wörter finden?",
+      "maxRank": 1
+    }
+  ]
+}
