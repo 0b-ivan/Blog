@@ -123,6 +123,7 @@ test('Kernel Grep keeps expected semantic search results stable', { timeout: 20 
   }
 
   const engine = await SemanticSearchEngine.create(engineOptions);
+  const failures = [];
 
   try {
     for (const slug of activeSlugs) {
@@ -131,23 +132,26 @@ test('Kernel Grep keeps expected semantic search results stable', { timeout: 20 
         const maxRank = regressionCase.maxRank ?? 1;
         const results = await engine.search(regressionCase.query, Math.max(5, maxRank));
         const rankIndex = results.findIndex((result) => result.slug === slug);
-        const actual = results.map((result, index) => `${index + 1}:${result.slug}`).join(', ') || '<no results>';
 
-        assert.ok(
-          rankIndex >= 0 && rankIndex + 1 <= maxRank,
-          `Query "${regressionCase.query}" expected ${slug} at rank <= ${maxRank}, got ${actual}`
-        );
+        if (rankIndex < 0 || rankIndex + 1 > maxRank) {
+          const actual = results.map((result, index) => `${index + 1}:${result.slug}`).join(', ') || '<no results>';
+          failures.push(`POSITIVE | "${regressionCase.query}" | expected ${slug} at rank <= ${maxRank} | got ${actual}`);
+        }
       }
     }
 
     for (const query of noResultQueries) {
       const results = await engine.search(query, 5);
-      assert.deepEqual(
-        results,
-        [],
-        `Query "${query}" should return no result, got ${results.map((result) => result.slug).join(', ')}`
-      );
+      if (results.length > 0) {
+        failures.push(`NEGATIVE | "${query}" | expected no results | got ${results.map((result, index) => `${index + 1}:${result.slug}`).join(', ')}`);
+      }
     }
+
+    assert.deepEqual(
+      failures,
+      [],
+      `Semantic search regression failures (${failures.length}):\n${failures.join('\n')}`
+    );
   } finally {
     engine.close();
     await fs.rm(root, { recursive: true, force: true });
