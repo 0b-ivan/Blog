@@ -39,6 +39,13 @@ async function markdownFiles(directory) {
     .map((entry) => path.join(directory, entry.name));
 }
 
+function referenceText(content) {
+  return String(content || '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/~~~[\s\S]*?~~~/g, '')
+    .replace(/`[^`\n]*`/g, '');
+}
+
 function isValidHttpUrl(value) {
   try {
     const url = new URL(value);
@@ -88,10 +95,11 @@ async function main() {
 
   for (const file of [...activeFiles, ...archiveFiles]) {
     const content = await fs.readFile(file, 'utf8');
+    const scanContent = referenceText(content);
     const relative = path.relative(root, file);
     const sourceIdsInPost = new Set();
 
-    for (const match of content.matchAll(SOURCE_LINK_RE)) {
+    for (const match of scanContent.matchAll(SOURCE_LINK_RE)) {
       const id = match[1];
       sourceIdsInPost.add(id);
       usedSourceIds.add(id);
@@ -105,7 +113,7 @@ async function main() {
     }
 
     if (file.includes(`${path.sep}posts${path.sep}`)) {
-      for (const match of content.matchAll(WIKI_LINK_RE)) {
+      for (const match of scanContent.matchAll(WIKI_LINK_RE)) {
         const target = match[1].trim();
         if (!resolvesWikiTarget(target, activeSlugs)) {
           errors.push(`${relative}: unresolved wiki-link target '${target}'`);
