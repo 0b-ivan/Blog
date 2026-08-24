@@ -3,7 +3,8 @@ const test = require('node:test');
 const {
   cosineSimilarity,
   lexicalMatchScore,
-  rankChunks
+  rankChunks,
+  tokens
 } = require('../lib/ranking');
 
 test('cosineSimilarity ranks aligned vectors highest', () => {
@@ -23,6 +24,13 @@ test('lexicalMatchScore prefers title and tag evidence and supports prefixes', (
 
   assert.ok(lexicalMatchScore('dock container', chunk) > 0.7);
   assert.equal(lexicalMatchScore('qwertzuiop', chunk), 0);
+});
+
+test('query tokenization removes common German filler words and inflections', () => {
+  assert.deepEqual(
+    tokens('Wie kann ich einen Dienst mit meiner Admin Oberfläche schützen?', { removeStopWords: true }),
+    ['dienst', 'admin', 'oberflache', 'schutzen']
+  );
 });
 
 test('rankChunks returns only the best relevant chunk per post', () => {
@@ -46,6 +54,17 @@ test('rankChunks rejects uniformly weak semantic matches without lexical evidenc
   ];
 
   const results = rankChunks(chunks, [1, 0], 'aksdfnasdglvhnasdf', 8);
+  assert.deepEqual(results, []);
+});
+
+test('rankChunks rejects lexical-only matches when semantic similarity is too weak', () => {
+  const chunks = [
+    { post_id: 'a', chunk_id: 'a1', title: 'Käsekuchen Docker', embedding: [0.75, 0.6614] },
+    { post_id: 'b', chunk_id: 'b1', title: 'RSS', embedding: [0.74, 0.6726] },
+    { post_id: 'c', chunk_id: 'c1', title: 'AWS', embedding: [0.73, 0.6834] }
+  ];
+
+  const results = rankChunks(chunks, [1, 0], 'Käsekuchen', 8);
   assert.deepEqual(results, []);
 });
 
