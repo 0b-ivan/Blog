@@ -1,0 +1,13 @@
+{
+  "post": "2026-08-19-dependabot-im-einsatz",
+  "queries": [
+    {
+      "query": "GitHub soll mich bei Sicherheitslücken in Libraries warnen",
+      "maxRank": 1
+    },
+    {
+      "query": "Wie kann ich Dependency Updates automatisch als Pull Request bekommen?",
+      "maxRank": 1
+    }
+  ]
+}
