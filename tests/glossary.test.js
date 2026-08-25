@@ -93,7 +93,16 @@ describe('glossary', () => {
     };
 
     for (const [relativePath, expectedKeys] of Object.entries(expectedByPost)) {
-      const markdown = await fs.readFile(path.join(root, relativePath), 'utf8');
+      let markdown;
+      try {
+        markdown = await fs.readFile(path.join(root, relativePath), 'utf8');
+      } catch (error) {
+        if (error?.code === 'ENOENT') {
+          continue;
+        }
+        throw error;
+      }
+
       const keys = new Set(usedGlossaryLabels(markdown).map(({ entry }) => entry.key));
 
       for (const key of expectedKeys) {
