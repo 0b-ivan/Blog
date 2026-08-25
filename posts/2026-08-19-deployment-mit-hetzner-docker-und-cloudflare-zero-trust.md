@@ -11,6 +11,11 @@ reviewed_by: pending
 category: DevOps
 excerpt: Ein schlankes Deployment-Setup mit Hetzner Cloud, Docker Compose und Cloudflare Zero Trust – inklusive Tunnel, Zugriffsschutz und automatischem Deployment.
 tags: Hetzner, Docker, Cloudflare, Zero Trust, DevOps
+search_queries:
+  - query: Ich möchte meine Admin Oberfläche nicht direkt ins Internet stellen
+    maxRank: 1
+  - query: Wie veröffentliche ich einen Container ohne Ports am Server zu öffnen?
+    maxRank: 1
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.
