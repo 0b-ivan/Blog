@@ -21,7 +21,7 @@ tags:
 search_queries:
   - query: Was ist ein Regressionstest?
     maxRank: 1
-  - query: Wie kann ich verhindern dass eine Änderung alte Funktionen kaputt macht?
+  - query: Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges Verhalten noch funktioniert?
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
@@ -202,9 +202,9 @@ Nicht jede Veränderung ist automatisch ein Bug. Aber sie muss zumindest bewusst
 
 ## Die Tests laufen automatisch
 
-Ich möchte nicht bei jedem Artikel zusätzlich irgendwelche JSON-Dateien von Hand pflegen.
+Ich möchte nicht bei jedem Artikel zusätzlich irgendwelche JSON-Dateien pflegen.
 
-Deshalb übernimmt mein Obsidian-Publisher das.
+Deshalb bleibt die Testdefinition direkt beim Artikel. Die CI liest `search_queries` aus dem Frontmatter der Markdown-Datei und führt diese Fragen gegen den aktuellen Kernel-Grep-Index aus.
 
 Aus:
 
@@ -214,37 +214,38 @@ search_queries:
   maxRank: 1
 ```
 
-wird intern ein Regression-Fixture für den Artikel.
+wird also keine zweite per-Artikel-Datei mehr erzeugt.
 
-Vereinfacht sieht das so aus:
-
-```json
-{
-  "post": "2026-08-25-regressionstests-was-sie-sind-und-wie-ich-sie-nutze",
-  "queries": [
-    {
-      "query": "Was ist ein Regressionstest?",
-      "maxRank": 1
-    }
-  ]
-}
-```
-
-Diese Dateien liegen bei mir unter:
+Der Artikel selbst ist die Quelle der Wahrheit:
 
 ```text
-rag/regression/cases/
+posts/artikel.md
+   │
+   ├── Inhalt
+   ├── Metadaten
+   └── search_queries
+          │
+          ▼
+Semantic-Search-Regression
 ```
 
-Beim Pull Request läuft dann die CI dagegen.
+Nur negative Suchfälle liegen separat unter:
+
+```text
+rag/regression/cases/_no-results.json
+```
+
+Das sind Fragen, für die bewusst **kein** Artikel zurückgegeben werden soll.
+
+Beim Pull Request läuft die CI dagegen.
 
 Das Prinzip ist:
 
 ```mermaid
 flowchart TD
     A[Artikel in Obsidian ändern] --> B[Obsidian Publisher]
-    B --> C[Regression Fixture erzeugen]
-    C --> D[Pull Request]
+    B --> C[Pull Request]
+    C --> D[CI liest search_queries aus Markdown]
     D --> E[Kernel-Grep-Index aufbauen]
     E --> F[Testfragen ausführen]
     F --> G[Ranking überprüfen]
@@ -253,7 +254,7 @@ flowchart TD
     H -->|Nein| J[CI rot]
 ```
 
-Damit wird die Suchqualität Teil meiner normalen CI.
+Damit wird die Suchqualität Teil meiner normalen CI, ohne dass Artikel und Testdefinition auseinanderlaufen können.
 
 ## Warum reicht ein Unit-Test nicht?
 
@@ -294,59 +295,40 @@ Er prüft eher:
 
 ## Ein Fehler, den ich selbst gemacht habe
 
-Anfangs hatte nicht jeder Artikel ein Regression-Fixture.
+Anfangs lagen die Regression-Fragen in separaten JSON-Fixtures unter `rag/regression/cases/`.
 
-Die CI prüfte korrekt:
+Damit hatte jeder Artikel zwei Stellen, die zusammenpassen mussten:
 
 ```text
-Every active post needs a search regression fixture.
+posts/artikel.md
+rag/regression/cases/artikel.json
 ```
 
-Danach lief aber ein weiterer Test weiter und versuchte:
+Die CI konnte zwar prüfen, ob für jeden aktiven Artikel ein Fixture existiert. Trotzdem blieb ein grundsätzliches Problem: Artikel und Fixture konnten auseinanderlaufen.
+
+Bei einem fehlenden Fixture entstand früher zusätzlich ein Folgefehler, weil ein weiterer Test trotzdem auf:
 
 ```js
 fixture.queries
 ```
 
-auf einem nicht vorhandenen Fixture aufzurufen.
+zugreifen wollte.
 
-Das Resultat war zusätzlich:
+Das Resultat war neben der eigentlichen Meldung:
 
 ```text
 Cannot read properties of undefined
 ```
 
-Damit hatte ich plötzlich zwei Fehler.
+Der Folgefehler ließ sich zwar mit einem Guard verhindern. Sauberer war aber, die doppelte Datenhaltung ganz zu entfernen.
 
-Der erste war sinnvoll:
-
-```text
-Regression-Fixture fehlt.
-```
-
-Der zweite war nur ein Folgefehler.
-
-Deshalb prüft der Test heute sinngemäß:
-
-```js
-const fixture = fixtures.get(slug);
-
-if (!fixture) {
-  continue;
-}
-```
-
-Der eigentliche Coverage-Test bleibt trotzdem rot.
-
-Damit bekomme ich einen klaren Fehler statt einer Kaskade aus Folgefehlern.
+Heute liest der Regressionstest die Fragen direkt aus dem Frontmatter. Damit gibt es für einen positiven Suchfall nur noch eine Quelle der Wahrheit.
 
 ## Was passiert bei neuen Artikeln?
 
-Neue Artikel bekommen automatisch ein Regression-Fixture.
+Jeder veröffentlichte Artikel braucht mindestens eine echte Regression-Frage im Frontmatter.
 
-Wenn ich keine eigenen Fragen angebe, kann zunächst der Artikeltitel als einfacher Test verwendet werden.
-
-Besser sind aber echte Fragen:
+Zum Beispiel:
 
 ```yaml
 search_queries:
@@ -356,7 +338,9 @@ search_queries:
   maxRank: 3
 ```
 
-Damit teste ich nicht nur, ob die Suchmaschine Wörter aus dem Titel wiederfindet, sondern ob sie die **Bedeutung** einer Frage dem richtigen Artikel zuordnen kann.
+Fehlt `search_queries`, wird nicht stillschweigend der Artikeltitel als Ersatz verwendet. Die CI wird stattdessen rot und meldet, welcher aktive Artikel noch keine Regression-Frage besitzt.
+
+Das ist absichtlich streng. Ein Titel als Suchfrage würde zwar leicht einen grünen Test erzeugen, aber kaum prüfen, ob die semantische Suche eine echte Nutzerfrage versteht.
 
 ## Was passiert beim Archivieren oder Löschen?
 
@@ -368,7 +352,7 @@ Bei:
 status: draft
 ```
 
-wird der Artikel nicht mehr veröffentlicht und sein Regression-Fixture entfernt.
+wird der Artikel nicht veröffentlicht und gehört damit nicht zum aktiven Suchindex. Die `search_queries` können im Obsidian-Dokument erhalten bleiben, werden aber nicht gegen den öffentlichen Index getestet.
 
 Bei:
 
@@ -376,7 +360,7 @@ Bei:
 status: archived
 ```
 
-bleibt der Artikel Teil der Historie und der Regressionstest kann erhalten bleiben.
+bleibt der Artikel unter `archive/` erhalten. Seine `search_queries` bleiben Teil des Artikels, werden aber nicht gegen den aktiven Suchindex ausgeführt. Wird der Artikel wieder veröffentlicht, werden dieselben Tests automatisch wieder aktiv.
 
 ```mermaid
 stateDiagram-v2
@@ -390,19 +374,19 @@ stateDiagram-v2
     state Draft {
         [*] --> NichtOeffentlich
         NichtOeffentlich: Artikel nicht öffentlich
-        NichtOeffentlich: Regression entfernt
+        NichtOeffentlich: Regression nicht aktiv
     }
 
     state Published {
         [*] --> Aktiv
         Aktiv: Artikel aktiv
-        Aktiv: Regression aktiv
+        Aktiv: search_queries werden getestet
     }
 
     state Archived {
         [*] --> Archiviert
         Archiviert: Artikel archiviert
-        Archiviert: Regression bleibt
+        Archiviert: search_queries bleiben erhalten
     }
 ```
 
@@ -426,7 +410,7 @@ search_queries:
 
 kann ich diese Erwartung direkt beim Artikel dokumentieren.
 
-Der Obsidian-Publisher übernimmt daraus den technischen Test und die CI führt ihn automatisch aus.
+Die CI liest dieselbe Markdown-Datei und führt die Suchfrage automatisch aus. Eine zusätzliche positive Regression-Datei muss nicht synchron gehalten werden.
 
 Damit wird aus:
 
