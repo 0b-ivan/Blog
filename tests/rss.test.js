@@ -86,7 +86,7 @@ describe('RSS feed', () => {
   it('serves rss.xml with newest posts first and the correct content type', async () => {
     await writePost(
       tmpDir,
-      '2026-08-18-old.md',
+      '2026-08-18-old-post.md',
       '---\ntitle: Old Post\ndate: 2026-08-18\ncategory: Linux\ntags: Linux\n---\nOld body'
     );
     await writePost(

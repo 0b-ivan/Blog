@@ -225,16 +225,34 @@ describe('blog server', () => {
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {
     await writePost(
       tmpDir,
+      '2026-08-04-systemd-timer-statt-cron.md',
+      '---\ntitle: Timer\ndate: 2026-08-04\ncategory: Linux\n---\nBody'
+    );
+    await writePost(
+      tmpDir,
       'features.md',
       '---\ntitle: Features\ndate: 2026-07-01\ncategory: Docs\n---\n[[Systemd Timer Statt Cron]]\n\nText mit Fussnote.[^1]\n\n[^1]: Hinweis\n\n::: warning Achtung\nBitte sichern.\n:::\n\n```mermaid\nflowchart TD\nA-->B\n```'
     );
 
     const posts = await readPosts(tmpDir);
-    const html = posts[0].html;
+    const features = posts.find((post) => post.slug === 'features');
+    const html = features.html;
     expect(html).toContain('/posts/systemd-timer-statt-cron');
     expect(html).toContain('footnote-ref');
     expect(html).toContain('admonition-warning');
     expect(html).toContain('<pre class="mermaid">');
+  });
+
+  it('renders wiki-links to unpublished posts as plain text', async () => {
+    await writePost(
+      tmpDir,
+      'features.md',
+      '---\ntitle: Features\ndate: 2026-07-01\ncategory: Docs\n---\nSiehe [[Noch Nicht Veröffentlicht|kommenden Artikel]].'
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts[0].html).toContain('kommenden Artikel');
+    expect(posts[0].html).not.toContain('/posts/noch-nicht-veroeffentlicht');
   });
 
   it('api returns 500 when posts path is not a directory', async () => {
