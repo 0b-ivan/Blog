@@ -6,7 +6,7 @@
       "maxRank": 1
     },
     {
-      "query": "Wie prüfe ich ob nach einer Änderung bisherige Funktionen noch funktionieren?",
+      "query": "Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges Verhalten noch funktioniert?",
       "maxRank": 3
     },
     {
