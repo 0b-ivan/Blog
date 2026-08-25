@@ -1,0 +1,9 @@
+{
+  "post": "2026-08-25-testartikel",
+  "queries": [
+    {
+      "query": "TestArtikel",
+      "maxRank": 1
+    }
+  ]
+}
