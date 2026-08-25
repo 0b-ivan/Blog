@@ -76,30 +76,53 @@ describe('glossary', () => {
 
   it('covers representative terms from active and archived blog posts', async () => {
     const root = path.join(__dirname, '..');
-    const expectedByPost = {
-      'archive/2026-08-04-systemd-timer-statt-cron.md': ['Cron', 'Observability', 'Logging'],
-      'archive/2026-08-12-cloudflare-tunnel-haerten.md': ['mTLS', 'Rate Limiting', 'Break-Glass-Zugang'],
-      'archive/2026-08-18-zero-downtime-mit-compose.md': ['Healthcheck', 'Reverse Proxy', 'Cutover'],
-      'posts/2026-08-19-dependabot-im-einsatz.md': ['Dependency Graph', 'Triage', 'Secret Scanning'],
-      'posts/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.md': ['Cloudflare Zero Trust', 'Docker Volume', 'Public IP'],
-      'posts/2026-08-19-fail2ban-ssh-hardening.md': ['SSH', 'Fail2ban', 'UFW'],
-      'posts/2026-08-19-markdown-features-im-blog.md': ['Markdown', 'Admonition', 'Frontmatter'],
-      'posts/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.md': ['RSS', 'OPML', 'Self-Hosting'],
-      'posts/2026-08-19-systemd-services-sauber-betreiben.md': ['Daemon', 'Runbook', 'Healthcheck'],
-      'posts/2026-08-19-wie-dieser-blog-gebaut-ist.md': ['Node.js', 'Docker Compose', 'Audit-Trail'],
-      'posts/2026-08-21-docker-vs-docker-compose.md': ['Docker Compose', 'Port-Mapping', 'Cluster-Orchestrator'],
-      'posts/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md': ['CSpell', 'LanguageTool', 'False Positive'],
-      'posts/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.md': ['Kafka', 'Embedding-Modell', 'Vector-Database-Cluster', 'Cosine Similarity', 'GraphRAG']
+    const expectedBySlug = {
+      '2026-08-04-systemd-timer-statt-cron': ['Cron', 'Observability', 'Logging'],
+      '2026-08-12-cloudflare-tunnel-haerten': ['mTLS', 'Rate Limiting', 'Break-Glass-Zugang'],
+      '2026-08-18-zero-downtime-mit-compose': ['Healthcheck', 'Reverse Proxy', 'Cutover'],
+      '2026-08-19-dependabot-im-einsatz': ['Dependency Graph', 'Triage', 'Secret Scanning'],
+      '2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust': ['Cloudflare Zero Trust', 'Docker Volume', 'Public IP'],
+      '2026-08-19-fail2ban-ssh-hardening': ['SSH', 'Fail2ban', 'UFW'],
+      '2026-08-19-markdown-features-im-blog': ['Markdown', 'Admonition', 'Frontmatter'],
+      '2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung': ['RSS', 'OPML', 'Self-Hosting'],
+      '2026-08-19-systemd-services-sauber-betreiben': ['Daemon', 'Runbook', 'Healthcheck'],
+      '2026-08-19-wie-dieser-blog-gebaut-ist': ['Node.js', 'Docker Compose', 'Audit-Trail'],
+      '2026-08-21-docker-vs-docker-compose': ['Docker Compose', 'Port-Mapping', 'Cluster-Orchestrator'],
+      '2026-08-21-rechtschreib-pipeline-trotz-legasthenie': ['CSpell', 'LanguageTool', 'False Positive'],
+      '2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog': ['Kafka', 'Embedding-Modell', 'Vector-Database-Cluster', 'Cosine Similarity', 'GraphRAG']
     };
+    let checkedPosts = 0;
 
-    for (const [relativePath, expectedKeys] of Object.entries(expectedByPost)) {
-      const markdown = await fs.readFile(path.join(root, relativePath), 'utf8');
+    for (const [slug, expectedKeys] of Object.entries(expectedBySlug)) {
+      let markdown = null;
+      let relativePath = '';
+
+      for (const directory of ['posts', 'archive']) {
+        relativePath = `${directory}/${slug}.md`;
+        try {
+          markdown = await fs.readFile(path.join(root, relativePath), 'utf8');
+          break;
+        } catch (error) {
+          if (error?.code !== 'ENOENT') {
+            throw error;
+          }
+        }
+      }
+
+      // Draft/unpublished articles intentionally exist in neither posts/ nor archive/.
+      if (markdown === null) {
+        continue;
+      }
+
+      checkedPosts += 1;
       const keys = new Set(usedGlossaryLabels(markdown).map(({ entry }) => entry.key));
 
       for (const key of expectedKeys) {
         expect(keys.has(key), `${relativePath} should use glossary key ${key}`).toBe(true);
       }
     }
+
+    expect(checkedPosts).toBeGreaterThan(0);
   });
 
   it('serves the central glossary page', async () => {
