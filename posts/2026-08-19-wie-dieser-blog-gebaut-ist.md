@@ -1,19 +1,24 @@
 ---
 id: 2026-08-19-wie-dieser-blog-gebaut-ist
-version: 3
+version: 1
 title: Wie dieser Blog gebaut ist
+status: publish
 date: 2026-08-19
-published_at: 2026-08-19T12:39:19+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-24
+updated_at: 2026-08-19
 author: obivan
 reviewed_by: pending
 category: Engineering
 excerpt: Architektur, Stack und Entscheidungen hinter diesem IT-Blog. Welche Technologien genutzt werden und warum sie für diesen Use Case sinnvoll sind.
-tags: Blog, Architecture, DevOps, Node
+tags: 
+- Blog
+- Architecture
+- DevOps
+- Node
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.
+
 
 ## Ziel des Projekts
 
@@ -68,7 +73,7 @@ Warum:
 - einfache Deployments auch ohne Kubernetes
 - klare Trennung von Build und Runtime
 
-Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche kleinzuhalten.
+Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche klein zu halten.
 
 ### 4) CI/CD mit GitHub Actions
 
@@ -77,8 +82,8 @@ Automatisiert werden u. a.:
 - Linting
 - Tests inkl. Coverage
 - Compose Smoke-Test
-- Build und Publish des Blog-Images nach GHCR
-- Deployment des SHA-getaggten Images auf den Hetzner-Host
+- Build und Publish nach GHCR
+- optionales Deploy nach OpenFaaS/faasd
 
 Warum:
 
@@ -133,19 +138,3 @@ Der Stack ist bewusst nicht maximal komplex, sondern maximal nützlich.
 Markdown + Node + Docker + CI/CD liefert für einen technischen Blog bereits sehr viel: schnelle Iteration, gute Lesbarkeit im Repo, saubere Deployments und nachvollziehbare Änderungen.
 
 Wenn sich Anforderungen ändern, lässt sich diese Basis schrittweise erweitern, ohne alles neu bauen zu müssen.
-
-## Querverweise
-
-- [[markdown-features-im-blog|Markdown-Features im Blog nutzen]]
-- [[dependabot-im-einsatz|Dependabot im Einsatz]]
-- [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
-- [[kernel-grep-semantische-suche-fuer-meinen-blog|Kernel Grep]]
-
-## Quellen
-
-- [Express Dokumentation](/sources.html#express)
-- [gray-matter](/sources.html#gray-matter)
-- [markdown-it Dokumentation](/sources.html#markdown-it)
-- [Docker Compose Referenz](/sources.html#docker-compose)
-- [GitHub Actions](/sources.html#github-actions-docs)
-- [GitHub Dependabot](/sources.html#github-dependabot-yml)
