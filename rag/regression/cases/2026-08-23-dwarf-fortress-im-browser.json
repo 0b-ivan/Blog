@@ -2,8 +2,16 @@
   "post": "2026-08-23-dwarf-fortress-im-browser",
   "queries": [
     {
-      "query": "Dwarf Fortress im Browser – mit Proxmox, Authentik und Cloudflare Zero Trust",
+      "query": "Wie kann ich Dwarf Fortress im Browser spielen?",
       "maxRank": 1
+    },
+    {
+      "query": "Wie kann ich Dwarf Fortress über Proxmox remote spielen?",
+      "maxRank": 3
+    },
+    {
+      "query": "Wie sichere ich Dwarf Fortress mit Authentik und Cloudflare Zero Trust ab?",
+      "maxRank": 3
     }
   ]
 }
