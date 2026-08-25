@@ -1,0 +1,17 @@
+{
+  "post": "2026-08-25-Regresions-test",
+  "queries": [
+    {
+      "query": "Was ist ein Regressionstest?",
+      "maxRank": 1
+    },
+    {
+      "query": "Wie kann ich verhindern dass eine Änderung alte Funktionen kaputt macht?",
+      "maxRank": 3
+    },
+    {
+      "query": "Wie teste ich eine semantische Suche automatisch?",
+      "maxRank": 3
+    }
+  ]
+}
