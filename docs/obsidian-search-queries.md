@@ -1,12 +1,10 @@
 # Obsidian Search Regression Queries
 
-Neue oder geaenderte Artikel brauchen kein manuell gepflegtes Regression-JSON mehr.
-Der Obsidian Publisher verwaltet die Datei unter `rag/regression/cases/` zusammen mit dem Artikel.
+Die Such-Regression gehoert direkt zum Artikel. `search_queries` im Markdown-Frontmatter ist die einzige Quelle fuer positive Regressionstests.
 
-Ohne weitere Angaben verwendet der Publisher den Artikeltitel als einfachen Regressionstest.
-Bestehende, bereits manuell gepflegte Fixtures bleiben dabei unveraendert.
+Der Obsidian Publisher veroeffentlicht die Markdown-Datei unveraendert. Er erzeugt keine zusaetzliche per-Artikel-Datei unter `rag/regression/cases/` mehr.
 
-Fuer bessere Suchtests koennen im Frontmatter eigene Fragen hinterlegt werden:
+Jeder Artikel mit `status: publish` braucht mindestens eine Regression-Frage:
 
 ```yaml
 search_queries:
@@ -26,5 +24,8 @@ search_queries:
 
 `maxRank` darf zwischen `1` und `12` liegen.
 
-Bei `status: draft` entfernt der Publisher die Regression zusammen mit dem Artikel.
-Bei `status: archived` bleibt die Regression erhalten.
+Es gibt bewusst keinen Artikeltitel als automatischen Fallback. Fehlt `search_queries` bei einem aktiven Artikel, blockiert die CI den Pull Request. Damit pruefen die Regressionstests echte Nutzerfragen statt nur leicht zu bestehende Titelsuchen.
+
+Negative Suchfaelle bleiben separat in `rag/regression/cases/_no-results.json`, weil sie keinem einzelnen Artikel zugeordnet sind.
+
+Bei `status: draft` ist der Artikel nicht Teil des aktiven Suchindex und seine Regression wird nicht ausgefuehrt. Bei `status: archived` bleiben die `search_queries` im archivierten Markdown erhalten; nach einer spaeteren Wiederveroeffentlichung werden sie automatisch wieder aktiv.
