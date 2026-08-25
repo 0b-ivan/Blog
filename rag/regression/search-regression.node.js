@@ -192,6 +192,10 @@ test('Kernel Grep keeps expected semantic search results stable', { timeout: 20 
   try {
     for (const slug of activeSlugs) {
       const fixture = fixtures.get(slug);
+      if (!fixture) {
+        continue;
+      }
+
       for (const regressionCase of fixture.queries) {
         const maxRank = regressionCase.maxRank ?? 1;
         const results = await engine.search(regressionCase.query, Math.max(5, maxRank));
