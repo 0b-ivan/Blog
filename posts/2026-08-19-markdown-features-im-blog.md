@@ -15,6 +15,11 @@ tags:
 - Docs
 - Mermaid
 - DevEx
+search_queries:
+  - query: Architekturdiagramm direkt im Markdown schreiben
+    maxRank: 1
+  - query: Wie kann ich Warnhinweise in Markdown anzeigen?
+    maxRank: 1
 ---
 
 Wenn du Inhalte schnell schreiben willst, ist Markdown genau richtig.
