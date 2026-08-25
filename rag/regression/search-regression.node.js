@@ -3,6 +3,7 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const { loadArticleRegressionCases } = require('../lib/regression-cases');
 const { SemanticSearchEngine } = require('../lib/search-engine');
 const {
   DEFAULT_RELEVANCE,
@@ -17,51 +18,19 @@ const archiveDir = path.join(repoRoot, 'archive');
 const casesDir = path.join(__dirname, 'cases');
 const noResultsPath = path.join(casesDir, '_no-results.json');
 
-async function markdownSlugs(directory) {
-  const entries = await fs.readdir(directory, { withFileTypes: true });
-  return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
-    .map((entry) => path.basename(entry.name, '.md'))
-    .sort();
-}
-
-async function loadFixtures() {
-  const entries = await fs.readdir(casesDir, { withFileTypes: true });
-  const fixtures = new Map();
-  const seenQueries = new Map();
-
-  for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.endsWith('.json') || entry.name.startsWith('_')) {
-      continue;
+function registerPositiveQueries(fixtures, seenQueries) {
+  for (const fixture of fixtures.values()) {
+    for (const regressionCase of fixture.queries) {
+      const normalized = regressionCase.query.toLocaleLowerCase('de-DE');
+      const duplicateOwner = seenQueries.get(normalized);
+      assert.equal(
+        duplicateOwner,
+        undefined,
+        `Duplicate regression query in ${duplicateOwner} and ${fixture.post}: ${regressionCase.query}`
+      );
+      seenQueries.set(normalized, fixture.post);
     }
-
-    const filePath = path.join(casesDir, entry.name);
-    const fixture = JSON.parse(await fs.readFile(filePath, 'utf8'));
-    const fileSlug = path.basename(entry.name, '.json');
-
-    assert.equal(fixture.post, fileSlug, `${entry.name}: "post" must match the fixture filename`);
-    assert.ok(Array.isArray(fixture.queries), `${entry.name}: "queries" must be an array`);
-    assert.ok(fixture.queries.length > 0, `${entry.name}: add at least one regression query`);
-    assert.equal(fixtures.has(fixture.post), false, `Duplicate fixture for ${fixture.post}`);
-
-    for (const [index, regressionCase] of fixture.queries.entries()) {
-      assert.equal(typeof regressionCase.query, 'string', `${entry.name} query ${index + 1}: query must be a string`);
-      const query = regressionCase.query.trim();
-      assert.ok(query.length >= 2, `${entry.name} query ${index + 1}: query is too short`);
-
-      const maxRank = regressionCase.maxRank ?? 1;
-      assert.ok(Number.isInteger(maxRank) && maxRank >= 1 && maxRank <= 12,
-        `${entry.name} query ${index + 1}: maxRank must be an integer from 1 to 12`);
-
-      const duplicateOwner = seenQueries.get(query.toLocaleLowerCase('de-DE'));
-      assert.equal(duplicateOwner, undefined, `Duplicate regression query in ${duplicateOwner} and ${entry.name}: ${query}`);
-      seenQueries.set(query.toLocaleLowerCase('de-DE'), entry.name);
-    }
-
-    fixtures.set(fixture.post, fixture);
   }
-
-  return { fixtures, seenQueries };
 }
 
 async function loadNoResultQueries(seenQueries) {
@@ -79,17 +48,31 @@ async function loadNoResultQueries(seenQueries) {
     return query;
   });
 
-  assert.equal(new Set(queries.map((query) => query.toLocaleLowerCase('de-DE'))).size, queries.length,
-    '_no-results.json contains duplicate queries');
+  assert.equal(
+    new Set(queries.map((query) => query.toLocaleLowerCase('de-DE'))).size,
+    queries.length,
+    '_no-results.json contains duplicate queries'
+  );
   return queries;
 }
 
 async function regressionSuite() {
-  const activeSlugs = await markdownSlugs(postsDir);
-  const archivedSlugs = await markdownSlugs(archiveDir);
-  const { fixtures, seenQueries } = await loadFixtures();
+  const activeFixtures = await loadArticleRegressionCases(postsDir);
+  const archivedFixtures = await loadArticleRegressionCases(archiveDir);
+  const fixtures = new Map([...archivedFixtures, ...activeFixtures]);
+  const activeSlugs = [...activeFixtures.keys()].sort();
+  const seenQueries = new Map();
+
+  registerPositiveQueries(fixtures, seenQueries);
   const noResultQueries = await loadNoResultQueries(seenQueries);
-  return { activeSlugs, archivedSlugs, fixtures, noResultQueries };
+
+  return {
+    activeFixtures,
+    activeSlugs,
+    archivedFixtures,
+    fixtures,
+    noResultQueries
+  };
 }
 
 function fixed(value) {
@@ -120,7 +103,8 @@ async function diagnoseQuery(engine, query, expectedSlug = '') {
   const semanticBaseline = median(candidates.map((candidate) => candidate.semanticScore));
   const diagnosed = candidates.map((candidate) => {
     const semanticLift = candidate.semanticScore - semanticBaseline;
-    const lexicalQualified = candidate.lexicalScore >= DEFAULT_RELEVANCE.minLexicalScore;
+    const lexicalQualified = candidate.lexicalScore >= DEFAULT_RELEVANCE.minLexicalScore
+      && candidate.semanticScore >= DEFAULT_RELEVANCE.minLexicalSemanticScore;
     const semanticQualified = candidate.semanticScore >= DEFAULT_RELEVANCE.minSemanticScore
       && semanticLift >= DEFAULT_RELEVANCE.minSemanticLift;
 
@@ -150,22 +134,30 @@ async function diagnoseQuery(engine, query, expectedSlug = '') {
   ].filter(Boolean).join(' ; ');
 }
 
-test('search regression fixtures cover every active article', async () => {
-  const { activeSlugs, archivedSlugs, fixtures } = await regressionSuite();
-  const knownSlugs = new Set([...activeSlugs, ...archivedSlugs]);
+test('active articles define semantic search regression queries in frontmatter', async () => {
+  const { activeFixtures } = await regressionSuite();
+  const missing = [...activeFixtures.values()]
+    .filter((fixture) => fixture.queries.length === 0)
+    .map((fixture) => fixture.post);
 
-  const missing = activeSlugs.filter((slug) => !fixtures.has(slug));
   assert.deepEqual(
     missing,
     [],
-    `Every active post needs a search regression fixture. Missing: ${missing.join(', ')}`
+    `Every active post needs search_queries in its frontmatter. Missing: ${missing.join(', ')}`
   );
+});
 
-  const unknown = [...fixtures.keys()].filter((slug) => !knownSlugs.has(slug));
+test('per-article regression JSON fixtures are not used anymore', async () => {
+  const entries = await fs.readdir(casesDir, { withFileTypes: true });
+  const legacyFixtures = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.json') && entry.name !== '_no-results.json')
+    .map((entry) => entry.name)
+    .sort();
+
   assert.deepEqual(
-    unknown,
+    legacyFixtures,
     [],
-    `Regression fixtures must belong to an active or archived post. Unknown: ${unknown.join(', ')}`
+    `Move these regression queries into article frontmatter and delete the JSON fixtures: ${legacyFixtures.join(', ')}`
   );
 });
 
@@ -197,7 +189,7 @@ test('Kernel Grep keeps expected semantic search results stable', { timeout: 20 
       }
 
       for (const regressionCase of fixture.queries) {
-        const maxRank = regressionCase.maxRank ?? 1;
+        const maxRank = regressionCase.maxRank;
         const results = await engine.search(regressionCase.query, Math.max(5, maxRank));
         const rankIndex = results.findIndex((result) => result.slug === slug);
 
