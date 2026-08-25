@@ -11,6 +11,11 @@ reviewed_by: pending
 category: DevOps
 excerpt: Docker startet Container direkt. Docker Compose beschreibt einen ganzen Stack deklarativ in einer YAML-Datei. Ein praktischer Vergleich mit Befehlen, compose.yaml und Screenshots.
 tags: Docker, DevOps, Operations, Architecture
+search_queries:
+  - query: Ich will mir lange docker run Befehle nicht merken
+    maxRank: 1
+  - query: Webserver Datenbank und Redis zusammen verwalten
+    maxRank: 1
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.
