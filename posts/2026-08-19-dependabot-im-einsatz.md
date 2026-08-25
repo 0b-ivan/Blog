@@ -11,6 +11,11 @@ reviewed_by: pending
 category: Security
 excerpt: Dependabot hält Abhängigkeiten im Blick, meldet bekannte Schwachstellen und kann Update-PRs erzeugen. Ein praktischer Überblick mit GitHub Dependency Graph, Alerts und Pull Requests.
 tags: GitHub, Dependabot, Security, Supply Chain, DevOps
+search_queries:
+  - query: Wie finde ich verwundbare Dependencies in GitHub?
+    maxRank: 1
+  - query: Wie kann ich Dependency Updates automatisch als Pull Request bekommen?
+    maxRank: 1
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.
