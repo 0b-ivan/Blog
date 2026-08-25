@@ -7,7 +7,6 @@ const DEFAULT_REPOSITORY = '0b-ivan/Blog';
 const DEFAULT_BASE_BRANCH = 'main';
 const DEFAULT_DEBOUNCE_SECONDS = 300;
 const DEFAULT_POLL_SECONDS = 30;
-const REGRESSION_CASES_DIR = 'rag/regression/cases';
 
 function parsePositiveInteger(value, fallback) {
   const parsed = Number.parseInt(String(value || ''), 10);
@@ -55,109 +54,6 @@ function parseFrontmatter(raw) {
     data[match[1]] = stripYamlQuotes(match[2]);
   }
   return data;
-}
-
-function parseSearchQueries(raw) {
-  const lines = frontmatterLines(raw);
-  const start = lines.findIndex((line) => /^search_queries:\s*$/.test(line));
-  if (start === -1) {
-    return [];
-  }
-
-  const queries = [];
-  let current = null;
-
-  const pushCurrent = () => {
-    if (!current) {
-      return;
-    }
-
-    const query = String(current.query || '').trim();
-    if (query.length >= 2) {
-      queries.push({
-        query,
-        maxRank: current.maxRank
-      });
-    }
-    current = null;
-  };
-
-  for (let index = start + 1; index < lines.length; index += 1) {
-    const line = lines[index];
-
-    if (/^[A-Za-z_][A-Za-z0-9_]*:\s*/.test(line)) {
-      break;
-    }
-
-    if (!line.trim()) {
-      continue;
-    }
-
-    let match = line.match(/^\s*-\s+query:\s*(.+)$/);
-    if (match) {
-      pushCurrent();
-      current = {
-        query: stripYamlQuotes(match[1]),
-        maxRank: 1
-      };
-      continue;
-    }
-
-    match = line.match(/^\s*-\s+(.+)$/);
-    if (match) {
-      pushCurrent();
-      current = {
-        query: stripYamlQuotes(match[1]),
-        maxRank: 1
-      };
-      continue;
-    }
-
-    match = line.match(/^\s+(?:maxRank|max_rank):\s*(.+)$/);
-    if (match && current) {
-      const parsed = Number.parseInt(stripYamlQuotes(match[1]), 10);
-      if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 12) {
-        current.maxRank = parsed;
-      }
-    }
-  }
-
-  pushCurrent();
-
-  const seen = new Set();
-  return queries.filter((entry) => {
-    const normalized = entry.query.toLocaleLowerCase('de-DE');
-    if (seen.has(normalized)) {
-      return false;
-    }
-    seen.add(normalized);
-    return true;
-  });
-}
-
-function articleSlug(fileName) {
-  return String(fileName || '').replace(/\.md$/i, '');
-}
-
-function regressionFixturePath(fileName) {
-  return `${REGRESSION_CASES_DIR}/${articleSlug(fileName)}.json`;
-}
-
-function buildRegressionFixture(fileName, title, raw, existingFixture = '') {
-  const explicitQueries = parseSearchQueries(raw);
-  if (explicitQueries.length === 0 && String(existingFixture || '').trim()) {
-    return existingFixture;
-  }
-
-  const fallbackQuery = String(title || articleSlug(fileName)).trim() || articleSlug(fileName);
-  const queries = explicitQueries.length > 0
-    ? explicitQueries
-    : [{ query: fallbackQuery, maxRank: 1 }];
-
-  return `${JSON.stringify({
-    post: articleSlug(fileName),
-    queries
-  }, null, 2)}\n`;
 }
 
 function contentHash(raw) {
@@ -362,7 +258,6 @@ class GitHubPublisher {
         `- Artikel: \`${filePath}\``,
         '- Status: `draft`',
         '- Der Artikel wird aus `posts/` und `archive/` entfernt und dadurch vollstaendig privat.',
-        '- Die zugehoerige Semantic-Search-Regression wird ebenfalls entfernt.',
         '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter erneut auf `publish` oder `archived` gesetzt werden.',
         '',
         'Der Artikel wird erst nach Merge dieses PR offline genommen.'
@@ -389,8 +284,8 @@ class GitHubPublisher {
       `- Artikel: \`${filePath}\``,
       '- Freigabe: `status: publish`',
       '- Falls der Artikel archiviert ist, wird er aus `archive/` wieder nach `posts/` geholt.',
-      '- Semantic-Search-Regression wird automatisch mit dem Artikel gepflegt.',
-      '- `search_queries` im Frontmatter koennen eigene Regression-Fragen definieren; ohne Angabe wird der Titel verwendet.',
+      '- Semantic-Search-Regression wird direkt aus `search_queries` im Artikel-Frontmatter gelesen.',
+      '- Jeder veröffentlichte Artikel braucht mindestens eine Regression-Frage; die CI prüft das.',
       '- Weitere Aenderungen in Obsidian aktualisieren diesen PR nach dem Debounce-Fenster.',
       '',
       'Der Artikel wird erst nach Merge nach `main` veroeffentlicht.'
@@ -447,24 +342,12 @@ class GitHubPublisher {
   async publish({ fileName, raw, title }) {
     const filePath = `posts/${fileName}`;
     const archivePath = `archive/${fileName}`;
-    const regressionPath = regressionFixturePath(fileName);
     const branch = branchForFile(fileName);
     const mainFile = await this.file(filePath, this.baseBranch);
     const mainArchiveFile = await this.file(archivePath, this.baseBranch);
-    const mainRegressionFile = await this.file(regressionPath, this.baseBranch);
-    const regressionFixture = buildRegressionFixture(
-      fileName,
-      title,
-      raw,
-      mainRegressionFile?.content || ''
-    );
     let pullRequest = await this.openPullRequest(branch);
 
-    if (
-      mainFile?.content === raw
-      && !mainArchiveFile
-      && mainRegressionFile?.content === regressionFixture
-    ) {
+    if (mainFile?.content === raw && !mainArchiveFile) {
       if (pullRequest) {
         await this.closePullRequest(pullRequest);
         return { action: 'closed-stale-pr', branch, pullRequest };
@@ -480,11 +363,6 @@ class GitHubPublisher {
     }
     await this.deleteFile(archivePath, branch, title, 'publish');
 
-    const branchRegressionFile = await this.file(regressionPath, branch);
-    if (branchRegressionFile?.content !== regressionFixture) {
-      await this.writeFile(regressionPath, branch, regressionFixture, `${title} search regression`, 'publish');
-    }
-
     if (!pullRequest) {
       pullRequest = await this.createPullRequest(branch, title, filePath, 'publish');
       return { action: 'created-pr', branch, pullRequest };
@@ -497,14 +375,12 @@ class GitHubPublisher {
   async unpublish({ fileName, title }) {
     const filePath = `posts/${fileName}`;
     const archivePath = `archive/${fileName}`;
-    const regressionPath = regressionFixturePath(fileName);
     const branch = branchForFile(fileName);
     const mainFile = await this.file(filePath, this.baseBranch);
     const mainArchiveFile = await this.file(archivePath, this.baseBranch);
-    const mainRegressionFile = await this.file(regressionPath, this.baseBranch);
     let pullRequest = await this.openPullRequest(branch);
 
-    if (!mainFile && !mainArchiveFile && !mainRegressionFile) {
+    if (!mainFile && !mainArchiveFile) {
       if (pullRequest) {
         await this.closePullRequest(pullRequest);
         return { action: 'closed-pending-publish', branch, pullRequest };
@@ -515,7 +391,6 @@ class GitHubPublisher {
     await this.ensureBranch(branch, pullRequest);
     await this.deleteFile(filePath, branch, title, 'unpublish');
     await this.deleteFile(archivePath, branch, title, 'unpublish');
-    await this.deleteFile(regressionPath, branch, `${title} search regression`, 'unpublish');
 
     if (!pullRequest) {
       pullRequest = await this.createPullRequest(branch, title, filePath, 'unpublish');
@@ -694,16 +569,12 @@ if (require.main === module) {
 module.exports = {
   GitHubPublisher,
   StableTracker,
-  articleSlug,
   branchForFile,
-  buildRegressionFixture,
   contentHash,
   frontmatterLines,
   modeTitle,
   parseFrontmatter,
   parsePositiveInteger,
-  parseSearchQueries,
-  regressionFixturePath,
   runCycle,
   stripYamlQuotes
 };
