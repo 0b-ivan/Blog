@@ -1,171 +1,103 @@
 ---
 id: 2026-08-21-rechtschreib-pipeline-trotz-legasthenie
-version: 2
+version: 3
 title: "Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline"
 date: 2026-08-21
 published_at: 2026-08-21T09:24:57+02:00
 created_at: 2026-08-21
-updated_at: 2026-08-24
+updated_at: 2026-08-25
 author: obivan
 reviewed_by: pending
 category: Automation
-excerpt: Ich habe Legasthenie und mache beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler. Deshalb prüft mein Blog Texte automatisch mit CSpell und LanguageTool. Autokorrekturen laufen bewusst nur manuell und landen zuerst in einem Pull Request.
+excerpt: Was als kleine Machbarkeitsfrage angefangen hat, ist inzwischen Teil meines Blog-Workflows: CSpell und LanguageTool prüfen meine Texte automatisch, sichere Autokorrekturen landen zuerst in einem Pull Request.
 tags: GitHub Actions, Automation, CSpell, LanguageTool, CI/CD
 ---
 
-Ich habe Legasthenie. Beim Schreiben bedeutet das für mich ganz praktisch: Rechtschreibfehler, vertauschte Buchstaben und Fehler bei der Interpunktion passieren regelmäßig. Besonders bei längeren technischen Texten übersehe ich sie beim eigenen Korrekturlesen schnell.
+Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.
 
-Ich möchte deshalb nicht weniger schreiben. Ich möchte Technik nutzen, um trotzdem möglichst **fehlerarme Texte** zu veröffentlichen.
+Die eigentliche Idee hinter diesem Projekt war aber erstmal deutlich weniger ernst: **Kann man Rechtschreibung eigentlich wie Code behandeln und dafür eine CI/CD-Pipeline bauen?**
 
-Das ist inzwischen ein Teil dieses Blogs geworden. Und weil mich Automatisierung interessiert, ist die Lösung ein kleines bisschen over-engineered.
+Was als kleine Machbarkeitsfrage und Spaßprojekt angefangen hat, funktioniert inzwischen überraschend gut und ist Teil meines Blog-Workflows geworden.
 
-## Das Ziel
+## Die Idee
 
-Ich wollte drei Dinge:
+Meine Blogposts liegen als Markdown in Git. Pull Requests, GitHub Actions und automatisierte Tests waren also ohnehin schon da.
 
-- Fehler automatisch finden.
-- Texte nicht ungeprüft durch Software verändern lassen.
-- Korrekturen genauso nachvollziehbar behandeln wie Code.
+Warum nicht auch die sprachliche Prüfung dort einbauen?
 
-Daraus ist diese Pipeline entstanden:
+Das Ziel war einfach:
+
+- Fehler automatisch finden,
+- Texte nicht ungeprüft von Software verändern lassen,
+- Korrekturen im Diff nachvollziehen können.
+
+Daraus ist dieser Ablauf entstanden:
 
 ```mermaid
 flowchart TD
     A[Markdown schreiben] --> B[Pull Request]
-    B --> C[CSpell]
-    B --> D[LanguageTool]
-    C --> E[Hinweise]
-    D --> E
-    E --> F{Autokorrektur gewünscht?}
-    F -->|Nein| G[Text manuell prüfen]
-    F -->|Ja| H[Autocorrect Workflow]
-    H --> I[Nur sichere Korrekturen]
-    I --> J[Neuer Pull Request]
-    J --> K[Diff prüfen]
-    K --> L[Merge]
+    B --> C[CSpell + LanguageTool]
+    C --> D[Hinweise]
+    D --> E{Autocorrect starten?}
+    E -->|Nein| F[Manuell prüfen]
+    E -->|Ja| G[Sichere Korrekturen]
+    G --> H[Neuer Pull Request]
+    H --> I[Diff prüfen]
+    I --> J[Merge]
 ```
 
-Der wichtigste Punkt ist die Trennung zwischen **prüfen** und **ändern**.
+Der wichtigste Punkt: **Prüfen und Ändern sind getrennt.**
 
-Die normale Pipeline darf Fehler melden. Sie darf meinen Text aber nicht einfach umschreiben.
+## CSpell und LanguageTool
 
-## Zwei Werkzeuge, zwei Aufgaben
+Für die Prüfung nutze ich zwei Werkzeuge.
 
-Für die Prüfung nutze ich **CSpell** und **LanguageTool**.
+**CSpell** kümmert sich hauptsächlich um Rechtschreib- und Tippfehler. Bei technischen Texten braucht es eine eigene Wortliste, damit Begriffe wie `Cloudflare`, `Dockerfile`, `Dependabot` oder `DevOps` nicht selbst zum Fehler werden.
 
-CSpell kümmert sich hauptsächlich um klassische Rechtschreib- und Tippfehler. Bei technischen Texten braucht es zusätzlich eine eigene Wortliste, sonst werden Begriffe wie `Cloudflare`, `Dockerfile`, `Dependabot` oder `DevOps` schnell selbst zum vermeintlichen Fehler.
+**LanguageTool** findet zusätzlich Hinweise zu Grammatik, Interpunktion, Groß- und Kleinschreibung, Typografie und Stil.
 
-LanguageTool geht weiter und findet zusätzlich Hinweise zu Grammatik, Interpunktion, Groß- und Kleinschreibung, Typografie und Stil.
-
-Das heißt aber nicht, dass alle Vorschläge automatisch übernommen werden.
-
-## Die normale Proofread-Pipeline verändert nichts
-
-Sobald ein Pull Request einen Blogpost ändert, läuft die Proofread-Pipeline.
-
-```mermaid
-flowchart LR
-    A[Blogpost geändert] --> B[CSpell]
-    A --> C[LanguageTool]
-    B --> D[GitHub Actions]
-    C --> D
-    D --> E[Annotations und Summary]
-    E --> F[Keine automatische Änderung]
-```
-
-Sprachliche Hinweise sind dabei bewusst **non-blocking**. Ein möglicher Kommafehler soll mir auffallen, aber nicht denselben Status haben wie ein kaputter Test oder ein fehlgeschlagenes Deployment.
-
-Der Workflow schreibt die Ergebnisse direkt in die GitHub-Action-Summary und als Annotations an die betroffenen Zeilen.
+Sobald ein Pull Request einen Blogpost ändert, läuft die Proofread-Pipeline. Die Hinweise erscheinen in der GitHub-Action-Summary und als Annotations an den betroffenen Zeilen.
 
 ![Proofread Summary mit LanguageTool-Hinweisen](/assets/posts/rechtschreib-pipeline/01-proofread-summary.svg)
 
-In diesem Lauf wurden 11 Dateien geprüft. LanguageTool hat 22 Hinweise gefunden, aber nur eine Korrektur wurde automatisch als sicher eingestuft. Genau das ist gewollt: viele Hinweise, wenige automatische Änderungen.
+Sprachliche Hinweise sind bewusst **non-blocking**. Ein mögliches Komma soll auffallen, aber nicht denselben Status bekommen wie ein kaputter Test oder ein fehlgeschlagenes Deployment.
 
-## Warum nicht einfach alles automatisch korrigieren?
+## Autokorrektur nur mit Sicherheitsnetz
 
-Weil Autokorrektur selbst Fehler erzeugen kann.
+Die normale Pipeline verändert keinen Text.
 
-Ein Rechtschreibvorschlag kann technisch eindeutig aussehen und trotzdem im Satz falsch sein. Deshalb gelten für die automatische Korrektur enge Regeln.
+Wenn ich Autocorrect nutzen möchte, starte ich dafür einen eigenen GitHub-Action-Workflow manuell.
 
-Für CSpell gilt im Wesentlichen:
+Automatisch übernommen werden nur möglichst eindeutige Fälle. Bei CSpell muss ein klarer Vorschlag vorhanden sein. Bei LanguageTool werden nur eindeutige `misspelling`-Treffer mit genau einem Ersatz berücksichtigt.
 
-```text
-kein eindeutiger Vorschlag
-→ nichts ändern
+Grammatik, Stil, Typografie und Interpunktion bleiben zur manuellen Prüfung stehen.
 
-genau ein eindeutiger Vorschlag
-→ Korrektur möglich
-
-mehrere Vorschläge
-→ nichts ändern
-```
-
-LanguageTool ist noch restriktiver. Automatisch übernommen werden nur eindeutige Treffer vom Typ `misspelling` mit genau einem Ersatz. Grammatik-, Stil-, Typografie- und Interpunktionshinweise bleiben zur manuellen Prüfung stehen.
-
-Das ist der Unterschied zwischen **Autokorrektur als Hilfe** und **Autokorrektur als Autor**.
-
-## Autokorrektur läuft bewusst manuell
-
-Die eigentliche Autokorrektur startet nicht bei jedem Commit. Sie wird in GitHub Actions bewusst manuell ausgelöst.
-
-![Manueller Start des Autocorrect-Workflows](/assets/posts/rechtschreib-pipeline/02-autocorrect-workflow.svg)
-
-Dabei kann ich optional nur einen bestimmten Markdown-Post angeben. Bleibt das Feld leer, werden alle aktiven Posts geprüft.
-
-Der Ablauf ist dann:
-
-```mermaid
-sequenceDiagram
-    actor I as Ich
-    participant GH as GitHub Actions
-    participant CS as CSpell
-    participant LT as LanguageTool
-    participant PR as Pull Request
-
-    I->>GH: Autocorrect starten
-    GH->>CS: sichere Korrekturen suchen
-    GH->>LT: sichere Korrekturen suchen
-    CS-->>GH: eindeutige Treffer
-    LT-->>GH: eindeutige Rechtschreibtreffer
-    GH->>PR: Branch + Pull Request erstellen
-    PR-->>I: Diff anzeigen
-    I->>PR: prüfen und mergen
-```
-
-Der Workflow schreibt also nicht direkt nach `main`.
-
-Er erzeugt einen eigenen Branch und danach einen Pull Request.
+Der Workflow schreibt außerdem nie direkt nach `main`. Er erstellt einen Branch und anschließend einen Pull Request.
 
 ![Automatisch erzeugter Korrektur-Pull-Request](/assets/posts/rechtschreib-pipeline/03-autocorrect-pr.svg)
 
-Damit bleibt jede automatische Textänderung nachvollziehbar und überprüfbar.
-
-## Der Diff ist die eigentliche Sicherheitsstufe
-
-Im Pull Request sehe ich genau, was die Automatik verändert hat.
+Im Diff sehe ich dann genau, was verändert wurde.
 
 ![Diff einer automatisch angewendeten Rechtschreibkorrektur](/assets/posts/rechtschreib-pipeline/04-autocorrect-diff.svg)
 
-Im gezeigten Lauf wurde beispielsweise:
+Zum Beispiel:
 
 ```diff
 -klein zu halten.
 +kleinzuhalten.
 ```
 
-korrigiert.
-
-Das ist genau die Art von Änderung, die ich automatisieren möchte: klein, nachvollziehbar und im Diff sofort verständlich.
-
 Wenn eine Änderung falsch aussieht, wird sie nicht gemerged.
 
-## Markdown muss teilweise ausgeblendet werden
+Oder anders gesagt: **Autokorrektur als Hilfe, nicht als Autor.**
 
-Ein Blogpost besteht nicht nur aus Fließtext. Darin stecken auch Frontmatter, Codeblöcke, Inline-Code, URLs, Markdown-Links und technische Bezeichner.
+## Markdown macht es etwas komplizierter
 
-Eine Rechtschreibprüfung auf dem kompletten Rohtext würde deshalb viele False Positives erzeugen.
+Ein Blogpost besteht nicht nur aus Fließtext. Darin stecken Frontmatter, Codeblöcke, Inline-Code, URLs, Links und technische Bezeichner.
 
-Die LanguageTool-Integration maskiert unter anderem:
+Würde LanguageTool einfach den kompletten Rohtext prüfen, gäbe es entsprechend viele False Positives.
+
+Deshalb maskiert die Integration unter anderem:
 
 ```text
 Frontmatter
@@ -176,11 +108,11 @@ Markdown-Link-Ziele
 HTML
 ```
 
-So wird möglichst der Text geprüft, den ein Leser tatsächlich liest, und nicht jede technische Zeichenfolge im Dokument.
+Geprüft werden soll möglichst der Text, den ein Leser tatsächlich liest.
 
 ## Kurz nachbauen
 
-Für denselben Ansatz reichen im Repository im Kern diese Dateien:
+Im Repository stecken dafür im Kern diese Dateien:
 
 ```text
 .github/workflows/proofread.yml
@@ -191,63 +123,39 @@ cspell.json
 config/proofread-words.txt
 ```
 
-Dann sind es fünf Schritte:
+Der Ablauf lässt sich auf fünf Schritte reduzieren:
 
-1. CSpell konfigurieren und eigene technische Begriffe in `proofread-words.txt` aufnehmen.
-2. LanguageTool im Workflow per Docker starten: `meyay/languagetool:latest`.
-3. `proofread.yml` bei Änderungen an `posts/**/*.md` laufen lassen und sprachliche Hinweise non-blocking behandeln.
-4. `proofread-autocorrect.yml` nur per `workflow_dispatch` starten und nur eindeutige Korrekturen anwenden.
-5. Unter **Settings → Actions → General** Schreibrechte sowie **Allow GitHub Actions to create and approve pull requests** aktivieren.
+1. CSpell konfigurieren und technische Begriffe in eine eigene Wortliste aufnehmen.
+2. LanguageTool im Workflow starten.
+3. Die Prüfung bei Änderungen an `posts/**/*.md` ausführen und Hinweise non-blocking behandeln.
+4. Autocorrect nur manuell starten und nur eindeutige Korrekturen anwenden.
+5. Änderungen aus Autocorrect immer über einen Pull Request laufen lassen.
 
-Danach reicht im Alltag:
-
-```text
-Pull Request → automatische Prüfung
-Actions → Autocorrect Blog Posts → Run workflow
-→ Korrektur-PR öffnen → Diff prüfen → Merge
-```
-
-## Warum dieser Aufwand?
-
-Natürlich könnte ich jeden Artikel vor dem Veröffentlichen durch einen normalen Texteditor schicken.
-
-Aber meine Texte liegen als Markdown in Git, Pull Requests sind bereits Teil des Workflows und GitHub Actions übernimmt ohnehin Tests und Deployment. Deshalb soll auch die sprachliche Qualitätsprüfung dort stattfinden.
-
-Der Kern für mich ist:
-
-**Fehlerarme Texte trotz Legasthenie schreiben, ohne das Schreiben selbst an eine Automatik abzugeben.**
-
-Die Technik unterstützt dort, wo ich Fehler regelmäßig übersehe. Die Entscheidung über den finalen Text bleibt bei mir.
-
-Und der zweite Grund ist einfacher: Ich finde solche Systeme interessant.
-
-Eine Rechtschreibprüfung hätte man deutlich kleiner bauen können. Dafür hätte ich dann aber weniger über GitHub Actions, Workflow Permissions, LanguageTool, CSpell, Markdown-Masking und Pull-Request-Automation gelernt.
-
-Ein bisschen Overengineering gehört hier also dazu.
-
-## Fazit
-
-Der Ablauf ist bewusst simpel gehalten:
+Im Alltag sieht das dann ungefähr so aus:
 
 ```text
 Schreiben
-↓
-automatisch prüfen
-↓
-Hinweise bekommen
-↓
-optional Autocorrect manuell starten
-↓
-sichere Änderungen als Pull Request
-↓
-Diff kontrollieren
-↓
-veröffentlichen
+→ Pull Request
+→ automatische Prüfung
+→ optional Autocorrect
+→ Korrektur-PR
+→ Diff prüfen
+→ Merge
 ```
 
-Die Pipeline soll Fehler früh finden und mir Arbeit abnehmen. Sie soll aber nicht entscheiden, was ich geschrieben haben wollte.
+## Fazit
 
-Für mich ist das die passende Mischung aus Accessibility und Engineering: **Technik reduziert die Fehlerquote, der Mensch behält die Kontrolle.**
+Braucht eine Rechtschreibprüfung wirklich GitHub Actions, zwei Tools, eigene Skripte und Pull Requests?
+
+Natürlich nicht.
+
+Das Ganze war in erster Linie ein Spaßprojekt und die Frage, ob sich eine sprachliche Qualitätsprüfung sinnvoll in einen normalen CI/CD-Workflow integrieren lässt.
+
+Die Antwort ist: **Ja.**
+
+Und nebenbei ist daraus etwas entstanden, das mir tatsächlich hilft. Die Technik findet Fehler, die ich selbst leicht übersehe, ohne mir die Entscheidung über den finalen Text abzunehmen.
+
+Ein bisschen Overengineering war also durchaus Absicht.
 
 ## Querverweise
 
