@@ -1,16 +1,20 @@
 ---
 id: 2026-08-19-markdown-features-im-blog
-version: 2
+version: 1
 title: Markdown-Features im Blog nutzen
+status: publish
 date: 2026-08-19
-published_at: 2026-08-19T12:08:03+02:00
 created_at: 2026-08-19
-updated_at: 2026-08-24
+updated_at: 2026-08-19
 author: obivan
 reviewed_by: pending
 category: Engineering
 excerpt: So nutzt du Tags, Wiki-Links, Footnotes, Admonitions und Mermaid in deinen Blogposts.
-tags: Markdown, Docs, Mermaid, DevEx
+tags: 
+- Markdown
+- Docs
+- Mermaid
+- DevEx
 ---
 
 Wenn du Inhalte schnell schreiben willst, ist Markdown genau richtig.
@@ -21,8 +25,8 @@ In diesem Post siehst du die wichtigsten Features, die dein Blog jetzt unterstü
 
 Du kannst auf andere Posts mit Wiki-Syntax verlinken:
 
-- [[docker-vs-docker-compose|Docker vs. Docker Compose]]
-- [[dependabot-im-einsatz|Dependabot im Einsatz]]
+- [[Zero Downtime Mit Compose]]
+- [[Systemd Timer Statt Cron|Systemd statt Cron]]
 
 Das ist praktisch, wenn du beim Schreiben erst mal schnell querverlinken willst.
 
@@ -70,14 +74,3 @@ So werden die Tags im Post angezeigt und können auch in der Übersicht als Filt
 ## Fazit
 
 Wenn du schnell schreiben und trotzdem strukturiert bleiben willst, sind diese Markdown-Features ein sehr guter Mittelweg zwischen Plain Text und vollem CMS.
-
-## Querverweise
-
-- [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
-- [[kernel-grep-semantische-suche-fuer-meinen-blog|Kernel Grep]]
-
-## Quellen
-
-- [markdown-it Dokumentation](/sources.html#markdown-it)
-- [markdown-it-footnote](/sources.html#markdown-it-footnote)
-- [Mermaid Dokumentation](/sources.html#mermaid)
