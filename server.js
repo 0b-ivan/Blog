@@ -81,6 +81,20 @@ function slugFromWikiName(name) {
     .replace(/^-|-$/g, '');
 }
 
+function resolveWikiTargetSlug(target, activeSlugs = []) {
+  const normalized = slugFromWikiName(target);
+  if (!normalized) {
+    return '';
+  }
+
+  const exact = activeSlugs.find((slug) => slugFromWikiName(slug) === normalized);
+  if (exact) {
+    return exact;
+  }
+
+  return activeSlugs.find((slug) => slugFromWikiName(slug).endsWith(`-${normalized}`)) || '';
+}
+
 function parseMetadataLine(line) {
   const match = String(line || '').match(/^([a-zA-Z_][a-zA-Z0-9_]*):\s*(.*)$/);
   if (!match) {
@@ -191,17 +205,17 @@ md.renderer.rules.abbr_open = (tokens, idx, options, env, self) => {
   return defaultAbbrOpenRule(tokens, idx, options, env, self);
 };
 
-function transformWikiLinks(content) {
+function transformWikiLinks(content, activeSlugs = []) {
   return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_match, target, label) => {
     const cleanTarget = String(target || '').trim();
     const cleanLabel = String(label || cleanTarget).trim();
-    const slug = slugFromWikiName(cleanTarget);
+    const resolvedSlug = resolveWikiTargetSlug(cleanTarget, activeSlugs);
 
-    if (!slug) {
+    if (!resolvedSlug) {
       return cleanLabel;
     }
 
-    return `[${cleanLabel}](/posts/${slug})`;
+    return `[${cleanLabel}](/posts/${slugFromWikiName(cleanTarget)})`;
   });
 }
 
@@ -258,6 +272,7 @@ async function loadPosts(postsDir) {
   }
 
   const files = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.md'));
+  const activeSlugs = files.map((file) => slugify(file.name));
 
   const posts = await Promise.all(
     files.map(async (file) => {
@@ -273,7 +288,7 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
-      const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content));
+      const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
       return {
         slug,
@@ -734,6 +749,8 @@ module.exports = {
   parseDate,
   normalizeTags,
   slugFromWikiName,
+  resolveWikiTargetSlug,
+  transformWikiLinks,
   inferDateFromSlug,
   recoverMetadata,
   resolvePostBySlug,
