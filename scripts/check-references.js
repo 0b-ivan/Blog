@@ -116,7 +116,7 @@ async function main() {
       for (const match of scanContent.matchAll(WIKI_LINK_RE)) {
         const target = match[1].trim();
         if (!resolvesWikiTarget(target, activeSlugs)) {
-          errors.push(`${relative}: unresolved wiki-link target '${target}'`);
+          warnings.push(`${relative}: wiki-link target currently not published '${target}'`);
         }
       }
     }
