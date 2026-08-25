@@ -6,7 +6,7 @@
       "maxRank": 1
     },
     {
-      "query": "Wie kann ich verhindern dass eine Änderung alte Funktionen kaputt macht?",
+      "query": "Wie prüfe ich ob nach einer Änderung bisherige Funktionen noch funktionieren?",
       "maxRank": 3
     },
     {
