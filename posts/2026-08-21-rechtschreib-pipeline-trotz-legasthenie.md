@@ -9,7 +9,7 @@ updated_at: 2026-08-25
 author: obivan
 reviewed_by: pending
 category: Automation
-excerpt: Was als kleine Machbarkeitsfrage angefangen hat, ist inzwischen Teil meines Blog-Workflows: CSpell und LanguageTool prüfen meine Texte automatisch, sichere Autokorrekturen landen zuerst in einem Pull Request.
+excerpt: "Was als kleine Machbarkeitsfrage angefangen hat, ist inzwischen Teil meines Blog-Workflows: CSpell und LanguageTool prüfen meine Texte automatisch, sichere Autokorrekturen landen zuerst in einem Pull Request."
 tags: GitHub Actions, Automation, CSpell, LanguageTool, CI/CD
 ---
 
