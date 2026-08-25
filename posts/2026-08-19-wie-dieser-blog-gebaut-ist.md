@@ -15,6 +15,11 @@ tags:
 - Architecture
 - DevOps
 - Node
+search_queries:
+  - query: Warum braucht dieser Blog keine Datenbank?
+    maxRank: 1
+  - query: Wie ist die Architektur dieses Blogs aufgebaut?
+    maxRank: 1
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.
