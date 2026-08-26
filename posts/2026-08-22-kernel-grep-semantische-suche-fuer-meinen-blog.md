@@ -2,6 +2,7 @@
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
 version: 6
 title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
+status: draft
 date: 2026-08-22
 published_at: 2026-08-22T19:51:00+02:00
 created_at: 2026-08-22
@@ -10,7 +11,13 @@ author: obivan
 reviewed_by: pending
 category: Engineering
 excerpt: Kernel Grep durchsucht meine Blogartikel lokal mit E5, DuckDB und einem hybriden Ranking. Entscheidend war weniger das Embedding selbst als die Frage, wann ein Treffer wirklich relevant ist.
-tags: Semantic Search, DuckDB, Embeddings, Transformers.js, Node.js, Docker, Self-Hosting
+tags: - Semantic-Search
+      - DuckDB
+      - Embeddings
+      - Transformers.js 
+      - Node.js 
+      - Docker 
+      - Self-Hosting
 search_queries:
   - query: Wie verhindere ich unsinnige Treffer bei einer semantischen Suche?
     maxRank: 1
