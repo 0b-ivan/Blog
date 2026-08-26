@@ -121,110 +121,126 @@ Authentifizierung
    ↓
 Cloudflare Tunnel
    ↓
-interner Docker-Service
+Docker Application
 ```
 
-Damit lässt sich zum Beispiel eine Admin-Oberfläche absichern, ohne sie einfach offen ins Internet zu stellen.
+Damit eignet sich das Setup besonders gut für interne Anwendungen wie:
+
+- Admin-Oberflächen
+- Monitoring
+- interne Tools
+- Home-Lab-Dienste
+- Entwicklungsumgebungen
+
+Ein Dienst muss dadurch nicht nur deshalb direkt aus dem Internet erreichbar sein, weil ich von unterwegs darauf zugreifen möchte.
+
+## Public und Private Services trennen
+
+Nicht jede Anwendung muss geschützt sein.
+
+Ein Blog soll beispielsweise öffentlich erreichbar sein:
+
+```text
+blog.example.de
+   ↓
+Cloudflare
+   ↓
+Tunnel
+   ↓
+Blog Container
+```
+
+Eine Admin-Oberfläche dagegen:
+
+```text
+admin.example.de
+   ↓
+Cloudflare Access
+   ↓
+Authentifizierung
+   ↓
+Tunnel
+   ↓
+Admin Container
+```
+
+Beide Dienste können auf demselben Hetzner Server laufen. Der Unterschied liegt vor allem in der Cloudflare-Konfiguration.
 
 ## Deployment
 
-Der eigentliche Deployment-Prozess bleibt bewusst einfach.
+Das eigentliche Deployment bleibt sehr einfach.
 
-Eine mögliche Pipeline:
+Das Docker Image wird in CI gebaut und in eine Registry gepusht. Auf dem Hetzner Server reichen anschließend im Kern Befehle wie:
+
+[Deployment](/snippets/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/01-deployment.sh "snippet:bash")
+
+Der Ablauf sieht dann ungefähr so aus:
 
 ```text
 Git Push
    ↓
-CI
-   ↓
 Docker Image bauen
    ↓
-Image Registry
+Container Registry
    ↓
 Hetzner Server
    ↓
 docker compose pull
    ↓
 docker compose up -d
-```
-
-Der Server selbst braucht dadurch keine komplizierte Orchestrierung.
-
-Für kleine Anwendungen reicht häufig bereits ein Compose-Stack.
-
-## Warum kein Kubernetes?
-
-Kubernetes löst viele echte Probleme.
-
-Für einen einzelnen Server mit wenigen Anwendungen bringt es aber auch zusätzliche Komplexität mit:
-
-- Cluster-Verwaltung
-- Ingress Controller
-- Secrets Management
-- zusätzliche Netzwerkebenen
-- mehr Komponenten, die gewartet werden müssen
-
-Für kleine Self-Hosting- oder Blog-Projekte ist deshalb ein einfacher Docker-Compose-Stack oft völlig ausreichend.
-
-## Mein aktuelles Setup
-
-Das Grundprinzip sieht damit so aus:
-
-```text
-GitHub
-   ↓
-CI/CD
-   ↓
-Container Registry
-   ↓
-Hetzner Cloud
-   ↓
-Docker Compose
    ↓
 Cloudflare Tunnel
    ↓
-Cloudflare Zero Trust
-   ↓
-Benutzer
+Application erreichbar
 ```
 
-Der interessante Teil ist dabei weniger Docker selbst.
+In diesem Blog läuft es bereits nach genau diesem Grundprinzip: Nach einem Merge nach `main` baut GitHub Actions ein unveränderliches Docker Image, pusht es nach GHCR und deployed anschließend das konkrete SHA-Image auf den Hetzner Host.
 
-Der größte Vorteil ist für mich, dass Dienste veröffentlicht werden können, ohne jeden Service direkt über die öffentliche IP des Servers erreichbar zu machen.
+## Updates und Rollbacks
 
-Cloudflare übernimmt dabei den kontrollierten Einstiegspunkt.
+Für produktive Deployments sind feste Image-Tags beziehungsweise noch besser ein konkreter Commit-SHA sinnvoller als ausschließlich `latest`.
 
-## Fazit
+Zum Beispiel:
 
-Für kleinere Anwendungen gefällt mir diese Kombination aktuell sehr gut:
+[Updates und Rollbacks](/snippets/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/02-updates-und-rollbacks.yml "snippet:yaml")
+
+Damit ist nachvollziehbar, welcher Stand gerade läuft.
+
+Wenn ein Deployment fehlschlägt, lässt sich gezielt wieder das vorherige Image starten. Ein automatischer Healthcheck kann zusätzlich prüfen, ob die neue Version wirklich erreichbar ist, bevor das Deployment als erfolgreich gilt.
+
+## Warum mir dieses Setup gefällt
+
+Das Setup ist vergleichsweise einfach, trennt die einzelnen Aufgaben aber trotzdem sauber voneinander.
 
 ```text
+Cloudflare
+    ↓
+Zugriff und TLS
+
 Hetzner
-+
-Docker Compose
-+
-Cloudflare Tunnel
-+
-Zero Trust
+    ↓
+Server
+
+Docker
+    ↓
+Anwendungen
 ```
 
-Das Setup bleibt relativ klein, reproduzierbar und gut nachvollziehbar.
+Dazu kommt ein wichtiger Vorteil: Viele Dienste müssen überhaupt nicht mehr direkt über die öffentliche IP des Servers erreichbar sein.
 
-Gleichzeitig müssen interne Dienste nicht einfach offen im Internet stehen.
+Für kleinere Projekte, interne Anwendungen und Self-Hosting ist die Kombination aus **Hetzner + Docker + Cloudflare Zero Trust** deshalb ein sehr interessantes Setup.
 
-Für große Plattformen würde ich weiterhin andere Lösungen verwenden.
-
-Für kleine Webanwendungen, interne Tools und Self-Hosting-Projekte ist dieses Setup aber erstaunlich leistungsfähig.
+Man bekommt eine überschaubare Infrastruktur, einfache Deployments und kann trotzdem sehr genau kontrollieren, welche Dienste öffentlich und welche nur nach Authentifizierung erreichbar sind.
 
 ## Querverweise
 
-- [[docker-vs-docker-compose|Docker vs. Docker Compose: Was ist der Unterschied?]]
+- [[docker-vs-docker-compose|Docker vs. Docker Compose]]
 - [[wie-dieser-blog-gebaut-ist|Wie dieser Blog gebaut ist]]
-- [[kernel-grep-semantische-suche-fuer-meinen-blog|Kernel Grep – semantische Suche für meinen Blog]]
 
 ## Quellen
 
-- [Docker Compose Dokumentation](/sources.html#docker-compose)
-- [Cloudflare Tunnel Dokumentation](/sources.html#cloudflare-tunnel)
-- [Cloudflare Access Dokumentation](/sources.html#cloudflare-access)
 - [Hetzner Cloud Dokumentation](/sources.html#hetzner-cloud)
+- [Docker Compose Referenz](/sources.html#docker-compose)
+- [Docker Compose in Produktion](/sources.html#docker-compose-production)
+- [Cloudflare Tunnel](/sources.html#cloudflare-tunnel)
+- [Cloudflare Access](/sources.html#cloudflare-access)
