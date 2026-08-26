@@ -1,0 +1,192 @@
+name: Sync main to Obsidian
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'posts/**'
+      - 'archive/**'
+      - '.github/workflows/sync-main-to-obsidian.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Sync mode
+        required: true
+        default: seed
+        type: choice
+        options:
+          - seed
+          - full
+
+concurrency:
+  group: obsidian-main-sync-production
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Build Obsidian sync package
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          STAGE=/tmp/obsidian-main-sync
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/vault"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            mode="${{ inputs.mode }}"
+          elif git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- \
+              .github/workflows/sync-main-to-obsidian.yml | grep -q .; then
+            # First deployment of this workflow: seed every published/archived note,
+            # but do not overwrite notes that already exist in the LiveSync vault.
+            mode=seed
+          else
+            mode=changed
+          fi
+
+          copy_note() {
+            source="$1"
+            [ -f "$source" ] || return 0
+            cp "$source" "$STAGE/vault/$(basename "$source")"
+          }
+
+          case "$mode" in
+            seed|full)
+              for source in posts/*.md archive/*.md; do
+                [ -e "$source" ] || continue
+                copy_note "$source"
+              done
+              ;;
+            changed)
+              while IFS= read -r source; do
+                case "$source" in
+                  posts/*.md|archive/*.md)
+                    copy_note "$source"
+                    ;;
+                esac
+              done < <(git diff --name-only --diff-filter=AMR \
+                "${{ github.event.before }}" "${{ github.sha }}" -- posts archive)
+              ;;
+            *)
+              echo "Unsupported sync mode: $mode" >&2
+              exit 1
+              ;;
+          esac
+
+          count="$(find "$STAGE/vault" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+          if [ "$count" -eq 0 ]; then
+            echo 'No Markdown notes need to be mirrored.'
+            exit 0
+          fi
+
+          tar -C "$STAGE" -czf /tmp/obsidian-main-sync.tgz vault
+          echo "Prepared $count note(s) in mode '$mode'."
+
+      - name: Validate deployment secrets
+        if: steps.package.outputs.count != '0'
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          test -n "$HETZNER_HOST" || { echo 'HETZNER_HOST is missing'; exit 1; }
+          test -n "$HETZNER_USER" || { echo 'HETZNER_USER is missing'; exit 1; }
+          test -n "$HETZNER_SSH_KEY" || { echo 'HETZNER_SSH_KEY is missing'; exit 1; }
+          test -n "$HETZNER_KNOWN_HOSTS" || { echo 'HETZNER_KNOWN_HOSTS is missing'; exit 1; }
+
+      - name: Configure SSH
+        if: steps.package.outputs.count != '0'
+        env:
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HETZNER_SSH_KEY" > ~/.ssh/hetzner_deploy
+          chmod 600 ~/.ssh/hetzner_deploy
+          printf '%s\n' "$HETZNER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload sync package
+        if: steps.package.outputs.count != '0'
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            /tmp/obsidian-main-sync.tgz \
+            "${HETZNER_USER}@${HETZNER_HOST}:/tmp/obsidian-main-sync-${{ github.sha }}.tgz"
+
+      - name: Mirror merged notes into headless vault
+        if: steps.package.outputs.count != '0'
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
+          SYNC_MODE: ${{ steps.package.outputs.mode }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          PORT="${HETZNER_PORT:-22}"
+          ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            "${HETZNER_USER}@${HETZNER_HOST}" bash -s -- "$SYNC_MODE" "$COMMIT_SHA" <<'REMOTE'
+          set -euo pipefail
+          MODE="$1"
+          COMMIT_SHA="$2"
+          ARCHIVE="/tmp/obsidian-main-sync-${COMMIT_SHA}.tgz"
+          STAGE="/tmp/obsidian-main-sync-${COMMIT_SHA}"
+          VAULT_DIR="/opt/Blog/posts"
+          STACK_DIR="/opt/Blog/ops/obsidian-livesync"
+
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE" "$VAULT_DIR"
+          tar -xzf "$ARCHIVE" -C "$STAGE"
+
+          for source in "$STAGE"/vault/*.md; do
+            [ -e "$source" ] || continue
+            target="$VAULT_DIR/$(basename "$source")"
+
+            if [ "$MODE" = seed ] && [ -e "$target" ]; then
+              echo "Keeping existing vault note: $(basename "$target")"
+              continue
+            fi
+
+            install -m 0644 "$source" "$target"
+            echo "Mirrored $(basename "$target") from main"
+          done
+
+          rm -rf "$STAGE" "$ARCHIVE"
+
+          if [ ! -f "$STACK_DIR/.env" ]; then
+            echo "LiveSync .env is missing at $STACK_DIR/.env" >&2
+            exit 1
+          fi
+
+          cd "$STACK_DIR"
+          docker compose --env-file .env --profile headless up -d livesync-cli
+
+          running="$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)"
+          if [ "$running" != true ]; then
+            echo 'Headless LiveSync daemon is not running.' >&2
+            docker compose --env-file .env --profile headless ps livesync-cli || true
+            docker compose --env-file .env --profile headless logs --tail=100 livesync-cli || true
+            exit 1
+          fi
+
+          docker compose --env-file .env --profile headless ps livesync-cli
+          REMOTE
