@@ -8,7 +8,7 @@ const STOP_WORDS = new Set([
   'nach', 'nicht', 'oder', 'ohne', 'sein', 'seine', 'seinen', 'seinem', 'seiner', 'seines', 'sie', 'sind', 'so', 'soll', 'sollen',
   'sollte', 'über', 'ueber', 'und', 'uns', 'unser', 'unsere', 'unseren', 'unserem', 'unserer', 'unseres', 'vom', 'von', 'vor',
   'was', 'welche', 'welcher', 'welches', 'welchem', 'welchen', 'wenn', 'werden', 'wie', 'wir', 'wird', 'zu', 'zum', 'zur'
-]);
+].map((word) => normalizeText(word)));
 
 const DEFAULT_RELEVANCE = Object.freeze({
   minSemanticScore: 0.84,
