@@ -35,7 +35,7 @@ COPY styles.css image-viewer.css ./
 COPY assets ./assets
 COPY config ./config
 COPY lib ./lib
-COPY server.js enhanced-server.js privacy-server.js ./
+COPY server.js enhanced-server.js privacy-server.js seo-server.js ./
 
 # Current article content remains in the image as a bootstrap/fallback.
 # Production mounts persistent volumes over these paths.
@@ -49,4 +49,4 @@ ENV POST_HISTORY_DIR=/content/post-history
 ENV SEARCH_SERVICE_URL=http://search:8090/search
 
 EXPOSE 8080
-CMD ["privacy-server.js"]
+CMD ["seo-server.js"]
