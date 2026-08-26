@@ -11,13 +11,14 @@ author: obivan
 reviewed_by: pending
 category: Engineering
 excerpt: Kernel Grep durchsucht meine Blogartikel lokal mit E5, DuckDB und einem hybriden Ranking. Entscheidend war weniger das Embedding selbst als die Frage, wann ein Treffer wirklich relevant ist.
-tags: - Semantic-Search
-      - DuckDB
-      - Embeddings
-      - Transformers.js 
-      - Node.js 
-      - Docker 
-      - Self-Hosting
+tags:
+  - Semantic-Search
+  - DuckDB
+  - Embeddings
+  - Transformers_js
+  - Node_js
+  - Docker
+  - Self-Hosting
 search_queries:
   - query: Wie verhindere ich unsinnige Treffer bei einer semantischen Suche?
     maxRank: 1
