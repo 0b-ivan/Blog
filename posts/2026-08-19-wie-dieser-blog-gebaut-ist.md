@@ -78,7 +78,7 @@ Warum:
 - einfache Deployments auch ohne Kubernetes
 - klare Trennung von Build und Runtime
 
-Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche klein zu halten.
+Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche kleinzuhalten.
 
 ### 4) CI/CD mit GitHub Actions
 
