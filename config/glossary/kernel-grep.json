@@ -1,0 +1,87 @@
+{
+  "Artikel-Metadaten": {
+    "full": "Artikel-Metadaten",
+    "short": "Strukturierte Zusatzdaten eines Artikels wie Titel, Tags, Kategorie oder Datum.",
+    "description": "Artikel-Metadaten beschreiben einen Beitrag unabhängig vom eigentlichen Fließtext und können für Suche, Filterung, Sortierung oder Verknüpfungen verwendet werden.",
+    "aliases": [
+      "Artikelmetadaten"
+    ]
+  },
+  "Code-Fences": {
+    "full": "Code Fences",
+    "short": "Markdown-Begrenzer für mehrzeilige Codeblöcke.",
+    "description": "Code-Fences markieren in Markdown einen Codeblock mit mindestens drei Backticks oder Tilden. Parser können dadurch Code vom normalen Fließtext unterscheiden.",
+    "aliases": [
+      "Code-Fence"
+    ]
+  },
+  "Content-Änderungen": {
+    "full": "Content Changes",
+    "short": "Änderungen am eigentlichen Inhalt eines Artikels oder Dokuments.",
+    "description": "Content-Änderungen können beispielsweise eine erneute Indexierung, einen neuen Hash oder einen aktualisierten Deployment-Schritt auslösen.",
+    "aliases": [
+      "Content-Änderung"
+    ]
+  },
+  "Fließkomma-Vektoren": {
+    "full": "Floating-Point Vectors",
+    "short": "Vektoren, deren Werte als Fließkommazahlen gespeichert werden.",
+    "description": "Embeddings werden häufig als Fließkomma-Vektoren gespeichert. Jeder Zahlenwert repräsentiert dabei eine Dimension im Vektorraum.",
+    "aliases": [
+      "Fließkomma-Vektor"
+    ]
+  },
+  "GET": {
+    "full": "HTTP GET",
+    "short": "HTTP-Methode zum Abrufen einer Ressource.",
+    "description": "GET fordert Daten von einem HTTP-Endpunkt an und soll dabei den Zustand der angefragten Ressource nicht verändern.",
+    "aliases": []
+  },
+  "LIST": {
+    "full": "DuckDB LIST",
+    "short": "DuckDB-Datentyp für eine geordnete Liste von Werten.",
+    "description": "LIST speichert in DuckDB mehrere Werte desselben Typs in einem Feld und eignet sich beispielsweise für Embedding-Vektoren als Liste von FLOAT-Werten.",
+    "aliases": [
+      "DuckDB LIST"
+    ]
+  },
+  "Live-Suche": {
+    "full": "Live Search",
+    "short": "Suche, die Ergebnisse direkt während der Eingabe aktualisiert.",
+    "description": "Eine Live-Suche startet oder aktualisiert Suchanfragen bereits beim Tippen, statt erst nach dem Absenden eines Formulars.",
+    "aliases": [
+      "Live Search"
+    ]
+  },
+  "POST": {
+    "full": "HTTP POST",
+    "short": "HTTP-Methode zum Übermitteln von Daten an einen Server.",
+    "description": "POST sendet Daten an einen HTTP-Endpunkt, beispielsweise um eine Verarbeitung auszulösen oder eine neue Ressource anzulegen.",
+    "aliases": []
+  },
+  "Search-Service": {
+    "full": "Search Service",
+    "short": "Eigenständiger Dienst, der Suchanfragen verarbeitet und Treffer zurückliefert.",
+    "description": "Ein Search-Service kapselt Indexierung oder Suchlogik hinter einer Schnittstelle und kann dadurch getrennt vom eigentlichen Blog oder Frontend betrieben werden.",
+    "aliases": [
+      "Search Service",
+      "Suchdienst"
+    ]
+  },
+  "Submit-Button": {
+    "full": "Submit Button",
+    "short": "Schaltfläche zum Absenden eines Formulars.",
+    "description": "Ein Submit-Button löst die Formularübermittlung aus und startet dadurch beispielsweise eine Suchanfrage oder das Senden eingegebener Daten.",
+    "aliases": [
+      "Submit Button"
+    ]
+  },
+  "Terminal-Overlay": {
+    "full": "Terminal Overlay",
+    "short": "Überlagerte Bedienoberfläche im Stil eines Terminals.",
+    "description": "Ein Terminal-Overlay legt sich über die bestehende Seite und stellt Eingaben oder Ausgaben in einer terminalähnlichen Oberfläche dar, ohne eine eigene Seite zu öffnen.",
+    "aliases": [
+      "Terminal Overlay"
+    ]
+  }
+}
