@@ -33,6 +33,24 @@ test('query tokenization removes common German filler words and inflections', ()
   );
 });
 
+test('query tokenization ignores generic brauchen verbs', () => {
+  assert.deepEqual(
+    tokens('Welche Reifen brauche ich für meinen BMW?', { removeStopWords: true }),
+    ['reifen', 'bmw']
+  );
+
+  const chunk = {
+    title: 'Regressionstests – was sie sind und wie ich sie nutze',
+    tags: ['Testing', 'Regressionstest'],
+    heading: 'Was passiert bei neuen Artikeln?',
+    category: 'Development',
+    excerpt: 'Wofür brauche ich Regressionstests?',
+    content: 'Ein Regressionstest prüft bekanntes Verhalten.'
+  };
+
+  assert.equal(lexicalMatchScore('Welche Reifen brauche ich für meinen BMW?', chunk), 0);
+});
+
 test('rankChunks returns only the best relevant chunk per post', () => {
   const chunks = [
     { post_id: 'a', chunk_id: 'a1', title: 'Docker Compose', tags: ['docker'], embedding: [1, 0] },

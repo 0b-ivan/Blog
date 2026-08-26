@@ -11,6 +11,11 @@ reviewed_by: pending
 category: Automation
 excerpt: "Was als kleine Machbarkeitsfrage angefangen hat, ist inzwischen Teil meines Blog-Workflows: CSpell und LanguageTool prüfen meine Texte automatisch, sichere Autokorrekturen landen zuerst in einem Pull Request."
 tags: GitHub Actions, Automation, CSpell, LanguageTool, CI/CD
+search_queries:
+  - query: Wie verhindere ich dass Autokorrektur meinen technischen Text kaputt macht?
+    maxRank: 1
+  - query: Codeblöcke sollen von der Rechtschreibprüfung ignoriert werden
+    maxRank: 1
 ---
 
 Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.
