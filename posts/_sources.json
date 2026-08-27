@@ -184,5 +184,47 @@
     "publisher": "DuckDB",
     "url": "https://duckdb.org/docs/stable/sql/data_types/list",
     "accessed_at": "2026-08-24"
+  },
+  "immich-external-libraries": {
+    "title": "External Libraries",
+    "publisher": "Immich",
+    "url": "https://docs.immich.app/features/libraries/",
+    "accessed_at": "2026-08-27"
+  },
+  "immich-xmp-sidecars": {
+    "title": "XMP Sidecars",
+    "publisher": "Immich",
+    "url": "https://docs.immich.app/features/xmp-sidecars/",
+    "accessed_at": "2026-08-27"
+  },
+  "immich-faq": {
+    "title": "FAQ",
+    "publisher": "Immich",
+    "url": "https://docs.immich.app/FAQ/",
+    "accessed_at": "2026-08-27"
+  },
+  "nextcloud-login-flow": {
+    "title": "Login Flow",
+    "publisher": "Nextcloud Developer Manual",
+    "url": "https://docs.nextcloud.com/server/latest/developer_manual/client_apis/LoginFlow/index.html",
+    "accessed_at": "2026-08-27"
+  },
+  "rclone-webdav": {
+    "title": "WebDAV",
+    "publisher": "rclone",
+    "url": "https://rclone.org/webdav/",
+    "accessed_at": "2026-08-27"
+  },
+  "rclone-mount": {
+    "title": "rclone mount",
+    "publisher": "rclone",
+    "url": "https://rclone.org/commands/rclone_mount/",
+    "accessed_at": "2026-08-27"
+  },
+  "authentik-immich": {
+    "title": "Immich integration",
+    "publisher": "authentik",
+    "url": "https://integrations.goauthentik.io/services/immich/",
+    "accessed_at": "2026-08-27"
   }
 }
