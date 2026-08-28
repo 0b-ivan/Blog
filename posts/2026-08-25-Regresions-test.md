@@ -21,7 +21,7 @@ tags:
 search_queries:
   - query: Was ist ein Regressionstest?
     maxRank: 1
-  - query: Wie kann ich verhindern dass eine Änderung alte Funktionen kaputt macht?
+  - query: Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges Verhalten noch funktioniert?
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
