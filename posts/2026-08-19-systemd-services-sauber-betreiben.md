@@ -15,11 +15,6 @@ tags:
 - systemd
 - Operations
 - Reliability
-search_queries:
-  - query: Mein Linux Dienst soll nach einem Absturz automatisch neu starten
-    maxRank: 1
-  - query: Wie lese ich Logs eines systemd Dienstes mit journalctl?
-    maxRank: 1
 ---
 
 `systemd` ist mehr als nur `systemctl start`.
