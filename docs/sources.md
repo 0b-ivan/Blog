@@ -1,6 +1,8 @@
 # Zentrale Quellen und Querverweise
 
-Die Quellen der Blogbeiträge liegen zentral in `posts/_sources.json`.
+Die Quellen der Blogbeiträge liegen zentral in `posts/_sources.json`. Gepflegt werden können sie als einzelne Markdown-Dateien in Obsidian unter `posts/_Quellen/`; der Sources-Publisher überträgt freigegebene Änderungen per Pull Request in den JSON-Katalog.
+
+Details zum Obsidian-Workflow stehen in [`docs/obsidian-sources-cms.md`](obsidian-sources-cms.md).
 
 Jede Quelle hat eine stabile ID, zum Beispiel:
 
@@ -23,7 +25,7 @@ Im Beitrag wird nur auf die Quellen-ID verwiesen:
 - [Docker Compose Dokumentation](/sources.html#docker-compose)
 ```
 
-Die externe URL, der Herausgeber und das Abrufdatum bleiben damit zentral im Quellenkatalog. Ändert sich eine URL, muss sie nur in `posts/_sources.json` angepasst werden.
+Die externe URL, der Herausgeber und das Abrufdatum bleiben damit zentral im Quellenkatalog. Ändert sich eine URL, muss sie nur einmal zentral angepasst werden.
 
 Das vollständige Quellenverzeichnis wird unter `/sources.html` aus dem JSON-Katalog gerendert.
 
