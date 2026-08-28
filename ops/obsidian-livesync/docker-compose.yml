@@ -80,9 +80,10 @@ services:
       PUBLISHER_VAULT_PATH: /vault
       PUBLISHER_DEBOUNCE_SECONDS: ${PUBLISHER_DEBOUNCE_SECONDS:-300}
       PUBLISHER_POLL_SECONDS: ${PUBLISHER_POLL_SECONDS:-30}
-    command: ["node", "/app/obsidian-publisher.js"]
+    command: ["node", "/app/obsidian-publisher-preserve-metadata.js"]
     volumes:
       - ./scripts/obsidian-publisher.js:/app/obsidian-publisher.js:ro
+      - ./scripts/obsidian-publisher-preserve-metadata.js:/app/obsidian-publisher-preserve-metadata.js:ro
       - ${OBSIDIAN_VAULT_PATH:-../../posts}:/vault
     networks:
       - livesync
