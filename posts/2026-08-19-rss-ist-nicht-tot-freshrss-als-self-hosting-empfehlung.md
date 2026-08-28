@@ -16,11 +16,6 @@ tags:
 - Miniflux
 - Self-Hosting
 - Docker
-search_queries:
-  - query: Wie lese ich Blogartikel und News über RSS statt über einen Algorithmus?
-    maxRank: 1
-  - query: Wie lese ich Artikel verschiedener Webseiten gesammelt mit RSS und FreshRSS?
-    maxRank: 1
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.
