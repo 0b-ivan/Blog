@@ -7,6 +7,7 @@ on:
     paths:
       - "ops/obsidian-livesync/docker-compose.yml"
       - "ops/obsidian-livesync/scripts/obsidian-publisher.js"
+      - "ops/obsidian-livesync/scripts/obsidian-publisher-preserve-metadata.js"
       - "ops/obsidian-livesync/scripts/obsidian-glossary-publisher.js"
       - "ops/obsidian-livesync/scripts/obsidian-sources-publisher.js"
       - ".github/workflows/deploy-obsidian-publisher.yml"
@@ -69,6 +70,7 @@ jobs:
 
           scp -i ~/.ssh/hetzner_deploy -P "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             ops/obsidian-livesync/scripts/obsidian-publisher.js \
+            ops/obsidian-livesync/scripts/obsidian-publisher-preserve-metadata.js \
             ops/obsidian-livesync/scripts/obsidian-glossary-publisher.js \
             ops/obsidian-livesync/scripts/obsidian-sources-publisher.js \
             "${HETZNER_USER}@${HETZNER_HOST}:${REMOTE_DIR}/scripts/"
