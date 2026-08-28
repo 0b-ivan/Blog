@@ -112,6 +112,7 @@ docker-compose.prod.yml Production
 - `docs/glossary.md` – Glossar und Tooltips
 - `docs/knowledge-graph.md` – Wissensnetz
 - `docs/sources.md` – Quellen und Querverweise
+- `docs/obsidian-sources-cms.md` – Quellenverwaltung über Obsidian
 - `docs/obsidian.md` – Authoring mit Obsidian
 - `ops/hetzner/README.md` – Production-Deployment
 
