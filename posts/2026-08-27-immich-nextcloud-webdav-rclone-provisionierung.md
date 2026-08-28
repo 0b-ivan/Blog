@@ -1,7 +1,7 @@
 ---
 id: 2026-08-27-immich-nextcloud-webdav-rclone-provisionierung
 version: 1
-title: Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien
+title: "Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien"
 status: draft
 date: 2026-08-27
 created_at: 2026-08-27
