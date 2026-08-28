@@ -1,0 +1,37 @@
+{
+  "Immich-Benutzer": {
+    "full": "Immich-Benutzerkonto",
+    "short": "Benutzerkonto in Immich mit eigener Bibliotheks- und Zugriffszuordnung.",
+    "description": "Ein Immich-Benutzer ist ein eigenes Konto in Immich. In diesem Setup wird er eindeutig einem Nextcloud-Benutzer, dessen Mount und der passenden External Library zugeordnet.",
+    "aliases": []
+  },
+  "RW": {
+    "full": "Read-Write",
+    "short": "Zugriffsmodus, bei dem Daten gelesen und verändert werden dürfen.",
+    "description": "RW steht für Read-Write. Ein so eingebundener Speicher erlaubt neben Lesezugriffen auch Schreib-, Änderungs- und Löschoperationen.",
+    "aliases": []
+  },
+  "RW-Mount": {
+    "full": "Read-Write Mount",
+    "short": "Dateisystem-Mount mit Lese- und Schreibzugriff.",
+    "description": "Ein RW-Mount bindet einen Speicher so ein, dass Anwendungen Dateien nicht nur lesen, sondern auch verändern, neu anlegen oder löschen können.",
+    "aliases": [
+      "read-write Mount"
+    ]
+  },
+  "WebDAV": {
+    "full": "Web Distributed Authoring and Versioning",
+    "short": "HTTP-basiertes Protokoll zum Lesen und Verändern entfernter Dateien.",
+    "description": "WebDAV erweitert HTTP um Dateioperationen für entfernte Speicher. Nextcloud stellt darüber Benutzerdateien bereit, die rclone in diesem Setup als Dateisystem mountet.",
+    "aliases": []
+  },
+  "XMP": {
+    "full": "Extensible Metadata Platform",
+    "short": "Standard zum Speichern von Metadaten zu Dateien, häufig in Sidecar-Dateien.",
+    "description": "XMP speichert Metadaten wie Beschreibungen, Bewertungen oder Schlagwörter. Bei Fotos werden diese Informationen häufig in separaten .xmp-Sidecar-Dateien neben dem Original abgelegt.",
+    "aliases": [
+      "XMP-Sidecar",
+      "XMP-Sidecars"
+    ]
+  }
+}
