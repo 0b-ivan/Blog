@@ -19,6 +19,13 @@ tags:
 - Proxmox
 - LXC
 - Self-Hosting
+search_queries:
+- query: Wie kann ich Nextcloud Fotos in Immich nutzen ohne sie zu kopieren?
+  maxRank: 1
+- query: Wie verbinde ich Nextcloud über WebDAV und rclone mit Immich?
+  maxRank: 1
+- query: Wie provisioniere ich Immich Benutzer mit eigenen Nextcloud Fotoordnern?
+  maxRank: 1
 ---
 
 Meine Fotos liegen bereits in **Nextcloud**. Für die eigentliche Verwaltung gefällt mir **Immich** aber deutlich besser.
