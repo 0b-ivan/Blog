@@ -1,3 +1,4 @@
+const { setTimeout: delay } = require('node:timers');
 const {
   GitHubPublisher,
   StableTracker,
@@ -88,7 +89,7 @@ class PreservingGitHubPublisher extends GitHubPublisher {
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => delay(resolve, ms));
 }
 
 async function main() {
