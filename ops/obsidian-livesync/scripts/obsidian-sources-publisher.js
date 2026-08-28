@@ -1,5 +1,6 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { URL } = require('node:url');
 const {
   GitHubGlossaryPublisher: GitHubCatalogPublisher,
   StableTracker,
