@@ -202,8 +202,13 @@ jobs:
       - name: Install Chromium smoke-test runtime
         if: steps.changes.outputs.heavy == 'true'
         run: |
-          npm install --no-save --package-lock=false playwright@1.55.0
-          npx playwright install --with-deps chromium
+          set -euo pipefail
+          PLAYWRIGHT_RUNTIME=/tmp/playwright-runtime
+          rm -rf "$PLAYWRIGHT_RUNTIME"
+          mkdir -p "$PLAYWRIGHT_RUNTIME"
+          npm install --prefix "$PLAYWRIGHT_RUNTIME" --no-package-lock --no-audit --no-fund playwright@1.55.0
+          "$PLAYWRIGHT_RUNTIME/node_modules/.bin/playwright" install --with-deps chromium
+          echo "NODE_PATH=$PLAYWRIGHT_RUNTIME/node_modules" >> "$GITHUB_ENV"
 
       - name: Browser click smoke test
         if: steps.changes.outputs.heavy == 'true'
@@ -342,7 +347,7 @@ jobs:
           print('CRITICAL vulnerabilities in Kernel Grep image:')
           for target, vuln_id, package, installed, fixed in vulnerabilities:
               fixed_display = fixed or '<none>'
-              print(f'{vuln_id} | {package} | installed={installed} | fixed={fixed_display} | target={target}')
+              print(f'{vuln_id} | {package} | installed={installed} fixed={fixed_display} target={target}')
               print(f'::error title={vuln_id}::{package} installed={installed} fixed={fixed_display} target={target}')
           sys.exit(1)
           PY
