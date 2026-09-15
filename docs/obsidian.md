@@ -14,10 +14,10 @@ Lokale Workspace-Zustaende von Obsidian werden nicht committed. Die eigentlichen
 
 ## Neuer Artikel per Obsidian
 
-Der sichere Weg ist zuerst einen Feature-Branch anzulegen:
+Der sichere Weg ist zuerst einen Feature-Branch von `staging` anzulegen:
 
 ```bash
-git switch main
+git switch staging
 git pull
 git switch -c post/mein-artikel
 ```
@@ -166,7 +166,7 @@ git commit -m "Update blog posts"
 git push -u origin HEAD
 ```
 
-Anschliessend einen Pull Request gegen `main` erstellen. Erst nach erfolgreicher CI und Merge wird der neue Stand automatisch deployed.
+Anschliessend einen Pull Request gegen `staging` erstellen. Nach erfolgreicher CI und Merge wird der Stand automatisch auf `staging-blog.obivan.org` deployed. Sobald der neue Build dort gesund und als Staging-Build verifiziert ist, erzeugt GitHub Actions automatisch einen Promotion-PR von `staging` nach `main`. Erst dessen manueller Merge veroeffentlicht den Stand in Production.
 
 ## Bilder
 
