@@ -248,12 +248,14 @@
   }
 
   function renderStatistics(section, statistics) {
+    const mostUsedTerm = statistics.mostUsedGlossaryTerm || {};
     const values = [
       ['Wörter insgesamt', Number(statistics.words || 0).toLocaleString('de-DE')],
       ['Lesezeit gesamt', formatReadingTime(Number(statistics.readingMinutes || 0))],
       ['Verlinkte Fachbegriffe', Number(statistics.glossaryTerms || 0).toLocaleString('de-DE')],
       ['Ø Wörter je Artikel', Number(statistics.averageWords || 0).toLocaleString('de-DE')],
-      ['Aktivster Monat', formatMonth(statistics.busiestMonth)]
+      ['Aktivster Monat', formatMonth(statistics.busiestMonth)],
+      [`Meistgenutzter Fachbegriff${mostUsedTerm.count ? ` · ${Number(mostUsedTerm.count).toLocaleString('de-DE')}×` : ''}`, mostUsedTerm.term || '–']
     ];
     section.querySelector('[data-statistics-cards]').innerHTML = values
       .map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`)
