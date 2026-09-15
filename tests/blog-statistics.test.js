@@ -3,9 +3,9 @@ const { publicationHeatmap, categoryRadar } = require('../assets/knowledge-netwo
 
 describe('blog statistics', () => {
   const posts = [
-    { date: '2026-09-01', category: 'AWS', tags: ['Cloud', 'VPC'], wordCount: 440, readingTime: 2, html: '<abbr data-glossary-key="VPC">VPC</abbr>' },
-    { date: '2026-09-01', category: 'AWS', tags: ['Cloud'], wordCount: 221, readingTime: 2, html: '<abbr data-glossary-key="AWS">AWS</abbr> <abbr data-glossary-key="VPC">VPC</abbr>' },
-    { date: '2026-09-02', category: 'Linux', tags: ['systemd'], wordCount: 100, readingTime: 1, html: '<p>Text</p>' }
+    { slug: 'vpc-guide', title: 'VPC Guide', date: '2026-09-01', category: 'AWS', tags: ['Cloud', 'VPC'], wordCount: 440, readingTime: 2, html: '<abbr data-glossary-key="VPC">VPC</abbr>' },
+    { slug: 'aws-guide', title: 'AWS Guide', date: '2026-09-01', category: 'AWS', tags: ['Cloud'], wordCount: 221, readingTime: 2, html: '<abbr data-glossary-key="AWS">AWS</abbr> <abbr data-glossary-key="VPC">VPC</abbr>' },
+    { slug: 'linux-guide', title: 'Linux Guide', date: '2026-09-02', category: 'Linux', tags: ['systemd'], wordCount: 100, readingTime: 1, html: '<p>Text</p>' }
   ];
 
   it('aggregates content, glossary, topic and publication metrics', () => {
@@ -14,7 +14,10 @@ describe('blog statistics', () => {
       articles: 3, words: 761, readingMinutes: 5, averageWords: 254,
       glossaryTerms: 2, categories: 2, tags: 3, busiestMonth: '2026-09',
       mostUsedGlossaryTerm: { term: 'VPC', count: 2 },
-      publicationDays: [{ date: '2026-09-01', count: 2 }, { date: '2026-09-02', count: 1 }]
+      publicationDays: [
+        { date: '2026-09-01', count: 2, posts: [{ title: 'VPC Guide', url: '/posts/vpc-guide' }, { title: 'AWS Guide', url: '/posts/aws-guide' }] },
+        { date: '2026-09-02', count: 1, posts: [{ title: 'Linux Guide', url: '/posts/linux-guide' }] }
+      ]
     });
     expect(statistics.topicDistribution).toEqual([
       { label: 'Cloud & Infrastruktur', value: 2 },
@@ -28,7 +31,7 @@ describe('blog statistics', () => {
 
   it('normalizes dates parsed from YAML into the publication heatmap', () => {
     const statistics = aggregateBlogStatistics([{ ...posts[0], date: new Date('2026-09-03T00:00:00Z') }]);
-    expect(statistics.publicationDays).toEqual([{ date: '2026-09-03', count: 1 }]);
+    expect(statistics.publicationDays).toEqual([{ date: '2026-09-03', count: 1, posts: [{ title: 'VPC Guide', url: '/posts/vpc-guide' }] }]);
   });
 
   it('renders accessible heatmap and radar SVGs', () => {
@@ -40,6 +43,8 @@ describe('blog statistics', () => {
     expect(heatmap).toContain('Weniger');
     expect(heatmap).toContain('Mehr');
     expect(heatmap).toContain('>Mo<');
+    expect(heatmap).toContain('data-heatmap-date="2026-09-01"');
+    expect(heatmap).toContain('role="button"');
     expect(categoryRadar([{ label: 'Cloud', value: 4 }, { label: 'Betrieb', value: 3 }, { label: 'Security', value: 2 }])).toContain('Spinnendiagramm');
   });
 });

@@ -206,11 +206,18 @@
 .publication-heatmap { display: block; width: 100%; min-width: 680px; }
 .publication-heatmap rect { fill: rgba(42,48,54,.08); }
 .publication-heatmap .heat-1 { fill: #b8d6cd; } .publication-heatmap .heat-2 { fill: #72aa9b; } .publication-heatmap .heat-3 { fill: #347c6d; } .publication-heatmap .heat-4 { fill: #00473e; }
+.publication-heatmap [data-heatmap-date] { cursor: pointer; }
+.publication-heatmap [data-heatmap-date]:hover, .publication-heatmap [data-heatmap-date]:focus { outline: none; stroke: #111; stroke-width: 2px; }
 .heatmap-labels text { fill: var(--muted, #5f666d); font: 9px "IBM Plex Mono", monospace; }
 .heatmap-footer { justify-content: space-between; gap: 18px; color: var(--muted, #5f666d); font: .68rem "IBM Plex Mono", monospace; }
 .heatmap-legend { gap: 4px; white-space: nowrap; }
 .heatmap-legend i { width: 10px; height: 10px; border-radius: 2px; background: rgba(42,48,54,.08); }
 .heatmap-legend .heat-1 { background: #b8d6cd; } .heatmap-legend .heat-2 { background: #72aa9b; } .heatmap-legend .heat-3 { background: #347c6d; } .heatmap-legend .heat-4 { background: #00473e; }
+.heatmap-details { margin-top: 14px; padding: 14px 16px; border: 1px solid rgba(42,48,54,.14); border-radius: 10px; background: rgba(255,255,255,.55); }
+.heatmap-details[hidden] { display: none; }
+.heatmap-details strong { font-size: .85rem; }
+.heatmap-details ul { display: grid; gap: 5px; margin: 8px 0 0; padding-left: 20px; }
+.heatmap-details a { color: #00473e; font-size: .82rem; text-underline-offset: 3px; }
 .category-radar { display: block; width: min(100%, 340px); margin: -8px auto 0; overflow: visible; }
 .radar-grid polygon, .radar-grid line { fill: none; stroke: rgba(42,48,54,.16); stroke-width: 1; }
 .radar-area { fill: rgba(91,156,246,.25); stroke: #3e83e4; stroke-width: 2; }
