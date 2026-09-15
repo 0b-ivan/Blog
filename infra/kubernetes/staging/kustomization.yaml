@@ -3,3 +3,6 @@ kind: Kustomization
 resources:
   - blog.yaml
   - cloudflared.yaml
+images:
+  - name: cloudflare/cloudflared
+    newTag: 2026.9.1
