@@ -2,6 +2,12 @@
 
 Die Manifeste veröffentlichen selbst keine NodePorts oder LoadBalancer. Der Zugriff erfolgt ausschließlich über einen Cloudflare Tunnel, der aus dem Cluster nach außen verbindet.
 
+Der öffentliche Staging-Hostname ist:
+
+```text
+https://staging-blog.obivan.org
+```
+
 ## Benötigte Secrets
 
 Das private GHCR-Paket benötigt einen Token mit mindestens `read:packages`:
@@ -20,7 +26,7 @@ kubectl -n cloudflare create secret generic cloudflared-token \
   --from-literal=token="$CLOUDFLARE_TUNNEL_TOKEN"
 ```
 
-Im Cloudflare Tunnel wird der Public Hostname `staging.blog.obivan.org` auf diesen internen Origin gelegt:
+Im Cloudflare Tunnel wird der Public Hostname `staging-blog.obivan.org` auf diesen internen Origin gelegt:
 
 ```text
 http://blog.blog-staging.svc.cluster.local:80
@@ -28,7 +34,17 @@ http://blog.blog-staging.svc.cluster.local:80
 
 Dafür ist keine Portfreigabe am Router, pfSense oder Proxmox erforderlich.
 
-## Erster manueller Test
+## Images
+
+Blog und Kernel Grep verwenden keine `latest`-Tags mehr. Staging ist auf den exakten Git-Commit gepinnt, dessen Produktions-Build die Images erfolgreich nach GHCR gepusht hat:
+
+```text
+43ff082ebf297c2444dc7f98c20b184b73f8f410
+```
+
+Damit ist eindeutig nachvollziehbar, welcher Git-Stand im Cluster läuft. `cloudflared` wird über Kustomize auf `2026.9.1` gepinnt.
+
+## Manueller Test
 
 ```bash
 kubectl apply -k infra/kubernetes/staging
@@ -40,17 +56,25 @@ kubectl -n blog-staging get pods,svc
 
 ## Flux
 
-Flux wird bewusst noch nicht eingecheckt. Sobald der K3s-Node läuft und der manuelle Kustomize-Test erfolgreich ist, kann Flux auf genau diesen Pfad gebootstrapped werden:
+Flux wird erst nach dem Merge dieses Staging-PRs gegen `main` gebootstrapped. Dadurch ist `main` die einzige GitOps-Quelle und der Cluster benötigt keinen eingehenden Netzwerkzugriff von GitHub Actions.
+
+Auf einem Admin-Host mit Zugriff auf den K3s-API-Server, `flux`, `gh` und einem passenden `KUBECONFIG`:
 
 ```bash
+export GITHUB_TOKEN="$(gh auth token)"
+
+flux check --pre
+
 flux bootstrap github \
   --owner=0b-ivan \
   --repository=Blog \
   --branch=main \
-  --path=infra/kubernetes/staging \
+  --path=infra/kubernetes/staging/flux-system \
   --personal
+
+unset GITHUB_TOKEN
 ```
 
-Danach zieht der Cluster seinen gewünschten Zustand selbst aus GitHub. GitHub Actions benötigt keinen Netzwerkzugriff auf den K3s-API-Server.
+Der Bootstrap legt die Flux-Controller und die Git-Synchronisation im Cluster an und committed die generierten Bootstrap-Manifeste in den angegebenen Pfad. Danach zieht der Cluster seinen gewünschten Zustand selbst aus GitHub.
 
-`latest` ist nur für den ersten Staging-Bootstrap vorgesehen. Im nächsten Schritt wird Staging auf immutable SHA-Tags umgestellt, damit Git und laufendes Image eindeutig zusammenpassen.
+Die Image-SHAs bleiben bewusst deklarativ im Repository. Ein automatischer Image-Updater ist ein separater Schritt; Flux soll zunächst nur den in Git freigegebenen Zustand reconciliieren.
