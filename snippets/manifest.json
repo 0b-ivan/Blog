@@ -3,14 +3,14 @@
     "title": "So ist Dependabot in diesem Blog konfiguriert",
     "path": "2026-08-19-dependabot-im-einsatz/01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml",
     "language": "yaml",
-    "usage": "Dependabot-YAML für automatische Dependency-Updates",
+    "usage": ".github/dependabot.yml für automatische Dependency-Updates",
     "post": "2026-08-19-dependabot-im-einsatz"
   },
   {
     "title": "Deployment",
     "path": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/01-deployment.sh",
     "language": "bash",
-    "usage": "Bash-Befehle für ein Docker-Compose-Deployment",
+    "usage": ".sh für ein Docker-Compose-Deployment",
     "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"
   },
   {
@@ -24,21 +24,21 @@
     "title": "2) Fail2ban aktivieren",
     "path": "2026-08-19-fail2ban-ssh-hardening/01-2-fail2ban-aktivieren.sh",
     "language": "bash",
-    "usage": "Bash-Befehle zur Installation von Fail2ban",
+    "usage": ".sh zur Installation von Fail2ban",
     "post": "2026-08-19-fail2ban-ssh-hardening"
   },
   {
     "title": "2) Fail2ban aktivieren",
     "path": "2026-08-19-fail2ban-ssh-hardening/02-2-fail2ban-aktivieren.ini",
     "language": "ini",
-    "usage": "Fail2ban-Jail-Konfiguration für SSH",
+    "usage": "jail.local als Fail2ban-Konfiguration für SSH",
     "post": "2026-08-19-fail2ban-ssh-hardening"
   },
   {
     "title": "3) Firewall minimal halten",
     "path": "2026-08-19-fail2ban-ssh-hardening/03-3-firewall-minimal-halten.sh",
     "language": "bash",
-    "usage": "Bash-Befehle zur Konfiguration der UFW-Firewall",
+    "usage": ".sh zur Konfiguration der UFW-Firewall",
     "post": "2026-08-19-fail2ban-ssh-hardening"
   },
   {
@@ -52,21 +52,21 @@
     "title": "Beispiel Unit",
     "path": "2026-08-19-systemd-services-sauber-betreiben/01-beispiel-unit.ini",
     "language": "ini",
-    "usage": "systemd-Unit für einen Linux-Dienst",
+    "usage": ".service als systemd-Unit für einen Linux-Dienst",
     "post": "2026-08-19-systemd-services-sauber-betreiben"
   },
   {
     "title": "Ein Container direkt mit Docker",
     "path": "2026-08-21-docker-vs-docker-compose/01-ein-container-direkt-mit-docker.sh",
     "language": "bash",
-    "usage": "Bash-Befehle zum Starten eines einzelnen Docker-Containers",
+    "usage": ".sh zum Starten eines einzelnen Docker-Containers",
     "post": "2026-08-21-docker-vs-docker-compose"
   },
   {
     "title": "Wo es mit mehreren Containern unübersichtlich wird",
     "path": "2026-08-21-docker-vs-docker-compose/02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh",
     "language": "bash",
-    "usage": "Bash-Befehle für mehrere verbundene Docker-Container",
+    "usage": ".sh für mehrere verbundene Docker-Container",
     "post": "2026-08-21-docker-vs-docker-compose"
   },
   {
