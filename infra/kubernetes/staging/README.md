@@ -8,6 +8,32 @@ Der öffentliche Staging-Hostname ist:
 https://staging-blog.obivan.org
 ```
 
+## Branch- und Deployment-Modell
+
+Staging und Production sind bewusst getrennt:
+
+```text
+feature/*
+   |
+   | PR + CI
+   v
+staging
+   |
+   | GitHub Actions baut Blog + Kernel Grep
+   | Images -> GHCR
+   | SHA-Pins -> infra/kubernetes/staging/kustomization.yaml
+   v
+Flux -> K3s -> staging-blog.obivan.org
+   |
+   | PR staging -> main
+   v
+main -> bestehendes Hetzner-Production-Deployment -> blog.obivan.org
+```
+
+Ein Merge nach `staging` veröffentlicht damit noch nichts auf Production. Production bleibt ausschließlich an `main` gebunden.
+
+Der Workflow `.github/workflows/cd-staging.yml` akzeptiert automatische Staging-Deployments nur für Commits, die zu einem gemergten Pull Request mit Zielbranch `staging` gehören. Danach werden Blog und Kernel Grep unter dem unveränderlichen Git-Commit-SHA nach GHCR gepusht. Der Workflow aktualisiert anschließend nur die Image-Pins in `kustomization.yaml`.
+
 ## Benötigte Secrets
 
 Das private GHCR-Paket benötigt einen Token mit mindestens `read:packages`:
@@ -34,15 +60,19 @@ http://blog.blog-staging.svc.cluster.local:80
 
 Dafür ist keine Portfreigabe am Router, pfSense oder Proxmox erforderlich.
 
-## Images
+## Images und Staging-Runtime
 
-Blog und Kernel Grep verwenden keine `latest`-Tags mehr. Staging ist auf den exakten Git-Commit gepinnt, dessen Produktions-Build die Images erfolgreich nach GHCR gepusht hat:
+Blog und Kernel Grep verwenden im Cluster keine `latest`-Tags. Die Kustomize-Konfiguration pinnt beide Images auf einen exakten Git-Commit. Der Staging-Workflow aktualisiert diese Pins nach einem erfolgreichen Build automatisch.
+
+Der Blog bekommt in Staging zusätzlich per Kustomize-Patch den Entrypoint:
 
 ```text
-43ff082ebf297c2444dc7f98c20b184b73f8f410
+staging-server.js
 ```
 
-Damit ist eindeutig nachvollziehbar, welcher Git-Stand im Cluster läuft. `cloudflared` wird über Kustomize auf `2026.9.1` gepinnt.
+Damit werden der orange/schwarz gestreifte Rahmen und das `STAGING`-Banner ausschließlich in der Staging-Umgebung aktiviert. Production verwendet weiterhin `seo-server.js`.
+
+`cloudflared` ist separat auf Version `2026.9.1` gepinnt.
 
 ## Manueller Test
 
@@ -56,7 +86,7 @@ kubectl -n blog-staging get pods,svc
 
 ## Flux
 
-Flux wird erst nach dem Merge dieses Staging-PRs gegen `main` gebootstrapped. Dadurch ist `main` die einzige GitOps-Quelle und der Cluster benötigt keinen eingehenden Netzwerkzugriff von GitHub Actions.
+Flux verwendet den Branch `staging` als GitOps-Quelle. Der Cluster benötigt dadurch keinen eingehenden Netzwerkzugriff von GitHub Actions.
 
 Auf einem Admin-Host mit Zugriff auf den K3s-API-Server, `flux`, `gh` und einem passenden `KUBECONFIG`:
 
@@ -68,13 +98,16 @@ flux check --pre
 flux bootstrap github \
   --owner=0b-ivan \
   --repository=Blog \
-  --branch=main \
-  --path=infra/kubernetes/staging/flux-system \
-  --personal
+  --branch=staging \
+  --path=infra/kubernetes/staging \
+  --personal \
+  --token-auth=false
 
 unset GITHUB_TOKEN
 ```
 
-Der Bootstrap legt die Flux-Controller und die Git-Synchronisation im Cluster an und committed die generierten Bootstrap-Manifeste in den angegebenen Pfad. Danach zieht der Cluster seinen gewünschten Zustand selbst aus GitHub.
+`--path` zeigt dabei auf den vom Cluster zu reconciliierenden Staging-Ordner. Der Bootstrap legt seine eigenen Manifeste darunter in `infra/kubernetes/staging/flux-system/` an und konfiguriert den Cluster auf den Branch `staging`.
 
-Die Image-SHAs bleiben bewusst deklarativ im Repository. Ein automatischer Image-Updater ist ein separater Schritt; Flux soll zunächst nur den in Git freigegebenen Zustand reconciliieren.
+Der Image-Build bleibt in GitHub Actions, das eigentliche Cluster-Deployment bleibt Pull-basiert über Flux. GitHub Actions braucht dadurch keinen direkten Netzwerkzugriff auf das private K3s-Netz.
+
+Hinweis für später enforced Rulesets: Der GitHub-Actions-Bot muss die automatischen Änderungen an den Image-Pins auf `staging` schreiben dürfen. Wenn die Rulesets durch einen passenden GitHub-Plan tatsächlich enforced werden, muss dafür ein gezielter Bypass bzw. eine gleichwertige Automationsregel eingerichtet werden.
