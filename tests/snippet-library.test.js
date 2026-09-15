@@ -49,6 +49,11 @@ describe('snippet library and publish ordering', () => {
     expect(page.status).toBe(200);
     expect(page.text).toContain('Code Snippets');
 
+    const library = await request(app).get('/snippets/library.js');
+    expect(library.text).toContain('Verwendung');
+    expect(library.text).toContain('Verwendet in');
+    expect(library.text).toContain('/api/posts');
+
     const manifest = await request(app).get('/snippets/manifest.json');
     expect(manifest.status).toBe(200);
     expect(Array.isArray(manifest.body)).toBe(true);
@@ -56,7 +61,9 @@ describe('snippet library and publish ordering', () => {
     expect(manifest.body[0]).toEqual(expect.objectContaining({
       title: expect.any(String),
       path: expect.any(String),
-      language: expect.any(String)
+      language: expect.any(String),
+      usage: expect.any(String),
+      post: expect.any(String)
     }));
   });
 });

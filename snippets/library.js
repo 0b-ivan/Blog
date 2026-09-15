@@ -38,12 +38,18 @@ function renderList(items) {
   draw();
 }
 
-async function renderViewer(item) {
+async function renderViewer(item, posts) {
   const response = await fetch(`/snippets/${item.path}`);
   if (!response.ok) throw new Error('Snippet konnte nicht geladen werden');
   const source = await response.text();
+  const post = posts.find((candidate) => candidate.slug === item.post);
+  const postTitle = post?.title || item.post;
   root.innerHTML = `
     <p><a href="/snippets/">← Alle Snippets</a></p>
+    <aside class="snippet-library__context" aria-label="Verwendung des Snippets">
+      <div><span>Verwendung</span><strong>${item.usage || item.language}</strong></div>
+      <div><span>Verwendet in</span><a href="/posts/${encodeURIComponent(item.post)}">${postTitle}</a></div>
+    </aside>
     <section class="code-snippet snippet-library__viewer">
       <header class="code-snippet__header">
         <div><p class="code-snippet__title">${item.title}</p><span class="code-snippet__meta">${item.language} · ${item.path}</span></div>
@@ -60,8 +66,12 @@ async function renderViewer(item) {
 }
 
 async function boot() {
-  const response = await fetch('/snippets/manifest.json', { cache: 'no-store' });
-  const items = await response.json();
+  const [manifestResponse, postsResponse] = await Promise.all([
+    fetch('/snippets/manifest.json', { cache: 'no-store' }),
+    fetch('/api/posts', { headers: { Accept: 'application/json' } })
+  ]);
+  if (!manifestResponse.ok || !postsResponse.ok) throw new Error('Snippet-Metadaten konnten nicht geladen werden');
+  const [items, posts] = await Promise.all([manifestResponse.json(), postsResponse.json()]);
   const path = selectedPath();
   if (!path) {
     renderList(items);
@@ -72,7 +82,7 @@ async function boot() {
     root.innerHTML = '<p>Snippet nicht gefunden. <a href="/snippets/">Zur Übersicht</a></p>';
     return;
   }
-  await renderViewer(item);
+  await renderViewer(item, posts);
 }
 
 window.addEventListener('hashchange', () => boot().catch(console.error));
