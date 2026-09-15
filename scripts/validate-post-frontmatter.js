@@ -98,6 +98,10 @@ async function main() {
     }
     const data = parsed.data || {};
 
+    if (Object.prototype.hasOwnProperty.call(data, 'reading_time')) {
+      violations.push(`${displayPath}: manual 'reading_time' is not allowed; it is calculated from article content`);
+    }
+
     for (const field of requiredFields) {
       if (!isPresent(data[field])) {
         violations.push(`${displayPath}: missing required field '${field}'`);

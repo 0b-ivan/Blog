@@ -3,6 +3,7 @@ const path = require('node:path');
 const http = require('node:http');
 const https = require('node:https');
 const { URL, URLSearchParams } = require('node:url');
+const { glossaryEntries } = require('../lib/glossary');
 
 const root = path.resolve(__dirname, '..');
 const DEFAULT_LANGUAGE = 'de-DE';
@@ -68,6 +69,13 @@ function maskMarkdown(source) {
       blankRange(chars, range.start, range.end);
     }
   };
+
+  // Block quotes are intentionally excluded: LanguageTool otherwise interprets
+  // quoted sentence fragments as one continuous sentence and reports false positives.
+  maskRegex(/^\s*>.*$/gm, (match) => ({
+    start: match.index,
+    end: match.index + match[0].length
+  }));
 
   maskRegex(/`[^`\n]*`/g, (match) => ({
     start: match.index,
@@ -174,6 +182,31 @@ async function loadIgnoredWords() {
       .filter((line) => line && !line.startsWith('#'))
       .map((line) => line.toLocaleLowerCase('de-DE'))
   );
+}
+
+function glossaryLabels(entries = glossaryEntries) {
+  return [...new Set(entries.flatMap((entry) => [entry.key, ...entry.aliases]).filter(Boolean))];
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function glossaryRanges(source, labels = glossaryLabels()) {
+  const ranges = [];
+  for (const label of labels.sort((left, right) => right.length - left.length)) {
+    const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegex(label).replace(/\\ /g, '\\s+')}s?(?![\\p{L}\\p{N}])`, 'giu');
+    for (const match of source.matchAll(pattern)) {
+      ranges.push({ start: match.index, end: match.index + match[0].length });
+    }
+  }
+  return ranges;
+}
+
+function isGlossaryMatch(match, ranges) {
+  const start = match.offset;
+  const end = match.offset + match.length;
+  return ranges.some((range) => start >= range.start && end <= range.end);
 }
 
 function normalizeMatchedText(value) {
@@ -347,9 +380,11 @@ async function run() {
   for (const file of files) {
     const source = await fs.readFile(file, 'utf-8');
     const masked = maskMarkdown(source);
+    const knownTermRanges = glossaryRanges(source);
     const result = await requestLanguageTool(masked, endpoint, language);
     const matches = (result.matches || [])
       .filter((match) => !isMaskedMatch(source, masked, match))
+      .filter((match) => !isGlossaryMatch(match, knownTermRanges))
       .filter((match) => !isIgnoredMatch(source, match, ignoredWords));
 
     totalIssues += matches.length;
@@ -403,6 +438,9 @@ module.exports = {
   isMaskedMatch,
   normalizeMatchedText,
   isIgnoredMatch,
+  glossaryLabels,
+  glossaryRanges,
+  isGlossaryMatch,
   safeFixCandidates,
   applySafeFixes,
   lineColumnAt

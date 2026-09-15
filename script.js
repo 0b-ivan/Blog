@@ -100,7 +100,7 @@ function renderPosts(posts) {
   list.innerHTML = posts
     .map((post, index) => {
       const delay = 240 + index * 60;
-      const meta = `${post.category} · ${formatDate(post.date)}`;
+      const meta = `${post.category} · ${formatDate(post.date)} · ca. ${post.readingTime || 1} Min. Lesezeit`;
       const tags = visibleTags(post.tags);
       const tagsHtml = tags.length
         ? `<div class="post-tags">${tags.map((tag) => `<span class="tag-chip">${tag}</span>`).join('')}</div>`

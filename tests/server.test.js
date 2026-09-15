@@ -85,6 +85,7 @@ describe('blog server', () => {
     expect(posts[1].title).toBe('Old');
     expect(posts[0].html).toContain('<p>New content</p>');
     expect(posts[0].tags).toEqual(['Linux', 'Docker']);
+    expect(posts[0].readingTime).toBe(1);
   });
 
   it('api returns post list dto', async () => {
@@ -104,7 +105,8 @@ describe('blog server', () => {
       title: 'Sample',
       category: 'Security',
       tags: ['Linux', 'Security'],
-      excerpt: 'Custom excerpt'
+      excerpt: 'Custom excerpt',
+      readingTime: 1
     });
     expect(res.body[0].html).toBeUndefined();
   });
@@ -213,11 +215,13 @@ describe('blog server', () => {
       category: 'Node',
       tags: ['Linux'],
       excerpt: 'Excerpt',
+      readingTime: 3,
       html: '<p>Rendered</p>'
     });
 
     expect(html).toContain('Meta Test | Kernel Notes');
     expect(html).toContain('Node · 2026-03-03');
+    expect(html).toContain('ca. 3 Min. Lesezeit');
     expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');
   });
