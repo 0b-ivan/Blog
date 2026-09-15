@@ -1,0 +1,184 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'posts/**'
+      - 'archive/**'
+      - 'snippets/**'
+      - 'assets/**'
+      - 'config/**'
+      - 'lib/**'
+      - '*.html'
+      - '*.js'
+      - 'rag/**'
+      - 'Dockerfile'
+      - 'Dockerfile.search'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'VERSION'
+      - '.dockerignore'
+      - '.github/workflows/cd-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  packages: write
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  BLOG_IMAGE_NAME: kernel-notes-blog
+  SEARCH_IMAGE_NAME: kernel-notes-search
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Require merged PR for automatic staging deployments
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            count=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/pulls" \
+              --jq '[.[] | select(.merged_at != null and .base.ref == "staging")] | length')
+            if [ "$count" -ge 1 ]; then
+              echo 'Staging commit is associated with a merged pull request.'
+              exit 0
+            fi
+            [ "$attempt" -eq 5 ] || sleep 3
+          done
+          echo 'Refusing staging deployment: commit is not associated with a merged PR into staging.'
+          exit 1
+
+      - name: Build article version history
+        run: node scripts/build-post-history.js
+
+      - name: Set immutable image names
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          BLOG_VERSION=$(tr -d '[:space:]' < VERSION)
+          if ! printf '%s' "$BLOG_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid VERSION: $BLOG_VERSION"
+            exit 1
+          fi
+
+          echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
+          echo "build_version=${BLOG_VERSION}-staging.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push staging blog image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          build-args: |
+            BUILD_VERSION=${{ steps.meta.outputs.build_version }}
+          tags: |
+            ${{ steps.meta.outputs.blog_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:staging
+          cache-from: type=gha,scope=staging-blog
+          cache-to: type=gha,mode=max,scope=staging-blog
+
+      - name: Build and push staging Kernel Grep image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.search
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.search_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.SEARCH_IMAGE_NAME }}:staging
+          cache-from: type=gha,scope=staging-search
+          cache-to: type=gha,mode=max,scope=staging-search
+
+      - name: Pin staging manifests to built images
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+          OWNER_LOWER: ${{ steps.meta.outputs.owner_lower }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path('infra/kubernetes/staging/blog.yaml')
+          text = path.read_text(encoding='utf-8')
+          sha = os.environ['DEPLOY_SHA']
+          owner = os.environ['OWNER_LOWER']
+
+          replacements = {
+              rf'image: ghcr\.io/{re.escape(owner)}/kernel-notes-blog:[^\s]+':
+                  f'image: ghcr.io/{owner}/kernel-notes-blog:{sha}',
+              rf'image: ghcr\.io/{re.escape(owner)}/kernel-notes-search:[^\s]+':
+                  f'image: ghcr.io/{owner}/kernel-notes-search:{sha}',
+          }
+
+          for pattern, replacement in replacements.items():
+              text, count = re.subn(pattern, replacement, text)
+              if count != 1:
+                  raise SystemExit(f'Expected one manifest image match for {pattern}, found {count}')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git diff --check
+          git diff -- infra/kubernetes/staging/blog.yaml
+
+      - name: Commit desired staging state
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add infra/kubernetes/staging/blog.yaml
+
+          if git diff --cached --quiet; then
+            echo 'Staging manifest is already pinned to this image SHA.'
+            exit 0
+          fi
+
+          git commit -m "chore(staging): deploy ${DEPLOY_SHA} [skip ci]"
+          git push origin HEAD:staging
+
+      - name: Deployment handoff
+        run: |
+          echo 'Images are in GHCR and the staging GitOps manifest is updated.'
+          echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
