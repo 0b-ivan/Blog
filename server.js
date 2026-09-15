@@ -13,7 +13,7 @@ const {
   renderGlossaryPage,
   withGlossaryDefinitions
 } = require('./lib/glossary');
-const { calculateReadingTime } = require('./lib/reading-time');
+const { countWords, calculateReadingTime } = require('./lib/reading-time');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -289,6 +289,7 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const wordCount = countWords(recovered.content);
       const readingTime = calculateReadingTime(recovered.content);
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
@@ -300,6 +301,7 @@ async function loadPosts(postsDir) {
         category,
         tags,
         excerpt,
+        wordCount,
         readingTime,
         html: md.render(markdownContent)
       };

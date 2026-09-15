@@ -185,6 +185,27 @@
   line-height: 1.55;
 }
 
+.blog-statistics { margin-top: 64px; }
+.blog-statistics__heading { display: grid; grid-template-columns: 1fr minmax(280px, 520px); gap: 28px; align-items: end; margin-bottom: 22px; }
+.blog-statistics__heading h2 { margin: 6px 0 0; font-size: clamp(1.8rem, 4vw, 3.5rem); }
+.blog-statistics__heading > p { margin: 0; color: var(--muted, #5f666d); line-height: 1.6; }
+.blog-statistics__cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.blog-statistics__cards > div { min-height: 112px; padding: 18px; border: 1px solid rgba(42, 48, 54, 0.14); border-radius: 14px; background: rgba(255,255,255,.58); }
+.blog-statistics__cards strong { display: block; margin-bottom: 12px; font-size: clamp(1.35rem, 2.4vw, 2.15rem); line-height: 1; }
+.blog-statistics__cards span { color: var(--muted, #5f666d); font: .7rem/1.35 "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .06em; }
+.blog-statistics__visuals { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr); gap: 14px; margin-top: 14px; }
+.statistics-panel { min-width: 0; padding: 20px; border: 1px solid rgba(42, 48, 54, 0.14); border-radius: 16px; background: rgba(247,246,241,.86); }
+.statistics-panel h3 { margin: 0; font-size: 1.15rem; }
+.statistics-panel header p { margin: 5px 0 18px; color: var(--muted, #5f666d); font: .7rem/1.45 "IBM Plex Mono", monospace; }
+.publication-heatmap { display: block; width: 100%; min-height: 120px; }
+.publication-heatmap rect { fill: rgba(42,48,54,.08); }
+.publication-heatmap .heat-1 { fill: #b8d6cd; } .publication-heatmap .heat-2 { fill: #72aa9b; } .publication-heatmap .heat-3 { fill: #347c6d; } .publication-heatmap .heat-4 { fill: #00473e; }
+.category-radar { display: block; width: min(100%, 340px); margin: -8px auto 0; overflow: visible; }
+.radar-grid polygon, .radar-grid line { fill: none; stroke: rgba(42,48,54,.16); stroke-width: 1; }
+.radar-area { fill: rgba(91,156,246,.25); stroke: #3e83e4; stroke-width: 2; }
+.category-radar text { fill: #30353b; font: 9px "IBM Plex Mono", monospace; }
+.statistics-empty { color: var(--muted, #5f666d); }
+
 @media (max-width: 900px) {
   .knowledge-network__hero {
     grid-template-columns: 1fr;
@@ -199,6 +220,8 @@
     width: 100%;
     margin-left: 0;
   }
+  .blog-statistics__cards { grid-template-columns: repeat(3, 1fr); }
+  .blog-statistics__visuals, .blog-statistics__heading { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
@@ -228,4 +251,9 @@
   .knowledge-network__canvas {
     min-height: 480px;
   }
+  .blog-statistics { margin-top: 42px; }
+  .blog-statistics__cards { grid-template-columns: repeat(2, 1fr); }
+  .blog-statistics__cards > div { min-height: 96px; padding: 14px; }
+  .statistics-panel { padding: 14px; overflow-x: auto; }
+  .publication-heatmap { width: 674px; }
 }

@@ -3,6 +3,8 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const { URL } = require('node:url');
 const enhanced = require('./enhanced-server');
+const legacy = require('./server');
+const { aggregateBlogStatistics } = require('./lib/blog-statistics');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -258,8 +260,16 @@ async function proxyKnowledgeGraph(limitValue, res) {
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(20_000)
     });
-    const payload = await upstream.text();
-    res.status(upstream.status).type('application/json').send(payload);
+    const payload = await upstream.json();
+    if (!upstream.ok) {
+      res.status(upstream.status).json(payload);
+      return;
+    }
+    const posts = await legacy.readPosts(path.join(root, 'posts'));
+    res.status(upstream.status).json({
+      ...payload,
+      statistics: aggregateBlogStatistics(posts)
+    });
   } catch (error) {
     console.error('Global knowledge graph upstream unavailable:', error.message || error);
     res.status(503).json({ error: 'Global knowledge graph is temporarily unavailable' });
