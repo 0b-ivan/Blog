@@ -25,7 +25,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
   packages: write
 
 concurrency:
@@ -175,7 +175,67 @@ jobs:
           git commit -m "chore(staging): deploy ${DEPLOY_SHA} [skip ci]"
           git push origin HEAD:staging
 
+      - name: Wait for published staging build
+        env:
+          EXPECTED_VERSION: ${{ steps.meta.outputs.build_version }}
+          STAGING_URL: https://staging-blog.obivan.org
+        run: |
+          set -euo pipefail
+          echo "Waiting for ${EXPECTED_VERSION} on ${STAGING_URL}"
+
+          for attempt in $(seq 1 60); do
+            health="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${STAGING_URL}/healthz?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            build_info="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${STAGING_URL}/build-info.json?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            version="$(printf '%s' "$build_info" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version", ""))' 2>/dev/null || true)"
+
+            if [ "$health" = 'ok' ] && [ "$version" = "$EXPECTED_VERSION" ]; then
+              page="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+                "${STAGING_URL}/?deploy=${GITHUB_SHA}")"
+              printf '%s' "$page" | grep -q 'data-environment="staging"'
+              echo "Staging is serving ${EXPECTED_VERSION}."
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/60: health='${health:-unavailable}', version='${version:-unavailable}'"
+            sleep 10
+          done
+
+          echo "Timed out waiting for ${EXPECTED_VERSION} to be published on staging." >&2
+          exit 1
+
+      - name: Open production promotion PR
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BUILD_VERSION: ${{ steps.meta.outputs.build_version }}
+        run: |
+          set -euo pipefail
+
+          existing="$(gh pr list \
+            --repo "$REPOSITORY" \
+            --state open \
+            --base main \
+            --head staging \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [ -n "$existing" ]; then
+            echo "Production promotion PR #${existing} is already open; it automatically includes the new staging commit."
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$REPOSITORY" \
+            --base main \
+            --head staging \
+            --title 'promote: staging to production' \
+            --body "Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org.\n\nThis PR promotes the currently tested \`staging\` state to \`main\`. Merge remains manual so production is never promoted automatically."
+
       - name: Deployment handoff
         run: |
           echo 'Images are in GHCR and the staging GitOps manifest is updated.'
           echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
+          echo 'The public staging build was verified before the production promotion PR was opened.'
