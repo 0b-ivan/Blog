@@ -1,0 +1,11 @@
+{
+  "NACL": {
+    "full": "Network Access Control List",
+    "short": "Stateless Netzwerkfilter auf Subnet-Ebene in einer AWS VPC.",
+    "description": "Eine Network Access Control List (NACL) kontrolliert eingehenden und ausgehenden Traffic für ein Subnet anhand nummerierter Allow- und Deny-Regeln. Anders als Security Groups arbeitet sie stateless, daher müssen Hin- und Rückweg jeweils durch passende Regeln erlaubt sein.",
+    "aliases": [
+      "Network ACL",
+      "Network Access Control List"
+    ]
+  }
+}
