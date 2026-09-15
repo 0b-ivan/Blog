@@ -663,6 +663,21 @@ function createApp(options = {}) {
   const siteUrl = options.siteUrl;
 
   app.use('/assets', express.static(path.join(root, 'assets')));
+  app.get('/snippets/manifest.json', async (_req, res) => {
+    try {
+      const [posts, manifestSource] = await Promise.all([
+        readPosts(postsDir),
+        fs.readFile(path.join(root, 'snippets', 'manifest.json'), 'utf-8')
+      ]);
+      const publishedSlugs = new Set(posts.map((post) => post.slug));
+      const manifest = JSON.parse(manifestSource)
+        .filter((snippet) => publishedSlugs.has(String(snippet.post || '')));
+      res.json(manifest);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Could not load snippet manifest' });
+    }
+  });
   app.use(express.static(root, { extensions: ['html'] }));
 
   app.get('/api/legal-info', (_req, res) => {

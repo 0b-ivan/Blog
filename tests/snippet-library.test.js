@@ -66,4 +66,25 @@ describe('snippet library and publish ordering', () => {
       post: expect.any(String)
     }));
   });
+
+  it('hides snippets whose article is no longer published', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-snippet-filter-'));
+
+    try {
+      await writePost(
+        tmpDir,
+        '2026-08-19-dependabot-im-einsatz.md',
+        'Dependabot im Einsatz',
+        '2026-08-19T10:00:00Z'
+      );
+      const manifest = await request(createApp({ postsDir: tmpDir })).get('/snippets/manifest.json');
+
+      expect(manifest.status).toBe(200);
+      expect(manifest.body).toHaveLength(1);
+      expect(manifest.body[0].post).toBe('2026-08-19-dependabot-im-einsatz');
+      expect(manifest.body.some((snippet) => snippet.post === '2026-08-21-docker-vs-docker-compose')).toBe(false);
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
+  });
 });

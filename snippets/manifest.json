@@ -17,7 +17,7 @@
     "title": "Updates und Rollbacks",
     "path": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/02-updates-und-rollbacks.yml",
     "language": "yaml",
-    "usage": "Docker-Compose-YAML für Updates und Rollbacks",
+    "usage": "compose.yml für Updates und Rollbacks",
     "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"
   },
   {
@@ -45,7 +45,7 @@
     "title": "Docker macht das Setup einfach",
     "path": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung/01-docker-macht-das-setup-einfach.yml",
     "language": "yaml",
-    "usage": "Docker-Compose-YAML für FreshRSS",
+    "usage": "compose.yml für FreshRSS",
     "post": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung"
   },
   {
@@ -73,7 +73,7 @@
     "title": "Dasselbe mit Docker Compose",
     "path": "2026-08-21-docker-vs-docker-compose/03-dasselbe-mit-docker-compose.yml",
     "language": "yaml",
-    "usage": "Docker-Compose-YAML für eine Anwendung mit mehreren Services",
+    "usage": "compose.yml für eine Anwendung mit mehreren Services",
     "post": "2026-08-21-docker-vs-docker-compose"
   },
   {
@@ -87,7 +87,7 @@
     "title": "Dockerfile und Docker Compose sind ebenfalls nicht dasselbe",
     "path": "2026-08-21-docker-vs-docker-compose/05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml",
     "language": "yaml",
-    "usage": "Docker-Compose-YAML zum Bauen und Starten einer Anwendung",
+    "usage": "compose.yml zum Bauen und Starten einer Anwendung",
     "post": "2026-08-21-docker-vs-docker-compose"
   }
 ]
