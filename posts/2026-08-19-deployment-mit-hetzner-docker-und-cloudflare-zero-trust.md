@@ -16,6 +16,17 @@ search_queries:
     maxRank: 1
   - query: Wie veröffentliche ich einen Container ohne Ports am Server zu öffnen?
     maxRank: 1
+snippets:
+  - file: "01-deployment.sh"
+    title: "Compose-Images laden und Services aktualisieren"
+    description: "Lädt die Images und aktualisiert die Services mit Docker Compose."
+    type: "Shellskript"
+    language: "bash"
+  - file: "02-updates-und-rollbacks.yml"
+    title: "Blog-Image auf einen festen Stand setzen"
+    description: "Zeigt einen festen Image-Tag für den Blog-Service."
+    type: "Compose-Ausschnitt"
+    language: "yaml"
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

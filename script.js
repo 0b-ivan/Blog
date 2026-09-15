@@ -459,9 +459,11 @@ function parseSnippetReference(link) {
     return null;
   }
 
+  const metadata = JSON.parse(link.getAttribute('data-snippet') || '{}');
   return {
-    title: link.textContent?.trim() || href.split('/').pop(),
-    language,
+    ...metadata,
+    title: metadata.title || link.textContent?.trim() || href.split('/').pop(),
+    language: metadata.language || language,
     range,
     href
   };
@@ -491,8 +493,14 @@ function renderSnippetEmbed(link, reference) {
   title.textContent = reference.title;
   const meta = document.createElement('span');
   meta.className = 'code-snippet__meta';
-  meta.textContent = [reference.language, reference.range ? `Zeilen ${reference.range}` : ''].filter(Boolean).join(' · ');
+  meta.textContent = [reference.type || (['bash', 'sh', 'shell'].includes(reference.language) ? 'Shellskript' : reference.language), reference.range ? `Zeilen ${reference.range}` : ''].filter(Boolean).join(' · ');
   titleBox.append(title, meta);
+  if (reference.description) {
+    const description = document.createElement('p');
+    description.className = 'code-snippet__description';
+    description.textContent = reference.description;
+    titleBox.append(description);
+  }
 
   const headerActions = document.createElement('div');
   headerActions.className = 'code-snippet__actions';
@@ -539,7 +547,7 @@ function renderSnippetEmbed(link, reference) {
   footer.className = 'code-snippet__footer';
   const full = document.createElement('a');
   full.href = `/snippets/#/${encodeURIComponent(reference.href.replace(/^\/snippets\//, ''))}`;
-  full.textContent = 'Vollständigen Code anzeigen';
+  full.textContent = 'Snippet öffnen';
   footer.append(full);
 
   body.append(toolbar, loading, pre, footer);

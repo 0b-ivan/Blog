@@ -50,9 +50,8 @@ describe('snippet library and publish ordering', () => {
     expect(page.text).toContain('Code Snippets');
 
     const library = await request(app).get('/snippets/library.js');
-    expect(library.text).toContain('Verwendung');
-    expect(library.text).toContain('Verwendet in');
-    expect(library.text).toContain('/api/posts');
+    expect(library.text).toContain('Aus Artikel:');
+    expect(library.text).not.toContain('Verwendet in');
 
     const manifest = await request(app).get('/snippets/manifest.json');
     expect(manifest.status).toBe(200);
@@ -65,6 +64,19 @@ describe('snippet library and publish ordering', () => {
       usage: expect.any(String),
       post: expect.any(String)
     }));
+  });
+
+  it('uses identical frontmatter metadata in the article and the library without changing URLs', async () => {
+    const posts = await readPosts();
+    const response = await request(createApp()).get('/snippets/manifest.json');
+    expect(response.body).toHaveLength(9);
+    for (const snippet of response.body) {
+      const post = posts.find((entry) => entry.slug === snippet.post);
+      const attributes = [...post.html.matchAll(/data-snippet="([^"]+)"/g)];
+      const embedded = attributes.map((match) => JSON.parse(require('entities').decodeHTML(match[1])));
+      expect(embedded).toContainEqual(snippet);
+      expect((await request(createApp()).get(`/snippets/${snippet.path}`)).status).toBe(200);
+    }
   });
 
   it('hides snippets whose article is no longer published', async () => {

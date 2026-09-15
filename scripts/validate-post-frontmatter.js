@@ -1,3 +1,4 @@
+const { resolveSnippets } = require('../lib/snippets');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const matter = require('gray-matter');
@@ -83,6 +84,7 @@ async function markdownFiles(directory) {
 async function main() {
   const files = (await Promise.all(contentDirs.map(markdownFiles))).flat();
   const violations = [];
+  const legacy = JSON.parse(await fs.readFile(path.join(root, 'snippets/manifest.json'), 'utf8'));
 
   for (const file of files) {
     const fullPath = path.join(file.path, file.name);
@@ -97,6 +99,11 @@ async function main() {
       continue;
     }
     const data = parsed.data || {};
+    try {
+      resolveSnippets({ slug: file.name.replace(/\.md$/, ''), data, markdown: parsed.content, legacy, snippetsDir: path.join(root, 'snippets') });
+    } catch (error) {
+      violations.push(`${displayPath}: ${error.message}`);
+    }
 
     if (Object.prototype.hasOwnProperty.call(data, 'reading_time')) {
       violations.push(`${displayPath}: manual 'reading_time' is not allowed; it is calculated from article content`);

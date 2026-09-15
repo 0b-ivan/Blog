@@ -240,3 +240,7 @@
   .code-snippet__summary { padding: 0.7rem 0.8rem; }
   .code-snippet code { font-size: 0.78rem; }
 }
+
+.snippet-library__source { margin: 0 0 1.5rem; }
+.code-snippet__description { margin: .5rem 0; color: var(--text-muted, #a9b3c1); font-size: .95rem; }
+.snippet-library__viewer > .code-snippet__description { padding: 0 1rem; }

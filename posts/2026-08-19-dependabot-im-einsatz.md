@@ -16,6 +16,12 @@ search_queries:
     maxRank: 1
   - query: Wie kann ich Dependency Updates automatisch als Pull Request bekommen?
     maxRank: 1
+snippets:
+  - file: "01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml"
+    title: "Dependabot für Actions, npm und Docker"
+    description: "Vereinfachtes Beispiel für wöchentliche Dependency-Updates."
+    type: "Dependabot-Konfiguration"
+    language: "yaml"
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.

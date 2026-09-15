@@ -1,3 +1,4 @@
+const { resolveSnippets, installSnippetRenderer } = require('./lib/snippets');
 const express = require('express');
 const fs = require('node:fs/promises');
 const path = require('path');
@@ -187,6 +188,7 @@ const md = new MarkdownIt({
   }
 });
 
+installSnippetRenderer(md);
 md.use(mdFootnote);
 md.use(mdAbbr);
 
@@ -273,6 +275,7 @@ async function loadPosts(postsDir) {
   }
 
   const files = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.md'));
+  const legacy = JSON.parse(await fs.readFile(path.join(root, 'snippets/manifest.json'), 'utf8'));
   const activeSlugs = files.map((file) => slugify(file.name));
 
   const posts = await Promise.all(
@@ -293,7 +296,9 @@ async function loadPosts(postsDir) {
       const readingTime = calculateReadingTime(recovered.content);
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
+      const snippets = resolveSnippets({ slug, title, data: recovered.data, markdown: recovered.content, legacy });
       return {
+        snippets,
         slug,
         title,
         date,
@@ -303,7 +308,7 @@ async function loadPosts(postsDir) {
         excerpt,
         wordCount,
         readingTime,
-        html: md.render(markdownContent)
+        html: md.render(markdownContent, { snippets })
       };
     })
   );
@@ -665,14 +670,8 @@ function createApp(options = {}) {
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.get('/snippets/manifest.json', async (_req, res) => {
     try {
-      const [posts, manifestSource] = await Promise.all([
-        readPosts(postsDir),
-        fs.readFile(path.join(root, 'snippets', 'manifest.json'), 'utf-8')
-      ]);
-      const publishedSlugs = new Set(posts.map((post) => post.slug));
-      const manifest = JSON.parse(manifestSource)
-        .filter((snippet) => publishedSlugs.has(String(snippet.post || '')));
-      res.json(manifest);
+      const posts = await readPosts(postsDir);
+      res.json(posts.flatMap((post) => post.snippets));
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Could not load snippet manifest' });
