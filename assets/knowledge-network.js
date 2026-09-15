@@ -226,7 +226,7 @@
           </div>
           <div class="blog-statistics__cards" data-statistics-cards></div>
           <div class="blog-statistics__visuals">
-            <article class="statistics-panel"><header><h3>Veröffentlichungsaktivität</h3><p>Die letzten 52 Wochen · dunkler bedeutet mehr Artikel</p></header><div data-publication-heatmap></div></article>
+            <article class="statistics-panel statistics-panel--heatmap"><div data-publication-heatmap></div></article>
             <article class="statistics-panel"><header><h3>Themenprofil</h3><p>Abdeckung in sechs stabilen, übergeordneten Themenfeldern</p></header><div data-category-radar></div></article>
           </div>
         </section>
@@ -248,12 +248,14 @@
   }
 
   function renderStatistics(section, statistics) {
+    const mostUsedTerm = statistics.mostUsedGlossaryTerm || {};
     const values = [
       ['Wörter insgesamt', Number(statistics.words || 0).toLocaleString('de-DE')],
       ['Lesezeit gesamt', formatReadingTime(Number(statistics.readingMinutes || 0))],
       ['Verlinkte Fachbegriffe', Number(statistics.glossaryTerms || 0).toLocaleString('de-DE')],
       ['Ø Wörter je Artikel', Number(statistics.averageWords || 0).toLocaleString('de-DE')],
-      ['Aktivster Monat', formatMonth(statistics.busiestMonth)]
+      ['Aktivster Monat', formatMonth(statistics.busiestMonth)],
+      [`Meistgenutzter Fachbegriff${mostUsedTerm.count ? ` · ${Number(mostUsedTerm.count).toLocaleString('de-DE')}×` : ''}`, mostUsedTerm.term || '–']
     ];
     section.querySelector('[data-statistics-cards]').innerHTML = values
       .map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`)
@@ -266,18 +268,38 @@
     const counts = new Map((days || []).map((item) => [item.date, Number(item.count) || 0]));
     const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const weekday = (end.getUTCDay() + 6) % 7;
-    end.setUTCDate(end.getUTCDate() + (6 - weekday));
     const start = new Date(end);
-    start.setUTCDate(start.getUTCDate() - 363);
+    start.setUTCDate(start.getUTCDate() - weekday - (51 * 7));
+    const totalDays = (51 * 7) + weekday + 1;
     const cells = [];
-    for (let index = 0; index < 364; index += 1) {
+    const monthLabels = [];
+    let total = 0;
+    let previousMonth = '';
+    for (let index = 0; index < totalDays; index += 1) {
       const day = new Date(start);
       day.setUTCDate(start.getUTCDate() + index);
       const date = day.toISOString().slice(0, 10);
       const count = counts.get(date) || 0;
-      cells.push(`<rect x="${Math.floor(index / 7) * 13}" y="${(index % 7) * 13}" width="10" height="10" rx="2" class="heat-${Math.min(4, count)}"><title>${date}: ${count} Artikel</title></rect>`);
+      total += count;
+      const week = Math.floor(index / 7);
+      if (index % 7 === 0) {
+        const month = date.slice(0, 7);
+        if (month !== previousMonth) {
+          const label = new Intl.DateTimeFormat('de-DE', { month: 'short', timeZone: 'UTC' }).format(day).replace('.', '');
+          monthLabels.push(`<text x="${42 + (week * 13)}" y="11">${label}</text>`);
+          previousMonth = month;
+        }
+      }
+      cells.push(`<rect x="${42 + (week * 13)}" y="${24 + ((index % 7) * 13)}" width="10" height="10" rx="2" class="heat-day heat-${Math.min(4, count)}"><title>${date}: ${count} Artikel</title></rect>`);
     }
-    return `<svg class="publication-heatmap" viewBox="0 0 674 88" role="img" aria-label="Heatmap der Veröffentlichungen in den letzten 52 Wochen">${cells.join('')}</svg>`;
+    const publicationLabel = total === 1 ? 'Veröffentlichung' : 'Veröffentlichungen';
+    return `<div class="heatmap-summary"><strong>${total} ${publicationLabel} im letzten Jahr</strong><span>${now.getUTCFullYear()}</span></div>
+      <div class="heatmap-chart">
+        <svg class="publication-heatmap" viewBox="0 0 720 118" role="img" aria-label="Heatmap der Veröffentlichungen in den letzten 52 Wochen">
+          <g class="heatmap-labels">${monthLabels.join('')}<text x="3" y="47">Mo</text><text x="3" y="73">Mi</text><text x="3" y="99">Fr</text></g>${cells.join('')}
+        </svg>
+      </div>
+      <div class="heatmap-footer"><span>Jedes Feld entspricht einem Tag.</span><div class="heatmap-legend"><span>Weniger</span><i class="heat-0"></i><i class="heat-1"></i><i class="heat-2"></i><i class="heat-3"></i><i class="heat-4"></i><span>Mehr</span></div></div>`;
   }
 
   function categoryRadar(distribution) {

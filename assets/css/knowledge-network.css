@@ -189,17 +189,28 @@
 .blog-statistics__heading { display: grid; grid-template-columns: 1fr minmax(280px, 520px); gap: 28px; align-items: end; margin-bottom: 22px; }
 .blog-statistics__heading h2 { margin: 6px 0 0; font-size: clamp(1.8rem, 4vw, 3.5rem); }
 .blog-statistics__heading > p { margin: 0; color: var(--muted, #5f666d); line-height: 1.6; }
-.blog-statistics__cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.blog-statistics__cards { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 .blog-statistics__cards > div { min-height: 112px; padding: 18px; border: 1px solid rgba(42, 48, 54, 0.14); border-radius: 14px; background: rgba(255,255,255,.58); }
-.blog-statistics__cards strong { display: block; margin-bottom: 12px; font-size: clamp(1.35rem, 2.4vw, 2.15rem); line-height: 1; }
+.blog-statistics__cards strong { display: block; margin-bottom: 12px; overflow-wrap: anywhere; font-size: clamp(1.25rem, 2.2vw, 2.15rem); line-height: 1; }
 .blog-statistics__cards span { color: var(--muted, #5f666d); font: .7rem/1.35 "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .06em; }
-.blog-statistics__visuals { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr); gap: 14px; margin-top: 14px; }
+.blog-statistics__visuals { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, .8fr); gap: 14px; align-items: start; margin-top: 14px; }
 .statistics-panel { min-width: 0; padding: 20px; border: 1px solid rgba(42, 48, 54, 0.14); border-radius: 16px; background: rgba(247,246,241,.86); }
 .statistics-panel h3 { margin: 0; font-size: 1.15rem; }
 .statistics-panel header p { margin: 5px 0 18px; color: var(--muted, #5f666d); font: .7rem/1.45 "IBM Plex Mono", monospace; }
-.publication-heatmap { display: block; width: 100%; min-height: 120px; }
+.statistics-panel--heatmap { padding: 18px 20px 14px; }
+.heatmap-summary, .heatmap-footer, .heatmap-legend { display: flex; align-items: center; }
+.heatmap-summary { justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+.heatmap-summary strong { font-size: 1rem; }
+.heatmap-summary > span { padding: 6px 18px; border-radius: 7px; background: #00473e; color: #fff; font: .75rem "IBM Plex Mono", monospace; }
+.heatmap-chart { overflow-x: auto; }
+.publication-heatmap { display: block; width: 100%; min-width: 680px; }
 .publication-heatmap rect { fill: rgba(42,48,54,.08); }
 .publication-heatmap .heat-1 { fill: #b8d6cd; } .publication-heatmap .heat-2 { fill: #72aa9b; } .publication-heatmap .heat-3 { fill: #347c6d; } .publication-heatmap .heat-4 { fill: #00473e; }
+.heatmap-labels text { fill: var(--muted, #5f666d); font: 9px "IBM Plex Mono", monospace; }
+.heatmap-footer { justify-content: space-between; gap: 18px; color: var(--muted, #5f666d); font: .68rem "IBM Plex Mono", monospace; }
+.heatmap-legend { gap: 4px; white-space: nowrap; }
+.heatmap-legend i { width: 10px; height: 10px; border-radius: 2px; background: rgba(42,48,54,.08); }
+.heatmap-legend .heat-1 { background: #b8d6cd; } .heatmap-legend .heat-2 { background: #72aa9b; } .heatmap-legend .heat-3 { background: #347c6d; } .heatmap-legend .heat-4 { background: #00473e; }
 .category-radar { display: block; width: min(100%, 340px); margin: -8px auto 0; overflow: visible; }
 .radar-grid polygon, .radar-grid line { fill: none; stroke: rgba(42,48,54,.16); stroke-width: 1; }
 .radar-area { fill: rgba(91,156,246,.25); stroke: #3e83e4; stroke-width: 2; }
@@ -254,6 +265,6 @@
   .blog-statistics { margin-top: 42px; }
   .blog-statistics__cards { grid-template-columns: repeat(2, 1fr); }
   .blog-statistics__cards > div { min-height: 96px; padding: 14px; }
-  .statistics-panel { padding: 14px; overflow-x: auto; }
-  .publication-heatmap { width: 674px; }
+  .statistics-panel { padding: 14px; }
+  .heatmap-footer { align-items: flex-start; flex-direction: column; }
 }
