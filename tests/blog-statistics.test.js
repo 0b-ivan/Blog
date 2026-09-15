@@ -32,8 +32,13 @@ describe('blog statistics', () => {
 
   it('renders accessible heatmap and radar SVGs', () => {
     const heatmap = publicationHeatmap([{ date: '2026-09-01', count: 2 }], new Date('2026-09-15T00:00:00Z'));
-    expect(heatmap.match(/<rect /g)).toHaveLength(364);
+    expect(heatmap.match(/class="heat-day/g)).toHaveLength(359);
     expect(heatmap).toContain('Heatmap der Veröffentlichungen');
+    expect(heatmap).toContain('2 Veröffentlichungen im letzten Jahr');
+    expect(heatmap).not.toContain('2026-09-16');
+    expect(heatmap).toContain('Weniger');
+    expect(heatmap).toContain('Mehr');
+    expect(heatmap).toContain('>Mo<');
     expect(categoryRadar([{ label: 'Cloud', value: 4 }, { label: 'Betrieb', value: 3 }, { label: 'Security', value: 2 }])).toContain('Spinnendiagramm');
   });
 });
