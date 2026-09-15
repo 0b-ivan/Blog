@@ -260,7 +260,41 @@
     section.querySelector('[data-statistics-cards]').innerHTML = values
       .map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`)
       .join('');
-    section.querySelector('[data-publication-heatmap]').innerHTML = publicationHeatmap(statistics.publicationDays);
+    const heatmap = section.querySelector('[data-publication-heatmap]');
+    const publicationDays = Array.isArray(statistics.publicationDays) ? statistics.publicationDays : [];
+    heatmap.innerHTML = publicationHeatmap(publicationDays);
+    const publicationsByDate = new Map(publicationDays.map((item) => [item.date, item]));
+    const showPublications = (date) => {
+      const details = heatmap.querySelector('[data-heatmap-details]');
+      const publication = publicationsByDate.get(date);
+      if (!details || !publication?.posts?.length) return;
+      const heading = document.createElement('strong');
+      const formattedDate = new Intl.DateTimeFormat('de-DE', { dateStyle: 'long', timeZone: 'UTC' })
+        .format(new Date(`${date}T00:00:00Z`));
+      heading.textContent = `Artikel vom ${formattedDate}`;
+      const list = document.createElement('ul');
+      publication.posts.forEach((post) => {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = post.url;
+        link.textContent = post.title;
+        item.append(link);
+        list.append(item);
+      });
+      details.replaceChildren(heading, list);
+      details.hidden = false;
+    };
+    heatmap.addEventListener('click', (event) => {
+      const cell = event.target.closest('[data-heatmap-date]');
+      if (cell) showPublications(cell.dataset.heatmapDate);
+    });
+    heatmap.addEventListener('keydown', (event) => {
+      const cell = event.target.closest('[data-heatmap-date]');
+      if (cell && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        showPublications(cell.dataset.heatmapDate);
+      }
+    });
     section.querySelector('[data-category-radar]').innerHTML = categoryRadar(statistics.topicDistribution);
   }
 
@@ -290,7 +324,8 @@
           previousMonth = month;
         }
       }
-      cells.push(`<rect x="${42 + (week * 13)}" y="${24 + ((index % 7) * 13)}" width="10" height="10" rx="2" class="heat-day heat-${Math.min(4, count)}"><title>${date}: ${count} Artikel</title></rect>`);
+      const interaction = count ? ` data-heatmap-date="${date}" tabindex="0" role="button" aria-label="${date}: ${count} Artikel anzeigen"` : '';
+      cells.push(`<rect x="${42 + (week * 13)}" y="${24 + ((index % 7) * 13)}" width="10" height="10" rx="2" class="heat-day heat-${Math.min(4, count)}"${interaction}><title>${date}: ${count} Artikel</title></rect>`);
     }
     const publicationLabel = total === 1 ? 'Veröffentlichung' : 'Veröffentlichungen';
     return `<div class="heatmap-summary"><strong>${total} ${publicationLabel} im letzten Jahr</strong><span>${now.getUTCFullYear()}</span></div>
@@ -299,7 +334,8 @@
           <g class="heatmap-labels">${monthLabels.join('')}<text x="3" y="47">Mo</text><text x="3" y="73">Mi</text><text x="3" y="99">Fr</text></g>${cells.join('')}
         </svg>
       </div>
-      <div class="heatmap-footer"><span>Jedes Feld entspricht einem Tag.</span><div class="heatmap-legend"><span>Weniger</span><i class="heat-0"></i><i class="heat-1"></i><i class="heat-2"></i><i class="heat-3"></i><i class="heat-4"></i><span>Mehr</span></div></div>`;
+      <div class="heatmap-footer"><span>Belegte Felder öffnen die Artikel des Tages.</span><div class="heatmap-legend"><span>Weniger</span><i class="heat-0"></i><i class="heat-1"></i><i class="heat-2"></i><i class="heat-3"></i><i class="heat-4"></i><span>Mehr</span></div></div>
+      <div class="heatmap-details" data-heatmap-details aria-live="polite" hidden></div>`;
   }
 
   function categoryRadar(distribution) {
