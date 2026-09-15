@@ -9,7 +9,7 @@ updated_at: 2026-09-15
 author: obivan
 reviewed_by: pending
 category: AWS
-excerpt: VPC, Subnet, Route Table, Internet Gateway und NAT wirken schnell nach schwarzer Magie. Dabei geht es am Ende fast immer um eine Frage: Welchen Weg nimmt mein Traffic?
+excerpt: "VPC, Subnet, Route Table, Internet Gateway und NAT wirken schnell nach schwarzer Magie. Dabei geht es am Ende fast immer um eine Frage: Welchen Weg nimmt mein Traffic?"
 tags:
   - AWS
   - VPC
