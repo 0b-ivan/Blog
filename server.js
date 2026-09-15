@@ -13,6 +13,7 @@ const {
   renderGlossaryPage,
   withGlossaryDefinitions
 } = require('./lib/glossary');
+const { calculateReadingTime } = require('./lib/reading-time');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -288,6 +289,7 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const readingTime = calculateReadingTime(recovered.content);
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
       return {
@@ -298,6 +300,7 @@ async function loadPosts(postsDir) {
         category,
         tags,
         excerpt,
+        readingTime,
         html: md.render(markdownContent)
       };
     })
@@ -559,7 +562,7 @@ function getLegalInfo() {
 }
 
 function renderPostPage(post, relatedPosts = []) {
-  const meta = `${post.category} · ${post.date}`;
+  const meta = `${post.category} · ${post.date} · ca. ${post.readingTime || 1} Min. Lesezeit`;
   const tagsHtml = normalizeTags(post.tags)
     .slice(0, MAX_VISIBLE_TAGS)
     .map((tag) => `<span class="tag-chip">${md.utils.escapeHtml(tag)}</span>`)
@@ -667,13 +670,14 @@ function createApp(options = {}) {
   app.get('/api/posts', async (_req, res) => {
     try {
       const posts = await readPosts(postsDir);
-      const dto = posts.map(({ slug, title, date, category, tags, excerpt }) => ({
+      const dto = posts.map(({ slug, title, date, category, tags, excerpt, readingTime }) => ({
         slug,
         title,
         date,
         category,
         tags,
-        excerpt
+        excerpt,
+        readingTime
       }));
       res.json(dto);
     } catch (error) {

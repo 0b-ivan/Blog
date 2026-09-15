@@ -2,10 +2,32 @@
 
 const fs = require('node:fs');
 const { spawnSync } = require('node:child_process');
+const os = require('node:os');
+const path = require('node:path');
+const { glossaryEntries } = require('../lib/glossary');
 
 const args = process.argv.slice(2);
 const fix = args.includes('--fix');
 const targets = args.filter((arg) => arg !== '--fix');
+const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'kernel-notes-cspell-'));
+const glossaryDictionary = path.join(temporaryDirectory, 'glossary.txt');
+const generatedConfig = path.join(temporaryDirectory, 'cspell.json');
+const baseConfig = JSON.parse(fs.readFileSync(path.resolve('cspell.json'), 'utf8'));
+baseConfig.dictionaryDefinitions = baseConfig.dictionaryDefinitions.map((definition) => ({
+  ...definition,
+  path: path.resolve(definition.path)
+}));
+const glossaryWords = [...new Set(glossaryEntries.flatMap((entry) => [entry.key, ...entry.aliases]))];
+
+fs.writeFileSync(glossaryDictionary, `${glossaryWords.join('\n')}\n`, 'utf8');
+baseConfig.dictionaryDefinitions.push({
+  name: 'kernel-notes-glossary',
+  path: glossaryDictionary,
+  addWords: true
+});
+baseConfig.dictionaries.push('kernel-notes-glossary');
+fs.writeFileSync(generatedConfig, JSON.stringify(baseConfig), 'utf8');
+process.on('exit', () => fs.rmSync(temporaryDirectory, { recursive: true, force: true }));
 
 if (targets.length === 0) {
   targets.push('posts/**/*.md');
@@ -20,7 +42,7 @@ const cspellArgs = [
   '--',
   'cspell',
   '--config',
-  'cspell.json',
+  generatedConfig,
   '--no-progress',
   '--show-suggestions',
   ...targets
