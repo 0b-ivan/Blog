@@ -127,7 +127,7 @@ jobs:
           cache-from: type=gha,scope=staging-search
           cache-to: type=gha,mode=max,scope=staging-search
 
-      - name: Pin staging manifests to built images
+      - name: Pin staging GitOps state to built images
         env:
           DEPLOY_SHA: ${{ github.sha }}
           OWNER_LOWER: ${{ steps.meta.outputs.owner_lower }}
@@ -138,28 +138,25 @@ jobs:
           import re
           from pathlib import Path
 
-          path = Path('infra/kubernetes/staging/blog.yaml')
+          path = Path('infra/kubernetes/staging/kustomization.yaml')
           text = path.read_text(encoding='utf-8')
           sha = os.environ['DEPLOY_SHA']
           owner = os.environ['OWNER_LOWER']
 
-          replacements = {
-              rf'image: ghcr\.io/{re.escape(owner)}/kernel-notes-blog:[^\s]+':
-                  f'image: ghcr.io/{owner}/kernel-notes-blog:{sha}',
-              rf'image: ghcr\.io/{re.escape(owner)}/kernel-notes-search:[^\s]+':
-                  f'image: ghcr.io/{owner}/kernel-notes-search:{sha}',
-          }
-
-          for pattern, replacement in replacements.items():
-              text, count = re.subn(pattern, replacement, text)
+          for image in ('kernel-notes-blog', 'kernel-notes-search'):
+              pattern = (
+                  rf'(  - name: ghcr\.io/{re.escape(owner)}/{image}\n'
+                  rf'    newTag: )[A-Za-z0-9._-]+'
+              )
+              text, count = re.subn(pattern, rf'\g<1>{sha}', text)
               if count != 1:
-                  raise SystemExit(f'Expected one manifest image match for {pattern}, found {count}')
+                  raise SystemExit(f'Expected one Kustomize image entry for {image}, found {count}')
 
           path.write_text(text, encoding='utf-8')
           PY
 
           git diff --check
-          git diff -- infra/kubernetes/staging/blog.yaml
+          git diff -- infra/kubernetes/staging/kustomization.yaml
 
       - name: Commit desired staging state
         env:
@@ -168,10 +165,10 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add infra/kubernetes/staging/blog.yaml
+          git add infra/kubernetes/staging/kustomization.yaml
 
           if git diff --cached --quiet; then
-            echo 'Staging manifest is already pinned to this image SHA.'
+            echo 'Staging Kustomize state is already pinned to this image SHA.'
             exit 0
           fi
 
