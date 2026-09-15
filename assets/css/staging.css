@@ -13,14 +13,35 @@ html[data-environment="staging"]::before {
   z-index: 2147483646;
   pointer-events: none;
   box-sizing: border-box;
-  border: var(--staging-frame-size) solid transparent;
-  border-image: repeating-linear-gradient(
-    135deg,
-    var(--staging-orange) 0,
-    var(--staging-orange) var(--staging-stripe-size),
-    var(--staging-black) var(--staging-stripe-size),
-    var(--staging-black) calc(var(--staging-stripe-size) * 2)
-  ) 10;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      var(--staging-orange) 0,
+      var(--staging-orange) var(--staging-stripe-size),
+      var(--staging-black) var(--staging-stripe-size),
+      var(--staging-black) calc(var(--staging-stripe-size) * 2)
+    ) top / 100% var(--staging-frame-size) no-repeat,
+    repeating-linear-gradient(
+      135deg,
+      var(--staging-orange) 0,
+      var(--staging-orange) var(--staging-stripe-size),
+      var(--staging-black) var(--staging-stripe-size),
+      var(--staging-black) calc(var(--staging-stripe-size) * 2)
+    ) bottom / 100% var(--staging-frame-size) no-repeat,
+    repeating-linear-gradient(
+      45deg,
+      var(--staging-orange) 0,
+      var(--staging-orange) var(--staging-stripe-size),
+      var(--staging-black) var(--staging-stripe-size),
+      var(--staging-black) calc(var(--staging-stripe-size) * 2)
+    ) left / var(--staging-frame-size) 100% no-repeat,
+    repeating-linear-gradient(
+      45deg,
+      var(--staging-orange) 0,
+      var(--staging-orange) var(--staging-stripe-size),
+      var(--staging-black) var(--staging-stripe-size),
+      var(--staging-black) calc(var(--staging-stripe-size) * 2)
+    ) right / var(--staging-frame-size) 100% no-repeat;
 }
 
 .staging-banner {
