@@ -218,9 +218,86 @@
           </div>
         </div>
         <p class="knowledge-network__note">Beim Öffnen dieser Seite werden keine neuen Embeddings berechnet. Das Netz wird aus den bereits indexierten Artikel-Vektoren aufgebaut; Roh-Vektoren verlassen den RAG-Service nicht.</p>
+
+        <section class="blog-statistics" aria-labelledby="blog-statistics-title" data-blog-statistics>
+          <div class="blog-statistics__heading">
+            <div><p class="eyebrow">BLOG IN ZAHLEN</p><h2 id="blog-statistics-title">Was im Wissensnetz steckt</h2></div>
+            <p>Live aus den veröffentlichten Artikeln, dem Glossar und den Verbindungen des Wissensnetzes berechnet.</p>
+          </div>
+          <div class="blog-statistics__cards" data-statistics-cards></div>
+          <div class="blog-statistics__visuals">
+            <article class="statistics-panel"><header><h3>Veröffentlichungsaktivität</h3><p>Die letzten 52 Wochen · dunkler bedeutet mehr Artikel</p></header><div data-publication-heatmap></div></article>
+            <article class="statistics-panel"><header><h3>Themenprofil</h3><p>Abdeckung in sechs stabilen, übergeordneten Themenfeldern</p></header><div data-category-radar></div></article>
+          </div>
+        </section>
       </section>`;
 
     return main.querySelector('.knowledge-network');
+  }
+
+  function formatReadingTime(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return hours ? `${hours} Std. ${rest ? `${rest} Min.` : ''}`.trim() : `${minutes} Min.`;
+  }
+
+  function formatMonth(value) {
+    if (!/^\d{4}-\d{2}$/.test(String(value || ''))) return '–';
+    return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+      .format(new Date(`${value}-01T00:00:00Z`));
+  }
+
+  function renderStatistics(section, statistics) {
+    const values = [
+      ['Wörter insgesamt', Number(statistics.words || 0).toLocaleString('de-DE')],
+      ['Lesezeit gesamt', formatReadingTime(Number(statistics.readingMinutes || 0))],
+      ['Verlinkte Fachbegriffe', Number(statistics.glossaryTerms || 0).toLocaleString('de-DE')],
+      ['Ø Wörter je Artikel', Number(statistics.averageWords || 0).toLocaleString('de-DE')],
+      ['Aktivster Monat', formatMonth(statistics.busiestMonth)]
+    ];
+    section.querySelector('[data-statistics-cards]').innerHTML = values
+      .map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`)
+      .join('');
+    section.querySelector('[data-publication-heatmap]').innerHTML = publicationHeatmap(statistics.publicationDays);
+    section.querySelector('[data-category-radar]').innerHTML = categoryRadar(statistics.topicDistribution);
+  }
+
+  function publicationHeatmap(days, now = new Date()) {
+    const counts = new Map((days || []).map((item) => [item.date, Number(item.count) || 0]));
+    const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const weekday = (end.getUTCDay() + 6) % 7;
+    end.setUTCDate(end.getUTCDate() + (6 - weekday));
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - 363);
+    const cells = [];
+    for (let index = 0; index < 364; index += 1) {
+      const day = new Date(start);
+      day.setUTCDate(start.getUTCDate() + index);
+      const date = day.toISOString().slice(0, 10);
+      const count = counts.get(date) || 0;
+      cells.push(`<rect x="${Math.floor(index / 7) * 13}" y="${(index % 7) * 13}" width="10" height="10" rx="2" class="heat-${Math.min(4, count)}"><title>${date}: ${count} Artikel</title></rect>`);
+    }
+    return `<svg class="publication-heatmap" viewBox="0 0 674 88" role="img" aria-label="Heatmap der Veröffentlichungen in den letzten 52 Wochen">${cells.join('')}</svg>`;
+  }
+
+  function categoryRadar(distribution) {
+    const axes = (distribution || []).slice(0, 6);
+    if (axes.length < 3) return '<p class="statistics-empty">Noch nicht genügend Kategorien für ein Themenprofil.</p>';
+    const center = 150;
+    const radius = 98;
+    const maximum = Math.max(...axes.map((item) => Number(item.value) || 0), 1);
+    const point = (index, scale = 1) => {
+      const angle = (-Math.PI / 2) + ((Math.PI * 2 * index) / axes.length);
+      return [center + Math.cos(angle) * radius * scale, center + Math.sin(angle) * radius * scale];
+    };
+    const rings = [0.25, 0.5, 0.75, 1].map((scale) => `<polygon points="${axes.map((_item, index) => point(index, scale).join(',')).join(' ')}" />`).join('');
+    const spokes = axes.map((_item, index) => `<line x1="${center}" y1="${center}" x2="${point(index)[0]}" y2="${point(index)[1]}" />`).join('');
+    const area = axes.map((item, index) => point(index, Number(item.value) / maximum).join(',')).join(' ');
+    const labels = axes.map((item, index) => {
+      const [x, y] = point(index, 1.22);
+      return `<text x="${x}" y="${y}" text-anchor="middle">${item.label} (${item.value})</text>`;
+    }).join('');
+    return `<svg class="category-radar" viewBox="0 0 300 300" role="img" aria-label="Spinnendiagramm der thematischen Blogabdeckung"><g class="radar-grid">${rings}${spokes}</g><polygon class="radar-area" points="${area}" />${labels}</svg>`;
   }
 
   function connectedTo(link, node) {
@@ -358,6 +435,7 @@
       );
       section.dataset.knowledgeReady = 'true';
       section.dataset.embeddingModel = String(payload.embeddingModel || '');
+      renderStatistics(section, payload.statistics || {});
       renderGraph(section, graphData);
     } catch (error) {
       if (status) {
@@ -370,7 +448,9 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       buildGraphData,
-      semanticLinkLabel
+      semanticLinkLabel,
+      publicationHeatmap,
+      categoryRadar
     };
   }
 

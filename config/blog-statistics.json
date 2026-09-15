@@ -1,0 +1,10 @@
+{
+  "topicDomains": [
+    { "label": "Cloud & Infrastruktur", "signals": ["AWS", "Cloud", "EC2", "IaC", "Infrastructure as Code", "Terraform", "Hetzner"] },
+    { "label": "Linux & Betrieb", "signals": ["Linux", "systemd", "Operations", "Reliability", "Monitoring", "Logging", "Observability"] },
+    { "label": "Container & Deployment", "signals": ["Docker", "Docker Compose", "Container", "Deployment", "DevOps", "CI", "CI/CD", "GitHub Actions"] },
+    { "label": "Security & Netzwerke", "signals": ["Security", "Networking", "VPC", "Subnet", "Zero Trust", "Cloudflare", "Dependabot", "Supply Chain"] },
+    { "label": "Entwicklung & Automation", "signals": ["Development", "Engineering", "Automation", "Java", "Node", "Node.js", "Testing", "Regressionstest"] },
+    { "label": "Self-Hosting & Daten", "signals": ["Self-Hosting", "Nextcloud", "Immich", "WebDAV", "Proxmox", "LXC", "RSS", "DuckDB", "Semantic-Search"] }
+  ]
+}
