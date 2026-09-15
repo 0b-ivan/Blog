@@ -86,7 +86,7 @@ kubectl -n blog-staging get pods,svc
 
 ## Flux
 
-Flux verwendet den geschützten Branch `staging` als GitOps-Quelle. Der Cluster benötigt dadurch keinen eingehenden Netzwerkzugriff von GitHub Actions.
+Flux verwendet den Branch `staging` als GitOps-Quelle. Der Cluster benötigt dadurch keinen eingehenden Netzwerkzugriff von GitHub Actions.
 
 Auf einem Admin-Host mit Zugriff auf den K3s-API-Server, `flux`, `gh` und einem passenden `KUBECONFIG`:
 
@@ -99,13 +99,14 @@ flux bootstrap github \
   --owner=0b-ivan \
   --repository=Blog \
   --branch=staging \
-  --path=infra/kubernetes/staging/flux-system \
-  --personal
+  --path=infra/kubernetes/staging \
+  --personal \
+  --token-auth=false
 
 unset GITHUB_TOKEN
 ```
 
-Der Bootstrap legt die Flux-Controller und die Git-Synchronisation im Cluster an. Danach reconciliert Flux den gewünschten Zustand aus `infra/kubernetes/staging` auf dem Branch `staging`.
+`--path` zeigt dabei auf den vom Cluster zu reconciliierenden Staging-Ordner. Der Bootstrap legt seine eigenen Manifeste darunter in `infra/kubernetes/staging/flux-system/` an und konfiguriert den Cluster auf den Branch `staging`.
 
 Der Image-Build bleibt in GitHub Actions, das eigentliche Cluster-Deployment bleibt Pull-basiert über Flux. GitHub Actions braucht dadurch keinen direkten Netzwerkzugriff auf das private K3s-Netz.
 
