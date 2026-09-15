@@ -1,0 +1,10 @@
+all:
+  children:
+    k3s_servers:
+      hosts:
+        k3s-blog-01:
+          ansible_host: 192.0.2.10
+          ansible_user: obivan
+
+# 192.0.2.10 ist nur ein Dokumentations-Platzhalter.
+# Vor dem ersten Lauf hosts.yml anlegen und die echte interne IP oder den DNS-Namen eintragen.

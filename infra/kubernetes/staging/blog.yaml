@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: blog-staging
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search
+  namespace: blog-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: search
+  template:
+    metadata:
+      labels:
+        app: search
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: search
+          image: ghcr.io/0b-ivan/kernel-notes-search:43ff082ebf297c2444dc7f98c20b184b73f8f410
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8090
+          env:
+            - name: RAG_EMBEDDER_MODE
+              value: e5
+            - name: RAG_MODEL
+              value: Xenova/multilingual-e5-small
+            - name: RAG_DTYPE
+              value: q8
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: models
+              mountPath: /models
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: models
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search
+  namespace: blog-staging
+spec:
+  selector:
+    app: search
+  ports:
+    - name: http
+      port: 8090
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog
+  namespace: blog-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blog
+  template:
+    metadata:
+      labels:
+        app: blog
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: blog
+          image: ghcr.io/0b-ivan/kernel-notes-blog:43ff082ebf297c2444dc7f98c20b184b73f8f410
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ARCHIVE_DIR
+              value: /content/archive
+            - name: POST_HISTORY_DIR
+              value: /content/post-history
+            - name: SEARCH_SERVICE_URL
+              value: http://search:8090/search
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog
+  namespace: blog-staging
+spec:
+  selector:
+    app: blog
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
