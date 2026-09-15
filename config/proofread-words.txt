@@ -1,10 +1,14 @@
 # Technische Begriffe, Eigennamen und bewusst verwendete Schreibweisen.
 # Diese Liste wird von LanguageTool und CSpell genutzt.
 # Ein Begriff pro Zeile; Vergleich erfolgt ohne Beachtung der Gross-/Kleinschreibung.
+Ansible
 AWS
 CDK
+Cert-Manager
 CI/CD
+Cloud-Init
 Cloudflare
+CNI
 CouchDB
 Dependabot
 DevOps
@@ -13,18 +17,22 @@ Einmalaktion
 esbuild
 Express
 Fail2ban
+Flux
 FreshRSS
 GitHub
+GitOps
 Hetzner
 IAM
 Java
 JavaScript
+K3s
 Kavita
 Kernel Notes
 LiveSync
 Node.js
 Obsidian
 Proxmox
+QEMU
 REST
 RSS
 S3
