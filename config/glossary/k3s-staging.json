@@ -1,0 +1,95 @@
+{
+  "Ansible": {
+    "full": "Ansible",
+    "short": "Agentloses Automatisierungswerkzeug für Konfiguration und Provisionierung.",
+    "description": "Ansible beschreibt Infrastrukturaufgaben deklarativ in Playbooks und führt sie typischerweise per SSH auf Zielsystemen aus, ohne dort einen dauerhaften Agenten zu benötigen.",
+    "aliases": []
+  },
+  "Cert-Manager": {
+    "full": "cert-manager",
+    "short": "Kubernetes-Controller zur automatischen Verwaltung von TLS-Zertifikaten.",
+    "description": "cert-manager kann Zertifikate in Kubernetes anfordern, erneuern und als Secrets bereitstellen, beispielsweise über ACME und Let's Encrypt.",
+    "aliases": [
+      "cert-manager"
+    ]
+  },
+  "Cloud-Init": {
+    "full": "cloud-init",
+    "short": "Werkzeug zur automatischen Erstkonfiguration virtueller Maschinen beim Booten.",
+    "description": "cloud-init verarbeitet beim ersten Start einer VM Metadaten und Konfigurationen, um beispielsweise Benutzer, SSH-Schlüssel, Netzwerkparameter und Pakete einzurichten.",
+    "aliases": [
+      "cloud-init"
+    ]
+  },
+  "CNI": {
+    "full": "Container Network Interface",
+    "short": "Standardschnittstelle für die Netzwerkanbindung von Containern.",
+    "description": "CNI definiert, wie Container-Runtimes Netzwerk-Plugins aufrufen. In Kubernetes übernehmen CNI-Plugins unter anderem Pod-Netzwerke, IP-Zuweisung und Routing.",
+    "aliases": [
+      "Container Network Interface"
+    ]
+  },
+  "Flux": {
+    "full": "Flux",
+    "short": "GitOps-Toolkit für die kontinuierliche Synchronisierung von Kubernetes mit Git.",
+    "description": "Flux läuft als Controller im Kubernetes-Cluster, beobachtet deklarierte Git-Quellen und gleicht den tatsächlichen Clusterzustand automatisch mit dem in Git beschriebenen Sollzustand ab.",
+    "aliases": [
+      "Flux CD"
+    ]
+  },
+  "GitOps": {
+    "full": "GitOps",
+    "short": "Betriebsmodell, bei dem Git den gewünschten Infrastruktur- und Deployment-Zustand beschreibt.",
+    "description": "Bei GitOps werden Änderungen versioniert über Git vorgenommen. Controller wie Flux erkennen freigegebene Änderungen und gleichen die Zielumgebung automatisch mit diesem deklarativen Sollzustand ab.",
+    "aliases": []
+  },
+  "Hetzner": {
+    "full": "Hetzner",
+    "short": "Deutscher Anbieter für Cloud-, Server- und Hosting-Infrastruktur.",
+    "description": "Hetzner stellt unter anderem virtuelle Cloud-Server, dedizierte Server, Storage und Netzwerkdienste bereit und wird hier als Hosting-Plattform der Produktionsumgebung verwendet.",
+    "aliases": [
+      "Hetzner Cloud"
+    ]
+  },
+  "K3s-Cluster": {
+    "full": "K3s Cluster",
+    "short": "Kubernetes-Cluster auf Basis der leichtgewichtigen K3s-Distribution.",
+    "description": "Ein K3s-Cluster stellt die Kubernetes-API und die benötigten Cluster-Komponenten in einer kompakt paketierten Distribution bereit, die sich besonders für Edge-, Lab- und kleinere Serverumgebungen eignet.",
+    "aliases": [
+      "K3s"
+    ]
+  },
+  "Proxmox": {
+    "full": "Proxmox Virtual Environment",
+    "short": "Virtualisierungsplattform für virtuelle Maschinen und Linux-Container.",
+    "description": "Proxmox VE bündelt KVM/QEMU-Virtualisierung, LXC-Container, Storage, Netzwerk und Clusterverwaltung in einer zentralen Plattform mit Weboberfläche und API.",
+    "aliases": [
+      "Proxmox VE"
+    ]
+  },
+  "Proxmox-Host": {
+    "full": "Proxmox Host",
+    "short": "Physischer oder virtueller Server, auf dem Proxmox VE läuft.",
+    "description": "Ein Proxmox-Host stellt Rechenleistung, Arbeitsspeicher, Netzwerk und Storage für darauf betriebene virtuelle Maschinen und Container bereit.",
+    "aliases": [
+      "Proxmox Host"
+    ]
+  },
+  "QEMU": {
+    "full": "QEMU",
+    "short": "Emulator und Virtualisierungssoftware für unterschiedliche Rechnerarchitekturen.",
+    "description": "QEMU stellt virtuelle Hardware für virtuelle Maschinen bereit und wird unter Linux häufig zusammen mit KVM für hardwarebeschleunigte Virtualisierung eingesetzt.",
+    "aliases": []
+  },
+  "VM": {
+    "full": "Virtual Machine",
+    "short": "Softwarebasiert emulierter Rechner mit eigenem Betriebssystem.",
+    "description": "Eine virtuelle Maschine erhält virtuelle CPU-, Speicher-, Netzwerk- und Datenträgerressourcen und läuft isoliert auf einem Hypervisor beziehungsweise Virtualisierungshost.",
+    "aliases": [
+      "Virtual Machine",
+      "virtuelle Maschine",
+      "virtuellen Maschine",
+      "virtueller Maschine"
+    ]
+  }
+}
