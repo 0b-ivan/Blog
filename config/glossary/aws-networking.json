@@ -1,0 +1,36 @@
+{
+  "IGW": {
+    "full": "Internet Gateway",
+    "short": "AWS-Komponente, die eine VPC mit dem Internet verbindet.",
+    "description": "Ein Internet Gateway wird an eine VPC angebunden und kann als Ziel in Route Tables verwendet werden. Eine Route zum IGW allein macht eine Ressource noch nicht öffentlich erreichbar; unter anderem müssen Adressierung und Security-Regeln ebenfalls passen.",
+    "aliases": [
+      "Internet Gateway"
+    ]
+  },
+  "NACL": {
+    "full": "Network Access Control List",
+    "short": "Stateless Netzwerkfilter auf Subnet-Ebene in einer AWS VPC.",
+    "description": "Eine Network Access Control List (NACL) kontrolliert eingehenden und ausgehenden Traffic für ein Subnet anhand nummerierter Allow- und Deny-Regeln. Anders als Security Groups arbeitet sie stateless, daher müssen Hin- und Rückweg jeweils durch passende Regeln erlaubt sein.",
+    "aliases": [
+      "Network ACL",
+      "Network Access Control List"
+    ]
+  },
+  "Peering": {
+    "full": "VPC Peering",
+    "short": "Direkte private Netzwerkverbindung zwischen zwei VPCs.",
+    "description": "VPC Peering ermöglicht privaten IP-Traffic zwischen zwei VPCs. Die Verbindung ist nicht transitiv: Eine über Peering erreichbare VPC kann nicht automatisch als Router zu einer dritten VPC verwendet werden.",
+    "aliases": [
+      "VPC Peering",
+      "VPC-Peering"
+    ]
+  },
+  "PrivateLink": {
+    "full": "AWS PrivateLink",
+    "short": "Privater Zugriff auf Services über private IP-Adressen, ohne öffentliches Internet.",
+    "description": "AWS PrivateLink stellt Services über Interface VPC Endpoints innerhalb einer VPC bereit. Dadurch kann ein Consumer einen Service privat erreichen, ohne Internet Gateway, NAT Gateway oder eine direkte Netzwerkverbindung zwischen den beteiligten VPCs zu benötigen.",
+    "aliases": [
+      "AWS PrivateLink"
+    ]
+  }
+}
