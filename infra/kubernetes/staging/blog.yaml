@@ -22,8 +22,8 @@ spec:
         - name: ghcr-pull
       containers:
         - name: search
-          image: ghcr.io/0b-ivan/kernel-notes-search:latest
-          imagePullPolicy: Always
+          image: ghcr.io/0b-ivan/kernel-notes-search:43ff082ebf297c2444dc7f98c20b184b73f8f410
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8090
@@ -39,11 +39,17 @@ spec:
               mountPath: /data
             - name: models
               mountPath: /models
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 36
           readinessProbe:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 12
@@ -51,7 +57,6 @@ spec:
             httpGet:
               path: /healthz
               port: http
-            initialDelaySeconds: 20
             periodSeconds: 20
             timeoutSeconds: 3
             failureThreshold: 6
@@ -99,8 +104,8 @@ spec:
         - name: ghcr-pull
       containers:
         - name: blog
-          image: ghcr.io/0b-ivan/kernel-notes-blog:latest
-          imagePullPolicy: Always
+          image: ghcr.io/0b-ivan/kernel-notes-blog:43ff082ebf297c2444dc7f98c20b184b73f8f410
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
