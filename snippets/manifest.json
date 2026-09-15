@@ -1,93 +1,106 @@
 [
   {
-    "title": "So ist Dependabot in diesem Blog konfiguriert",
+    "title": "Dependabot für Actions, npm und Docker",
     "path": "2026-08-19-dependabot-im-einsatz/01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml",
     "language": "yaml",
-    "usage": ".github/dependabot.yml für automatische Dependency-Updates",
-    "post": "2026-08-19-dependabot-im-einsatz"
+    "usage": "Vereinfachtes Beispiel für wöchentliche Dependency-Updates.",
+    "post": "2026-08-19-dependabot-im-einsatz",
+    "type": "Dependabot-Konfiguration"
   },
   {
-    "title": "Deployment",
+    "title": "Compose-Images laden und Services aktualisieren",
     "path": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/01-deployment.sh",
     "language": "bash",
-    "usage": ".sh für ein Docker-Compose-Deployment",
-    "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"
+    "usage": "Lädt die Images und aktualisiert die Services mit Docker Compose.",
+    "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust",
+    "type": "Shellskript"
   },
   {
-    "title": "Updates und Rollbacks",
+    "title": "Blog-Image auf einen festen Stand setzen",
     "path": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust/02-updates-und-rollbacks.yml",
     "language": "yaml",
-    "usage": "compose.yml für Updates und Rollbacks",
-    "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"
+    "usage": "Zeigt einen festen Image-Tag für den Blog-Service.",
+    "post": "2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust",
+    "type": "Compose-Ausschnitt"
   },
   {
-    "title": "2) Fail2ban aktivieren",
+    "title": "Fail2ban installieren",
     "path": "2026-08-19-fail2ban-ssh-hardening/01-2-fail2ban-aktivieren.sh",
     "language": "bash",
-    "usage": ".sh zur Installation von Fail2ban",
-    "post": "2026-08-19-fail2ban-ssh-hardening"
+    "usage": "Aktualisiert die Paketlisten und installiert Fail2ban.",
+    "post": "2026-08-19-fail2ban-ssh-hardening",
+    "type": "Shellskript"
   },
   {
-    "title": "2) Fail2ban aktivieren",
+    "title": "SSH-Jail für Fail2ban konfigurieren",
     "path": "2026-08-19-fail2ban-ssh-hardening/02-2-fail2ban-aktivieren.ini",
     "language": "ini",
-    "usage": "jail.local als Fail2ban-Konfiguration für SSH",
-    "post": "2026-08-19-fail2ban-ssh-hardening"
+    "usage": "Aktiviert das SSH-Jail mit fünf Fehlversuchen und einer Stunde Sperrzeit.",
+    "post": "2026-08-19-fail2ban-ssh-hardening",
+    "type": "Fail2ban-Konfiguration"
   },
   {
-    "title": "3) Firewall minimal halten",
+    "title": "SSH, HTTP und HTTPS mit UFW freigeben",
     "path": "2026-08-19-fail2ban-ssh-hardening/03-3-firewall-minimal-halten.sh",
     "language": "bash",
-    "usage": ".sh zur Konfiguration der UFW-Firewall",
-    "post": "2026-08-19-fail2ban-ssh-hardening"
+    "usage": "Legt die Freigaben an und aktiviert UFW.",
+    "post": "2026-08-19-fail2ban-ssh-hardening",
+    "type": "Shellskript"
   },
   {
-    "title": "Docker macht das Setup einfach",
+    "title": "FreshRSS mit persistenten Daten betreiben",
     "path": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung/01-docker-macht-das-setup-einfach.yml",
     "language": "yaml",
-    "usage": "compose.yml für FreshRSS",
-    "post": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung"
+    "usage": "Definiert FreshRSS mit Volumes für Daten und Erweiterungen.",
+    "post": "2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung",
+    "type": "Compose-Beispiel"
   },
   {
-    "title": "Beispiel Unit",
+    "title": "Node.js-Dienst mit systemd betreiben",
     "path": "2026-08-19-systemd-services-sauber-betreiben/01-beispiel-unit.ini",
     "language": "ini",
-    "usage": ".service als systemd-Unit für einen Linux-Dienst",
-    "post": "2026-08-19-systemd-services-sauber-betreiben"
+    "usage": "Startet die Kernel Notes API und konfiguriert automatische Neustarts.",
+    "post": "2026-08-19-systemd-services-sauber-betreiben",
+    "type": "systemd-Unit"
   },
   {
-    "title": "Ein Container direkt mit Docker",
+    "title": "Nginx mit Docker starten",
     "path": "2026-08-21-docker-vs-docker-compose/01-ein-container-direkt-mit-docker.sh",
     "language": "bash",
-    "usage": ".sh zum Starten eines einzelnen Docker-Containers",
-    "post": "2026-08-21-docker-vs-docker-compose"
+    "usage": "Startet Nginx im Hintergrund und veröffentlicht Port 8080.",
+    "post": "2026-08-21-docker-vs-docker-compose",
+    "type": "Shellskript"
   },
   {
-    "title": "Wo es mit mehreren Containern unübersichtlich wird",
+    "title": "Nginx und Redis im gemeinsamen Docker-Netz starten",
     "path": "2026-08-21-docker-vs-docker-compose/02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh",
     "language": "bash",
-    "usage": ".sh für mehrere verbundene Docker-Container",
-    "post": "2026-08-21-docker-vs-docker-compose"
+    "usage": "Erstellt ein Netzwerk und startet beide Container darin.",
+    "post": "2026-08-21-docker-vs-docker-compose",
+    "type": "Shellskript"
   },
   {
-    "title": "Dasselbe mit Docker Compose",
+    "title": "Nginx und Redis mit Compose starten",
     "path": "2026-08-21-docker-vs-docker-compose/03-dasselbe-mit-docker-compose.yml",
     "language": "yaml",
-    "usage": "compose.yml für eine Anwendung mit mehreren Services",
-    "post": "2026-08-21-docker-vs-docker-compose"
+    "usage": "Definiert beide Services und ein persistentes Redis-Volume.",
+    "post": "2026-08-21-docker-vs-docker-compose",
+    "type": "Compose-Beispiel"
   },
   {
-    "title": "Dockerfile und Docker Compose sind ebenfalls nicht dasselbe",
+    "title": "Node.js-Image bauen",
     "path": "2026-08-21-docker-vs-docker-compose/04-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.Dockerfile",
     "language": "dockerfile",
-    "usage": "Dockerfile zum Bauen eines Node.js-Container-Images",
-    "post": "2026-08-21-docker-vs-docker-compose"
+    "usage": "Installiert Produktionsabhängigkeiten und startet server.js.",
+    "post": "2026-08-21-docker-vs-docker-compose",
+    "type": "Dockerfile"
   },
   {
-    "title": "Dockerfile und Docker Compose sind ebenfalls nicht dasselbe",
+    "title": "Eine Anwendung mit Compose bauen und starten",
     "path": "2026-08-21-docker-vs-docker-compose/05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml",
     "language": "yaml",
-    "usage": "compose.yml zum Bauen und Starten einer Anwendung",
-    "post": "2026-08-21-docker-vs-docker-compose"
+    "usage": "Baut das lokale Image und veröffentlicht Port 8080.",
+    "post": "2026-08-21-docker-vs-docker-compose",
+    "type": "Compose-Beispiel"
   }
 ]

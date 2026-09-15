@@ -20,6 +20,12 @@ search_queries:
     maxRank: 1
   - query: Wie lese ich Logs eines systemd Dienstes mit journalctl?
     maxRank: 1
+snippets:
+  - file: "01-beispiel-unit.ini"
+    title: "Node.js-Dienst mit systemd betreiben"
+    description: "Startet die Kernel Notes API und konfiguriert automatische Neustarts."
+    type: "systemd-Unit"
+    language: "ini"
 ---
 
 `systemd` ist mehr als nur `systemctl start`.
@@ -28,24 +34,7 @@ Wenn Services stabil laufen sollen, helfen ein paar saubere Defaults.
 
 ## Beispiel Unit
 
-```ini
-[Unit]
-Description=Kernel Notes API
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-User=www-data
-WorkingDirectory=/opt/kernel-notes
-ExecStart=/usr/bin/node server.js
-Restart=always
-RestartSec=3
-Environment=NODE_ENV=production
-
-[Install]
-WantedBy=multi-user.target
-```
+[Node.js-Dienst mit systemd betreiben](/snippets/2026-08-19-systemd-services-sauber-betreiben/01-beispiel-unit.ini "snippet:ini")
 
 ## Restart-Strategie bewusst setzen
 

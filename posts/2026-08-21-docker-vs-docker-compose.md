@@ -16,6 +16,32 @@ search_queries:
     maxRank: 1
   - query: Webserver Datenbank und Redis zusammen verwalten
     maxRank: 1
+snippets:
+  - file: "01-ein-container-direkt-mit-docker.sh"
+    title: "Nginx mit Docker starten"
+    description: "Startet Nginx im Hintergrund und veröffentlicht Port 8080."
+    type: "Shellskript"
+    language: "bash"
+  - file: "02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh"
+    title: "Nginx und Redis im gemeinsamen Docker-Netz starten"
+    description: "Erstellt ein Netzwerk und startet beide Container darin."
+    type: "Shellskript"
+    language: "bash"
+  - file: "03-dasselbe-mit-docker-compose.yml"
+    title: "Nginx und Redis mit Compose starten"
+    description: "Definiert beide Services und ein persistentes Redis-Volume."
+    type: "Compose-Beispiel"
+    language: "yaml"
+  - file: "04-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.Dockerfile"
+    title: "Node.js-Image bauen"
+    description: "Installiert Produktionsabhängigkeiten und startet server.js."
+    type: "Dockerfile"
+    language: "dockerfile"
+  - file: "05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml"
+    title: "Eine Anwendung mit Compose bauen und starten"
+    description: "Baut das lokale Image und veröffentlicht Port 8080."
+    type: "Compose-Beispiel"
+    language: "yaml"
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.
