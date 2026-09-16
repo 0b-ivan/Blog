@@ -1,11 +1,11 @@
 ---
 id: 2026-08-21-docker-vs-docker-compose
-version: 2
+version: 3
 title: "Docker vs. Docker Compose: Was ist der Unterschied?"
 date: 2026-08-21
 published_at: 2026-08-21T07:12:56+02:00
 created_at: 2026-08-21
-updated_at: 2026-08-24
+updated_at: 2026-09-16
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -15,7 +15,7 @@ search_queries:
   - query: Ich will mir lange docker run Befehle nicht merken
     maxRank: 1
   - query: Webserver Datenbank und Redis zusammen verwalten
-    maxRank: 1
+    maxRank: 2
 snippets:
   - file: "01-ein-container-direkt-mit-docker.sh"
     title: "Nginx mit Docker starten"
