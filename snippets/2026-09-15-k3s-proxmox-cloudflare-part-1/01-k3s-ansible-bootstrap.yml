@@ -1,0 +1,64 @@
+---
+- name: Prepare blog staging K3s node
+  hosts: k3s_servers
+  become: true
+  gather_facts: true
+
+  vars:
+    k3s_install_url: https://get.k3s.io
+    k3s_install_channel: stable
+    k3s_config_dir: /etc/rancher/k3s
+
+  tasks:
+    - name: Install base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - qemu-guest-agent
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Ensure QEMU guest agent is enabled and running
+      ansible.builtin.systemd_service:
+        name: qemu-guest-agent
+        enabled: true
+        state: started
+
+    - name: Create K3s configuration directory
+      ansible.builtin.file:
+        path: "{{ k3s_config_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Configure K3s
+      ansible.builtin.copy:
+        dest: "{{ k3s_config_dir }}/config.yaml"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          write-kubeconfig-mode: "0640"
+          secrets-encryption: true
+          node-name: "{{ inventory_hostname }}"
+          disable:
+            - traefik
+            - servicelb
+
+    - name: Download official K3s installer
+      ansible.builtin.get_url:
+        url: "{{ k3s_install_url }}"
+        dest: /usr/local/src/install-k3s.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Install K3s
+      ansible.builtin.command: /usr/local/src/install-k3s.sh
+      environment:
+        INSTALL_K3S_CHANNEL: "{{ k3s_install_channel }}"
+      args:
+        creates: /usr/local/bin/k3s
