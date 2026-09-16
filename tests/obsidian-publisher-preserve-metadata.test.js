@@ -1,4 +1,5 @@
 const {
+  normalizeEmptyListField,
   normalizeTagWhitespace,
   preserveTopLevelBlock,
   topLevelBlock
@@ -126,5 +127,18 @@ tags: GitHub, Dependabot, Supply Chain, DevOps
     expect(normalizeTagWhitespace(raw)).toContain(
       'tags: GitHub, Dependabot, Supply-Chain, DevOps'
     );
+  });
+
+  it('normalizes an empty snippets property to an empty YAML list', () => {
+    const raw = `---
+title: RSS
+status: publish
+snippets:
+---
+
+# RSS
+`;
+
+    expect(normalizeEmptyListField(raw, 'snippets')).toContain('snippets: []');
   });
 });
