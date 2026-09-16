@@ -1,6 +1,6 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 4
+version: 5
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
@@ -30,6 +30,52 @@ search_queries:
     maxRank: 1
   - query: Wie öffne ich nach erfolgreichem Staging Deployment automatisch einen Production Pull Request?
     maxRank: 1
+snippets:
+  - file: "01-kustomize-image-pins.yml"
+    title: "Git-SHA-Images mit Kustomize pinnen"
+    description: "Zeigt die beiden Image-Einträge, deren Tags der Staging-Workflow auf den gebauten Git-SHA setzt."
+    type: "Kustomize-Ausschnitt"
+    language: "yaml"
+  - file: "02-staging-deployment-guard.sh"
+    title: "Staging-Deployment auf gemergte PRs begrenzen"
+    description: "Prüft über die GitHub API, ob der auslösende Commit zu einem gemergten Pull Request nach staging gehört."
+    type: "Shellskript"
+    language: "bash"
+  - file: "03-flux-precheck.sh"
+    title: "Flux-Version und Voraussetzungen prüfen"
+    description: "Prüft die installierte Flux CLI und die Kubernetes-Voraussetzungen vor dem Bootstrap."
+    type: "Shellskript"
+    language: "bash"
+  - file: "04-flux-bootstrap.sh"
+    title: "Flux gegen den staging-Branch bootstrappen"
+    description: "Bootstrapped Flux für den staging-Branch und den Kubernetes-Staging-Pfad mit SSH Deploy Key."
+    type: "Shellskript"
+    language: "bash"
+  - file: "05-flux-reconcile-check.sh"
+    title: "Flux-Reconcile und Controller prüfen"
+    description: "Zeigt Git Source, Kustomizations und Flux-Controller im Cluster."
+    type: "Shellskript"
+    language: "bash"
+  - file: "06-rollout-image-verification.sh"
+    title: "Staging-Rollout und verwendete Images prüfen"
+    description: "Prüft Pods und Deployments und gibt die tatsächlich referenzierten Blog- und Search-Images aus."
+    type: "Shellskript"
+    language: "bash"
+  - file: "07-public-staging-gate.sh"
+    title: "Öffentlichen Staging-Gate prüfen"
+    description: "Wartet auf Healthcheck, erwartete Build-Version und den Staging-Marker im ausgelieferten HTML."
+    type: "Shellskript"
+    language: "bash"
+  - file: "08-publish-promotion-candidate.sh"
+    title: "Verifizierten Promotion-Candidate veröffentlichen"
+    description: "Prüft den verifizierten GitOps-Commit gegen staging und verschiebt promotion/staging-verified ohne Force-Push."
+    type: "Shellskript"
+    language: "bash"
+  - file: "09-open-promotion-pr.sh"
+    title: "Production-Promotion-PR öffnen oder aktualisieren"
+    description: "Verwendet den verifizierten Candidate-Branch für den manuellen Pull Request nach main."
+    type: "Shellskript"
+    language: "bash"
 ---
 
 Teil I hat die technische Basis geschaffen: Debian auf Proxmox, K3s, interne Services und einen Cloudflare Tunnel bis zum öffentlichen Healthcheck.
@@ -101,7 +147,7 @@ Flux
 Kubernetes
 ```
 
-GitHub Actions baut weiterhin die Images, greift aber nicht auf den Kubernetes-API-Server zu. Der K3s-Node hängt in meinem internen Netz und muss von GitHub Actions nicht erreichbar sein.
+GitHub Actions baut weiterhin die Images, greift aber nicht auf den Kubernetes-API-Server zu. Der K3s-Node hängt im internen Netz und muss von GitHub Actions nicht erreichbar sein.
 
 Für den normalen Deployment-Pfad ist deshalb kein öffentlicher Kubernetes-API-Port notwendig.
 
@@ -157,9 +203,7 @@ Deployment
 
 ### SHA-getaggt ist nicht automatisch unveränderlich
 
-An dieser Stelle ist eine begriffliche Trennung wichtig.
-
-Ein Git-SHA-Tag ist **commit-eindeutig**, aber damit noch nicht technisch unveränderlich. Ein Registry-Tag kann grundsätzlich erneut auf ein anderes Image geschrieben werden, wenn die Registry und die Berechtigungen das zulassen.
+Ein Git-SHA-Tag ist **commit-eindeutig**, aber damit noch nicht technisch unveränderlich. Ein Registry-Tag kann grundsätzlich erneut auf ein anderes Image geschrieben werden, wenn Registry und Berechtigungen das zulassen.
 
 Der aktuelle Aufbau gewinnt also vor allem Nachvollziehbarkeit durch eindeutige Tags.
 
@@ -173,23 +217,11 @@ Dann referenziert Kubernetes direkt den konkreten Image-Inhalt und nicht nur ein
 
 ## 3. Kustomize speichert den gewünschten Image-Stand
 
-Die Basis-Manifeste enthalten die Image-Namen. Der aktuell gewünschte Staging-Stand wird in
+Die Basis-Manifeste enthalten die Image-Namen. Der aktuell gewünschte Staging-Stand wird in `infra/kubernetes/staging/kustomization.yaml` festgehalten.
 
-```text
-infra/kubernetes/staging/kustomization.yaml
-```
+Das wiederverwendbare Beispiel liegt als Snippet vor:
 
-festgehalten.
-
-Vereinfacht:
-
-```yaml
-images:
-  - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: <git-sha>
-  - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: <git-sha>
-```
+[Git-SHA-Images mit Kustomize pinnen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/01-kustomize-image-pins.yml "snippet:yaml")
 
 Nach einem erfolgreichen Build ersetzt der Workflow beide Tags durch den SHA des gerade gebauten Commits.
 
@@ -233,25 +265,11 @@ Es ist aber nicht korrekt, `[skip ci]` allein als Schleifenbremse zu beschreiben
 
 Bei normalen Push-Events prüft der Workflow, ob der Commit zu einem gemergten Pull Request mit Zielbranch `staging` gehört.
 
-Vereinfacht:
+Die vollständige Prüfung ist als Snippet ausgelagert:
 
-```bash
-gh api \
-  "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/pulls"
-```
+[Staging-Deployment auf gemergte PRs begrenzen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/02-staging-deployment-guard.sh "snippet:bash")
 
-Akzeptiert wird nur ein verknüpfter PR mit:
-
-```text
-merged_at != null
-base.ref == staging
-```
-
-Andernfalls endet der automatische Workflow mit:
-
-```text
-Refusing staging deployment
-```
+Akzeptiert wird nur ein verknüpfter PR mit `merged_at != null` und `base.ref == staging`. Andernfalls endet der automatische Workflow mit `Refusing staging deployment`.
 
 `workflow_dispatch` bleibt davon bewusst ausgenommen und kann manuell gestartet werden.
 
@@ -277,14 +295,11 @@ Die Pipeline sollte nicht als Ersatz für Repository-Schutz verstanden werden.
 
 ## 6. Flux CLI installieren und prüfen
 
-Für den Bootstrap habe ich die Flux CLI 2.9.5 auf einem Admin-Host installiert und den Download per Checksumme geprüft.
+Für den Bootstrap wurde Flux CLI 2.9.5 auf einem Admin-Host installiert und der Download per Checksumme geprüft.
 
-Vor dem Bootstrap:
+Vor dem Bootstrap werden Version und Voraussetzungen geprüft:
 
-```bash
-flux --version
-flux check --pre
-```
+[Flux-Version und Voraussetzungen prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/03-flux-precheck.sh "snippet:bash")
 
 Im verwendeten Cluster meldete der Pre-Check unter anderem:
 
@@ -293,23 +308,13 @@ Kubernetes 1.36.4+k3s1 >=1.33.0-0
 prerequisites checks passed
 ```
 
-Der Admin-Host benötigt für diesen Schritt Zugriff auf den Kubernetes-API-Server und GitHub.
-
-Der spätere normale Deployment-Pfad benötigt diesen Admin-Host nicht mehr.
+Der Admin-Host benötigt für diesen Schritt Zugriff auf den Kubernetes-API-Server und GitHub. Der spätere normale Deployment-Pfad benötigt diesen Admin-Host nicht mehr.
 
 ## 7. Flux gegen den staging-Branch bootstrappen
 
-Der Bootstrap sieht in diesem Aufbau so aus:
+Der verwendete Bootstrap liegt als ausführbares Snippet vor:
 
-```bash
-flux bootstrap github \
-  --owner=0b-ivan \
-  --repository=Blog \
-  --branch=staging \
-  --path=infra/kubernetes/staging \
-  --personal \
-  --token-auth=false
-```
+[Flux gegen den staging-Branch bootstrappen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/04-flux-bootstrap.sh "snippet:bash")
 
 Die zwei entscheidenden Parameter sind:
 
@@ -322,13 +327,7 @@ Flux legt dabei seine eigenen Bootstrap-Manifeste unterhalb des GitOps-Pfads ab 
 
 ## 8. SSH Deploy Key statt GitHub-PAT als Cluster-Credential
 
-Mit
-
-```text
---token-auth=false
-```
-
-verwendet Flux für den laufenden Git-Zugriff einen SSH Deploy Key.
+Mit `--token-auth=false` verwendet Flux für den laufenden Git-Zugriff einen SSH Deploy Key.
 
 Während des Bootstrap-Vorgangs braucht die Flux CLI weiterhin eine passende GitHub-Authentifizierung, um Repository-Konfiguration und Deploy Key einzurichten.
 
@@ -340,31 +339,17 @@ Im Cluster liegt die private SSH-Seite der Git-Verbindung im `flux-system` Secre
 
 ## 9. Prüfen, ob Flux wirklich reconciliert
 
-Nach dem Bootstrap sind zuerst Source und Kustomization interessant:
+Source, Kustomization und Controller lassen sich mit einem gemeinsamen Diagnose-Snippet prüfen:
 
-```bash
-flux get sources git -A
-flux get kustomizations -A
-```
+[Flux-Reconcile und Controller prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
 
-Beide sollten `Ready=True` melden.
-
-Zusätzlich lässt sich die angewendete Revision nachvollziehen:
+Source und Kustomization sollten `Ready=True` melden. Zusätzlich lässt sich die angewendete Revision nachvollziehen:
 
 ```text
 Applied revision: staging@sha1:...
 ```
 
-Damit ist belegt, welchen Git-Stand Flux zuletzt erfolgreich verarbeitet hat.
-
-Für eine genauere Diagnose helfen außerdem:
-
-```bash
-flux get all -A
-kubectl -n flux-system get pods
-kubectl -n flux-system logs deployment/source-controller
-kubectl -n flux-system logs deployment/kustomize-controller
-```
+Damit ist belegt, welchen Git-Stand Flux zuletzt erfolgreich verarbeitet hat. Für tiefergehende Fehleranalyse sind anschließend die Logs von `source-controller` und `kustomize-controller` relevant.
 
 ## 10. Der erste automatische Rollout
 
@@ -388,53 +373,17 @@ Flux
 Kubernetes Deployment
 ```
 
-Auf dem Cluster lässt sich der Zustand prüfen mit:
+Pods, Deployments und die tatsächlich verwendeten Images werden gemeinsam geprüft:
 
-```bash
-kubectl -n blog-staging get pods
-kubectl -n blog-staging get deployments
-kubectl -n blog-staging get pods -o wide
-```
+[Staging-Rollout und verwendete Images prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/06-rollout-image-verification.sh "snippet:bash")
 
-Für die tatsächlich verwendeten Images:
-
-```bash
-kubectl -n blog-staging get deployment blog \
-  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-
-kubectl -n blog-staging get deployment search \
-  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
-```
-
-Die dort sichtbaren SHA-Tags sollten mit den Pins in `kustomization.yaml` übereinstimmen.
+Die ausgegebenen SHA-Tags sollten mit den Pins in `kustomization.yaml` übereinstimmen.
 
 ## 11. Staging muss optisch eindeutig sein
 
-Nur Staging startet den Blog mit:
+Nur Staging startet den Blog mit `staging-server.js`; Production verwendet weiterhin `seo-server.js`.
 
-```text
-staging-server.js
-```
-
-Production verwendet weiterhin:
-
-```text
-seo-server.js
-```
-
-Der Staging-Server ergänzt am ausgelieferten HTML:
-
-```html
-data-environment="staging"
-```
-
-und injiziert:
-
-```text
-/assets/css/staging.css
-```
-
-Zusätzlich erscheint ein sichtbarer `STAGING`-Banner.
+Der Staging-Server ergänzt am ausgelieferten HTML `data-environment="staging"` und injiziert `/assets/css/staging.css`. Zusätzlich erscheint ein sichtbarer `STAGING`-Banner.
 
 Der Rahmen um den Viewport verwendet vier explizite Gradient-Flächen für oben, unten, links und rechts. Die vorherige Variante mit `border-image` war auf WebKit nicht zuverlässig genug.
 
@@ -450,19 +399,9 @@ Pipeline kann Staging maschinell erkennen
 
 Nach dem Bot-Commit wartet GitHub Actions auf die öffentlich erreichbare Staging-Instanz.
 
-Das Blog-Image erhält beim Build eine Versionskennung:
+Das Blog-Image erhält beim Build eine Versionskennung nach dem Muster `<VERSION>-staging.<github-run-number>`. Diese landet im Image unter `/build-info.json`.
 
-```text
-<VERSION>-staging.<github-run-number>
-```
-
-Diese landet im Image unter:
-
-```text
-/build-info.json
-```
-
-Der Workflow prüft anschließend von außen:
+Der Workflow prüft von außen drei Signale:
 
 ```text
 /healthz == ok
@@ -470,17 +409,11 @@ Der Workflow prüft anschließend von außen:
 HTML enthält data-environment="staging"
 ```
 
-Sinngemäß:
+Die vollständige Gate-Logik liegt als Snippet vor:
 
-```bash
-curl -fsS https://staging-blog.obivan.org/healthz
-curl -fsS https://staging-blog.obivan.org/build-info.json
-curl -fsS https://staging-blog.obivan.org/
-```
+[Öffentlichen Staging-Gate prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/07-public-staging-gate.sh "snippet:bash")
 
-Damit wird mehr geprüft als nur ein HTTP-200.
-
-Der Gate belegt, dass **das neu gebaute Blog-Image** über Cloudflare öffentlich ausgeliefert wird und tatsächlich im Staging-Modus läuft.
+Damit wird mehr geprüft als nur ein HTTP-200. Der Gate belegt, dass **das neu gebaute Blog-Image** über Cloudflare öffentlich ausgeliefert wird und tatsächlich im Staging-Modus läuft.
 
 ### Was dieser Gate nicht beweist
 
@@ -488,25 +421,17 @@ Der Search-Container wird im selben Workflow gebaut und auf denselben Git-SHA ge
 
 Auch `/healthz` des Blogs liefert nur den Zustand des Blog-Prozesses und ist kein aggregierter Healthcheck aller Abhängigkeiten.
 
-Für einen strengeren End-to-End-Gate wäre später beispielsweise sinnvoll:
-
-```text
-öffentliche Search-Funktion ausführen
-oder
-separaten Search-Readiness-Test einbauen
-```
-
-Damit ist klar, was der aktuelle Gate garantiert und was nicht.
+Für einen strengeren End-to-End-Gate wäre später beispielsweise eine echte öffentliche Search-Anfrage oder ein separater Search-Readiness-Test sinnvoll.
 
 ## 13. Verifizierten Promotion-Candidate veröffentlichen
 
 Der Production-PR zeigt nicht mehr direkt auf den beweglichen `staging`-Branch.
 
-Nach dem erfolgreichen öffentlichen Gate nimmt der Workflow den GitOps-Commit, der die gerade getesteten Kustomize-Pins enthält, und veröffentlicht genau diesen Stand auf:
+Nach dem erfolgreichen öffentlichen Gate nimmt der Workflow den GitOps-Commit, der die gerade getesteten Kustomize-Pins enthält, und veröffentlicht genau diesen Stand auf `promotion/staging-verified`.
 
-```text
-promotion/staging-verified
-```
+Die konkrete Prüfung und der Fast-Forward-Push sind ausgelagert:
+
+[Verifizierten Promotion-Candidate veröffentlichen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/08-publish-promotion-candidate.sh "snippet:bash")
 
 Der Ablauf ist damit:
 
@@ -530,17 +455,13 @@ manueller Merge
 
 Wichtig ist die Reihenfolge: Der Candidate-Branch wird **erst nach** dem erfolgreichen öffentlichen Gate weitergeschoben.
 
-Der Workflow prüft zusätzlich, ob der verifizierte GitOps-Commit tatsächlich Teil der aktuellen `staging`-Historie ist. Erst danach wird der Candidate veröffentlicht.
-
-Der Push auf `promotion/staging-verified` erfolgt ohne Force-Push. Sollte der Branch unerwartet von der Staging-Historie divergieren, schlägt die Promotion damit fehl, statt einen bestehenden Candidate still zu überschreiben.
+Der Workflow prüft zusätzlich, ob der verifizierte GitOps-Commit tatsächlich Teil der aktuellen `staging`-Historie ist. Der Push auf `promotion/staging-verified` erfolgt ohne Force-Push. Sollte der Branch unerwartet von der Staging-Historie divergieren, schlägt die Promotion fehl, statt einen bestehenden Candidate still zu überschreiben.
 
 ### Warum der Candidate auf den GitOps-Commit zeigt
 
 Gebaut werden die Images aus dem ursprünglichen Merge-Commit. Danach schreibt GitHub Actions diese Image-SHAs aber noch in `infra/kubernetes/staging/kustomization.yaml` und erzeugt dafür einen separaten Bot-Commit.
 
-Genau dieser Bot-Commit beschreibt den Zustand, den Flux ausrollt.
-
-Deshalb zeigt der Promotion-Candidate nicht nur auf den ursprünglichen Code-Commit, sondern auf den verifizierten GitOps-Stand:
+Genau dieser Bot-Commit beschreibt den Zustand, den Flux ausrollt:
 
 ```text
 Merge Commit
@@ -556,24 +477,13 @@ Damit enthält der Production-PR den tatsächlich getesteten Sollzustand.
 
 ## 14. Promotion nach main bleibt manuell
 
-Nach dem erfolgreichen Gate sucht der Workflow nach einem offenen Pull Request mit:
+Nach dem erfolgreichen Gate sucht der Workflow nach einem offenen Pull Request mit `head: promotion/staging-verified` und `base: main`.
 
-```text
-head: promotion/staging-verified
-base: main
-```
+Die Logik zum Aktualisieren beziehungsweise Erzeugen dieses PRs liegt ebenfalls als Snippet vor:
 
-Existiert keiner, wird automatisch ein PR mit dem Titel
+[Production-Promotion-PR öffnen oder aktualisieren](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/09-open-promotion-pr.sh "snippet:bash")
 
-```text
-promote: verified staging to production
-```
-
-angelegt.
-
-Existiert bereits ein solcher PR, bleibt derselbe PR offen und der Candidate-Branch wird erst beim nächsten **erfolgreich verifizierten** Staging-Stand weitergeschoben. Ungeprüfte Commits auf `staging` landen damit nicht automatisch im Production-PR.
-
-Der PR-Text enthält zusätzlich die geprüfte Staging-Version und den verifizierten GitOps-Commit.
+Existiert noch kein PR, wird `promote: verified staging to production` angelegt. Existiert bereits einer, bleibt derselbe PR offen und der Candidate-Branch wird erst beim nächsten **erfolgreich verifizierten** Staging-Stand weitergeschoben. Ungeprüfte Commits auf `staging` landen damit nicht automatisch im Production-PR.
 
 Der letzte Schritt bleibt bewusst manuell:
 
@@ -588,13 +498,7 @@ Ein erfolgreicher Staging-Gate ist damit Voraussetzung für einen neuen Producti
 
 Die Artikel entstehen teilweise in Obsidian und werden über Self-hosted LiveSync mit dem Vault synchronisiert.
 
-Der Publisher bekommt auf dem Server:
-
-```text
-PUBLISHER_BASE_BRANCH=staging
-```
-
-Damit führt `status: publish` nicht mehr direkt zu einem PR gegen `main`.
+Der Publisher bekommt auf dem Server `PUBLISHER_BASE_BRANCH=staging`. Damit führt `status: publish` nicht mehr direkt zu einem PR gegen `main`.
 
 Der Content-Pfad ist nun:
 
@@ -638,17 +542,9 @@ Auch diese Änderungen gehen gegen `staging` und nicht direkt gegen Production.
 
 ## 17. Publisher-Software und Content haben unterschiedliche Deployment-Grenzen
 
-Hier gibt es eine wichtige Unterscheidung.
-
 Der **Content-Publisher** erstellt Pull Requests nach `staging`.
 
-Die **Publisher-Software selbst** läuft aber auf dem Hetzner-System. Änderungen an dieser Software werden weiterhin über den Workflow
-
-```text
-Deploy Obsidian Publisher
-```
-
-von `main` aus auf den Server deployed.
+Die **Publisher-Software selbst** läuft aber auf dem Hetzner-System. Änderungen an dieser Software werden weiterhin über den Workflow `Deploy Obsidian Publisher` von `main` aus auf den Server deployed.
 
 Das ist kein Widerspruch:
 
@@ -696,16 +592,7 @@ Promotion-PR
 manueller Merge nach main
 ```
 
-Nicht mehr Teil des normalen Ablaufs sind:
-
-```text
-manuelles SHA-Kopieren
-kubectl set image
-kubectl rollout restart
-manuelles flux reconcile
-manuelles Anlegen des Promotion-PRs
-Obsidian-PR direkt nach main
-```
+Nicht mehr Teil des normalen Ablaufs sind manuelles SHA-Kopieren, `kubectl set image`, `kubectl rollout restart`, manuelles `flux reconcile`, manuelles Anlegen des Promotion-PRs und ein Obsidian-PR direkt nach `main`.
 
 ## Aktuelle Grenzen des Aufbaus
 
