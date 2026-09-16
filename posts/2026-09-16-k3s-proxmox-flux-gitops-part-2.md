@@ -1,7 +1,7 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 1
-title: "K3s auf Proxmox – Part 2: GitOps mit Flux und echtem Staging"
+version: 2
+title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
 created_at: 2026-09-16
@@ -16,7 +16,7 @@ tags:
   - Proxmox
   - Flux
   - GitOps
-  - GitHub Actions
+  - GitHub-Actions
   - GHCR
   - Kustomize
   - Cloudflare
@@ -32,7 +32,7 @@ search_queries:
     maxRank: 1
 ---
 
-In Part 1 war das Ziel noch relativ simpel: eine Debian-VM auf Proxmox, K3s installieren, Blog und Search deployen, `cloudflared` davor setzen und am Ende über `staging-blog.obivan.org` ein ehrliches `ok` zurückbekommen.
+In Teil I war das Ziel noch relativ simpel: eine Debian-VM auf Proxmox, K3s installieren, Blog und Search deployen, `cloudflared` davor setzen und am Ende über `staging-blog.obivan.org` ein ehrliches `ok` zurückbekommen.
 
 Das hat funktioniert.
 
@@ -82,7 +82,7 @@ automatischer PR staging -> main
 manueller Production-Merge
 ```
 
-Das ist der Stand, den ich in Part 2 aufgebaut habe.
+Das ist der Stand, den ich in Teil II aufgebaut habe.
 
 ## Warum überhaupt GitOps?
 
@@ -298,16 +298,10 @@ Das ersetzt keine saubere Branch Protection, ist aber eine zusätzliche technisc
 
 Flux selbst läuft direkt im K3s-Cluster.
 
-Auf meinem temporären Admin-Host habe ich zuerst die CLI installiert:
+Auf meinem temporären Admin-Host habe ich die Flux CLI 2.9.5 installiert und den Download per Checksumme verifiziert. Danach habe ich zuerst Version und Voraussetzungen geprüft:
 
 ```bash
-curl -s https://fluxcd.io/install.sh | bash
 flux --version
-```
-
-Danach der Pre-Check:
-
-```bash
 flux check --pre
 ```
 
@@ -795,11 +789,11 @@ Das ist für mich der eigentliche Gewinn von GitOps.
 
 ---
 
-## Weiter in Part 3
+## Weiter in Teil III
 
-Part 1 hat die Plattform online gebracht.
+Teil I hat die Plattform online gebracht.
 
-Part 2 hat daraus einen echten GitOps- und Staging-Workflow gemacht.
+Teil II hat daraus einen echten GitOps- und Staging-Workflow gemacht.
 
 Als Nächstes wird es weniger sichtbar, aber mindestens genauso wichtig:
 
@@ -813,6 +807,6 @@ und irgendwann die Frage:
 Brauche ich wirklich mehr als einen Node?
 ```
 
-**Fortsetzung: Part 3 – K3s im Homelab härten: Secrets, Backups, Updates und Observability.**
+**Fortsetzung: Teil III – K3s im Homelab härten: Secrets, Backups, Updates und Observability.**
 
 <!-- series-next: k3s-proxmox-part-3-hardening-secrets-backups-observability -->
