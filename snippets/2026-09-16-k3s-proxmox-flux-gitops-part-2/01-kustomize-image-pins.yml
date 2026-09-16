@@ -1,0 +1,5 @@
+images:
+  - name: ghcr.io/0b-ivan/kernel-notes-blog
+    newTag: <git-sha>
+  - name: ghcr.io/0b-ivan/kernel-notes-search
+    newTag: <git-sha>
