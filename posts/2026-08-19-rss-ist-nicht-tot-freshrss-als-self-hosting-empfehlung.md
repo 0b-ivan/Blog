@@ -21,6 +21,7 @@ search_queries:
     maxRank: 1
   - query: Wie lese ich Artikel verschiedener Webseiten gesammelt mit RSS und FreshRSS?
     maxRank: 1
+snippets:
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.
