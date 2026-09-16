@@ -10,7 +10,7 @@ author: obivan
 reviewed_by: pending
 category: DevOps
 excerpt: Ein schlankes Deployment-Setup mit Hetzner Cloud, Docker Compose und Cloudflare Zero Trust – inklusive Tunnel, Zugriffsschutz und automatischem Deployment.
-tags: Hetzner, Docker, Cloudflare, Zero Trust, DevOps
+tags: Hetzner, Docker, Cloudflare, Zero-Trust, DevOps
 search_queries:
   - query: Wie sichere ich einen internen Admin-Dienst ab, ohne ihn direkt öffentlich erreichbar zu machen?
     maxRank: 1

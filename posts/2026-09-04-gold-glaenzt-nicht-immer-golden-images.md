@@ -14,9 +14,9 @@ tags:
   - AWS
   - EC2
   - AMI
-  - Image Builder
-  - Golden Image
-  - Infrastructure as Code
+  - Image-Builder
+  - Golden-Image
+  - Infrastructure-as-Code
   - DevOps
   - Security
 search_queries:

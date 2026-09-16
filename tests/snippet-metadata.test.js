@@ -17,6 +17,10 @@ describe('shared snippet metadata', () => {
     expect(resolve({}, { legacy: [] })[0]).toMatchObject({ title: 'Link title', language: 'sh', type: 'Shellskript' });
   });
 
+  it('treats empty snippets metadata from Obsidian as no explicit snippets', () => {
+    expect(resolve({ snippets: null })).toEqual(resolve());
+  });
+
   it('supports frontmatter-only entries and conservative format fallbacks', () => {
     expect(resolve({ snippets: [{ file: 'config.yml' }] }, { legacy: [], markdown: '' })[0]).toMatchObject({
       title: 'config.yml', language: 'yaml', type: 'YAML', description: ''

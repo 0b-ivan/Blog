@@ -69,7 +69,8 @@ describe('snippet library and publish ordering', () => {
   it('uses identical frontmatter metadata in the article and the library without changing URLs', async () => {
     const posts = await readPosts();
     const response = await request(createApp()).get('/snippets/manifest.json');
-    expect(response.body).toHaveLength(9);
+    const expectedSnippetCount = posts.reduce((count, post) => count + post.snippets.length, 0);
+    expect(response.body).toHaveLength(expectedSnippetCount);
     for (const snippet of response.body) {
       const post = posts.find((entry) => entry.slug === snippet.post);
       const attributes = [...post.html.matchAll(/data-snippet="([^"]+)"/g)];
