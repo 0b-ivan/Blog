@@ -112,4 +112,19 @@ tags: [AWS, Route Table, "Internet Gateway"]
       'tags: [AWS, Route-Table, "Internet-Gateway"]'
     );
   });
+
+  it('normalizes whitespace in legacy comma-separated tag strings', () => {
+    const raw = `---
+title: Dependabot
+status: publish
+tags: GitHub, Dependabot, Supply Chain, DevOps
+---
+
+# Dependabot
+`;
+
+    expect(normalizeTagWhitespace(raw)).toContain(
+      'tags: GitHub, Dependabot, Supply-Chain, DevOps'
+    );
+  });
 });
