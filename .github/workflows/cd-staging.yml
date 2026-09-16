@@ -237,12 +237,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          body="Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org.
-
-Verified GitOps commit: \`${VERIFIED_SHA}\`
-Promotion branch: \`${PROMOTION_BRANCH}\`
-
-This PR promotes only the latest successfully verified staging candidate to \`main\`. The promotion branch is advanced only after the public staging gate succeeds. Merge remains manual so production is never promoted automatically."
+          body="$(printf '%s\n\n%s\n%s\n\n%s\n' \
+            "Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org." \
+            "Verified GitOps commit: \`${VERIFIED_SHA}\`" \
+            "Promotion branch: \`${PROMOTION_BRANCH}\`" \
+            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
 
           existing="$(gh pr list \
             --repo "$REPOSITORY" \
