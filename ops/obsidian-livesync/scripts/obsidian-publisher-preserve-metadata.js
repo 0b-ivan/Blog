@@ -107,6 +107,20 @@ function normalizeTagWhitespace(raw) {
   return normalized.replace(block, lines.join('\n'));
 }
 
+function normalizeEmptyListField(raw, key) {
+  const normalized = String(raw || '').replace(/\r\n/g, '\n');
+  const block = topLevelBlock(normalized, key);
+  if (!block) {
+    return normalized;
+  }
+
+  if (block === `${key}:` || block === `${key}: null` || block === `${key}: ~`) {
+    return normalized.replace(block, `${key}: []`);
+  }
+
+  return normalized;
+}
+
 class PreservingGitHubPublisher extends GitHubPublisher {
   async preserveSearchQueries(fileName, raw) {
     if (topLevelBlock(raw, 'search_queries')) {
@@ -121,11 +135,17 @@ class PreservingGitHubPublisher extends GitHubPublisher {
 
   async preparedContent(fileName, raw) {
     const preserved = await this.preserveSearchQueries(fileName, raw);
-    const normalized = normalizeTagWhitespace(preserved);
-    if (normalized !== preserved) {
+    const normalizedTags = normalizeTagWhitespace(preserved);
+    if (normalizedTags !== preserved) {
       console.log(`[publisher] ${fileName}: normalized whitespace in tags`);
     }
-    return normalized;
+
+    const normalizedSnippets = normalizeEmptyListField(normalizedTags, 'snippets');
+    if (normalizedSnippets !== normalizedTags) {
+      console.log(`[publisher] ${fileName}: normalized empty snippets to []`);
+    }
+
+    return normalizedSnippets;
   }
 
   async publish({ fileName, raw, title }) {
@@ -174,6 +194,7 @@ async function main() {
   console.log(`[publisher] repository ${repository}, base ${baseBranch}`);
   console.log('[publisher] preserving search_queries from base when absent in Obsidian');
   console.log('[publisher] normalizing tag whitespace to hyphens before publishing');
+  console.log('[publisher] normalizing empty snippets metadata before publishing');
 
   while (true) {
     await runCycle({ vaultPath, tracker, publisher });
@@ -190,6 +211,7 @@ if (require.main === module) {
 
 module.exports = {
   PreservingGitHubPublisher,
+  normalizeEmptyListField,
   normalizeTagWhitespace,
   preserveTopLevelBlock,
   topLevelBlock
