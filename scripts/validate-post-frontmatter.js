@@ -71,6 +71,21 @@ function suggestedTag(value) {
   return String(value || '').trim().replace(/\s+/g, '-');
 }
 
+function tagValues(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 async function markdownFiles(directory) {
   try {
     const entries = await fs.readdir(directory.path, { withFileTypes: true });
@@ -127,10 +142,10 @@ async function main() {
     }
 
     if (Object.prototype.hasOwnProperty.call(data, 'tags')) {
-      if (!Array.isArray(data.tags)) {
-        violations.push(`${displayPath}: 'tags' must be a YAML list`);
+      if (!Array.isArray(data.tags) && typeof data.tags !== 'string') {
+        violations.push(`${displayPath}: 'tags' must be a YAML list or comma-separated string`);
       } else {
-        data.tags.forEach((tag, index) => {
+        tagValues(data.tags).forEach((tag, index) => {
           const text = String(tag ?? '').trim();
           if (!text) {
             violations.push(`${displayPath}: tags[${index}] must not be empty`);
