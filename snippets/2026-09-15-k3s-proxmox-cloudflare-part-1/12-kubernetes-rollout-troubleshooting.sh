@@ -6,7 +6,12 @@ kubectl -n blog-staging rollout status deployment/search
 kubectl -n blog-staging rollout status deployment/blog
 kubectl -n blog-staging get pods,svc -o wide
 
-# Bei Problemen <POD> durch den betroffenen Pod-Namen ersetzen.
-kubectl -n blog-staging describe pod <POD>
-kubectl -n blog-staging logs <POD>
+POD="${1:-}"
+if [ -z "$POD" ]; then
+  echo 'Optional: Pod-Namen als erstes Argument übergeben, um describe/logs auszuführen.'
+  exit 0
+fi
+
+kubectl -n blog-staging describe pod "$POD"
+kubectl -n blog-staging logs "$POD"
 kubectl -n blog-staging get events --sort-by=.lastTimestamp
