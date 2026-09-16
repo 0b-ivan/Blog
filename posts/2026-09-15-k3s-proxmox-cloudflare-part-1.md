@@ -1,6 +1,6 @@
 ---
 id: 2026-09-15-k3s-proxmox-cloudflare-part-1
-version: 3
+version: 4
 title: "K3s auf Proxmox – Teil I: Blog-Staging mit Cloudflare Tunnel"
 status: publish
 date: 2026-09-15
@@ -63,7 +63,7 @@ snippets:
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.
 
-Wenn du bereits ein Docker-Image deiner Anwendung hast, kannst du den Ablauf weitgehend übernehmen. Du musst im Wesentlichen Image, Container-Port, Healthcheck und Domain durch deine eigenen Werte ersetzen.
+Ist bereits ein Docker-Image der Anwendung vorhanden, lässt sich der Ablauf weitgehend übernehmen. Im Wesentlichen müssen nur Image, Container-Port, Healthcheck und Domain an den jeweiligen Stack angepasst werden.
 
 Am Ende läuft diese Kette:
 
@@ -89,18 +89,18 @@ Dabei braucht der Kubernetes-Node weder eine öffentliche IP noch einen NodePort
 
 Für den Nachbau reichen wenige Bausteine:
 
-| Baustein | In meinem Setup | Für dein Setup |
+| Baustein | In meinem Setup | Übertragbares Setup |
 | --- | --- | --- |
 | Hypervisor | Proxmox VE | Proxmox oder vorhandene Linux-VM |
 | VM | Debian 13, 2 vCPU, 4 GB RAM, 32 GB | für kleine Stacks ähnlich ausreichend |
 | Kubernetes | K3s | K3s Single Node |
 | Registry | GHCR privat | GHCR oder andere OCI Registry |
-| Anwendung | Blog + Search | dein Container-Image |
+| Anwendung | Blog + Search | beliebiges Container-Image |
 | Healthcheck | `/healthz` | eigener HTTP-Endpunkt empfohlen |
 | Externer Zugriff | Cloudflare Tunnel | Cloudflare Tunnel |
 | Admin-Zugriff | SSH + Ansible | SSH reicht, Ansible macht es reproduzierbar |
 
-Mein K3s-Node heißt `k3s-blog-01`. Die konkrete interne IP ist für das Konzept egal; wichtig ist nur, dass dein Admin-Rechner den Node per SSH und später auf TCP 6443 erreichen kann.
+Mein K3s-Node heißt `k3s-blog-01`. Die konkrete interne IP ist für das Konzept egal; wichtig ist nur, dass der Admin-Rechner den Node per SSH und später auf TCP 6443 erreichen kann.
 
 ## 1. Debian-VM in Proxmox anlegen
 
@@ -135,7 +135,7 @@ qm disk import "$VMID" "$IMAGE" "$STORAGE"
 qm config "$VMID" | grep '^unused'
 ```
 
-Der Import erscheint danach als `unused0`. Den ausgegebenen Storage-Identifier hängst du als Boot-Disk ein, zum Beispiel:
+Der Import erscheint danach als `unused0`. Der ausgegebene Storage-Identifier wird anschließend als Boot-Disk eingebunden, zum Beispiel:
 
 ```bash
 qm set "$VMID" --scsi0 local-zfs:vm-105-disk-0
@@ -385,7 +385,7 @@ spec:
       targetPort: http
 ```
 
-Die vier Werte, die du fast immer anpassen musst, sind `image`, `containerPort`, der Healthcheck-Pfad und der Service-Port.
+Die vier Werte, die in fast jedem Setup angepasst werden müssen, sind `image`, `containerPort`, der Healthcheck-Pfad und der Service-Port.
 
 Für meinen Blog kommt noch der Search-Service dazu. Beide bleiben reine `ClusterIP`-Services:
 
@@ -608,9 +608,9 @@ ok
 
 Ich hatte zunächst `staging.blog.obivan.org` verwendet. DNS funktionierte, TLS jedoch nicht wie erwartet. Der praktische Unterschied: Ein Zertifikat für `*.obivan.org` deckt `staging-blog.obivan.org`, aber nicht automatisch die zusätzliche Ebene `staging.blog.obivan.org` ab. Für mein Setup war der flachere Hostname deshalb die pragmatische Lösung.
 
-## 14. So überträgst du einen Docker-Compose-Service auf Kubernetes
+## 14. Docker-Compose-Service auf Kubernetes übertragen
 
-Wenn du nicht meinen Blog, sondern deinen eigenen Stack migrieren willst, ist diese Zuordnung nützlicher als jedes vollständige Copy-and-Paste-Manifest:
+Für die Migration eines anderen Stacks ist diese Zuordnung nützlicher als jedes vollständige Copy-and-Paste-Manifest:
 
 | Docker / Compose | Kubernetes |
 | --- | --- |
@@ -717,7 +717,3 @@ Production bleibt dabei weiterhin bewusst ein manueller Merge.
 
 - [[deployment-mit-hetzner-docker-und-cloudflare-zero-trust|Deployment mit Hetzner, Docker und Cloudflare Zero Trust]]
 - [[docker-vs-docker-compose|Docker vs. Docker Compose]]
-
-## Quellen
-
-- [Cloudflare Tunnel](/sources.html#cloudflare-tunnel)
