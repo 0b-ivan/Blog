@@ -36,6 +36,7 @@ env:
   REGISTRY: ghcr.io
   BLOG_IMAGE_NAME: kernel-notes-blog
   SEARCH_IMAGE_NAME: kernel-notes-search
+  PROMOTION_BRANCH: promotion/staging-verified
 
 jobs:
   deploy-staging:
@@ -74,7 +75,7 @@ jobs:
       - name: Build article version history
         run: node scripts/build-post-history.js
 
-      - name: Set immutable image names
+      - name: Set SHA-tagged image names
         id: meta
         shell: bash
         run: |
@@ -159,6 +160,7 @@ jobs:
           git diff -- infra/kubernetes/staging/kustomization.yaml
 
       - name: Commit desired staging state
+        id: desired-state
         env:
           DEPLOY_SHA: ${{ github.sha }}
         run: |
@@ -169,11 +171,14 @@ jobs:
 
           if git diff --cached --quiet; then
             echo 'Staging Kustomize state is already pinned to this image SHA.'
-            exit 0
+          else
+            git commit -m "chore(staging): deploy ${DEPLOY_SHA} [skip ci]"
+            git push origin HEAD:staging
           fi
 
-          git commit -m "chore(staging): deploy ${DEPLOY_SHA} [skip ci]"
-          git push origin HEAD:staging
+          GITOPS_SHA="$(git rev-parse HEAD)"
+          echo "gitops_sha=${GITOPS_SHA}" >> "$GITHUB_OUTPUT"
+          echo "GitOps state to verify: ${GITOPS_SHA}"
 
       - name: Wait for published staging build
         env:
@@ -205,37 +210,66 @@ jobs:
           echo "Timed out waiting for ${EXPECTED_VERSION} to be published on staging." >&2
           exit 1
 
-      - name: Open production promotion PR
+      - name: Publish verified promotion candidate
+        if: github.event_name == 'push'
+        env:
+          VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$VERIFIED_SHA"
+
+          git fetch origin staging
+          if ! git merge-base --is-ancestor "$VERIFIED_SHA" origin/staging; then
+            echo "Refusing to publish promotion candidate: ${VERIFIED_SHA} is not part of current staging history." >&2
+            exit 1
+          fi
+
+          git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
+          echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
+
+      - name: Open or update production promotion PR
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           BUILD_VERSION: ${{ steps.meta.outputs.build_version }}
+          VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
         run: |
           set -euo pipefail
+
+          body="$(printf '%s\n\n%s\n%s\n\n%s\n' \
+            "Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org." \
+            "Verified GitOps commit: \`${VERIFIED_SHA}\`" \
+            "Promotion branch: \`${PROMOTION_BRANCH}\`" \
+            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
 
           existing="$(gh pr list \
             --repo "$REPOSITORY" \
             --state open \
             --base main \
-            --head staging \
+            --head "$PROMOTION_BRANCH" \
             --json number \
             --jq '.[0].number // empty')"
 
           if [ -n "$existing" ]; then
-            echo "Production promotion PR #${existing} is already open; it automatically includes the new staging commit."
+            gh api \
+              --method PATCH \
+              "/repos/${REPOSITORY}/pulls/${existing}" \
+              -f body="$body" >/dev/null
+            echo "Updated production promotion PR #${existing} to verified candidate ${VERIFIED_SHA}."
             exit 0
           fi
 
           gh pr create \
             --repo "$REPOSITORY" \
             --base main \
-            --head staging \
-            --title 'promote: staging to production' \
-            --body "Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org.\n\nThis PR promotes the currently tested \`staging\` state to \`main\`. Merge remains manual so production is never promoted automatically."
+            --head "$PROMOTION_BRANCH" \
+            --title 'promote: verified staging to production' \
+            --body "$body"
 
       - name: Deployment handoff
         run: |
           echo 'Images are in GHCR and the staging GitOps manifest is updated.'
           echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
-          echo 'The public staging build was verified before the production promotion PR was opened.'
+          echo 'The public staging build was verified before promotion/staging-verified was advanced.'
+          echo 'The production promotion PR targets the verified candidate branch and still requires a manual merge.'
