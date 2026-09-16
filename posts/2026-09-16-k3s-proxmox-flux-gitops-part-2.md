@@ -1,6 +1,6 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 3
+version: 4
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
@@ -9,7 +9,7 @@ updated_at: 2026-09-16
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil II baut aus dem K3s-Staging einen GitOps-Workflow: SHA-getaggte Images, Kustomize-Pins, Flux, öffentlicher Deployment-Gate, Obsidian-Publishing und eine bewusst manuelle Production-Freigabe."
+excerpt: "Teil II baut aus dem K3s-Staging einen GitOps-Workflow: SHA-getaggte Images, Kustomize-Pins, Flux, öffentlicher Deployment-Gate, verifizierter Promotion-Candidate, Obsidian-Publishing und eine bewusst manuelle Production-Freigabe."
 tags:
   - Kubernetes
   - K3s
@@ -58,6 +58,8 @@ K3s auf Proxmox
 staging-blog.obivan.org
         ↓
 öffentlicher Deployment-Gate
+        ↓
+promotion/staging-verified
         ↓
 Promotion-PR Richtung main
         ↓
@@ -496,71 +498,93 @@ separaten Search-Readiness-Test einbauen
 
 Damit ist klar, was der aktuelle Gate garantiert und was nicht.
 
-## 13. Promotion nach main: automatisch vorbereiten, manuell mergen
+## 13. Verifizierten Promotion-Candidate veröffentlichen
 
-Erst nach dem erfolgreichen öffentlichen Check läuft der Schritt zum Promotion-PR.
+Der Production-PR zeigt nicht mehr direkt auf den beweglichen `staging`-Branch.
 
-Der Workflow sucht nach:
+Nach dem erfolgreichen öffentlichen Gate nimmt der Workflow den GitOps-Commit, der die gerade getesteten Kustomize-Pins enthält, und veröffentlicht genau diesen Stand auf:
 
 ```text
-head: staging
+promotion/staging-verified
+```
+
+Der Ablauf ist damit:
+
+```text
+staging Merge
+     ↓
+Images bauen
+     ↓
+Kustomize-Pins committen
+     ↓
+Flux reconciliert
+     ↓
+öffentlicher Gate erfolgreich
+     ↓
+promotion/staging-verified
+     ↓
+PR nach main
+     ↓
+manueller Merge
+```
+
+Wichtig ist die Reihenfolge: Der Candidate-Branch wird **erst nach** dem erfolgreichen öffentlichen Gate weitergeschoben.
+
+Der Workflow prüft zusätzlich, ob der verifizierte GitOps-Commit tatsächlich Teil der aktuellen `staging`-Historie ist. Erst danach wird der Candidate veröffentlicht.
+
+Der Push auf `promotion/staging-verified` erfolgt ohne Force-Push. Sollte der Branch unerwartet von der Staging-Historie divergieren, schlägt die Promotion damit fehl, statt einen bestehenden Candidate still zu überschreiben.
+
+### Warum der Candidate auf den GitOps-Commit zeigt
+
+Gebaut werden die Images aus dem ursprünglichen Merge-Commit. Danach schreibt GitHub Actions diese Image-SHAs aber noch in `infra/kubernetes/staging/kustomization.yaml` und erzeugt dafür einen separaten Bot-Commit.
+
+Genau dieser Bot-Commit beschreibt den Zustand, den Flux ausrollt.
+
+Deshalb zeigt der Promotion-Candidate nicht nur auf den ursprünglichen Code-Commit, sondern auf den verifizierten GitOps-Stand:
+
+```text
+Merge Commit
+   ↓ Image Build
+Bot-Commit mit Kustomize-Pins
+   ↓ Flux
+öffentlicher Gate
+   ↓
+promotion/staging-verified
+```
+
+Damit enthält der Production-PR den tatsächlich getesteten Sollzustand.
+
+## 14. Promotion nach main bleibt manuell
+
+Nach dem erfolgreichen Gate sucht der Workflow nach einem offenen Pull Request mit:
+
+```text
+head: promotion/staging-verified
 base: main
 ```
 
-Existiert kein solcher PR, wird automatisch erzeugt:
+Existiert keiner, wird automatisch ein PR mit dem Titel
 
 ```text
-promote: staging to production
+promote: verified staging to production
 ```
 
-Der Merge bleibt manuell.
+angelegt.
 
-Production wird dadurch nicht automatisch freigegeben.
+Existiert bereits ein solcher PR, bleibt derselbe PR offen und der Candidate-Branch wird erst beim nächsten **erfolgreich verifizierten** Staging-Stand weitergeschoben. Ungeprüfte Commits auf `staging` landen damit nicht automatisch im Production-PR.
 
-### Eine wichtige Grenze des aktuellen Promotion-PRs
+Der PR-Text enthält zusätzlich die geprüfte Staging-Version und den verifizierten GitOps-Commit.
 
-Ein Pull Request mit `head: staging` zeigt immer auf den aktuellen Stand dieses Branches.
-
-Das bedeutet:
+Der letzte Schritt bleibt bewusst manuell:
 
 ```text
-Smoke-Test A erfolgreich
-        ↓
-Promotion-PR wird geöffnet
-        ↓
-neuer Commit B landet in staging
-        ↓
-der offene PR enthält Commit B sofort
-        ↓
-Smoke-Test B läuft möglicherweise noch
+Promotion-Candidate automatisch
+Production-Merge manuell
 ```
 
-Die Aussage „der Promotion-PR enthält ausschließlich bereits getestete Commits“ wäre deshalb im aktuellen Aufbau zu stark.
+Ein erfolgreicher Staging-Gate ist damit Voraussetzung für einen neuen Production-Candidate, aber keine automatische Freigabe für Production.
 
-Beim **Erstellen** des PRs wurde der damalige Stand getestet. Ein bereits offener PR kann später jedoch neue Staging-Commits aufnehmen, bevor deren Deployment-Gate abgeschlossen ist.
-
-Deshalb gilt momentan organisatorisch:
-
-```text
-vor dem Merge nach main
-immer den aktuellsten Staging-Run prüfen
-```
-
-Eine technisch strengere Variante wäre ein eigener verifizierter Promotion-Branch, beispielsweise:
-
-```text
-staging
-   ↓ erfolgreicher öffentlicher Gate
-promotion/staging-verified
-   ↓ PR
-main
-```
-
-Dieser Branch würde erst **nach** einem erfolgreichen Smoke-Test auf den verifizierten Commit weitergeschoben. Dann könnte der Promotion-PR nicht vorzeitig ungeprüfte `staging`-Commits aufnehmen.
-
-Das ist eine sinnvolle nächste Härtung des Deployment-Gates.
-
-## 14. Obsidian veröffentlicht jetzt nach staging
+## 15. Obsidian veröffentlicht jetzt nach staging
 
 Die Artikel entstehen teilweise in Obsidian und werden über Self-hosted LiveSync mit dem Vault synchronisiert.
 
@@ -587,12 +611,14 @@ CI + Staging Deployment
   ↓
 öffentlicher Gate
   ↓
-Promotion Richtung main
+promotion/staging-verified
+  ↓
+Promotion-PR Richtung main
 ```
 
 Der Branch-Name ist deterministisch. Weitere Änderungen am selben Artikel aktualisieren deshalb denselben offenen Pull Request.
 
-## 15. draft, publish und archived bleiben getrennt
+## 16. draft, publish und archived bleiben getrennt
 
 Der Publisher reagiert auf drei Zustände:
 
@@ -610,7 +636,7 @@ status: archived
 
 Auch diese Änderungen gehen gegen `staging` und nicht direkt gegen Production.
 
-## 16. Publisher-Software und Content haben unterschiedliche Deployment-Grenzen
+## 17. Publisher-Software und Content haben unterschiedliche Deployment-Grenzen
 
 Hier gibt es eine wichtige Unterscheidung.
 
@@ -638,7 +664,7 @@ Auch der Rückweg zum Vault bleibt Production-basiert. `sync-main-to-obsidian.ym
 
 Damit wird erst der tatsächlich nach Production gemergte Content zurück in den Obsidian-Vault gespiegelt.
 
-## 17. Ein kleiner Inkonsistenz-Fund im Publisher
+## 18. Ein kleiner Inkonsistenz-Fund im Publisher
 
 Die Runtime-Konfiguration zeigt korrekt auf `staging`. Im generischen Publisher-Code existiert jedoch weiterhin ein Textbaustein für automatisch erzeugte PR-Beschreibungen, der von „Merge nach main“ spricht.
 
@@ -662,6 +688,8 @@ GitOps-Pins aktualisieren
 Flux reconciliert
    ↓
 öffentlichen Staging-Gate prüfen
+   ↓
+verifizierten Promotion-Candidate setzen
    ↓
 Promotion-PR
    ↓
@@ -687,8 +715,8 @@ Offen bleiben unter anderem:
 
 ```text
 staging ist noch nicht wirksam branch-geschützt
+promotion/staging-verified ist ebenfalls nicht wirksam branch-geschützt
 SHA-Tags sind nachvollziehbar, aber nicht registry-seitig immutable
-Promotion-PR folgt dem beweglichen staging-Branch
 öffentlicher Gate prüft das Blog-Image, Search nicht separat
 Secrets sind noch nicht vollständig automatisiert verwaltet
 K3s-Version und Installationsartefakte sollen noch stärker gepinnt werden
@@ -747,10 +775,10 @@ feature/* / obsidian/*
          öffentlicher Deployment-Gate
                     │
                     ▼
-       Promotion-PR staging → main
+       promotion/staging-verified
                     │
                     ▼
-       aktuelle Staging-CI nochmals prüfen
+       Promotion-PR Candidate → main
                     │
                     ▼
               manueller Merge
@@ -777,6 +805,8 @@ Cluster-Zustand
  ↓
 öffentlicher Test
  ↓
+verifizierter Promotion-Candidate
+ ↓
 Production-Freigabe
 ```
 
@@ -795,7 +825,9 @@ Teil III kann genau dort ansetzen:
 ```text
 Secrets sauberer verwalten
 K3s-Versionen und Downloads pinnen
-Branch- und Promotion-Gates härten
+Branch-Gates härten
+Image-Digests statt nur Tags prüfen
+Search separat im Deployment-Gate verifizieren
 Backups und Restore testen
 Monitoring und Alerting ergänzen
 Cluster-Hardening
