@@ -73,6 +73,13 @@ function normalizeTagToken(value) {
   return token.replace(/\s+/g, '-');
 }
 
+function normalizeTagList(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => normalizeTagToken(item))
+    .join(', ');
+}
+
 function normalizeTagWhitespace(raw) {
   const normalized = String(raw || '').replace(/\r\n/g, '\n');
   const block = topLevelBlock(normalized, 'tags');
@@ -82,12 +89,12 @@ function normalizeTagWhitespace(raw) {
 
   const lines = block.split('\n');
   const inline = lines[0].match(/^(tags:\s*)\[(.*)\]\s*$/);
+  const scalar = lines[0].match(/^(tags:\s*)(.+?)\s*$/);
+
   if (inline) {
-    const items = inline[2]
-      .split(',')
-      .map((item) => normalizeTagToken(item))
-      .join(', ');
-    lines[0] = `${inline[1]}[${items}]`;
+    lines[0] = `${inline[1]}[${normalizeTagList(inline[2])}]`;
+  } else if (scalar && lines.length === 1) {
+    lines[0] = `${scalar[1]}${normalizeTagList(scalar[2])}`;
   } else {
     for (let index = 1; index < lines.length; index += 1) {
       const item = lines[index].match(/^(\s*-\s*)(.+?)\s*$/);
