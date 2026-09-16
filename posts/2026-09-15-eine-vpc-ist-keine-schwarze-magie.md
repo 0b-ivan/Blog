@@ -15,10 +15,10 @@ tags:
   - VPC
   - Networking
   - Subnet
-  - Route Table
-  - NAT Gateway
-  - Internet Gateway
-  - Security Group
+  - Route-Table
+  - NAT-Gateway
+  - Internet-Gateway
+  - Security-Group
 search_queries:
   - query: Wie funktioniert eine AWS VPC einfach erklärt?
     maxRank: 1
