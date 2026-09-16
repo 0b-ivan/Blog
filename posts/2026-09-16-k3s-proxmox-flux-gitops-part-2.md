@@ -1,6 +1,6 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 2
+version: 3
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
@@ -9,7 +9,7 @@ updated_at: 2026-09-16
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Nach dem ersten K3s-Deployment kommt der spannendere Teil: GitOps mit Flux, immutable SHA-Images, ein eigener staging-Branch, öffentlicher Smoke-Test und ein automatischer Promotion-PR nach main."
+excerpt: "Teil II baut aus dem K3s-Staging einen GitOps-Workflow: SHA-getaggte Images, Kustomize-Pins, Flux, öffentlicher Deployment-Gate, Obsidian-Publishing und eine bewusst manuelle Production-Freigabe."
 tags:
   - Kubernetes
   - K3s
@@ -32,136 +32,87 @@ search_queries:
     maxRank: 1
 ---
 
-In Teil I war das Ziel noch relativ simpel: eine Debian-VM auf Proxmox, K3s installieren, Blog und Search deployen, `cloudflared` davor setzen und am Ende über `staging-blog.obivan.org` ein ehrliches `ok` zurückbekommen.
+Teil I hat die technische Basis geschaffen: Debian auf Proxmox, K3s, interne Services und einen Cloudflare Tunnel bis zum öffentlichen Healthcheck.
 
-Das hat funktioniert.
+Teil II entfernt nun den manuellen Deployment-Pfad.
 
-Aber genau an diesem Punkt beginnt eigentlich erst der interessante Teil.
-
-Denn ein Cluster, den ich nur mit manuellen `kubectl apply`-Kommandos aktuell halte, ist zwar Kubernetes, aber noch lange kein sauberer Deployment-Prozess.
-
-Ich wollte deshalb weg von diesem Ablauf:
+Der Zielzustand ist:
 
 ```text
-Änderung im Repository
+feature/* / obsidian/*
+        ↓ PR + CI
+      staging
         ↓
-GitHub Actions baut Image
+GitHub Actions baut Images
         ↓
-ich kopiere SHA
+GHCR mit Git-SHA-Tags
         ↓
-kubectl set image
+Kustomize-Pins werden aktualisiert
         ↓
-kubectl rollout status
-```
-
-und hin zu diesem:
-
-```text
-Feature / Obsidian
+Git enthält den gewünschten Zustand
         ↓
-Pull Request
+Flux reconciliert
         ↓
-staging
-        ↓
-GitHub Actions
-        ↓
-GHCR
-        ↓
-Git als gewünschter Zustand
-        ↓
-Flux
-        ↓
-K3s
+K3s auf Proxmox
         ↓
 staging-blog.obivan.org
         ↓
-öffentlicher Smoke-Test
+öffentlicher Deployment-Gate
         ↓
-automatischer PR staging -> main
+Promotion-PR Richtung main
         ↓
-manueller Production-Merge
+manuelle Production-Freigabe
 ```
 
-Das ist der Stand, den ich in Teil II aufgebaut habe.
+Production bleibt weiterhin auf Hetzner mit Docker Compose. Kubernetes ist in diesem Aufbau zunächst ausschließlich die Staging-Plattform.
 
-## Warum überhaupt GitOps?
+## Was GitOps hier konkret verändert
 
-Der größte Unterschied ist für mich nicht, dass jetzt ein weiteres Tool im Cluster läuft.
-
-Der eigentliche Unterschied ist die Richtung der Verantwortung.
-
-Vorher habe ich dem Cluster gesagt, was er tun soll:
+Vor Flux sah ein Deployment sinngemäß so aus:
 
 ```text
-Admin
-  ↓
-kubectl
-  ↓
-Cluster
+Image bauen
+   ↓
+SHA kopieren
+   ↓
+kubectl set image
+   ↓
+Rollout prüfen
 ```
 
-Mit Flux läuft es anders:
+Damit existieren zwei Zustände:
 
 ```text
 Git
-  ↓
-Flux beobachtet den gewünschten Zustand
-  ↓
-Cluster gleicht sich selbst daran an
+Cluster
 ```
 
-Der Cluster wird damit nicht mehr aktiv von GitHub Actions oder meinem Laptop gesteuert.
+und beide können voneinander abweichen.
 
-Das war für mein Homelab besonders wichtig, weil der K3s-Node bewusst in einem internen Netz hängt.
-
-GitHub Actions kann und soll `172.22.2.x` überhaupt nicht erreichen.
-
-Stattdessen zieht Flux selbst aus Git.
+Mit Flux wird Git zur Quelle für den gewünschten Cluster-Zustand:
 
 ```text
-GitHub
-   ▲
-   │ HTTPS / SSH outbound
-   │
-Flux im Cluster
+Git
+ ↓
+Flux
+ ↓
+Kubernetes
 ```
 
-Kein eingehender Zugriff auf den Kubernetes-API-Server notwendig.
+GitHub Actions baut weiterhin die Images, greift aber nicht auf den Kubernetes-API-Server zu. Der K3s-Node hängt in meinem internen Netz und muss von GitHub Actions nicht erreichbar sein.
 
-## Ein eigener staging-Branch
+Für den normalen Deployment-Pfad ist deshalb kein öffentlicher Kubernetes-API-Port notwendig.
 
-Bis dahin hatte mein Blog im Wesentlichen nur `main` als relevante Veröffentlichungsgrenze.
+## 1. staging wird zur GitOps-Quelle
 
-Das passt für Production, aber nicht für echtes Staging.
-
-Deshalb gibt es jetzt einen eigenen Branch:
+Der K3s-Cluster beobachtet nicht `main`, sondern:
 
 ```text
-feature/*
-   ↓ PR
-staging
-   ↓
-Staging Deployment
-   ↓ PR
-main
-   ↓
-Production
+Branch: staging
+Pfad:   infra/kubernetes/staging
 ```
 
-Wichtig ist dabei: `staging` ist nicht einfach nur ein Sammelbranch.
-
-Er ist die GitOps-Quelle für den K3s-Cluster.
-
-Flux beobachtet genau diesen Branch und genau diesen Pfad:
-
-```text
-branch: staging
-path:   infra/kubernetes/staging
-```
-
-`main` bleibt dagegen weiter die Produktionsgrenze für den Hetzner-Deploy.
-
-Damit sind die beiden Umgebungen sauber voneinander getrennt:
+Damit sind Staging und Production klar getrennt:
 
 ```text
 staging
@@ -171,106 +122,114 @@ main
    └── Hetzner / Docker Compose
 ```
 
-## Die Staging-Pipeline baut immutable Images
+Code oder Content gelangt zunächst über einen Pull Request nach `staging`. Erst ein späterer, manueller Merge nach `main` verändert Production.
 
-Ein Punkt war mir wichtig: Ich wollte nicht, dass Kubernetes einfach immer wieder `:latest` oder nur `:staging` zieht.
+## 2. Images bekommen einen Git-SHA-Tag
 
-Für Debugging und Rollbacks muss eindeutig nachvollziehbar sein, welcher Commit gerade läuft.
+Der Staging-Workflow baut Blog und Kernel Grep mit dem Commit-SHA als Tag:
 
-Deshalb baut die Pipeline beide Images mit dem Git-Commit als Tag.
-
-Vereinfacht:
-
-```yaml
-BLOG_IMAGE=ghcr.io/0b-ivan/kernel-notes-blog:${GITHUB_SHA}
-SEARCH_IMAGE=ghcr.io/0b-ivan/kernel-notes-search:${GITHUB_SHA}
+```text
+ghcr.io/0b-ivan/kernel-notes-blog:<git-sha>
+ghcr.io/0b-ivan/kernel-notes-search:<git-sha>
 ```
 
-Zusätzlich gibt es weiterhin einen komfortablen `staging`-Tag.
-
-Der relevante Teil ist aber der SHA-Tag.
+Zusätzlich wird ein beweglicher `staging`-Tag geschrieben. Für den Kubernetes-Sollzustand wird aber der SHA-Tag verwendet.
 
 Beispiel:
 
 ```text
-ghcr.io/0b-ivan/kernel-notes-blog:e5c68c850887c175bc4438cd8a2a5091d2e37a0b
+ghcr.io/0b-ivan/kernel-notes-blog:a9bc2daf77e0d5c2fa1e5bafeae95cc0c0428203
 ```
 
-Damit ist klar:
+Damit lässt sich der Zusammenhang direkt nachvollziehen:
 
 ```text
-Commit e5c68c...
-        =
-Image e5c68c...
-        =
-Deployment e5c68c...
+Git Commit
+    ↓
+Image-Tag
+    ↓
+Kustomize-Pin
+    ↓
+Deployment
 ```
 
-Das ist deutlich angenehmer als später herausfinden zu müssen, welches Image irgendwann einmal hinter `latest` lag.
+### SHA-getaggt ist nicht automatisch unveränderlich
 
-## Kustomize hält den gewünschten Image-Stand fest
+An dieser Stelle ist eine begriffliche Trennung wichtig.
 
-Die Kubernetes-Manifeste liegen bereits im Repository.
+Ein Git-SHA-Tag ist **commit-eindeutig**, aber damit noch nicht technisch unveränderlich. Ein Registry-Tag kann grundsätzlich erneut auf ein anderes Image geschrieben werden, wenn die Registry und die Berechtigungen das zulassen.
 
-Der eigentliche Deployment-Stand steckt bei mir in:
+Der aktuelle Aufbau gewinnt also vor allem Nachvollziehbarkeit durch eindeutige Tags.
+
+Eine noch strengere Variante wäre später ein Pin auf den Image-Digest:
+
+```text
+image@sha256:...
+```
+
+Dann referenziert Kubernetes direkt den konkreten Image-Inhalt und nicht nur einen Tag-Namen.
+
+## 3. Kustomize speichert den gewünschten Image-Stand
+
+Die Basis-Manifeste enthalten die Image-Namen. Der aktuell gewünschte Staging-Stand wird in
 
 ```text
 infra/kubernetes/staging/kustomization.yaml
 ```
 
-Dort werden die Images überschrieben:
+festgehalten.
+
+Vereinfacht:
 
 ```yaml
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: <commit-sha>
+    newTag: <git-sha>
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: <commit-sha>
+    newTag: <git-sha>
 ```
 
-Nach erfolgreichem Build ersetzt GitHub Actions dort die Tags mit dem gerade gebauten Commit.
+Nach einem erfolgreichen Build ersetzt der Workflow beide Tags durch den SHA des gerade gebauten Commits.
 
-Damit steht der gewünschte Zustand wieder in Git.
+Damit ist nicht der GitHub-Actions-Run selbst der dauerhafte Sollzustand. Der Sollzustand steht wieder in Git.
 
-Das ist wichtig, weil Flux nicht auf Zuruf irgendein Image deployt.
+## 4. GitHub Actions schreibt den Sollzustand zurück
 
-Flux liest Git.
-
-## Warum die Pipeline zurück nach staging schreibt
-
-Der Ablauf sieht dadurch zunächst etwas ungewöhnlich aus:
+Der Ablauf besteht deshalb aus zwei Git-Ständen:
 
 ```text
 Merge nach staging
         ↓
-GitHub Actions baut Images
+GitHub Actions baut Blog + Search
         ↓
-Kustomize-Tags werden aktualisiert
+Images landen in GHCR
         ↓
-GitHub Actions committet den neuen Soll-Zustand zurück nach staging
+Kustomize bekommt die SHA-Tags
         ↓
-Flux erkennt Änderung
-        ↓
-K3s rollt aus
+Bot-Commit nach staging
 ```
 
-Der Commit sieht zum Beispiel so aus:
+Der Bot-Commit sieht beispielsweise so aus:
 
 ```text
 chore(staging): deploy <sha> [skip ci]
 ```
 
-Das `[skip ci]` ist hier wichtig.
+Danach erkennt Flux die Änderung im GitOps-Pfad und reconciliert den Cluster.
 
-Ohne diese Bremse würde der GitOps-Commit die Pipeline erneut starten, die wieder einen Commit erzeugt, der wieder die Pipeline startet.
+### Warum `[skip ci]` hier nur eine zusätzliche Sicherung ist
 
-Ein sehr kleines Detail, das sonst sehr schnell sehr viele Builds produziert.
+Im Workflow gibt es außerdem einen `paths`-Filter. `infra/kubernetes/staging/**` gehört aktuell nicht zu den Pfaden, die den Staging-Build auslösen.
 
-## Direkte Pushes sollen nicht einfach deployen
+Der reine Kustomize-Bot-Commit würde den Build deshalb bereits wegen dieses Filters nicht erneut starten.
 
-Weil `staging` jetzt eine echte Veröffentlichungsgrenze ist, wollte ich nicht, dass jeder beliebige Push automatisch deployed wird.
+`[skip ci]` bleibt trotzdem sinnvoll: Es dokumentiert die Absicht und bietet eine zweite Sicherung gegen unnötige CI-Läufe, falls die Pfadfilter später erweitert werden.
 
-Der Workflow prüft deshalb, ob der Commit mit einem gemergten Pull Request nach `staging` verknüpft ist.
+Es ist aber nicht korrekt, `[skip ci]` allein als Schleifenbremse zu beschreiben.
+
+## 5. Der automatische Deployment-Guard
+
+Bei normalen Push-Events prüft der Workflow, ob der Commit zu einem gemergten Pull Request mit Zielbranch `staging` gehört.
 
 Vereinfacht:
 
@@ -279,40 +238,66 @@ gh api \
   "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/pulls"
 ```
 
-Danach wird geprüft, ob mindestens ein PR existiert mit:
+Akzeptiert wird nur ein verknüpfter PR mit:
 
 ```text
 merged_at != null
 base.ref == staging
 ```
 
-Wenn nicht:
+Andernfalls endet der automatische Workflow mit:
 
 ```text
 Refusing staging deployment
 ```
 
-Das ersetzt keine saubere Branch Protection, ist aber eine zusätzliche technische Schranke direkt im Deployment-Workflow.
+`workflow_dispatch` bleibt davon bewusst ausgenommen und kann manuell gestartet werden.
 
-## Flux installieren
+### Wichtig: Das ist keine Branch Protection
 
-Flux selbst läuft direkt im K3s-Cluster.
+Der Guard schützt nur den GitHub-Actions-Pfad.
 
-Auf meinem temporären Admin-Host habe ich die Flux CLI 2.9.5 installiert und den Download per Checksumme verifiziert. Danach habe ich zuerst Version und Voraussetzungen geprüft:
+Zum Zeitpunkt dieses Aufbaus ist `staging` im Repository nicht durch GitHub Branch Protection beziehungsweise ein tatsächlich erzwungenes Ruleset geschützt.
+
+Das hat eine wichtige Konsequenz: Flux beobachtet Git direkt. Eine direkte Änderung an `infra/kubernetes/staging/**` könnte deshalb von Flux übernommen werden, ohne dass der oben beschriebene Build-Guard beteiligt ist.
+
+Der Guard verhindert also nicht jeden denkbaren Direkt-Deploy. Er ist eine zusätzliche Schranke für den automatischen Build-Workflow.
+
+Sauberer wäre langfristig:
+
+```text
+Branch Protection / enforced Ruleset
+        +
+Deployment-Guard
+```
+
+Die Pipeline sollte nicht als Ersatz für Repository-Schutz verstanden werden.
+
+## 6. Flux CLI installieren und prüfen
+
+Für den Bootstrap habe ich die Flux CLI 2.9.5 auf einem Admin-Host installiert und den Download per Checksumme geprüft.
+
+Vor dem Bootstrap:
 
 ```bash
 flux --version
 flux check --pre
 ```
 
-Bei meinem Cluster kam dabei unter anderem:
+Im verwendeten Cluster meldete der Pre-Check unter anderem:
 
 ```text
 Kubernetes 1.36.4+k3s1 >=1.33.0-0
 prerequisites checks passed
 ```
 
-Dann der eigentliche Bootstrap:
+Der Admin-Host benötigt für diesen Schritt Zugriff auf den Kubernetes-API-Server und GitHub.
+
+Der spätere normale Deployment-Pfad benötigt diesen Admin-Host nicht mehr.
+
+## 7. Flux gegen den staging-Branch bootstrappen
+
+Der Bootstrap sieht in diesem Aufbau so aus:
 
 ```bash
 flux bootstrap github \
@@ -324,16 +309,16 @@ flux bootstrap github \
   --token-auth=false
 ```
 
-Der entscheidende Teil ist für mich:
+Die zwei entscheidenden Parameter sind:
 
 ```text
 --branch=staging
 --path=infra/kubernetes/staging
 ```
 
-Damit weiß Flux genau, was seine Quelle ist.
+Flux legt dabei seine eigenen Bootstrap-Manifeste unterhalb des GitOps-Pfads ab und konfiguriert den Cluster so, dass genau dieser Repository-Bereich reconciliert wird.
 
-## Deploy Key statt PAT im Cluster
+## 8. SSH Deploy Key statt GitHub-PAT als Cluster-Credential
 
 Mit
 
@@ -341,344 +326,379 @@ Mit
 --token-auth=false
 ```
 
-verwendet Flux für die Git-Verbindung einen SSH-Deploy-Key.
+verwendet Flux für den laufenden Git-Zugriff einen SSH Deploy Key.
 
-Ich wollte bewusst vermeiden, einfach einen breit berechtigten persönlichen GitHub-Token dauerhaft in Kubernetes abzulegen.
+Während des Bootstrap-Vorgangs braucht die Flux CLI weiterhin eine passende GitHub-Authentifizierung, um Repository-Konfiguration und Deploy Key einzurichten.
 
-Der Cluster braucht nur das, was er tatsächlich tun muss: Repository lesen.
+Der persönliche GitHub-Token wird aber nicht als dauerhaftes Git-Credential im Cluster verwendet.
 
-Das ist für diesen Aufbau deutlich passender.
+Ohne `--read-write-key` wird der von Flux angelegte GitHub Deploy Key standardmäßig read-only verwendet. Das passt hier, weil Flux nur den gewünschten Zustand lesen und anwenden soll. Das Zurückschreiben der Kustomize-Pins übernimmt GitHub Actions.
 
-## Der Moment, in dem GitOps wirklich funktioniert
+Im Cluster liegt die private SSH-Seite der Git-Verbindung im `flux-system` Secret.
 
-Nach dem Bootstrap sah der Zustand so aus:
+## 9. Prüfen, ob Flux wirklich reconciliert
+
+Nach dem Bootstrap sind zuerst Source und Kustomization interessant:
 
 ```bash
 flux get sources git -A
 flux get kustomizations -A
 ```
 
-Erwartet:
+Beide sollten `Ready=True` melden.
 
-```text
-flux-system   Ready=True
-```
-
-Bei meinem ersten Lauf zeigte Flux bereits eine Revision vom `staging`-Branch und meldete:
+Zusätzlich lässt sich die angewendete Revision nachvollziehen:
 
 ```text
 Applied revision: staging@sha1:...
 ```
 
-Damit war der wichtige Punkt erreicht:
+Damit ist belegt, welchen Git-Stand Flux zuletzt erfolgreich verarbeitet hat.
 
-Der Cluster hatte seinen gewünschten Zustand aus Git gelesen und angewendet.
+Für eine genauere Diagnose helfen außerdem:
 
-Nicht mein lokales `kubectl` hatte entschieden, was laufen soll.
-
-Git hatte es entschieden.
-
-## Der erste automatische Rollout
-
-Danach kam der erste echte Test.
-
-Ein Commit landet in `staging`.
-
-GitHub Actions baut neue Images und schreibt die SHA-Tags in Kustomize.
-
-Flux erkennt den neuen Git-Stand und Kubernetes startet neue Pods.
-
-Auf dem Cluster konnte ich anschließend sehen:
-
-```text
-blog-...     1/1 Running
-search-...   1/1 Running
+```bash
+flux get all -A
+kubectl -n flux-system get pods
+kubectl -n flux-system logs deployment/source-controller
+kubectl -n flux-system logs deployment/kustomize-controller
 ```
 
-Und die Deployments zeigten exakt dieselben SHA-Tags, die vorher in GHCR gebaut worden waren.
+## 10. Der erste automatische Rollout
 
-Das war für mich der eigentliche Beweis, dass die Kette geschlossen war.
-
-## Ein Test-Blogpost als End-to-End-Probe
-
-Nur auf grüne Controller zu schauen reicht mir bei so einem Setup nicht.
-
-Deshalb habe ich absichtlich einen kleinen Test-Blogpost angelegt.
-
-Nicht weil der Inhalt wichtig war, sondern weil damit wirklich alle Schichten beteiligt waren:
+Nach einem Merge nach `staging` läuft nun diese Kette:
 
 ```text
-Markdown
-  ↓
-Git
-  ↓
+Merge Commit
+   ↓
 GitHub Actions
-  ↓
-Docker Build
-  ↓
+   ↓
+Blog Image + Search Image
+   ↓
 GHCR
-  ↓
-Kustomize
-  ↓
+   ↓
+Kustomize SHA-Pins
+   ↓
+Bot-Commit
+   ↓
 Flux
-  ↓
-K3s
-  ↓
-Blog
-  ↓
-Cloudflare Tunnel
-  ↓
-Browser
+   ↓
+Kubernetes Deployment
 ```
 
-Erst als der Testartikel auf `staging-blog.obivan.org` sichtbar war, war für mich klar: Das ist nicht nur theoretisch GitOps.
+Auf dem Cluster lässt sich der Zustand prüfen mit:
 
-Die komplette Anwendungskette funktioniert.
+```bash
+kubectl -n blog-staging get pods
+kubectl -n blog-staging get deployments
+kubectl -n blog-staging get pods -o wide
+```
 
-Anschließend wurde der Testpost natürlich wieder entfernt.
+Für die tatsächlich verwendeten Images:
 
-## Staging muss sichtbar Staging sein
+```bash
+kubectl -n blog-staging get deployment blog \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
 
-Eine weitere Kleinigkeit ist im Alltag erstaunlich wichtig.
+kubectl -n blog-staging get deployment search \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
 
-Wenn Staging optisch genauso aussieht wie Production, ist ein falscher Tab schnell teuer.
+Die dort sichtbaren SHA-Tags sollten mit den Pins in `kustomization.yaml` übereinstimmen.
 
-Deshalb bekommt nur die Staging-Instanz einen eigenen Startpunkt:
+## 11. Staging muss optisch eindeutig sein
+
+Nur Staging startet den Blog mit:
 
 ```text
 staging-server.js
 ```
 
-Production startet weiterhin normal mit:
+Production verwendet weiterhin:
 
 ```text
 seo-server.js
 ```
 
-Der Staging-Server injiziert zusätzlich:
+Der Staging-Server ergänzt am ausgelieferten HTML:
 
 ```html
 data-environment="staging"
 ```
 
-und eine eigene CSS-Datei:
+und injiziert:
 
 ```text
 /assets/css/staging.css
 ```
 
-Dazu kommt ein deutlich sichtbarer `STAGING`-Banner und ein orange-schwarzer Rahmen um den Viewport.
+Zusätzlich erscheint ein sichtbarer `STAGING`-Banner.
 
-Der Rahmen war übrigens ein kleiner Browser-Stolperstein: `border-image` mit einem wiederholten Gradient sah auf WebKit nicht zuverlässig aus.
+Der Rahmen um den Viewport verwendet vier explizite Gradient-Flächen für oben, unten, links und rechts. Die vorherige Variante mit `border-image` war auf WebKit nicht zuverlässig genug.
 
-Die robuste Variante waren am Ende vier feste Gradient-Flächen für oben, unten, links und rechts.
-
-Nicht besonders elegant, aber deutlich zuverlässiger.
-
-## Nicht nur healthz prüfen
-
-Ein `200 OK` sagt nur, dass irgendeine Version der Anwendung antwortet.
-
-Das reicht für einen echten Deployment-Gate nicht.
-
-Deshalb bekommt das Blog-Image beim Build eine eindeutige Staging-Version:
+Der Marker erfüllt damit zwei Aufgaben:
 
 ```text
-<blog-version>-staging.<github-run-number>
+Mensch erkennt Staging sofort
+        +
+Pipeline kann Staging maschinell erkennen
 ```
 
-Diese landet in:
+## 12. Der öffentliche Deployment-Gate
+
+Nach dem Bot-Commit wartet GitHub Actions auf die öffentlich erreichbare Staging-Instanz.
+
+Das Blog-Image erhält beim Build eine Versionskennung:
+
+```text
+<VERSION>-staging.<github-run-number>
+```
+
+Diese landet im Image unter:
 
 ```text
 /build-info.json
 ```
 
-Der Workflow wartet nach dem GitOps-Commit so lange, bis von außen wirklich genau diese Version zurückkommt.
+Der Workflow prüft anschließend von außen:
+
+```text
+/healthz == ok
+/build-info.json.version == erwartete Build-Version
+HTML enthält data-environment="staging"
+```
 
 Sinngemäß:
 
 ```bash
-curl https://staging-blog.obivan.org/healthz
-curl https://staging-blog.obivan.org/build-info.json
+curl -fsS https://staging-blog.obivan.org/healthz
+curl -fsS https://staging-blog.obivan.org/build-info.json
+curl -fsS https://staging-blog.obivan.org/
 ```
 
-Geprüft wird:
+Damit wird mehr geprüft als nur ein HTTP-200.
+
+Der Gate belegt, dass **das neu gebaute Blog-Image** über Cloudflare öffentlich ausgeliefert wird und tatsächlich im Staging-Modus läuft.
+
+### Was dieser Gate nicht beweist
+
+Der Search-Container wird im selben Workflow gebaut und auf denselben Git-SHA gepinnt. Der öffentliche Smoke-Test prüft seine konkrete Image-Version aber nicht separat.
+
+Auch `/healthz` des Blogs liefert nur den Zustand des Blog-Prozesses und ist kein aggregierter Healthcheck aller Abhängigkeiten.
+
+Für einen strengeren End-to-End-Gate wäre später beispielsweise sinnvoll:
 
 ```text
-healthz == ok
-version == erwartete Build-Version
-HTML enthält data-environment="staging"
+öffentliche Search-Funktion ausführen
+oder
+separaten Search-Readiness-Test einbauen
 ```
 
-Damit weiß die Pipeline nicht nur, dass die Seite erreichbar ist.
+Damit ist klar, was der aktuelle Gate garantiert und was nicht.
 
-Sie weiß, dass **der gerade gebaute Stand** über Cloudflare tatsächlich online ist.
+## 13. Promotion nach main: automatisch vorbereiten, manuell mergen
 
-Das ist ein wichtiger Unterschied.
+Erst nach dem erfolgreichen öffentlichen Check läuft der Schritt zum Promotion-PR.
 
-## Erst danach darf Production vorbereitet werden
-
-An diesem Punkt wollte ich den nächsten manuellen Schritt ebenfalls reduzieren.
-
-Wenn Staging erfolgreich gebaut, von Flux ausgerollt und öffentlich geprüft wurde, gibt es technisch keinen Grund, jedes Mal von Hand einen neuen Pull Request nach `main` anzulegen.
-
-Deshalb macht das jetzt die Pipeline.
-
-Sie prüft zuerst, ob bereits ein Promotion-PR existiert:
+Der Workflow sucht nach:
 
 ```text
 head: staging
 base: main
 ```
 
-Wenn schon einer offen ist, passiert nichts weiter.
-
-Der bestehende PR enthält automatisch auch die neuen Staging-Commits.
-
-Wenn keiner existiert, wird automatisch einer angelegt:
+Existiert kein solcher PR, wird automatisch erzeugt:
 
 ```text
 promote: staging to production
 ```
 
-Der wichtige Punkt:
+Der Merge bleibt manuell.
 
-**Der PR wird nur geöffnet. Er wird nicht automatisch gemerged.**
+Production wird dadurch nicht automatisch freigegeben.
 
-Production bleibt damit weiterhin eine bewusste Entscheidung.
+### Eine wichtige Grenze des aktuellen Promotion-PRs
+
+Ein Pull Request mit `head: staging` zeigt immer auf den aktuellen Stand dieses Branches.
+
+Das bedeutet:
 
 ```text
-Staging automatisch
-Production manuell freigeben
+Smoke-Test A erfolgreich
+        ↓
+Promotion-PR wird geöffnet
+        ↓
+neuer Commit B landet in staging
+        ↓
+der offene PR enthält Commit B sofort
+        ↓
+Smoke-Test B läuft möglicherweise noch
 ```
 
-Genau diese Grenze wollte ich haben.
+Die Aussage „der Promotion-PR enthält ausschließlich bereits getestete Commits“ wäre deshalb im aktuellen Aufbau zu stark.
 
-## Obsidian gehört jetzt ebenfalls in diesen Flow
+Beim **Erstellen** des PRs wurde der damalige Stand getestet. Ein bereits offener PR kann später jedoch neue Staging-Commits aufnehmen, bevor deren Deployment-Gate abgeschlossen ist.
 
-Mein Blog wird nicht nur direkt in Git bearbeitet.
+Deshalb gilt momentan organisatorisch:
 
-Ich schreibe Artikel auch in Obsidian und synchronisiere sie über Self-hosted LiveSync mit CouchDB.
+```text
+vor dem Merge nach main
+immer den aktuellsten Staging-Run prüfen
+```
 
-Der bisherige Publisher erzeugte bei `status: publish` direkt einen Pull Request nach `main`.
+Eine technisch strengere Variante wäre ein eigener verifizierter Promotion-Branch, beispielsweise:
 
-Das wäre mit dem neuen Staging-Modell falsch gewesen.
+```text
+staging
+   ↓ erfolgreicher öffentlicher Gate
+promotion/staging-verified
+   ↓ PR
+main
+```
 
-Deshalb zeigt der Publisher jetzt auf:
+Dieser Branch würde erst **nach** einem erfolgreichen Smoke-Test auf den verifizierten Commit weitergeschoben. Dann könnte der Promotion-PR nicht vorzeitig ungeprüfte `staging`-Commits aufnehmen.
+
+Das ist eine sinnvolle nächste Härtung des Deployment-Gates.
+
+## 14. Obsidian veröffentlicht jetzt nach staging
+
+Die Artikel entstehen teilweise in Obsidian und werden über Self-hosted LiveSync mit dem Vault synchronisiert.
+
+Der Publisher bekommt auf dem Server:
 
 ```text
 PUBLISHER_BASE_BRANCH=staging
 ```
 
-Damit wird aus:
+Damit führt `status: publish` nicht mehr direkt zu einem PR gegen `main`.
 
-```text
-Obsidian
-  ↓
-PR nach main
-```
-
-jetzt:
+Der Content-Pfad ist nun:
 
 ```text
 Obsidian
   ↓
 Publisher
   ↓
-PR nach staging
+obsidian/<artikel-slug>
+  ↓ PR
+staging
   ↓
-CI
+CI + Staging Deployment
   ↓
-Merge
+öffentlicher Gate
   ↓
-Staging Deployment
-  ↓
-öffentlicher Smoke-Test
-  ↓
-automatischer Promotion-PR nach main
+Promotion Richtung main
 ```
 
-Der Content-Workflow folgt damit endlich derselben Deployment-Logik wie normale Codeänderungen.
+Der Branch-Name ist deterministisch. Weitere Änderungen am selben Artikel aktualisieren deshalb denselben offenen Pull Request.
 
-Das gefällt mir besonders gut, weil Obsidian dadurch kein Sonderweg mehr ist.
+## 15. draft, publish und archived bleiben getrennt
 
-## Was mit status: publish passiert
-
-Ein Artikel bleibt zunächst lokal beziehungsweise im LiveSync-Vault.
-
-Erst wenn im Frontmatter steht:
+Der Publisher reagiert auf drei Zustände:
 
 ```yaml
+status: draft
 status: publish
+status: archived
 ```
 
-wird der Publisher aktiv.
+`draft` entfernt einen bereits veröffentlichten Artikel über einen PR wieder aus `posts/` beziehungsweise `archive/`.
 
-Nach dem Debounce-Fenster entsteht ein deterministischer Branch:
+`publish` legt den Artikel unter `posts/` ab oder holt ihn aus dem Archiv zurück.
+
+`archived` verschiebt ihn nach `archive/`.
+
+Auch diese Änderungen gehen gegen `staging` und nicht direkt gegen Production.
+
+## 16. Publisher-Software und Content haben unterschiedliche Deployment-Grenzen
+
+Hier gibt es eine wichtige Unterscheidung.
+
+Der **Content-Publisher** erstellt Pull Requests nach `staging`.
+
+Die **Publisher-Software selbst** läuft aber auf dem Hetzner-System. Änderungen an dieser Software werden weiterhin über den Workflow
 
 ```text
-obsidian/<artikel-slug>
+Deploy Obsidian Publisher
 ```
 
-und ein PR gegen `staging`.
+von `main` aus auf den Server deployed.
 
-Weitere Änderungen am Artikel aktualisieren denselben PR.
-
-Es entstehen also nicht fünf verschiedene Publish-PRs für denselben Text.
-
-Nach dem Merge übernimmt die normale Staging-Pipeline.
-
-Das ist genau die Trennung, die ich wollte:
+Das ist kein Widerspruch:
 
 ```text
-Obsidian entscheidet: bereit zur Veröffentlichung
-GitHub entscheidet: geprüft und gemerged
-Staging entscheidet: technisch lauffähig
-Mensch entscheidet: Production
+Publisher-Code
+main → Hetzner
+
+Artikel-Content
+Obsidian → PR nach staging
 ```
 
-## Was ich heute nicht mehr manuell tun muss
+Auch der Rückweg zum Vault bleibt Production-basiert. `sync-main-to-obsidian.yml` reagiert weiterhin auf Änderungen an `main`.
 
-Nach diesem Umbau sind einige Dinge aus meinem normalen Ablauf verschwunden:
+Damit wird erst der tatsächlich nach Production gemergte Content zurück in den Obsidian-Vault gespiegelt.
 
-```text
-kein kubectl set image
-kein manuelles SHA-Kopieren
-kein kubectl rollout restart
-kein manueller Flux-Reconcile
-kein manueller Production-PR
-kein direkter Obsidian-Publish nach main
-```
+## 17. Ein kleiner Inkonsistenz-Fund im Publisher
 
-Was übrig bleibt, ist im Wesentlichen:
+Die Runtime-Konfiguration zeigt korrekt auf `staging`. Im generischen Publisher-Code existiert jedoch weiterhin ein Textbaustein für automatisch erzeugte PR-Beschreibungen, der von „Merge nach main“ spricht.
+
+Das verändert nicht den tatsächlichen Base-Branch des Pull Requests, ist aber redaktionell irreführend.
+
+Der Base-Branch wird technisch durch `PUBLISHER_BASE_BRANCH=staging` bestimmt. Der Textbaustein sollte separat auf eine neutrale Formulierung wie „nach Merge dieses PR“ umgestellt werden.
+
+## Was nach Teil II automatisch läuft
+
+Der normale Weg benötigt keine manuellen `kubectl set image`-Kommandos mehr:
 
 ```text
 PR prüfen
+   ↓
 Merge nach staging
-Staging ansehen
-Promotion-PR prüfen
-Merge nach main
+   ↓
+Images bauen
+   ↓
+GitOps-Pins aktualisieren
+   ↓
+Flux reconciliert
+   ↓
+öffentlichen Staging-Gate prüfen
+   ↓
+Promotion-PR
+   ↓
+manueller Merge nach main
 ```
 
-Das ist ein deutlich angenehmerer Workflow.
+Nicht mehr Teil des normalen Ablaufs sind:
 
-## Was ich trotzdem bewusst nicht automatisiert habe
+```text
+manuelles SHA-Kopieren
+kubectl set image
+kubectl rollout restart
+manuelles flux reconcile
+manuelles Anlegen des Promotion-PRs
+Obsidian-PR direkt nach main
+```
 
-Ich hätte auch den letzten Merge nach `main` automatisieren können.
+## Aktuelle Grenzen des Aufbaus
 
-Das will ich aber derzeit nicht.
+Teil II ist ein funktionierender GitOps-Pfad, aber noch nicht die endgültige Härtung.
 
-Mein Production-System läuft weiterhin auf Hetzner mit Docker Compose und ist die öffentlich relevante Instanz.
+Offen bleiben unter anderem:
 
-Deshalb bleibt zwischen getestetem Staging und Production eine bewusste Freigabe.
+```text
+staging ist noch nicht wirksam branch-geschützt
+SHA-Tags sind nachvollziehbar, aber nicht registry-seitig immutable
+Promotion-PR folgt dem beweglichen staging-Branch
+öffentlicher Gate prüft das Blog-Image, Search nicht separat
+Secrets sind noch nicht vollständig automatisiert verwaltet
+K3s-Version und Installationsartefakte sollen noch stärker gepinnt werden
+Backups und Restore sind noch nicht systematisch getestet
+Monitoring und Alerting fehlen noch
+```
 
-Automatisierung ist für mich nicht das Ziel an sich.
+Diese Punkte gehören nicht versteckt, sondern bilden direkt den Arbeitsvorrat für die nächste Ausbaustufe.
 
-Sie soll langweilige und fehleranfällige Schritte entfernen, nicht jede Entscheidung abschaffen.
-
-## Der aktuelle Gesamtaufbau
-
-Damit sieht die Architektur jetzt ungefähr so aus:
+## Der Gesamtaufbau
 
 ```text
                  Obsidian
@@ -724,10 +744,13 @@ feature/* / obsidian/*
         staging-blog.obivan.org
                     │
                     ▼
-             öffentlicher Smoke-Test
+         öffentlicher Deployment-Gate
                     │
                     ▼
-       automatischer PR staging -> main
+       Promotion-PR staging → main
+                    │
+                    ▼
+       aktuelle Staging-CI nochmals prüfen
                     │
                     ▼
               manueller Merge
@@ -739,53 +762,25 @@ feature/* / obsidian/*
               blog.obivan.org
 ```
 
-Für ein kleines Homelab-Projekt ist das inzwischen ziemlich viel Infrastruktur.
+Der wesentliche Gewinn ist nicht Flux als einzelnes Tool.
 
-Der entscheidende Punkt ist aber: Jede Komponente hat inzwischen einen klaren Zweck.
-
-K3s führt aus.
-
-Flux reconciliert.
-
-Git beschreibt den Soll-Zustand.
-
-GitHub Actions baut Images und aktualisiert diesen Soll-Zustand.
-
-Cloudflare macht den Dienst von außen erreichbar.
-
-Obsidian bleibt meine Schreiboberfläche.
-
-Und `main` bleibt die bewusste Produktionsgrenze.
-
-## Was ich aus dem Umbau mitnehme
-
-Der größte Lerneffekt war für mich nicht ein bestimmter Flux-Befehl.
-
-Es war die Trennung der Zuständigkeiten.
-
-Vorher war Deployment im Kern ein Skript, das aktiv irgendwo etwas verändert hat.
-
-Jetzt gibt es eine Kette aus klaren Zuständen:
+Der Gewinn ist, dass die Zustände nachvollziehbar voneinander getrennt sind:
 
 ```text
 Code
-  ↓
-Image
-  ↓
+ ↓
+Container-Image
+ ↓
 Git-Sollzustand
-  ↓
+ ↓
 Cluster-Zustand
-  ↓
+ ↓
 öffentlicher Test
-  ↓
+ ↓
 Production-Freigabe
 ```
 
-Jeder Schritt kann überprüft werden.
-
-Und vor allem kann ich später noch nachvollziehen, **warum** eine bestimmte Version auf dem Cluster gelandet ist.
-
-Das ist für mich der eigentliche Gewinn von GitOps.
+Jeder Schritt lässt sich separat prüfen und bei einem Fehler einer konkreten Schicht zuordnen.
 
 ---
 
@@ -793,18 +788,17 @@ Das ist für mich der eigentliche Gewinn von GitOps.
 
 Teil I hat die Plattform online gebracht.
 
-Teil II hat daraus einen echten GitOps- und Staging-Workflow gemacht.
+Teil II hat daraus einen reproduzierbaren GitOps- und Staging-Workflow gemacht und gleichzeitig gezeigt, an welchen Stellen noch echte technische Grenzen bestehen.
 
-Als Nächstes wird es weniger sichtbar, aber mindestens genauso wichtig:
+Teil III kann genau dort ansetzen:
 
 ```text
 Secrets sauberer verwalten
-K3s-Versionen pinnen
+K3s-Versionen und Downloads pinnen
+Branch- und Promotion-Gates härten
 Backups und Restore testen
 Monitoring und Alerting ergänzen
 Cluster-Hardening
-und irgendwann die Frage:
-Brauche ich wirklich mehr als einen Node?
 ```
 
 **Fortsetzung: Teil III – K3s im Homelab härten: Secrets, Backups, Updates und Observability.**
