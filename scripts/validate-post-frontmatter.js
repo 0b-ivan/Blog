@@ -67,6 +67,10 @@ function describeValue(value) {
   return `type=${typeof value} value=${JSON.stringify(value)}`;
 }
 
+function suggestedTag(value) {
+  return String(value || '').trim().replace(/\s+/g, '-');
+}
+
 async function markdownFiles(directory) {
   try {
     const entries = await fs.readdir(directory.path, { withFileTypes: true });
@@ -119,6 +123,24 @@ async function main() {
       const status = String(data.status).trim().toLowerCase();
       if (!allowedStatuses.has(status)) {
         violations.push(`${displayPath}: invalid status '${data.status}', expected draft, publish or archived`);
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(data, 'tags')) {
+      if (!Array.isArray(data.tags)) {
+        violations.push(`${displayPath}: 'tags' must be a YAML list`);
+      } else {
+        data.tags.forEach((tag, index) => {
+          const text = String(tag ?? '').trim();
+          if (!text) {
+            violations.push(`${displayPath}: tags[${index}] must not be empty`);
+            return;
+          }
+
+          if (/\s/.test(text)) {
+            violations.push(`${displayPath}: tag '${text}' contains whitespace; use '${suggestedTag(text)}'`);
+          }
+        });
       }
     }
 
