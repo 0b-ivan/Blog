@@ -1,4 +1,5 @@
 const {
+  normalizeTagWhitespace,
   preserveTopLevelBlock,
   topLevelBlock
 } = require('../ops/obsidian-livesync/scripts/obsidian-publisher-preserve-metadata');
@@ -75,5 +76,40 @@ status: draft
 `;
 
     expect(preserveTopLevelBlock(obsidian, main, 'search_queries')).toBe(obsidian);
+  });
+
+  it('normalizes whitespace in list-style tags without touching article text', () => {
+    const raw = `---
+title: VPC
+status: publish
+tags:
+  - AWS
+  - Route Table
+  - "Security Group"
+---
+
+Route Table bleibt im Artikeltext lesbar.
+`;
+
+    const result = normalizeTagWhitespace(raw);
+
+    expect(result).toContain('  - Route-Table');
+    expect(result).toContain('  - "Security-Group"');
+    expect(result).toContain('Route Table bleibt im Artikeltext lesbar.');
+  });
+
+  it('normalizes whitespace in inline tag arrays', () => {
+    const raw = `---
+title: VPC
+status: publish
+tags: [AWS, Route Table, "Internet Gateway"]
+---
+
+# VPC
+`;
+
+    expect(normalizeTagWhitespace(raw)).toContain(
+      'tags: [AWS, Route-Table, "Internet-Gateway"]'
+    );
   });
 });
