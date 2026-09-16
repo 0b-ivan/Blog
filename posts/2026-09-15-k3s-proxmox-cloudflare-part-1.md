@@ -1,6 +1,6 @@
 ---
 id: 2026-09-15-k3s-proxmox-cloudflare-part-1
-version: 4
+version: 5
 title: "K3s auf Proxmox – Teil I: Blog-Staging mit Cloudflare Tunnel"
 status: publish
 date: 2026-09-15
@@ -59,6 +59,56 @@ snippets:
     description: "Prüft die Erreichbarkeit des Blog-Service über den vollständigen Kubernetes DNS-Namen."
     type: "Shellskript"
     language: "bash"
+  - file: "07-proxmox-vm-bootstrap.sh"
+    title: "Debian-VM für K3s mit qm vorbereiten"
+    description: "Erstellt die Proxmox-VM, importiert die Cloud-Image-Disk und setzt Cloud-Init, Netzwerk und Boot-Konfiguration."
+    type: "Shellskript"
+    language: "bash"
+  - file: "08-ansible-inventory.yml"
+    title: "Ansible-Inventory für den K3s-Node"
+    description: "Zeigt ein minimales Inventory mit Dokumentations-IP für den K3s-Server."
+    type: "Ansible-Inventory"
+    language: "yaml"
+  - file: "09-k3s-validation.sh"
+    title: "K3s-Node und Secrets Encryption validieren"
+    description: "Prüft Node-Status, System-Pods und die aktivierte Verschlüsselung von Kubernetes Secrets."
+    type: "Shellskript"
+    language: "bash"
+  - file: "10-kubeconfig-admin-setup.sh"
+    title: "Kubeconfig auf den Admin-Rechner übernehmen"
+    description: "Kopiert die K3s-Kubeconfig per SSH, setzt die interne Node-Adresse und testet den Zugriff."
+    type: "Shellskript"
+    language: "bash"
+  - file: "11-minimal-http-deployment-service.yml"
+    title: "Minimaler HTTP-Service als Deployment und ClusterIP"
+    description: "Definiert ein übertragbares Deployment mit Readiness/Liveness-Probes und einen internen ClusterIP-Service."
+    type: "Kubernetes-Manifest"
+    language: "yaml"
+  - file: "12-kubernetes-rollout-troubleshooting.sh"
+    title: "Staging-Manifeste anwenden und Rollout prüfen"
+    description: "Wendet Kustomize an, wartet auf Blog und Search und zeigt die wichtigsten Diagnosebefehle."
+    type: "Shellskript"
+    language: "bash"
+  - file: "13-search-startup-probe.yml"
+    title: "Startup-Probe für langsam startenden Search-Service"
+    description: "Gibt einem Service mit Modell- oder Dateninitialisierung ein eigenes Startfenster vor Readiness und Liveness."
+    type: "Kubernetes-Ausschnitt"
+    language: "yaml"
+  - file: "14-cloudflare-tunnel-secret.sh"
+    title: "Cloudflare-Tunnel-Token als Kubernetes Secret anlegen"
+    description: "Legt den Cloudflare-Namespace und das Tunnel-Secret an, ohne den Token in Git zu speichern."
+    type: "Shellskript"
+    language: "bash"
+  - file: "15-external-staging-check.sh"
+    title: "Staging von außen über DNS, HTTP und Healthcheck prüfen"
+    description: "Prüft öffentliche DNS-Auflösung, HTTP-Header und den Healthcheck-Endpunkt."
+    type: "Shellskript"
+    language: "bash"
+  - file: "16-troubleshoot-inside-out.sh"
+    title: "Kubernetes und Cloudflare von innen nach außen debuggen"
+    description: "Prüft Pod, Service, Cluster-DNS, Cross-Namespace-Zugriff, Tunnel und erst zuletzt den öffentlichen Endpunkt."
+    type: "Shellskript"
+    language: "bash"
 ---
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.
@@ -100,11 +150,11 @@ Für den Nachbau reichen wenige Bausteine:
 | Externer Zugriff | Cloudflare Tunnel | Cloudflare Tunnel |
 | Admin-Zugriff | SSH + Ansible | SSH reicht, Ansible macht es reproduzierbar |
 
-Mein K3s-Node heißt `k3s-blog-01`. Die konkrete interne IP ist für das Konzept egal; wichtig ist nur, dass der Admin-Rechner den Node per SSH und später auf TCP 6443 erreichen kann.
+Der K3s-Node heißt in diesem Aufbau `k3s-blog-01`. Die konkrete interne IP ist für das Konzept egal; wichtig ist nur, dass der Admin-Rechner den Node per SSH und später auf TCP 6443 erreichen kann.
 
 ## 1. Debian-VM in Proxmox anlegen
 
-Ich nutze eine Debian-13-Cloud-Image-VM mit diesen Ressourcen:
+Verwendet wird eine Debian-13-Cloud-Image-VM mit diesen Ressourcen:
 
 ```text
 Name:       k3s-blog-01
@@ -115,144 +165,48 @@ Netzwerk:   internes Service-Netz
 Public IP:  keine
 ```
 
-Das lässt sich über die Proxmox-Oberfläche bauen. Wer lieber reproduzierbar arbeitet, kann die VM auch per `qm` vorbereiten. Beispiel mit Platzhaltern:
+Das lässt sich über die Proxmox-Oberfläche bauen. Für einen reproduzierbaren Aufbau steht die komplette `qm`-Variante als Snippet bereit:
 
-```bash
-VMID=105
-VM_NAME=k3s-blog-01
-STORAGE=local-zfs
-BRIDGE=vmbr1_serv
-IMAGE=/var/lib/vz/template/iso/debian-13-generic-amd64.qcow2
+[Debian-VM für K3s mit qm vorbereiten](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/07-proxmox-vm-bootstrap.sh "snippet:bash")
 
-qm create "$VMID" \
-  --name "$VM_NAME" \
-  --cores 2 \
-  --memory 4096 \
-  --net0 "virtio,bridge=${BRIDGE}" \
-  --scsihw virtio-scsi-single
+Der Name des importierten Volumes kann je nach Storage abweichen. Deshalb darf der Beispielwert `local-zfs:vm-105-disk-0` nicht blind übernommen werden; maßgeblich ist die Ausgabe von `qm config`.
 
-qm disk import "$VMID" "$IMAGE" "$STORAGE"
-qm config "$VMID" | grep '^unused'
-```
-
-Der Import erscheint danach als `unused0`. Der ausgegebene Storage-Identifier wird anschließend als Boot-Disk eingebunden, zum Beispiel:
-
-```bash
-qm set "$VMID" --scsi0 local-zfs:vm-105-disk-0
-qm set "$VMID" --ide2 "${STORAGE}:cloudinit"
-qm set "$VMID" --boot order=scsi0
-qm set "$VMID" --serial0 socket --vga serial0
-qm set "$VMID" --agent enabled=1
-qm set "$VMID" --ciuser obivan
-qm set "$VMID" --sshkeys ~/.ssh/id_ed25519.pub
-qm set "$VMID" --ipconfig0 ip=dhcp
-qm start "$VMID"
-```
-
-Der Name des importierten Volumes kann je nach Storage abweichen. Deshalb nicht blind `vm-105-disk-0` übernehmen, sondern vorher die Ausgabe von `qm config` prüfen.
-
-Nach dem Boot muss zuerst nur SSH funktionieren:
-
-```bash
-ssh obivan@<VM-IP>
-```
-
-Für meinen Ansible-Bootstrap kann der Benutzer außerdem `sudo` ohne interaktive Passworteingabe verwenden:
-
-```bash
-sudo -n true
-```
-
-Wenn dieser Befehl ohne Ausgabe und Fehler endet, ist die VM bereit.
+Nach dem Boot reicht zunächst die Prüfung per `ssh obivan@<VM-IP>`. Für den Ansible-Bootstrap sollte zusätzlich `sudo -n true` ohne Ausgabe und Fehler durchlaufen.
 
 ## 2. K3s reproduzierbar mit Ansible installieren
 
-Der Bootstrap liegt bei mir unter `infra/ansible/`. Das Inventory ist absichtlich nicht mit der echten internen IP eingecheckt.
+Der Bootstrap liegt unter `infra/ansible/`. Das Inventory ist absichtlich nicht mit einer echten internen IP eingecheckt.
 
-```bash
-cd infra/ansible
-cp inventory/staging/hosts.yml.example inventory/staging/hosts.yml
-```
+Ein minimales Beispiel:
 
-Danach wird nur die Adresse angepasst:
+[Ansible-Inventory für den K3s-Node](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/08-ansible-inventory.yml "snippet:yaml")
 
-```yaml
-all:
-  children:
-    k3s_servers:
-      hosts:
-        k3s-blog-01:
-          ansible_host: 192.0.2.10
-          ansible_user: obivan
-```
+`192.0.2.10` ist dort nur ein Dokumentationswert. An dieser Stelle gehört die echte IP oder ein interner DNS-Name hinein.
 
-`192.0.2.10` ist hier nur ein Dokumentationswert. Dort gehört die echte IP oder ein interner DNS-Name hinein.
+Vor der Installation sollte `ansible all -m ping` ein `pong` liefern. Anschließend können `ansible-playbook playbooks/k3s.yml --syntax-check` und danach das eigentliche Playbook ausgeführt werden.
 
-Bevor irgendetwas installiert wird, teste ich Ansible und SSH:
-
-```bash
-ansible all -m ping
-```
-
-Erwartet wird:
-
-```text
-pong
-```
-
-Dann Syntax prüfen und den Bootstrap ausführen:
-
-```bash
-ansible-playbook playbooks/k3s.yml --syntax-check
-ansible-playbook playbooks/k3s.yml
-```
-
-Das vollständige Beispiel liegt hier:
+Das vollständige Bootstrap-Beispiel liegt hier:
 
 [K3s-Node mit Ansible bootstrappen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/01-k3s-ansible-bootstrap.yml "snippet:yaml")
 
-Wesentlich sind in meinem K3s-Setup diese Einstellungen:
+Wesentlich sind in diesem K3s-Setup `write-kubeconfig-mode: "0640"`, `secrets-encryption: true` sowie die deaktivierten Komponenten `traefik` und `servicelb`.
 
-```yaml
-write-kubeconfig-mode: "0640"
-secrets-encryption: true
-disable:
-  - traefik
-  - servicelb
-```
-
-Traefik und ServiceLB sind hier nicht defekt oder unerwünscht. Ich brauche sie schlicht nicht, weil der externe HTTP-Pfad später vollständig über `cloudflared` läuft.
+Traefik und ServiceLB sind hier nicht defekt oder unerwünscht. Sie werden schlicht nicht benötigt, weil der externe HTTP-Pfad später vollständig über `cloudflared` läuft.
 
 ## 3. Prüfen, ob Kubernetes wirklich funktioniert
 
-Ein laufender `k3s.service` reicht nicht. Der Node muss aus Kubernetes-Sicht `Ready` sein:
+Ein laufender `k3s.service` reicht nicht. Node, System-Pods und Secrets Encryption werden gemeinsam geprüft:
 
-```bash
-sudo k3s kubectl get nodes -o wide
-```
+[K3s-Node und Secrets Encryption validieren](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/09-k3s-validation.sh "snippet:bash")
 
-Erwartet wird ungefähr:
+Der Node sollte ungefähr so erscheinen:
 
 ```text
 NAME          STATUS   ROLES           VERSION
 k3s-blog-01   Ready    control-plane   v1.x.x+k3s1
 ```
 
-Danach die System-Pods prüfen:
-
-```bash
-sudo k3s kubectl get pods -A
-```
-
-Mindestens CoreDNS und die übrigen benötigten K3s-Systemkomponenten sollten `Running` sein.
-
-Weil Secrets Encryption aktiviert wurde, prüfe ich auch diesen Zustand explizit:
-
-```bash
-sudo k3s secrets-encrypt status
-```
-
-Der relevante Teil ist:
+Mindestens CoreDNS und die übrigen benötigten K3s-Systemkomponenten sollten `Running` sein. Für die Verschlüsselung ist insbesondere diese Ausgabe relevant:
 
 ```text
 Encryption Status: Enabled
@@ -264,61 +218,21 @@ Damit steht die Kubernetes-Basis.
 
 Alle weiteren Befehle können direkt auf dem Node mit `sudo k3s kubectl` ausgeführt werden. Bequemer ist ein normales `kubectl` auf dem Admin-Rechner.
 
-Dort lege ich zuerst das Ziel an:
+Die komplette Übernahme inklusive Ersetzen von `127.0.0.1` durch die interne Node-Adresse ist ausgelagert:
 
-```bash
-mkdir -p ~/.kube
-ssh obivan@<VM-IP> 'sudo cat /etc/rancher/k3s/k3s.yaml' \
-  > ~/.kube/k3s-blog-01.yaml
-chmod 600 ~/.kube/k3s-blog-01.yaml
-```
+[Kubeconfig auf den Admin-Rechner übernehmen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/10-kubeconfig-admin-setup.sh "snippet:bash")
 
-In der Datei zeigt der API-Server zunächst auf `127.0.0.1`. Das muss durch die interne Adresse des K3s-Nodes ersetzt werden:
-
-```yaml
-server: https://<VM-IP>:6443
-```
-
-Dann testen:
-
-```bash
-export KUBECONFIG=~/.kube/k3s-blog-01.yaml
-kubectl get nodes
-```
-
-Wenn hier wieder `Ready` erscheint, können die restlichen Schritte vom Admin-Rechner aus erfolgen.
+In der resultierenden Datei muss der API-Server auf `https://<VM-IP>:6443` zeigen. Wenn `kubectl get nodes` anschließend wieder `Ready` meldet, können die restlichen Schritte vom Admin-Rechner aus erfolgen.
 
 ## 5. Namespace und Registry-Zugriff vorbereiten
 
-Meine Anwendung läuft im Namespace `blog-staging`:
+Die Anwendung läuft im Namespace `blog-staging`. Dieser wird einmalig mit `kubectl create namespace blog-staging` angelegt.
 
-```bash
-kubectl create namespace blog-staging
-```
-
-Für öffentliche Images wäre damit schon genug vorbereitet. Meine Images liegen jedoch privat in GHCR, also braucht Kubernetes ein Pull-Secret.
-
-```bash
-read -s GHCR_TOKEN
-export GHCR_TOKEN
-
-kubectl -n blog-staging create secret docker-registry ghcr-pull \
-  --docker-server=ghcr.io \
-  --docker-username=<GITHUB-USER> \
-  --docker-password="$GHCR_TOKEN"
-
-unset GHCR_TOKEN
-```
-
-Das gleiche als wiederverwendbares Snippet:
+Für öffentliche Images wäre damit bereits genug vorbereitet. Private GHCR-Images benötigen zusätzlich ein Pull-Secret:
 
 [GHCR Pull Secret für den Staging-Namespace](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/02-ghcr-pull-secret.sh "snippet:bash")
 
-Prüfen:
-
-```bash
-kubectl -n blog-staging get secret ghcr-pull
-```
+Das Snippet erwartet `GITHUB_USER` und `GHCR_TOKEN` als Umgebungsvariablen. Mit `kubectl -n blog-staging get secret ghcr-pull` lässt sich anschließend prüfen, ob das Secret vorhanden ist.
 
 Der Token selbst gehört nicht in Git und nicht als Klartext in ein Manifest.
 
@@ -334,74 +248,23 @@ Service
   gibt den Pods eine stabile interne Adresse
 ```
 
-Ein minimales Beispiel für einen HTTP-Service sieht so aus:
+Ein vollständiges, aber bewusst minimales HTTP-Beispiel steht als Kubernetes-Snippet bereit:
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: app
-  namespace: blog-staging
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: app
-  template:
-    metadata:
-      labels:
-        app: app
-    spec:
-      imagePullSecrets:
-        - name: ghcr-pull
-      containers:
-        - name: app
-          image: ghcr.io/OWNER/APP:GIT_SHA
-          ports:
-            - name: http
-              containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            periodSeconds: 15
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: app
-  namespace: blog-staging
-spec:
-  selector:
-    app: app
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
-```
+[Minimaler HTTP-Service als Deployment und ClusterIP](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/11-minimal-http-deployment-service.yml "snippet:yaml")
 
 Die vier Werte, die in fast jedem Setup angepasst werden müssen, sind `image`, `containerPort`, der Healthcheck-Pfad und der Service-Port.
 
-Für meinen Blog kommt noch der Search-Service dazu. Beide bleiben reine `ClusterIP`-Services:
+Für den Blog kommt noch der Search-Service dazu. Beide bleiben reine `ClusterIP`-Services:
 
 [Interne ClusterIP-Services für Blog und Search](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/03-blog-search-services.yml "snippet:yaml")
 
-Der Blog erreicht Search im selben Namespace über:
-
-```text
-http://search:8090/search
-```
+Der Blog erreicht Search im selben Namespace über `http://search:8090/search`.
 
 Das ist der wichtige Unterschied zu Docker-Setups mit fest verdrahteten IPs: Pods dürfen wechseln. Der Service-Name bleibt.
 
 ## 7. Manifeste anwenden und Rollout beobachten
 
-In meinem Repository liegen die Staging-Manifeste unter:
+Im Repository liegen die Staging-Manifeste unter:
 
 ```text
 infra/kubernetes/staging/
@@ -410,48 +273,19 @@ infra/kubernetes/staging/
 └── kustomization.yaml
 ```
 
-Noch ohne Flux kann dieser Stand ganz normal manuell angewendet werden:
+Anwenden, Rollout prüfen und bei Problemen direkt in Pods und Events schauen lässt sich mit einem gemeinsamen Snippet:
 
-```bash
-kubectl apply -k infra/kubernetes/staging
-```
+[Staging-Manifeste anwenden und Rollout prüfen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/12-kubernetes-rollout-troubleshooting.sh "snippet:bash")
 
-Danach nicht sofort den Browser öffnen, sondern zuerst den Rollout prüfen:
-
-```bash
-kubectl -n blog-staging rollout status deployment/search
-kubectl -n blog-staging rollout status deployment/blog
-kubectl -n blog-staging get pods,svc -o wide
-```
-
-Bei Problemen sind diese drei Befehle meistens der schnellste Einstieg:
-
-```bash
-kubectl -n blog-staging describe pod <POD>
-kubectl -n blog-staging logs <POD>
-kubectl -n blog-staging get events --sort-by=.lastTimestamp
-```
-
-Typische Fehler lassen sich damit sofort einer Schicht zuordnen: Registry-Zugriff, Container-Start, Probe, fehlende Umgebungsvariable oder Ressourcenlimit.
+Typische Fehler lassen sich damit meist schnell einer Schicht zuordnen: Registry-Zugriff, Container-Start, Probe, fehlende Umgebungsvariable oder Ressourcenlimit.
 
 ## 8. Die Anwendung zuerst intern testen
 
 Cloudflare kommt erst dazu, wenn Kubernetes intern sauber funktioniert.
 
-Zuerst prüfe ich den Blog direkt über seine ClusterIP und anschließend aus einem temporären Pod über Kubernetes DNS:
+Zuerst wird der Blog direkt über seine ClusterIP und anschließend aus einem temporären Pod über Kubernetes DNS geprüft:
 
 [Blog intern per ClusterIP und Kubernetes DNS testen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/04-internal-healthchecks.sh "snippet:bash")
-
-Der entscheidende Test ist konzeptionell dieser:
-
-```bash
-kubectl -n blog-staging run curl-test \
-  --image=curlimages/curl \
-  --restart=Never \
-  --attach \
-  --rm \
-  -- curl -fsS http://blog/healthz
-```
 
 Erwartet wird:
 
@@ -465,19 +299,11 @@ Wenn das nicht funktioniert, bringt es nichts, gleichzeitig DNS bei Cloudflare o
 
 ## 9. Probes müssen zum Startverhalten passen
 
-Mein Search-Container benötigt beim ersten Start deutlich länger als der kleine Blog-Webserver. Unter anderem werden Modell und Daten initialisiert.
+Der Search-Container benötigt beim ersten Start deutlich länger als der kleine Blog-Webserver. Unter anderem werden Modell und Daten initialisiert.
 
-Dafür verwende ich zusätzlich eine `startupProbe`:
+Dafür wird zusätzlich eine `startupProbe` verwendet:
 
-```yaml
-startupProbe:
-  httpGet:
-    path: /healthz
-    port: http
-  periodSeconds: 5
-  timeoutSeconds: 3
-  failureThreshold: 36
-```
+[Startup-Probe für langsam startenden Search-Service](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/13-search-startup-probe.yml "snippet:yaml")
 
 Erst wenn diese Startphase erfolgreich war, übernehmen Readiness- und Liveness-Probe ihre normalen Aufgaben.
 
@@ -485,39 +311,23 @@ Beim ersten Aufbau hatte Search einmal einen Restart. Aus diesem einzelnen Ereig
 
 ## 10. Cloudflare Tunnel in Kubernetes starten
 
-Jetzt kommt der öffentliche Zugriff dazu. Dafür nutze ich einen bereits in Cloudflare angelegten Tunnel.
+Jetzt kommt der öffentliche Zugriff dazu. Dafür wird ein bereits in Cloudflare angelegter Tunnel verwendet.
 
-Zuerst Namespace und Secret:
+Namespace und Tunnel-Token werden ohne Klartext-Secret im Repository vorbereitet:
 
-```bash
-kubectl create namespace cloudflare
+[Cloudflare-Tunnel-Token als Kubernetes Secret anlegen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/14-cloudflare-tunnel-secret.sh "snippet:bash")
 
-read -s CLOUDFLARE_TUNNEL_TOKEN
-export CLOUDFLARE_TUNNEL_TOKEN
-
-kubectl -n cloudflare create secret generic cloudflared-token \
-  --from-literal=token="$CLOUDFLARE_TUNNEL_TOKEN"
-
-unset CLOUDFLARE_TUNNEL_TOKEN
-```
-
-Das Deployment liest nur die Secret-Referenz:
+Das Deployment liest anschließend nur die Secret-Referenz:
 
 [cloudflared als Deployment im Cluster](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/05-cloudflared-deployment.yml "snippet:yaml")
 
-Danach:
-
-```bash
-kubectl apply -k infra/kubernetes/staging
-kubectl -n cloudflare rollout status deployment/cloudflared
-kubectl -n cloudflare get pods
-```
+Nach `kubectl apply -k infra/kubernetes/staging` lässt sich der Tunnel mit `kubectl -n cloudflare rollout status deployment/cloudflared` und `kubectl -n cloudflare get pods` prüfen.
 
 Der Tunnel baut die Verbindung **aus dem Cluster nach außen** auf. Deshalb muss für diesen HTTP-Pfad kein Port 80 oder 443 zum K3s-Node weitergeleitet werden.
 
 ## 11. Vor Cloudflare den Cross-Namespace-Pfad testen
 
-`cloudflared` läuft bei mir im Namespace `cloudflare`, der Blog in `blog-staging`. Deshalb teste ich genau den DNS-Namen, den später auch der Tunnel verwendet:
+`cloudflared` läuft im Namespace `cloudflare`, der Blog in `blog-staging`. Deshalb wird genau der DNS-Name getestet, den später auch der Tunnel verwendet:
 
 ```text
 blog.blog-staging.svc.cluster.local
@@ -527,11 +337,7 @@ Der Test dazu:
 
 [Cloudflare-Namespace gegen den Blog-Service testen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/06-cross-namespace-healthcheck.sh "snippet:bash")
 
-Erwartet wird wieder:
-
-```text
-ok
-```
+Erwartet wird wieder `ok`.
 
 Wenn dieser Test funktioniert, steht der interne Pfad:
 
@@ -549,7 +355,7 @@ Blog Pod
 
 ## 12. Public Hostname im Tunnel setzen
 
-In Cloudflare zeigt mein Public Hostname auf diesen Origin:
+In Cloudflare zeigt der Public Hostname auf diesen Origin:
 
 ```text
 Hostname:
@@ -581,32 +387,13 @@ Blog Pod :8080
 
 ## 13. Von außen testen
 
-Zuerst DNS:
+DNS-Auflösung, HTTP und Healthcheck sind in einem kleinen Prüf-Snippet zusammengefasst:
 
-```bash
-dig +short staging-blog.obivan.org @1.1.1.1
-```
+[Staging von außen über DNS, HTTP und Healthcheck prüfen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/15-external-staging-check.sh "snippet:bash")
 
-Dann HTTP und Healthcheck:
+Erwartet werden `HTTP/2 200` und für `/healthz` die Ausgabe `ok`.
 
-```bash
-curl -I https://staging-blog.obivan.org
-curl -fsS https://staging-blog.obivan.org/healthz
-```
-
-Erwartet werden:
-
-```text
-HTTP/2 200
-```
-
-und:
-
-```text
-ok
-```
-
-Ich hatte zunächst `staging.blog.obivan.org` verwendet. DNS funktionierte, TLS jedoch nicht wie erwartet. Der praktische Unterschied: Ein Zertifikat für `*.obivan.org` deckt `staging-blog.obivan.org`, aber nicht automatisch die zusätzliche Ebene `staging.blog.obivan.org` ab. Für mein Setup war der flachere Hostname deshalb die pragmatische Lösung.
+Zunächst wurde `staging.blog.obivan.org` verwendet. DNS funktionierte, TLS jedoch nicht wie erwartet. Der praktische Unterschied: Ein Zertifikat für `*.obivan.org` deckt `staging-blog.obivan.org`, aber nicht automatisch die zusätzliche Ebene `staging.blog.obivan.org` ab. Für diesen Aufbau war der flachere Hostname deshalb die pragmatische Lösung.
 
 ## 14. Docker-Compose-Service auf Kubernetes übertragen
 
@@ -625,43 +412,15 @@ Für die Migration eines anderen Stacks ist diese Zuordnung nützlicher als jede
 | private Registry Login | `imagePullSecrets` |
 | `restart: unless-stopped` | Deployment hält gewünschte Replica-Zahl |
 
-Für die erste Migration würde ich **einen Service nach dem anderen** umziehen: erst Deployment + ClusterIP, intern testen, dann Abhängigkeiten, zuletzt den externen Zugriff.
+Für die erste Migration empfiehlt sich **ein Service nach dem anderen**: erst Deployment + ClusterIP, intern testen, dann Abhängigkeiten, zuletzt den externen Zugriff.
 
 ## 15. Fehler systematisch von innen nach außen suchen
 
-Wenn die öffentliche URL nicht funktioniert, prüfe ich nicht alles gleichzeitig, sondern diese Reihenfolge:
+Wenn die öffentliche URL nicht funktioniert, sollte nicht alles gleichzeitig geprüft werden. Die komplette Diagnosekette ist als ausführbares Snippet abgelegt:
 
-```bash
-# 1. Läuft der Pod?
-kubectl -n blog-staging get pods
+[Kubernetes und Cloudflare von innen nach außen debuggen](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/16-troubleshoot-inside-out.sh "snippet:bash")
 
-# 2. Warum läuft er nicht oder wird nicht Ready?
-kubectl -n blog-staging describe pod <POD>
-kubectl -n blog-staging logs <POD>
-
-# 3. Hat der Service Endpoints?
-kubectl -n blog-staging get svc,endpoints
-
-# 4. Funktioniert Service-DNS aus einem Pod?
-kubectl -n blog-staging run curl-test \
-  --image=curlimages/curl \
-  --restart=Never --attach --rm -- \
-  curl -fsS http://blog/healthz
-
-# 5. Erreicht der cloudflared-Namespace den Blog?
-kubectl -n cloudflare run curl-test \
-  --image=curlimages/curl \
-  --restart=Never --attach --rm -- \
-  curl -fsS http://blog.blog-staging.svc.cluster.local/healthz
-
-# 6. Ist der Tunnel gesund?
-kubectl -n cloudflare logs deployment/cloudflared
-
-# 7. Erst jetzt extern testen
-curl -v https://staging-blog.obivan.org/healthz
-```
-
-Damit ist schnell sichtbar, ob der Fehler im Container, in Kubernetes, im Tunnel oder erst davor bei DNS/TLS liegt.
+Die Reihenfolge geht bewusst vom Pod über Service und Cluster-DNS zum Tunnel und erst zuletzt zu DNS/TLS außerhalb des Clusters. Damit ist schnell sichtbar, ob der Fehler im Container, in Kubernetes, im Tunnel oder erst davor liegt.
 
 ## Was nach Teil I funktioniert
 
@@ -693,7 +452,7 @@ Das ist die Grenze von Teil I: **Die Anwendung läuft reproduzierbar auf Kuberne
 
 ## Ausblick auf Teil II
 
-Teil II automatisiert genau diesen funktionierenden Pfad. Dort kommen der `staging`-Branch, immutable Git-SHA-Images, Kustomize-Pins und Flux dazu.
+Teil II automatisiert genau diesen funktionierenden Pfad. Dort kommen der `staging`-Branch, Git-SHA-getaggte Images, Kustomize-Pins und Flux dazu.
 
 Der Ablauf wird dann:
 
@@ -707,6 +466,8 @@ Git schreibt gewünschte SHA-Pins
 Flux reconciliert
       ↓
 öffentlicher Smoke-Test
+      ↓
+verifizierter Promotion-Candidate
       ↓
 Promotion-PR nach main
 ```
