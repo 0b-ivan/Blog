@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+POD="${1:-}"
+
 # 1. Läuft der Pod?
 kubectl -n blog-staging get pods
 
-# 2. Warum läuft er nicht oder wird nicht Ready?
-kubectl -n blog-staging describe pod <POD>
-kubectl -n blog-staging logs <POD>
+# 2. Optional: konkreten Pod genauer prüfen.
+if [ -n "$POD" ]; then
+  kubectl -n blog-staging describe pod "$POD"
+  kubectl -n blog-staging logs "$POD"
+else
+  echo 'Für describe/logs optional den Pod-Namen als erstes Argument übergeben.'
+fi
 
 # 3. Hat der Service Endpoints?
 kubectl -n blog-staging get svc,endpoints
