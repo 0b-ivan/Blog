@@ -1,6 +1,6 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 4
+version: 5
 title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
 status: publish
 date: 2026-09-18
@@ -9,7 +9,7 @@ updated_at: 2026-09-18
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil III härtet das bestehende K3s-Staging schrittweise: reproduzierbare Versionen, GitOps-taugliche Secrets, getestete Backups und Restore sowie Observability ohne unnötige öffentliche Angriffsfläche."
+excerpt: "Teil III räumt die Stellen auf, die beim ersten Aufbau noch pragmatisch gelöst waren: feste K3s-Versionen, SOPS/age für Secrets und als nächster Schritt ein Backup, das auch wirklich zurückgespielt wird."
 tags:
   - Kubernetes
   - K3s
@@ -55,186 +55,213 @@ snippets:
     type: "Shellskript"
     language: "bash"
 ---
+Teil I: Der Blog läuft auf K3s.
 
-Teil I hat den Blog auf K3s gebracht. Teil II hat daraus einen GitOps-Pfad mit Flux, verifiziertem Staging und manueller Production-Freigabe gemacht.
+Teil II: Der Weg von Git bis Staging läuft automatisch über Flux.
 
-Teil III beginnt an einer anderen Stelle: **Der Aufbau funktioniert bereits. Jetzt muss er auch reproduzierbar, wiederherstellbar und beobachtbar werden.**
+Damit war das Setup benutzbar. Aber „läuft“ ist für mich noch nicht dasselbe wie „ich bekomme das in sechs Monaten genauso wieder aufgebaut“.
 
-Der aktuelle Hardening-Plan besteht aus vier getrennten Schritten:
+Genau darum geht es in Teil III.
 
-| Schritt | Ziel | Status |
+Ich will bei einem kaputten Node nicht überlegen müssen, welche K3s-Version damals zufällig im `stable`-Channel lag. Ich will Secrets nicht per Hand im Cluster verteilen. Und ein Backup ist für mich erst dann ein Backup, wenn ich weiß, wie ich es wieder einspiele.
+
+Der Plan ist deshalb bewusst in einzelne Baustellen aufgeteilt:
+
+| Schritt | Was ich erreichen will | Stand |
 | --- | --- | --- |
-| K3s Bootstrap | Version, Installationsquelle und Installer-Hash reproduzierbar festschreiben | umgesetzt |
-| Secrets | GHCR- und Cloudflare-Credentials verschlüsselt über GitOps verwalten | umgesetzt und verifiziert |
-| Backup / Restore | K3s-Datastore und kritische Konfiguration sicher sichern und Rücksicherung testen | geplant |
-| Observability | Node, Pods, Deployments und externen Healthcheck überwachen | geplant |
+| K3s Bootstrap | exakt dieselbe Version und denselben Installer wieder bekommen | umgesetzt |
+| Secrets | GHCR- und Cloudflare-Secrets verschlüsselt über Git verwalten | umgesetzt und getestet |
+| Backup / Restore | Datastore sichern und eine Rücksicherung wirklich durchführen | als Nächstes |
+| Observability | Node, Pods und öffentlichen Blog sinnvoll überwachen | danach |
 
-Die Schritte werden bewusst getrennt umgesetzt. Ein Hardening-Change soll nicht gleichzeitig ein Kubernetes-Upgrade, eine neue Secret-Lösung und ein Monitoring-Stack sein.
+Ich ändere diese Punkte absichtlich nacheinander. Wenn ich gleichzeitig Kubernetes upgrade, Secrets umbaue und Monitoring einziehe, weiß ich beim ersten Fehler wieder nicht, welche Änderung ihn verursacht hat.
 
-## 1. Das erste Problem: `stable` ist kein reproduzierbarer Zustand
+## 1. `stable` war mir zu schwammig
 
-Der bisherige Ansible-Bootstrap verwendete den K3s-`stable`-Channel.
+Mein erstes Ansible-Playbook hat K3s über den `stable`-Channel installiert.
 
-Das ist bequem, bedeutet aber:
+Das ist bequem:
 
 ```text
-Playbook heute
-    ↓
+Playbook ausführen
+      ↓
 stable
-    ↓
-Version X
-
-dasselbe Playbook später
-    ↓
-stable
-    ↓
-Version Y
+      ↓
+K3s läuft
 ```
 
-Damit beschreibt Git nicht vollständig, welche Kubernetes-Version auf einem frisch aufgebauten Node landet.
+Nur ist `stable` kein fester Zustand.
 
-Der bestehende Node läuft auf:
+Heute kann das Version X sein, ein paar Wochen später Version Y. Dasselbe Git-Repository baut dann plötzlich einen anderen Node.
+
+Mein laufender Cluster war zu diesem Zeitpunkt auf:
 
 ```text
 v1.36.4+k3s1
 ```
 
-Teil III friert zunächst genau diesen bekannten Stand ein. Ein Wechsel auf eine neuere K3s-Version wird damit zu einem eigenen, sichtbaren Commit.
+Also habe ich erstmal genau diesen Stand festgenagelt. Noch kein Upgrade, keine neue Baustelle – nur Reproduzierbarkeit.
 
-## 2. Version, Installer-Quelle und Installer-Hash gemeinsam pinnen
+## 2. Ich pinne nicht nur die K3s-Version
 
-Die Versionswerte liegen jetzt zentral unter:
+Nur `INSTALL_K3S_VERSION` zu setzen war mir zu wenig.
+
+Ich wollte drei Dinge festhalten:
+
+```text
+K3s:
+v1.36.4+k3s1
+
+Installer-Commit:
+4dedb15be78017a8ddd5b9e81acd44f3481078ed
+
+SHA-256 von install.sh:
+46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad
+```
+
+Die Werte liegen zentral in:
 
 ```text
 infra/ansible/group_vars/k3s_servers.yml
 ```
 
-Festgeschrieben werden drei Dinge:
+Damit lade ich den Installer nicht mehr von einer beweglichen `get.k3s.io`-URL, sondern direkt aus genau diesem Upstream-Commit.
 
-```text
-K3s Release:
-v1.36.4+k3s1
-
-Upstream-Commit des Installers:
-4dedb15be78017a8ddd5b9e81acd44f3481078ed
-
-SHA-256 des install.sh aus diesem Commit:
-46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad
-```
-
-Der Installer wird damit nicht mehr über die bewegliche URL `get.k3s.io` bezogen. Ansible lädt die Datei direkt aus dem konkreten K3s-Upstream-Commit und akzeptiert sie nur, wenn der lokal gepinnte SHA-256 stimmt.
-
-Das vollständige, reduzierte Beispiel:
+Das Playbook:
 
 [K3s-Version mit Ansible fest pinnen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/01-k3s-version-pin.yml "snippet:yaml")
 
-## 3. Auch das K3s-Binary wird verifiziert
+Wenn der Hash nicht passt, wird nicht installiert.
 
-Die Prüfung des Installer-Skripts ersetzt nicht die Prüfung des eigentlichen K3s-Binaries.
+Das ist simpel, aber genau die Art Fehler, die ich lieber beim Bootstrap sehe als später auf einem halb aktualisierten Node.
 
-Der offizielle K3s-Installer lädt für die angeforderte Release-Version die passende `sha256sum-<arch>.txt` und vergleicht den Hash des Binaries vor der Installation.
+## 3. Der Installer prüft danach auch das eigentliche Binary
 
-Der Ablauf ist damit:
+Die Checksumme von `install.sh` sagt natürlich noch nichts über das heruntergeladene K3s-Binary aus.
+
+Der offizielle Installer lädt für die gewünschte Release-Version zusätzlich die passende `sha256sum-<arch>.txt` und prüft das Binary.
+
+Damit sieht die Kette bei mir so aus:
 
 ```text
 Git
  ↓
-gepinnter Installer-Commit
+gepinntes install.sh
  ↓
-lokaler SHA-256-Pin des Installers
+eigener SHA-256-Check
  ↓
 INSTALL_K3S_VERSION=v1.36.4+k3s1
  ↓
-offizielle Release-Checksumme
+K3s Release-Checksumme
  ↓
-verifiziertes K3s-Binary
+Binary
 ```
 
-Damit sind die zuvor beweglichen Bestandteile kontrolliert und beide Download-Stufen werden geprüft.
+Ich prüfe also beide Stufen und nicht nur das Shellskript.
 
-## 4. Das Playbook wird gleichzeitig zum kontrollierten Upgrade-Pfad
+## 4. Ein K3s-Upgrade ist jetzt ein normaler Git-Change
 
-Das Playbook prüft zuerst die aktuell installierte Version.
+Das Playbook liest zuerst die installierte Version.
 
-Stimmt sie bereits mit `k3s_version` überein, passiert keine Neuinstallation.
+Passt sie zum Pin, macht es nichts.
 
-Weicht sie ab, wird genau die konfigurierte Version installiert. Anschließend prüft Ansible erneut `k3s --version` und bricht ab, falls der erwartete Pin nicht erreicht wurde.
+Passt sie nicht, wird genau die konfigurierte Version installiert und danach nochmal mit `k3s --version` geprüft.
 
-Ein späteres Upgrade besteht deshalb nicht aus einem spontanen `curl | sh`, sondern aus einem überprüfbaren Git-Change:
+Ein Upgrade sieht damit nicht mehr nach:
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+```
+
+aus, sondern nach:
 
 ```text
-k3s_version ändern
-        +
-passenden Upstream-Commit pinnen
-        +
-neuen Installer-SHA-256 hinterlegen
-        ↓
-Pull Request
-        ↓
-Release Notes prüfen
-        ↓
-Ansible ausführen
-        ↓
-Version verifizieren
-        ↓
-Workloads testen
+Version ändern
+   ↓
+Installer-Commit prüfen
+   ↓
+neuen SHA-256 eintragen
+   ↓
+PR
+   ↓
+Release Notes lesen
+   ↓
+Ansible laufen lassen
+   ↓
+Cluster prüfen
 ```
 
-Damit bleiben **Upgrade-Entscheidung** und **Upgrade-Ausführung** voneinander getrennt.
+Das gefällt mir deutlich besser, weil die Entscheidung für ein Upgrade im Git-Verlauf sichtbar bleibt.
 
-## 5. Warum noch nicht direkt auf K3s 1.37 wechseln?
+## 5. Warum ich nicht direkt auf die nächste Minor-Version gegangen bin
 
-Zum Zeitpunkt dieses Schritts ist K3s 1.37 bereits verfügbar. Der laufende Node verwendet jedoch 1.36.4.
+Zu dem Zeitpunkt war K3s 1.37 schon verfügbar.
 
-Teil III startet absichtlich ohne Versionssprung. Das Ziel dieses Commits ist zunächst Reproduzierbarkeit. Ein Upgrade auf eine neue Kubernetes-Minor-Version bringt ein anderes Risikoprofil mit und bekommt deshalb einen eigenen Change mit eigener Prüfung.
+Ich habe trotzdem zuerst 1.36.4 gepinnt.
 
-## 6. Secrets: SOPS + age ohne halbfertigen Flux-Zustand
+Der Grund ist ziemlich unspektakulär: Ich wollte zwei Änderungen nicht miteinander vermischen.
 
-Noch nicht GitOps-tauglich sind aktuell insbesondere:
+```text
+Änderung A: Bootstrap reproduzierbar machen
+Änderung B: Kubernetes-Version wechseln
+```
+
+Erst A sauber machen, testen, dann B als eigenen Change. Falls beim Upgrade später etwas schiefgeht, weiß ich wenigstens, wonach ich suchen muss.
+
+## 6. Die nächste unsaubere Ecke waren die Secrets
+
+Bis dahin lagen zwei wichtige Secrets nur im Cluster:
 
 ```text
 blog-staging/ghcr-pull
 cloudflare/cloudflared-token
 ```
 
-Diese Secrets existieren bereits im Cluster, aber nicht im Git-Sollzustand.
+Das funktioniert technisch. GitOps ist es aber nicht.
 
-Flux unterstützt SOPS direkt über `spec.decryption`. Für age kann ein Kubernetes-Secret mit einem Schlüssel verwendet werden, dessen Name auf `.agekey` endet. Die eigentlichen Kubernetes-Secrets bleiben dabei als verschlüsselte YAML-Dateien im Repository; entschlüsselt wird erst im Cluster.
+Wenn ich den Cluster neu aufbaue, fehlen genau diese Dinge und ich muss mich wieder daran erinnern, wie ich sie damals angelegt habe.
 
-Die Migration wird absichtlich in drei Phasen getrennt.
+Klartext im Repository kommt natürlich nicht infrage. Deshalb habe ich SOPS + age genommen.
 
-Auf dem Admin-Rechner werden dafür `kubectl`, `age-keygen` und `sops` benötigt. Die Hilfsskripte brechen ab, wenn eines dieser Werkzeuge fehlt.
+Flux kann SOPS direkt beim Reconcile entschlüsseln. Im Repository liegen nur verschlüsselte Secret-Manifeste. Der private age-Key bleibt außerhalb von Git.
 
-### 6.1 Age-Key erzeugen und nur außerhalb von Git speichern
+## 6.1 Den age-Key will ich nicht aus Versehen committen
 
-Der private Schlüssel liegt standardmäßig unter:
+Der private Key liegt bei mir standardmäßig unter:
 
 ```text
 ~/.config/sops/age/keys.txt
 ```
 
-Das Bootstrap-Skript verweigert einen Pfad innerhalb des Git-Repositories und gibt den privaten Key nicht auf stdout aus.
+Das Bootstrap-Skript prüft extra, dass der Pfad nicht innerhalb des Repositories liegt und schreibt den privaten Key nicht ins Terminal:
 
 [SOPS-age-Key für Flux vorbereiten](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/02-bootstrap-sops-age.sh "snippet:bash")
 
-Der gleiche Key wird anschließend als Kubernetes-Secret `flux-system/sops-age` hinterlegt. Der Key-Eintrag heißt `identity.agekey`, damit der Flux-Kustomize-Controller ihn eindeutig als age-Identity erkennt.
-
-Der private Schlüssel muss zusätzlich außerhalb des Clusters gesichert werden. Sonst wäre ein vollständiger Clusterverlust gleichzeitig ein Verlust der Fähigkeit, die Git-Secrets zu entschlüsseln.
-
-### 6.2 Bestehende Secrets exportieren, aber niemals im Worktree als Klartext ablegen
-
-Der zweite Schritt liest die bereits funktionierenden Secrets direkt aus Kubernetes:
+Flux braucht denselben Key im Cluster. Dort landet er als:
 
 ```text
-blog-staging/ghcr-pull
-cloudflare/cloudflared-token
+flux-system/sops-age
 ```
 
-Klartext bzw. die Kubernetes-`data`-Werte landen nur in einem per `mktemp` erzeugten temporären Verzeichnis. Von dort werden sie unmittelbar mit SOPS und dem öffentlichen age-Recipient verschlüsselt.
+mit dem Eintrag:
+
+```text
+identity.agekey
+```
+
+Wichtig ist aber: **Der Key im Cluster ist nicht mein Backup.**
+
+Wenn der Cluster komplett weg ist, brauche ich den privaten age-Key trotzdem noch irgendwo außerhalb davon.
+
+## 6.2 Die vorhandenen Secrets habe ich aus dem laufenden Cluster übernommen
+
+Ich wollte nicht neue GHCR- oder Cloudflare-Credentials erfinden, obwohl die vorhandenen bereits funktionieren.
+
+Darum liest das Skript die beiden Secrets direkt aus Kubernetes, legt die Klartextdaten nur in einem temporären Verzeichnis ab und verschlüsselt sie sofort mit SOPS:
 
 [Bestehende Cluster-Secrets mit SOPS verschlüsseln](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/03-export-encrypt-staging-secrets.sh "snippet:bash")
 
-Im Repository entstehen danach ausschließlich:
+Im Repository landen nur:
 
 ```text
 infra/kubernetes/staging/secrets/
@@ -242,37 +269,48 @@ infra/kubernetes/staging/secrets/
 └── cloudflared-token.sops.yaml
 ```
 
-SOPS verschlüsselt nur `data` beziehungsweise `stringData`. `apiVersion`, `kind`, `metadata`, Name und Namespace bleiben lesbar, damit Flux und Kustomize die Ressourcen verarbeiten können.
+Name und Namespace dürfen lesbar bleiben. Die eigentlichen Werte unter `data` beziehungsweise `stringData` sind verschlüsselt.
 
-### 6.3 Flux-Decryption erst aktivieren, wenn Key und Ciphertext geprüft sind
+## 6.3 Bei SOPS ist die Reihenfolge wichtiger als gedacht
 
-Der kritische Teil ist die Reihenfolge.
+Hier bin ich beim ersten Rollout tatsächlich in einen kleinen Bootstrap-Zirkel gelaufen.
 
-Würde `spec.decryption` aktiviert, bevor `flux-system/sops-age` vorhanden ist, könnte die Kustomization nicht mehr sauber reconciliieren. Würden umgekehrt verschlüsselte Secret-Manifeste ohne Decryption in die aktive Kustomization aufgenommen, wären die Ressourcen ebenfalls nicht anwendbar.
+Flux soll die verschlüsselten Secrets aus Git lesen. Dafür muss die laufende Kustomization aber bereits wissen, **wie** sie SOPS entschlüsseln soll.
 
-Deshalb prüft das Aktivierungsskript zuerst:
+Wenn ich zuerst nur die verschlüsselten Dateien in Git aktiviere, sagt Flux sinngemäß:
 
 ```text
-sops-age Secret vorhanden?
-        ↓
+Secret ... is SOPS encrypted,
+configuring decryption is required
+```
+
+Wenn ich umgekehrt Decryption aktiviere, aber Key oder Secret-Dateien fehlen, ist der Zustand ebenfalls kaputt.
+
+Darum prüft mein Skript zuerst alles, bevor es überhaupt den Git-Zustand vorbereitet:
+
+```text
+sops-age vorhanden?
+      ↓
 beide .sops.yaml vorhanden?
-        ↓
-lokal mit demselben Key entschlüsselbar?
-        ↓
-erst jetzt gotk-sync.yaml patchen
-        ↓
-erst jetzt Secret-Ressourcen in Kustomize aufnehmen
+      ↓
+lokal entschlüsselbar?
+      ↓
+Flux-Decryption eintragen
+      ↓
+Secret-Ressourcen in Kustomize aufnehmen
 ```
 
 [Flux-SOPS-Git-Zustand vorbereiten](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/04-activate-flux-sops.sh "snippet:bash")
 
-Das Skript committed nichts selbst. Nach der Änderung bleiben `git diff`, CI und der normale Staging-PR weiterhin die Freigabestellen.
+Das Skript committed absichtlich nichts. Ich will danach immer noch ganz normal `git diff`, CI und den PR sehen.
 
-### 6.4 Der einmalige Flux-Bootstrap-Zirkel
+## 6.4 Der erste SOPS-Rollout braucht einmal Hilfe
 
-Beim ersten echten Rollout zeigte sich ein wichtiger Bootstrap-Effekt: Die laufende `flux-system`-Kustomization kann ein Git-Manifest mit SOPS-Secrets nicht anwenden, solange ihre **Live-Spec** noch keine Decryption-Konfiguration enthält. Gleichzeitig liegt genau diese neue Decryption-Spec erst im Git-Commit, den Flux anwenden soll.
+Der interessante Haken kam danach.
 
-Der beobachtete Zustand war eindeutig:
+Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende** Flux-Kustomization hatte aber noch keine Decryption-Konfiguration und konnte deshalb genau den Commit nicht anwenden, der diese Konfiguration enthält.
+
+Bei mir sah das so aus:
 
 ```text
 Ready=False
@@ -280,82 +318,77 @@ Secret/blog-staging/ghcr-pull is SOPS encrypted,
 configuring decryption is required for this secret to be reconciled
 ```
 
-Die Lösung ist ein einmaliger, kontrollierter Live-Bootstrap **nachdem** der gewünschte SOPS-Zustand bereits in `origin/staging` liegt:
+Klassisches Henne-Ei-Problem.
+
+Dafür gibt es jetzt einen einmaligen Bootstrap:
 
 [Live-Flux einmalig für SOPS bootstrappen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/05-bootstrap-live-flux-sops.sh "snippet:bash")
 
-Das Skript verweigert den Patch, solange `origin/staging` nicht bereits Decryption, beide Secret-Ressourcen und echte SOPS-Ciphertexte enthält. Erst danach patcht es die laufende Kustomization, stößt den Reconcile an und wartet auf `Ready=True`.
+Das Skript macht den Live-Patch **erst**, wenn es vorher geprüft hat, dass in `origin/staging` bereits alles sauber vorbereitet ist:
 
-Im realen Rollout wechselte Flux danach auf:
+- Decryption-Konfiguration
+- beide Secret-Ressourcen
+- echte SOPS-Ciphertexte
+
+Danach patcht es die laufende Kustomization, startet den Reconcile und wartet auf `Ready=True`.
+
+Bei meinem Rollout kam anschließend:
 
 ```text
 READY=True
 Applied revision: staging@sha1:4d7e5ab8b99421496349b4833e1355efcf4e60bb
 ```
 
-Der anschließende öffentliche Staging-Gate lief vollständig erfolgreich durch.
+Und der öffentliche Staging-Check war danach ebenfalls grün.
 
+Genau so wollte ich es: einmaliger Bootstrap, danach wieder normaler GitOps-Betrieb.
 
-### 6.5 CI blockiert Klartext und halbfertige Migrationen
+## 6.5 CI soll mich vor einem dummen Secret-Commit schützen
 
-Zusätzlich läuft jetzt bei jedem PR:
+Nur in die README zu schreiben „bitte keine Secrets committen“ reicht mir nicht.
 
-```text
+Deshalb läuft bei jedem PR:
+
+```bash
 bash scripts/check-gitops-secrets.sh
 ```
 
-Der Guard blockiert unter anderem:
+Der Check blockiert unter anderem:
 
 - getrackte `.agekey`-Dateien
 - Secret-Dateien ohne SOPS-Metadaten
-- Klartextwerte unter `data` oder `stringData`
-- verschlüsselte Secret-Dateien ohne aktivierte Flux-Decryption
-- aktivierte Flux-Decryption ohne die erwarteten verschlüsselten Secret-Ressourcen
+- Klartext unter `data` oder `stringData`
+- SOPS-Secrets ohne aktivierte Flux-Decryption
+- Decryption ohne die erwarteten verschlüsselten Secret-Ressourcen
 
-Damit reicht nicht mehr nur die Konvention „keine Secrets committen“. Der Zustand wird maschinell geprüft.
+Das ersetzt keinen sauberen Umgang mit Credentials. Aber es fängt genau die Fehler ab, die beim schnellen Basteln sonst irgendwann im Git-Verlauf landen.
 
-### 6.6 Verifizierter Secret-Rollout
+## Wo ich nach diesem Schritt stehe
 
-Die Migration wurde gegen den laufenden Staging-Cluster durchgeführt. Beide bestehenden Secrets wurden aus Kubernetes gelesen, lokal mit SOPS verschlüsselt und als Ciphertext committed.
-
-Nach dem einmaligen Live-Bootstrap konnte Flux den neuen Git-Sollzustand erfolgreich anwenden. Der Staging-Deploy inklusive öffentlichem Health-/Build-Gate lief anschließend vollständig grün durch.
-
-Der reproduzierbare Übergang ist damit:
+Aktuell ist erledigt:
 
 ```text
-age-Key außerhalb Git
-        ↓
-sops-age im Cluster
-        ↓
-bestehende Secrets exportieren + verschlüsseln
-        ↓
-Git-Sollzustand vorbereiten
-        ↓
-PR + CI
-        ↓
-Merge nach staging
-        ↓
-einmaliger Live-Flux-SOPS-Bootstrap
-        ↓
-Flux Ready=True
-        ↓
-öffentlicher Staging-Gate
+K3s stable Channel          raus
+K3s-Version                 gepinnt
+Installer-Commit            gepinnt
+Installer-SHA-256           gepinnt
+Binary-Checksumme           geprüft
+Upgrade                     bewusster Git-Change
+
+SOPS + age                  eingerichtet
+GHCR Secret                 verschlüsselt in Git
+Cloudflare Secret           verschlüsselt in Git
+Flux Decryption             aktiv
+Secret-Guard in CI          aktiv
+Staging nach Migration      erfolgreich geprüft
 ```
 
-## Zwischenstand
+Das ist noch kein „fertig gehärteter Cluster“. Aber zwei Stellen, die mich beim Wiederaufbau ziemlich sicher genervt hätten, sind jetzt sauberer.
 
-Nach diesem ersten Hardening-Schritt ist der Cluster noch nicht vollständig gehärtet. Ein wichtiger Bootstrap-Blindspot ist aber beseitigt:
+Als Nächstes kommt der Punkt, bei dem sich entscheidet, ob das Ganze wirklich belastbar ist:
 
-```text
-K3s stable Channel            entfernt
-exakte K3s-Version            gepinnt
-Installer-Quellstand          gepinnt
-Installer-SHA-256             gepinnt
-Release-Binary-Checksumme     weiterhin geprüft
-Versionsabweichung            von Ansible erkannt
-Upgrade                       bewusster Git-Change
-SOPS/age Migration            umgesetzt und im Staging verifiziert
-GitOps Secret Guard           in CI verankert
-```
+**Backup und Restore.**
 
-Als nächster Teil-III-Schritt folgen Backup und ein tatsächlich getesteter Restore des K3s-Datastores.
+Nicht nur ein Cronjob, der irgendwo Dateien hinlegt, sondern ein Restore, den ich auf einem frischen beziehungsweise bewusst zurückgesetzten Zustand wirklich teste.
+
+Danach kommt Monitoring. Erst wenn ich weiß, dass ich den Cluster wiederherstellen kann, lohnt sich für mich die nächste Runde an Metriken und Alarmen.
