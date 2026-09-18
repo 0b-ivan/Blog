@@ -1,0 +1,9 @@
+---
+# Teil III Hardening: reproducible K3s bootstrap.
+# Upgrade policy: change version, matching upstream source commit and installer checksum together.
+k3s_version: "v1.36.4+k3s1"
+k3s_install_script_ref: "4dedb15be78017a8ddd5b9e81acd44f3481078ed"
+k3s_install_script_checksum: "sha256:46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad"
+k3s_install_url: "https://raw.githubusercontent.com/k3s-io/k3s/{{ k3s_install_script_ref }}/install.sh"
+k3s_config_dir: /etc/rancher/k3s
+k3s_binary_path: /usr/local/bin/k3s
