@@ -5,6 +5,7 @@
   vars:
     k3s_version: "v1.36.4+k3s1"
     k3s_install_script_ref: "4dedb15be78017a8ddd5b9e81acd44f3481078ed"
+    k3s_install_script_checksum: "sha256:46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad"
     k3s_install_url: "https://raw.githubusercontent.com/k3s-io/k3s/{{ k3s_install_script_ref }}/install.sh"
     k3s_binary_path: /usr/local/bin/k3s
 
@@ -15,11 +16,12 @@
       changed_when: false
       failed_when: false
 
-    - name: Download installer from pinned upstream commit
+    - name: Download verified installer from pinned upstream commit
       ansible.builtin.get_url:
         url: "{{ k3s_install_url }}"
         dest: /usr/local/src/install-k3s.sh
         mode: "0755"
+        checksum: "{{ k3s_install_script_checksum }}"
         force: true
       when: current.rc != 0 or k3s_version not in current.stdout
 
