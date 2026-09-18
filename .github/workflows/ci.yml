@@ -103,6 +103,14 @@ jobs:
       - name: Validate GitOps secret hygiene
         run: bash scripts/check-gitops-secrets.sh
 
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            bash -n "$file"
+          done < <(find scripts snippets -type f -name '*.sh' -print0)
+
       - name: Lint
         run: npm run lint
 
