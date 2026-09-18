@@ -1,6 +1,6 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 2
+version: 3
 title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
 status: publish
 date: 2026-09-18
@@ -34,6 +34,21 @@ snippets:
     description: "Installiert nur bei Versionsabweichung und prüft den auf einen konkreten Upstream-Commit gepinnten Installer per SHA-256."
     type: "Ansible-Playbook"
     language: "yaml"
+  - file: "02-bootstrap-sops-age.sh"
+    title: "SOPS-age-Key für Flux vorbereiten"
+    description: "Erzeugt oder verwendet einen lokalen age-Key und legt daraus flux-system/sops-age an, ohne den privaten Key auszugeben."
+    type: "Shellskript"
+    language: "bash"
+  - file: "03-export-encrypt-staging-secrets.sh"
+    title: "Bestehende Cluster-Secrets mit SOPS verschlüsseln"
+    description: "Exportiert GHCR- und Cloudflare-Secrets nur temporär und schreibt ausschließlich SOPS-verschlüsselte Manifeste ins Repository."
+    type: "Shellskript"
+    language: "bash"
+  - file: "04-activate-flux-sops.sh"
+    title: "Flux-SOPS kontrolliert aktivieren"
+    description: "Prüft Key und verschlüsselte Manifeste, aktiviert Flux-Decryption und referenziert die Secret-Ressourcen erst danach."
+    type: "Shellskript"
+    language: "bash"
 ---
 
 Teil I hat den Blog auf K3s gebracht. Teil II hat daraus einen GitOps-Pfad mit Flux, verifiziertem Staging und manueller Production-Freigabe gemacht.
@@ -45,7 +60,7 @@ Der aktuelle Hardening-Plan besteht aus vier getrennten Schritten:
 | Schritt | Ziel | Status |
 | --- | --- | --- |
 | K3s Bootstrap | Version, Installationsquelle und Installer-Hash reproduzierbar festschreiben | umgesetzt |
-| Secrets | GHCR- und Cloudflare-Credentials verschlüsselt über GitOps verwalten | als Nächstes |
+| Secrets | GHCR- und Cloudflare-Credentials verschlüsselt über GitOps verwalten | Migration vorbereitet |
 | Backup / Restore | K3s-Datastore und kritische Konfiguration sicher sichern und Rücksicherung testen | geplant |
 | Observability | Node, Pods, Deployments und externen Healthcheck überwachen | geplant |
 
@@ -168,7 +183,7 @@ Zum Zeitpunkt dieses Schritts ist K3s 1.37 bereits verfügbar. Der laufende Node
 
 Teil III startet absichtlich ohne Versionssprung. Das Ziel dieses Commits ist zunächst Reproduzierbarkeit. Ein Upgrade auf eine neue Kubernetes-Minor-Version bringt ein anderes Risikoprofil mit und bekommt deshalb einen eigenen Change mit eigener Prüfung.
 
-## Nächster Schritt: Secrets aus dem manuellen Zustand holen
+## 6. Secrets: SOPS + age ohne halbfertigen Flux-Zustand
 
 Noch nicht GitOps-tauglich sind aktuell insbesondere:
 
@@ -177,21 +192,116 @@ blog-staging/ghcr-pull
 cloudflare/cloudflared-token
 ```
 
-Diese Secrets werden bisher außerhalb des Git-Sollzustands angelegt.
+Diese Secrets existieren bereits im Cluster, aber nicht im Git-Sollzustand.
 
-Als nächster Teil-III-Schritt ist deshalb vorgesehen:
+Flux unterstützt SOPS direkt über `spec.decryption`. Für age kann ein Kubernetes-Secret mit einem Schlüssel verwendet werden, dessen Name auf `.agekey` endet. Die eigentlichen Kubernetes-Secrets bleiben dabei als verschlüsselte YAML-Dateien im Repository; entschlüsselt wird erst im Cluster.
+
+Die Migration wird absichtlich in drei Phasen getrennt.
+
+### 6.1 Age-Key erzeugen und nur außerhalb von Git speichern
+
+Der private Schlüssel liegt standardmäßig unter:
 
 ```text
-SOPS + age
-   ↓
-verschlüsselte Secret-Manifeste in Git
-   ↓
-Flux entschlüsselt erst im Cluster
-   ↓
-keine Klartext-Credentials im Repository
+~/.config/sops/age/keys.txt
 ```
 
-Dabei wird die Flux-Decryption erst aktiviert, nachdem der Age-Key im Cluster vorhanden und verifiziert ist. So bleibt das bestehende Staging während der Migration funktionsfähig.
+Das Bootstrap-Skript verweigert einen Pfad innerhalb des Git-Repositories und gibt den privaten Key nicht auf stdout aus.
+
+[SOPS-age-Key für Flux vorbereiten](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/02-bootstrap-sops-age.sh "snippet:bash")
+
+Der gleiche Key wird anschließend als Kubernetes-Secret `flux-system/sops-age` hinterlegt. Der Key-Eintrag heißt `identity.agekey`, damit der Flux-Kustomize-Controller ihn eindeutig als age-Identity erkennt.
+
+Der private Schlüssel muss zusätzlich außerhalb des Clusters gesichert werden. Sonst wäre ein vollständiger Clusterverlust gleichzeitig ein Verlust der Fähigkeit, die Git-Secrets zu entschlüsseln.
+
+### 6.2 Bestehende Secrets exportieren, aber niemals im Worktree als Klartext ablegen
+
+Der zweite Schritt liest die bereits funktionierenden Secrets direkt aus Kubernetes:
+
+```text
+blog-staging/ghcr-pull
+cloudflare/cloudflared-token
+```
+
+Klartext bzw. die Kubernetes-`data`-Werte landen nur in einem per `mktemp` erzeugten temporären Verzeichnis. Von dort werden sie unmittelbar mit SOPS und dem öffentlichen age-Recipient verschlüsselt.
+
+[Bestehende Cluster-Secrets mit SOPS verschlüsseln](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/03-export-encrypt-staging-secrets.sh "snippet:bash")
+
+Im Repository entstehen danach ausschließlich:
+
+```text
+infra/kubernetes/staging/secrets/
+├── ghcr-pull.sops.yaml
+└── cloudflared-token.sops.yaml
+```
+
+SOPS verschlüsselt nur `data` beziehungsweise `stringData`. `apiVersion`, `kind`, `metadata`, Name und Namespace bleiben lesbar, damit Flux und Kustomize die Ressourcen verarbeiten können.
+
+### 6.3 Flux-Decryption erst aktivieren, wenn Key und Ciphertext geprüft sind
+
+Der kritische Teil ist die Reihenfolge.
+
+Würde `spec.decryption` aktiviert, bevor `flux-system/sops-age` vorhanden ist, könnte die Kustomization nicht mehr sauber reconciliieren. Würden umgekehrt verschlüsselte Secret-Manifeste ohne Decryption in die aktive Kustomization aufgenommen, wären die Ressourcen ebenfalls nicht anwendbar.
+
+Deshalb prüft das Aktivierungsskript zuerst:
+
+```text
+sops-age Secret vorhanden?
+        ↓
+beide .sops.yaml vorhanden?
+        ↓
+lokal mit demselben Key entschlüsselbar?
+        ↓
+erst jetzt gotk-sync.yaml patchen
+        ↓
+erst jetzt Secret-Ressourcen in Kustomize aufnehmen
+```
+
+[Flux-SOPS kontrolliert aktivieren](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/04-activate-flux-sops.sh "snippet:bash")
+
+Das Skript committed nichts selbst. Nach der Änderung bleiben `git diff`, CI und der normale Staging-PR weiterhin die Freigabestellen.
+
+### 6.4 CI blockiert Klartext und halbfertige Migrationen
+
+Zusätzlich läuft jetzt bei jedem PR:
+
+```text
+bash scripts/check-gitops-secrets.sh
+```
+
+Der Guard blockiert unter anderem:
+
+- getrackte `.agekey`-Dateien
+- Secret-Dateien ohne SOPS-Metadaten
+- Klartextwerte unter `data` oder `stringData`
+- verschlüsselte Secret-Dateien ohne aktivierte Flux-Decryption
+- aktivierte Flux-Decryption ohne die erwarteten verschlüsselten Secret-Ressourcen
+
+Damit reicht nicht mehr nur die Konvention „keine Secrets committen“. Der Zustand wird maschinell geprüft.
+
+### 6.5 Noch kein automatisches Secret-Rollout in diesem PR
+
+Die Werkzeuge und Guards sind implementiert, die eigentlichen verschlüsselten Dateien aber noch nicht.
+
+Dafür werden einmalig der vorhandene Clusterzustand und der private age-Key benötigt. Diese Werte gehören nicht in GitHub Actions und nicht in den PR.
+
+Der sichere Übergang ist deshalb:
+
+```text
+PR mit Werkzeugen + CI-Guard
+        ↓
+auf Admin-Rechner/Cluster ausführen
+        ↓
+verschlüsselte .sops.yaml erzeugen
+        ↓
+Flux-SOPS aktivieren
+        ↓
+Diff prüfen
+        ↓
+neuer Commit / PR-Update
+        ↓
+Flux reconciliert
+```
 
 ## Zwischenstand
 
@@ -205,6 +315,8 @@ Installer-SHA-256             gepinnt
 Release-Binary-Checksumme     weiterhin geprüft
 Versionsabweichung            von Ansible erkannt
 Upgrade                       bewusster Git-Change
+SOPS/age Migration            als sichere Zwei-Phasen-Migration vorbereitet
+GitOps Secret Guard           in CI verankert
 ```
 
-Als Nächstes folgt die Secret-Migration mit SOPS und age.
+Als nächster operativer Schritt wird die vorbereitete SOPS/age-Migration einmalig gegen den laufenden Staging-Cluster ausgeführt. Danach folgen Backup und Restore.
