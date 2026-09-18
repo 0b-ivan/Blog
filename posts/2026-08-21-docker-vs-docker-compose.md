@@ -14,8 +14,8 @@ tags: Docker, DevOps, Operations, Architecture
 search_queries:
   - query: Ich will mir lange docker run Befehle nicht merken
     maxRank: 1
-  - query: Webserver Datenbank und Redis zusammen verwalten
-    maxRank: 2
+  - query: Nginx und Redis gemeinsam mit Docker Compose verwalten
+    maxRank: 1
 snippets:
   - file: "01-ein-container-direkt-mit-docker.sh"
     title: "Nginx mit Docker starten"

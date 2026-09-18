@@ -3,7 +3,8 @@ FROM node:26-bookworm-slim
 WORKDIR /app/rag
 
 COPY rag/package.json ./
-RUN npm install --omit=dev --no-audit --no-fund \
+# The search service runs CPU inference; skip optional CUDA EP binaries from NuGet.
+RUN npm install --omit=dev --no-audit --no-fund --onnxruntime-node-install=skip \
   && npm cache clean --force \
   && rm -rf /usr/local/lib/node_modules/npm \
   && rm -f /usr/local/bin/npm /usr/local/bin/npx

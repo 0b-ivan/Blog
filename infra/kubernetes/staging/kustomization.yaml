@@ -3,13 +3,15 @@ kind: Kustomization
 resources:
   - blog.yaml
   - cloudflared.yaml
+  - secrets/ghcr-pull.sops.yaml
+  - secrets/cloudflared-token.sops.yaml
 images:
   - name: cloudflare/cloudflared
     newTag: 2026.9.1
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 57c6f72bce5120c4347ce6af2296f1ddb6ddd6e7
+    newTag: 60c866dbe29adc1170f274d55b4d44761a79a2cd
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 57c6f72bce5120c4347ce6af2296f1ddb6ddd6e7
+    newTag: 60c866dbe29adc1170f274d55b4d44761a79a2cd
 patches:
   - target:
       group: apps
