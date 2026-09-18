@@ -100,6 +100,17 @@ jobs:
       - name: Validate sources and internal references
         run: npm run references:check
 
+      - name: Validate GitOps secret hygiene
+        run: bash scripts/check-gitops-secrets.sh
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            bash -n "$file"
+          done < <(find scripts snippets -type f -name '*.sh' -print0)
+
       - name: Lint
         run: npm run lint
 
@@ -108,7 +119,8 @@ jobs:
 
       - name: Install semantic search dependencies
         if: steps.changes.outputs.heavy == 'true' || steps.changes.outputs.semantic == 'true'
-        run: npm install --prefix rag --package-lock=false --no-audit --no-fund
+        # Semantic search uses CPU inference in CI. Avoid onnxruntime-node's optional CUDA NuGet download.
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund --onnxruntime-node-install=skip
 
       - name: Semantic search unit tests
         if: steps.changes.outputs.heavy == 'true'

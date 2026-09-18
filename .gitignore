@@ -34,3 +34,8 @@ posts/_Glossar/
 # Generated/editable sources mirror inside the LiveSync vault.
 # The canonical published data remains posts/_sources.json.
 posts/_Quellen/
+
+# SOPS/age private material and accidental cleartext secret exports
+*.agekey
+infra/kubernetes/staging/secrets/*.plain.yaml
+infra/kubernetes/staging/secrets/*.decrypted.yaml
