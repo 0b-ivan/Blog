@@ -1,6 +1,6 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 3
+version: 4
 title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
 status: publish
 date: 2026-09-18
@@ -45,8 +45,13 @@ snippets:
     type: "Shellskript"
     language: "bash"
   - file: "04-activate-flux-sops.sh"
-    title: "Flux-SOPS kontrolliert aktivieren"
-    description: "Prüft Key und verschlüsselte Manifeste, aktiviert Flux-Decryption und referenziert die Secret-Ressourcen erst danach."
+    title: "Flux-SOPS-Git-Zustand vorbereiten"
+    description: "Prüft Key und verschlüsselte Manifeste und bereitet Decryption sowie Secret-Ressourcen im Git-Sollzustand vor."
+    type: "Shellskript"
+    language: "bash"
+  - file: "05-bootstrap-live-flux-sops.sh"
+    title: "Live-Flux einmalig für SOPS bootstrappen"
+    description: "Prüft zuerst den bereits gemergten staging-Sollzustand, aktiviert dann einmalig SOPS in der laufenden Flux-Kustomization und wartet auf Ready."
     type: "Shellskript"
     language: "bash"
 ---
@@ -60,7 +65,7 @@ Der aktuelle Hardening-Plan besteht aus vier getrennten Schritten:
 | Schritt | Ziel | Status |
 | --- | --- | --- |
 | K3s Bootstrap | Version, Installationsquelle und Installer-Hash reproduzierbar festschreiben | umgesetzt |
-| Secrets | GHCR- und Cloudflare-Credentials verschlüsselt über GitOps verwalten | Migration vorbereitet |
+| Secrets | GHCR- und Cloudflare-Credentials verschlüsselt über GitOps verwalten | umgesetzt und verifiziert |
 | Backup / Restore | K3s-Datastore und kritische Konfiguration sicher sichern und Rücksicherung testen | geplant |
 | Observability | Node, Pods, Deployments und externen Healthcheck überwachen | geplant |
 
@@ -259,11 +264,39 @@ erst jetzt gotk-sync.yaml patchen
 erst jetzt Secret-Ressourcen in Kustomize aufnehmen
 ```
 
-[Flux-SOPS kontrolliert aktivieren](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/04-activate-flux-sops.sh "snippet:bash")
+[Flux-SOPS-Git-Zustand vorbereiten](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/04-activate-flux-sops.sh "snippet:bash")
 
 Das Skript committed nichts selbst. Nach der Änderung bleiben `git diff`, CI und der normale Staging-PR weiterhin die Freigabestellen.
 
-### 6.4 CI blockiert Klartext und halbfertige Migrationen
+### 6.4 Der einmalige Flux-Bootstrap-Zirkel
+
+Beim ersten echten Rollout zeigte sich ein wichtiger Bootstrap-Effekt: Die laufende `flux-system`-Kustomization kann ein Git-Manifest mit SOPS-Secrets nicht anwenden, solange ihre **Live-Spec** noch keine Decryption-Konfiguration enthält. Gleichzeitig liegt genau diese neue Decryption-Spec erst im Git-Commit, den Flux anwenden soll.
+
+Der beobachtete Zustand war eindeutig:
+
+```text
+Ready=False
+Secret/blog-staging/ghcr-pull is SOPS encrypted,
+configuring decryption is required for this secret to be reconciled
+```
+
+Die Lösung ist ein einmaliger, kontrollierter Live-Bootstrap **nachdem** der gewünschte SOPS-Zustand bereits in `origin/staging` liegt:
+
+[Live-Flux einmalig für SOPS bootstrappen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/05-bootstrap-live-flux-sops.sh "snippet:bash")
+
+Das Skript verweigert den Patch, solange `origin/staging` nicht bereits Decryption, beide Secret-Ressourcen und echte SOPS-Ciphertexte enthält. Erst danach patcht es die laufende Kustomization, stößt den Reconcile an und wartet auf `Ready=True`.
+
+Im realen Rollout wechselte Flux danach auf:
+
+```text
+READY=True
+Applied revision: staging@sha1:4d7e5ab8b99421496349b4833e1355efcf4e60bb
+```
+
+Der anschließende öffentliche Staging-Gate lief vollständig erfolgreich durch.
+
+
+### 6.5 CI blockiert Klartext und halbfertige Migrationen
 
 Zusätzlich läuft jetzt bei jedem PR:
 
@@ -281,28 +314,32 @@ Der Guard blockiert unter anderem:
 
 Damit reicht nicht mehr nur die Konvention „keine Secrets committen“. Der Zustand wird maschinell geprüft.
 
-### 6.5 Noch kein automatisches Secret-Rollout in diesem PR
+### 6.6 Verifizierter Secret-Rollout
 
-Die Werkzeuge und Guards sind implementiert, die eigentlichen verschlüsselten Dateien aber noch nicht.
+Die Migration wurde gegen den laufenden Staging-Cluster durchgeführt. Beide bestehenden Secrets wurden aus Kubernetes gelesen, lokal mit SOPS verschlüsselt und als Ciphertext committed.
 
-Dafür werden einmalig der vorhandene Clusterzustand und der private age-Key benötigt. Diese Werte gehören nicht in GitHub Actions und nicht in den PR.
+Nach dem einmaligen Live-Bootstrap konnte Flux den neuen Git-Sollzustand erfolgreich anwenden. Der Staging-Deploy inklusive öffentlichem Health-/Build-Gate lief anschließend vollständig grün durch.
 
-Der sichere Übergang ist deshalb:
+Der reproduzierbare Übergang ist damit:
 
 ```text
-PR mit Werkzeugen + CI-Guard
+age-Key außerhalb Git
         ↓
-auf Admin-Rechner/Cluster ausführen
+sops-age im Cluster
         ↓
-verschlüsselte .sops.yaml erzeugen
+bestehende Secrets exportieren + verschlüsseln
         ↓
-Flux-SOPS aktivieren
+Git-Sollzustand vorbereiten
         ↓
-Diff prüfen
+PR + CI
         ↓
-neuer Commit / PR-Update
+Merge nach staging
         ↓
-Flux reconciliert
+einmaliger Live-Flux-SOPS-Bootstrap
+        ↓
+Flux Ready=True
+        ↓
+öffentlicher Staging-Gate
 ```
 
 ## Zwischenstand
@@ -317,8 +354,8 @@ Installer-SHA-256             gepinnt
 Release-Binary-Checksumme     weiterhin geprüft
 Versionsabweichung            von Ansible erkannt
 Upgrade                       bewusster Git-Change
-SOPS/age Migration            als sichere gestufte Migration vorbereitet
+SOPS/age Migration            umgesetzt und im Staging verifiziert
 GitOps Secret Guard           in CI verankert
 ```
 
-Als nächster operativer Schritt wird die vorbereitete SOPS/age-Migration einmalig gegen den laufenden Staging-Cluster ausgeführt. Danach folgen Backup und Restore.
+Als nächster Teil-III-Schritt folgen Backup und ein tatsächlich getesteter Restore des K3s-Datastores.
