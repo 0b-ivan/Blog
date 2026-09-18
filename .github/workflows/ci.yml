@@ -119,7 +119,8 @@ jobs:
 
       - name: Install semantic search dependencies
         if: steps.changes.outputs.heavy == 'true' || steps.changes.outputs.semantic == 'true'
-        run: npm install --prefix rag --package-lock=false --no-audit --no-fund
+        # Semantic search uses CPU inference in CI. Avoid onnxruntime-node's optional CUDA NuGet download.
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund --onnxruntime-node-install=skip
 
       - name: Semantic search unit tests
         if: steps.changes.outputs.heavy == 'true'
