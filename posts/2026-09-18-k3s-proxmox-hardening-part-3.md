@@ -1,6 +1,6 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 1
+version: 2
 title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
 status: publish
 date: 2026-09-18
@@ -31,7 +31,7 @@ search_queries:
 snippets:
   - file: "01-k3s-version-pin.yml"
     title: "K3s-Version mit Ansible fest pinnen"
-    description: "Installiert nur bei Versionsabweichung und verwendet einen auf einen konkreten Upstream-Commit gepinnten Installer."
+    description: "Installiert nur bei Versionsabweichung und prüft den auf einen konkreten Upstream-Commit gepinnten Installer per SHA-256."
     type: "Ansible-Playbook"
     language: "yaml"
 ---
@@ -44,7 +44,7 @@ Der aktuelle Hardening-Plan besteht aus vier getrennten Schritten:
 
 | Schritt | Ziel | Status |
 | --- | --- | --- |
-| K3s Bootstrap | Version und Installationsquelle reproduzierbar festschreiben | umgesetzt |
+| K3s Bootstrap | Version, Installationsquelle und Installer-Hash reproduzierbar festschreiben | umgesetzt |
 | Secrets | GHCR- und Cloudflare-Credentials verschlüsselt über GitOps verwalten | als Nächstes |
 | Backup / Restore | K3s-Datastore und kritische Konfiguration sicher sichern und Rücksicherung testen | geplant |
 | Observability | Node, Pods, Deployments und externen Healthcheck überwachen | geplant |
@@ -81,7 +81,7 @@ v1.36.4+k3s1
 
 Teil III friert zunächst genau diesen bekannten Stand ein. Ein Wechsel auf eine neuere K3s-Version wird damit zu einem eigenen, sichtbaren Commit.
 
-## 2. Version und Installer-Quelle gemeinsam pinnen
+## 2. Version, Installer-Quelle und Installer-Hash gemeinsam pinnen
 
 Die Versionswerte liegen jetzt zentral unter:
 
@@ -89,7 +89,7 @@ Die Versionswerte liegen jetzt zentral unter:
 infra/ansible/group_vars/k3s_servers.yml
 ```
 
-Festgeschrieben werden zwei Dinge:
+Festgeschrieben werden drei Dinge:
 
 ```text
 K3s Release:
@@ -97,17 +97,20 @@ v1.36.4+k3s1
 
 Upstream-Commit des Installers:
 4dedb15be78017a8ddd5b9e81acd44f3481078ed
+
+SHA-256 des install.sh aus diesem Commit:
+46177d4c99440b4c0311b67233823a8e8a2fc09693f6c89af1a7161e152fbfad
 ```
 
-Der Installer wird damit nicht mehr über die bewegliche URL `get.k3s.io` bezogen, sondern direkt aus dem konkreten K3s-Upstream-Commit.
+Der Installer wird damit nicht mehr über die bewegliche URL `get.k3s.io` bezogen. Ansible lädt die Datei direkt aus dem konkreten K3s-Upstream-Commit und akzeptiert sie nur, wenn der lokal gepinnte SHA-256 stimmt.
 
 Das vollständige, reduzierte Beispiel:
 
 [K3s-Version mit Ansible fest pinnen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/01-k3s-version-pin.yml "snippet:yaml")
 
-## 3. Der K3s-Installer verifiziert weiterhin das Binary
+## 3. Auch das K3s-Binary wird verifiziert
 
-Das Pinning des Installer-Quellstands ersetzt nicht die Prüfung des eigentlichen K3s-Binaries.
+Die Prüfung des Installer-Skripts ersetzt nicht die Prüfung des eigentlichen K3s-Binaries.
 
 Der offizielle K3s-Installer lädt für die angeforderte Release-Version die passende `sha256sum-<arch>.txt` und vergleicht den Hash des Binaries vor der Installation.
 
@@ -118,6 +121,8 @@ Git
  ↓
 gepinnter Installer-Commit
  ↓
+lokaler SHA-256-Pin des Installers
+ ↓
 INSTALL_K3S_VERSION=v1.36.4+k3s1
  ↓
 offizielle Release-Checksumme
@@ -125,7 +130,7 @@ offizielle Release-Checksumme
 verifiziertes K3s-Binary
 ```
 
-Damit sind zwei bisher bewegliche Bestandteile kontrolliert: die gewünschte Version und der verwendete Installer-Quellstand.
+Damit sind die zuvor beweglichen Bestandteile kontrolliert und beide Download-Stufen werden geprüft.
 
 ## 4. Das Playbook wird gleichzeitig zum kontrollierten Upgrade-Pfad
 
@@ -141,6 +146,8 @@ Ein späteres Upgrade besteht deshalb nicht aus einem spontanen `curl | sh`, son
 k3s_version ändern
         +
 passenden Upstream-Commit pinnen
+        +
+neuen Installer-SHA-256 hinterlegen
         ↓
 Pull Request
         ↓
@@ -194,6 +201,7 @@ Nach diesem ersten Hardening-Schritt ist der Cluster noch nicht vollständig geh
 K3s stable Channel            entfernt
 exakte K3s-Version            gepinnt
 Installer-Quellstand          gepinnt
+Installer-SHA-256             gepinnt
 Release-Binary-Checksumme     weiterhin geprüft
 Versionsabweichung            von Ansible erkannt
 Upgrade                       bewusster Git-Change
