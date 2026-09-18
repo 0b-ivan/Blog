@@ -198,6 +198,8 @@ Flux unterstützt SOPS direkt über `spec.decryption`. Für age kann ein Kuberne
 
 Die Migration wird absichtlich in drei Phasen getrennt.
 
+Auf dem Admin-Rechner werden dafür `kubectl`, `age-keygen` und `sops` benötigt. Die Hilfsskripte brechen ab, wenn eines dieser Werkzeuge fehlt.
+
 ### 6.1 Age-Key erzeugen und nur außerhalb von Git speichern
 
 Der private Schlüssel liegt standardmäßig unter:
@@ -315,7 +317,7 @@ Installer-SHA-256             gepinnt
 Release-Binary-Checksumme     weiterhin geprüft
 Versionsabweichung            von Ansible erkannt
 Upgrade                       bewusster Git-Change
-SOPS/age Migration            als sichere Zwei-Phasen-Migration vorbereitet
+SOPS/age Migration            als sichere gestufte Migration vorbereitet
 GitOps Secret Guard           in CI verankert
 ```
 
