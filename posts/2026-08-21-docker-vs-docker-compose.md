@@ -1,11 +1,11 @@
 ---
 id: 2026-08-21-docker-vs-docker-compose
-version: 2
+version: 3
 title: "Docker vs. Docker Compose: Was ist der Unterschied?"
 date: 2026-08-21
 published_at: 2026-08-21T07:12:56+02:00
 created_at: 2026-08-21
-updated_at: 2026-08-24
+updated_at: 2026-09-16
 author: obivan
 reviewed_by: pending
 category: DevOps
