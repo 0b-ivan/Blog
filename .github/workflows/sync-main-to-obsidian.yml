@@ -178,7 +178,13 @@ jobs:
           fi
 
           cd "$STACK_DIR"
-          docker compose --env-file .env --profile headless up -d livesync-cli
+
+          if docker inspect kernel-notes-livesync-cli >/dev/null 2>&1; then
+            docker start kernel-notes-livesync-cli >/dev/null
+          else
+            echo 'Headless LiveSync container does not exist; refusing to rebuild it during content sync.' >&2
+            exit 1
+          fi
 
           running="$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)"
           if [ "$running" != true ]; then
