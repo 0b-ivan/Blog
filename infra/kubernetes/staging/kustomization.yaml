@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - blog.yaml
   - cloudflared.yaml
+  - secrets/ghcr-pull.sops.yaml
+  - secrets/cloudflared-token.sops.yaml
 images:
   - name: cloudflare/cloudflared
     newTag: 2026.9.1
