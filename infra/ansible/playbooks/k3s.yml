@@ -10,8 +10,9 @@
         that:
           - k3s_version is match('^v[0-9]+\\.[0-9]+\\.[0-9]+\\+k3s[0-9]+$')
           - k3s_install_script_ref is match('^[0-9a-f]{40}$')
-          - k3s_install_url.startswith('https://raw.githubusercontent.com/k3s-io/k3s/')
-        fail_msg: K3s version and installer source must be pinned before provisioning.
+          - k3s_install_script_checksum is match('^sha256:[0-9a-f]{64}$')
+          - k3s_install_url is match('^https://raw\\.githubusercontent\\.com/k3s-io/k3s/')
+        fail_msg: K3s version, installer source and checksum must be pinned before provisioning.
 
     - name: Install base packages
       ansible.builtin.apt:
@@ -66,13 +67,14 @@
             or k3s_version not in k3s_current_version.stdout
           }}
 
-    - name: Download installer from pinned upstream commit
+    - name: Download verified installer from pinned upstream commit
       ansible.builtin.get_url:
         url: "{{ k3s_install_url }}"
         dest: /usr/local/src/install-k3s.sh
         owner: root
         group: root
         mode: "0755"
+        checksum: "{{ k3s_install_script_checksum }}"
         force: true
       when: k3s_install_required
 
