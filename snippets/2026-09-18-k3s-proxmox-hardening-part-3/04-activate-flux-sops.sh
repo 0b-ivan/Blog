@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-for cmd in git kubectl python3 sops; do
+for cmd in age-keygen base64 git kubectl python3 sops; do
   command -v "$cmd" >/dev/null 2>&1 || {
     echo "Fehlt: $cmd" >&2
     exit 1
@@ -9,6 +9,7 @@ for cmd in git kubectl python3 sops; do
 done
 
 ROOT="$(git rev-parse --show-toplevel)"
+KEY_FILE="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
 SYNC_FILE="$ROOT/infra/kubernetes/staging/flux-system/gotk-sync.yaml"
 KUSTOMIZATION="$ROOT/infra/kubernetes/staging/kustomization.yaml"
 GHCR_SECRET="$ROOT/infra/kubernetes/staging/secrets/ghcr-pull.sops.yaml"
