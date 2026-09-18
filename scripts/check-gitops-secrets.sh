@@ -12,7 +12,10 @@ if git -C "$ROOT" ls-files '*.agekey' | grep -q .; then
   exit 1
 fi
 
-mapfile -t SECRET_FILES < <(
+SECRET_FILES=()
+while IFS= read -r file; do
+  SECRET_FILES+=("$file")
+done < <(
   find "$SECRET_DIR" -maxdepth 1 -type f -name '*.sops.yaml' -print 2>/dev/null | sort
 )
 
