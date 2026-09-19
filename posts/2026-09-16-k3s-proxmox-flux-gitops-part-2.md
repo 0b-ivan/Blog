@@ -9,7 +9,7 @@ updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil II zeigt meinen Weg vom manuellen K3s-Deployment zu einem GitOps-Workflow mit Flux: Git-SHA-Images, Kustomize-Pins, öffentlich geprüftes Staging und eine Production-Freigabe, die bewusst manuell bleibt."
+excerpt: "Teil II zeigt, wie ich mein K3s-Staging automatisiert habe: GitHub Actions baut die Images, Git hält den gewünschten Stand fest, Flux rollt ihn aus und Production bleibt bewusst manuell."
 tags:
   - Kubernetes
   - K3s
@@ -92,8 +92,8 @@ Bevor ich den Ablauf zeige, die Begriffe, die in diesem Teil ständig vorkommen:
 | **GHCR** | *GitHub Container Registry*: Dort speichere ich die gebauten Container-Images. |
 | **Flux** | Ein Dienst im Kubernetes-Cluster, der den gewünschten Zustand aus Git liest und im Cluster umsetzt. |
 | **GitOps** | Die gewünschte Konfiguration liegt in Git. Änderungen passieren über Commits und Pull Requests statt über spontane Befehle direkt im Cluster. |
-| **Git-SHA** | Die eindeutige Kennung eines Git-Commits, zum Beispiel `a9bc2d…`. Ich verwende sie als Image-Tag, damit ein Build einem Commit zugeordnet werden kann. |
-| **Kustomize** | Ein Kubernetes-Werkzeug, das YAML-Manifeste für eine konkrete Umgebung anpasst. Ich nutze es unter anderem für die Image-Tags von Staging. |
+| **Git-SHA** | Die eindeutige Kennung eines Git-Commits, zum Beispiel `a9bc2d…`. Ich hänge sie als Versionsbezeichnung an den Image-Namen, damit ein Build einem Commit zugeordnet werden kann. |
+| **Kustomize** | Ein Kubernetes-Werkzeug, das Kubernetes-YAML-Dateien für eine konkrete Umgebung anpasst. Ich nutze es unter anderem für die Image-Tags von Staging. |
 | **Pin** | Eine Version bewusst festschreiben, statt immer „die neueste“ zu verwenden. Ein Kustomize-Pin legt hier fest, welches Image Staging benutzen soll. |
 | **Reconcile** | Flux vergleicht „was Git sagt“ mit „was im Cluster läuft“ und korrigiert Abweichungen. |
 | **Bootstrap** | Die einmalige Ersteinrichtung von Flux: Dienste installieren, Repository verbinden und Branch/Pfad festlegen. |
@@ -106,7 +106,7 @@ Image bauen, SHA raussuchen, irgendwo eintragen, Rollout prüfen. Das funktionie
 
 Das Ziel von Teil II: **Ich will jederzeit sehen können, welcher Git-Stand auf Staging läuft und genau diesen Stand prüfen, bevor irgendetwas nach Production geht.**
 
-![Architektur Teil II: GitHub Actions, GHCR, Kustomize, Flux, K3s und verifizierter Promotion-Candidate](/assets/posts/k3s-proxmox-series/teil-ii-architektur.svg)
+![Architektur Teil II: GitHub Actions baut, Flux rollt Staging aus und nur der öffentlich geprüfte Stand geht Richtung Production](/assets/posts/k3s-proxmox-series/teil-ii-architektur.svg)
 
 Der Weg besteht aus sechs klaren Schritten:
 
@@ -701,8 +701,8 @@ Nicht Flux allein macht das Setup besser. Die Kette wird einfach nachvollziehbar
 
 ## Weiter in Teil III
 
-Teil III kümmert sich um die Sachen, die ich bis hierhin bewusst liegen gelassen habe: feste K3s-Versionen, Secrets mit SOPS/age, Backup und Restore sowie Monitoring.
+Teil III kümmert sich um die Sachen, die ich bis hierhin bewusst liegen gelassen habe: feste K3s-Versionen, verschlüsselte Secrets in Git, Backup und Restore sowie Monitoring.
 
-**Fortsetzung: Teil III – K3s im Homelab härten: Secrets, Backups, Updates und Observability.**
+**Fortsetzung: Teil III – K3s im Homelab härten: feste Versionen und verschlüsselte Secrets.**
 
 <!-- series-next: k3s-proxmox-part-3-hardening-secrets-backups-observability -->
