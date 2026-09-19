@@ -1,8 +1,6 @@
 # Kubernetes-Production auf Proxmox
 
-Dieses Overlay startet eine interne Production-Kopie des Blogs im bestehenden K3s-Cluster. Es übernimmt noch keinen öffentlichen Traffic.
-
-Aktueller Aufbau:
+Dieses Overlay bereitet eine interne Production-Kopie des Blogs im bestehenden K3s-Cluster vor. Es übernimmt noch keinen öffentlichen Traffic.
 
 ```text
 blog.obivan.org
@@ -12,11 +10,11 @@ Hetzner Docker Compose        <- bleibt öffentliche Production
 
 K3s / Proxmox
     |
-    +-- namespace blog-staging
+    +-- blog-staging
     |     +-- 3x blog
     |     +-- 1x search
     |
-    +-- namespace blog-production
+    +-- blog-production
           +-- 3x blog
           +-- 1x search
           +-- kein Cloudflare-Tunnel
@@ -26,51 +24,48 @@ Damit können wir Production unter Kubernetes testen, ohne den bestehenden Hetzn
 
 ## Gemeinsame Basis
 
-Die Deployments und Services liegen unter:
+Blog und Search liegen unter `infra/kubernetes/base`. Staging und Production verwenden dadurch dieselben Services, Probes, Rolling-Update-Regeln und Ressourcenlimits.
 
-```text
-infra/kubernetes/base
-```
+Die Overlays unterscheiden nur die umgebungsspezifischen Teile. Staging setzt drei Blog-Replicas und ergänzt `staging-server.js`. Production setzt ebenfalls drei Blog-Replicas, verwendet aber den normalen Image-Entrypoint `seo-server.js`.
 
-Staging und Production verwenden damit dieselben Probes, Ressourcenlimits, Services und Container-Konfigurationen. Die Overlays unterscheiden Namespace, Replica-Anzahl, Image-Pins und Staging-spezifische Runtime-Argumente.
+## Production-Images
 
-Production verwendet bewusst `seo-server.js` aus dem Image-Default. Nur Staging setzt per Patch `staging-server.js`.
-
-## Images
-
-Die Production-Kopie ist auf einen exakten `main`-Commit gepinnt:
+Die interne Production ist zunächst auf den erfolgreichen `main`-Build gepinnt:
 
 ```text
 227fbe6f417799ab1ff8928dc6820910861a3bfb
 ```
 
-Der öffentliche Hetzner-Deploy bleibt weiterhin die maßgebliche Production. Das Kubernetes-Overlay ist zunächst nur eine parallele interne Instanz.
+Blog- und Search-Image dieses Commits wurden bereits erfolgreich nach GHCR gebaut.
 
-## Flux
+## Flux startet absichtlich suspendiert
 
-`infra/kubernetes/staging/production-flux.yaml` legt eine zweite Flux-Kustomization an. Sie verwendet dieselbe GitRepository-Quelle und dasselbe SOPS-age-Key-Material, reconciliert aber:
+`infra/kubernetes/staging/production-flux.yaml` legt eine zweite Flux-Kustomization namens `blog-production` an. Sie reconciliert:
 
 ```text
 ./infra/kubernetes/production
 ```
 
-Der Production-Namespace wird dadurch separat reconciliiert und gepruned.
+Sie wird mit `suspend: true` erstellt. Ein Merge nach `staging` startet daher nicht automatisch eine zweite Production.
 
-## Prüfen
+Vor dem ersten Resume muss im Namespace `blog-production` ein `ghcr-pull`-Secret mit einem minimalen Read-only-GHCR-Credential vorhanden sein. Das Secret wird in diesem Schritt bewusst noch nicht in Git erzeugt.
 
-Auf einem Admin-Host mit Zugriff auf den Cluster:
+Danach:
 
 ```bash
 export KUBECONFIG=/root/.kube/k3s-blog-01.yaml
 
-flux get kustomizations -A
+flux resume kustomization blog-production -n flux-system
+flux reconcile kustomization blog-production -n flux-system --with-source
 
 kubectl -n blog-production rollout status deployment/search --timeout=300s
 kubectl -n blog-production rollout status deployment/blog --timeout=180s
-kubectl -n blog-production get pods -o wide
-kubectl -n blog-production get endpointslice -o wide
 
-scripts/verify-production-k8s.sh
+./scripts/verify-production-k8s.sh
 ```
 
-Erst nach diesen Tests bekommt `blog-production` einen eigenen Cloudflare-Origin. `blog.obivan.org` wird in diesem Schritt ausdrücklich nicht umgeschaltet.
+## Kein Traffic-Cutover
+
+Es gibt absichtlich weder `NodePort`, `LoadBalancer` noch `cloudflared` für `blog-production`. Der bestehende Hetzner-Blog bleibt unter `blog.obivan.org` aktiv.
+
+Erst nachdem Replica-, Service-, Recovery- und Search-Tests bestanden sind, verdrahten wir Cloudflare mit dieser K3s-Production.
