@@ -26,6 +26,9 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosManifest).toContain('suspend: true');
     expect(chaosManifest).toContain('resources: ["pods"]');
     expect(chaosManifest).toContain('verbs: ["get", "list", "delete"]');
+    expect(chaosManifest).toContain('resourceNames: ["chaos-monkey-result"]');
+    expect(chaosManifest).toContain('verbs: ["patch"]');
+    expect(chaosManifest).not.toContain('verbs: ["create"]');
     expect(chaosManifest).not.toContain('resources: ["nodes"]');
   });
 
@@ -40,6 +43,9 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
   it('keeps the public status exporter read-only', () => {
     expect(statusManifest).toContain('resources: ["pods"]');
     expect(statusManifest).toContain('verbs: ["get", "list"]');
+    expect(statusManifest).toContain('resourceNames: ["chaos-monkey-result"]');
+    expect(statusManifest).toContain('verbs: ["get"]');
     expect(statusManifest).not.toContain('verbs: ["get", "list", "delete"]');
+    expect(statusManifest).not.toContain('verbs: ["patch"]');
   });
 });
