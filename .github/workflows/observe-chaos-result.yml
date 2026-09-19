@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 concurrency:
   group: observe-first-staging-chaos
@@ -65,17 +64,13 @@ jobs:
 
           echo "found=false" >> "$GITHUB_OUTPUT"
 
-      - name: Comment result on experiment PR
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Publish chaos result summary
         shell: bash
         run: |
           set -euo pipefail
 
           if [ "${{ steps.result.outputs.found }}" != "true" ]; then
-            gh api --method POST \
-              "repos/${GITHUB_REPOSITORY}/issues/${RESULT_PR}/comments" \
-              -f body="Chaos experiment observer: no sanitized lastChaosExperiment result became visible before the observer timeout. The one-shot Job may have aborted during preflight or Flux may not have reconciled it yet." >/dev/null
+            echo "Chaos experiment observer: no sanitized lastChaosExperiment result became visible before the observer timeout." >&2
             exit 1
           fi
 
@@ -85,24 +80,25 @@ jobs:
           failures="$(jq -r '.httpFailures' /tmp/chaos-result.json)"
           minimum="$(jq -r '.minimumReadyPods' /tmp/chaos-result.json)"
           maximum="$(jq -r '.maximumReadyPods' /tmp/chaos-result.json)"
+          search_before="$(jq -r 'if .searchReachableBefore then "reachable" else "unreachable" end' /tmp/chaos-result.json)"
           search_after="$(jq -r 'if .searchReachableAfter then "reachable" else "unreachable" end' /tmp/chaos-result.json)"
           started="$(jq -r '.experimentStartedAt' /tmp/chaos-result.json)"
           completed="$(jq -r '.completedAt' /tmp/chaos-result.json)"
 
-          body="$(printf '%s\n' \
-            '### Chaos experiment result' \
-            '' \
-            "- Result: **${status}**" \
-            "- Recovery: **${recovery} ms**" \
-            "- HTTP checks: **${checks}**" \
-            "- HTTP failures: **${failures}**" \
-            "- Ready pods observed: **${minimum} → ${maximum}**" \
-            "- Search after experiment: **${search_after}**" \
-            "- Started: \`${started}\`" \
-            "- Completed: \`${completed}\`" \
-            '' \
-            'This comment is generated only from the public sanitized status payload. Pod names, node names and internal addresses are not included.')"
+          {
+            echo "### Chaos experiment result"
+            echo
+            echo "- Result: **${status}**"
+            echo "- Recovery: **${recovery} ms**"
+            echo "- HTTP checks: **${checks}**"
+            echo "- HTTP failures: **${failures}**"
+            echo "- Ready pods observed: **${minimum} → ${maximum}**"
+            echo "- Search before experiment: **${search_before}**"
+            echo "- Search after experiment: **${search_after}**"
+            echo "- Started: \`${started}\`"
+            echo "- Completed: \`${completed}\`"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
-          gh api --method POST \
-            "repos/${GITHUB_REPOSITORY}/issues/${RESULT_PR}/comments" \
-            -f body="$body" >/dev/null
+          if [ "$status" != "PASS" ]; then
+            exit 1
+          fi
