@@ -6,9 +6,9 @@ resources:
   - ../base
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: fa1dc61527e14ccf8274ed00054768bfd4c140b4
+    newTag: 6ec6128eaee1dcced51009ccf7729660dd99fe22
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: fa1dc61527e14ccf8274ed00054768bfd4c140b4
+    newTag: 6ec6128eaee1dcced51009ccf7729660dd99fe22
 replicas:
   - name: blog
     count: 3
