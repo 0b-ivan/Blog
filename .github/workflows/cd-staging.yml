@@ -21,6 +21,11 @@ on:
       - 'VERSION'
       - '.dockerignore'
       - '.github/workflows/cd-staging.yml'
+      - 'infra/kubernetes/base/**'
+      - 'infra/kubernetes/staging/**'
+      - 'infra/kubernetes/production/**'
+      - 'scripts/verify-staging-scaling.sh'
+      - 'scripts/verify-production-k8s.sh'
   workflow_dispatch:
 
 permissions:
@@ -72,10 +77,49 @@ jobs:
           echo 'Refusing staging deployment: commit is not associated with a merged PR into staging.'
           exit 1
 
+      - name: Classify staging deployment
+        id: deploy_mode
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "build_images=true" >> "$GITHUB_OUTPUT"
+            echo "gitops_only=false" >> "$GITHUB_OUTPUT"
+            echo 'Manual staging deployment: rebuild images and verify the published version.'
+            exit 0
+          fi
+
+          git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" > /tmp/staging-deploy-files.txt
+          echo 'Staging deployment-relevant changes:'
+          cat /tmp/staging-deploy-files.txt
+
+          build_images=false
+          while IFS= read -r file; do
+            case "$file" in
+              infra/kubernetes/base/*|infra/kubernetes/base/**/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|infra/kubernetes/production/*|infra/kubernetes/production/**/*|scripts/verify-staging-scaling.sh|scripts/verify-production-k8s.sh|.github/workflows/cd-staging.yml)
+                ;;
+              *)
+                build_images=true
+                ;;
+            esac
+          done < /tmp/staging-deploy-files.txt
+
+          if [ "$build_images" = true ]; then
+            echo "gitops_only=false" >> "$GITHUB_OUTPUT"
+            echo 'Application/content change detected: build new images.'
+          else
+            echo "gitops_only=true" >> "$GITHUB_OUTPUT"
+            echo 'GitOps-only change detected: reuse currently pinned images.'
+          fi
+          echo "build_images=$build_images" >> "$GITHUB_OUTPUT"
+
       - name: Build article version history
+        if: steps.deploy_mode.outputs.build_images == 'true'
         run: node scripts/build-post-history.js
 
       - name: Set SHA-tagged image names
+        if: steps.deploy_mode.outputs.build_images == 'true'
         id: meta
         shell: bash
         run: |
@@ -93,9 +137,11 @@ jobs:
           echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
+        if: steps.deploy_mode.outputs.build_images == 'true'
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
       - name: Login to GHCR
+        if: steps.deploy_mode.outputs.build_images == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ${{ env.REGISTRY }}
@@ -103,6 +149,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push staging blog image
+        if: steps.deploy_mode.outputs.build_images == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -117,6 +164,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=staging-blog
 
       - name: Build and push staging Kernel Grep image
+        if: steps.deploy_mode.outputs.build_images == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -129,6 +177,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=staging-search
 
       - name: Pin staging GitOps state to built images
+        if: steps.deploy_mode.outputs.build_images == 'true'
         env:
           DEPLOY_SHA: ${{ github.sha }}
           OWNER_LOWER: ${{ steps.meta.outputs.owner_lower }}
@@ -170,7 +219,7 @@ jobs:
           git add infra/kubernetes/staging/kustomization.yaml
 
           if git diff --cached --quiet; then
-            echo 'Staging Kustomize state is already pinned to this image SHA.'
+            echo 'No generated GitOps image-pin change to commit.'
           else
             git commit -m "chore(staging): deploy ${DEPLOY_SHA} [skip ci]"
             git push origin HEAD:staging
@@ -181,6 +230,7 @@ jobs:
           echo "GitOps state to verify: ${GITOPS_SHA}"
 
       - name: Wait for published staging build
+        if: steps.deploy_mode.outputs.build_images == 'true'
         env:
           EXPECTED_VERSION: ${{ steps.meta.outputs.build_version }}
           STAGING_URL: https://staging-blog.obivan.org
@@ -210,8 +260,35 @@ jobs:
           echo "Timed out waiting for ${EXPECTED_VERSION} to be published on staging." >&2
           exit 1
 
+      - name: Check public staging after GitOps-only change
+        if: steps.deploy_mode.outputs.gitops_only == 'true'
+        env:
+          STAGING_URL: https://staging-blog.obivan.org
+        run: |
+          set -euo pipefail
+          echo 'GitOps-only change: no image rebuild is required.'
+          echo 'Waiting briefly for Flux reconciliation before checking public availability.'
+          sleep 30
+
+          for attempt in $(seq 1 30); do
+            health="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache'               "${STAGING_URL}/healthz?gitops=${GITHUB_SHA}" 2>/dev/null || true)"
+            page="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache'               "${STAGING_URL}/?gitops=${GITHUB_SHA}" 2>/dev/null || true)"
+
+            if [ "$health" = 'ok' ] && printf '%s' "$page" | grep -q 'data-environment="staging"'; then
+              echo 'Public staging is healthy after the GitOps-only change.'
+              echo 'Note: this proves public availability, not the exact in-cluster replica count.'
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/30: health='${health:-unavailable}'"
+            sleep 10
+          done
+
+          echo 'Public staging did not become healthy after the GitOps-only change.' >&2
+          exit 1
+
       - name: Publish verified promotion candidate
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && steps.deploy_mode.outputs.build_images == 'true'
         env:
           VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
         run: |
@@ -228,7 +305,7 @@ jobs:
           echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
 
       - name: Open or update production promotion PR
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && steps.deploy_mode.outputs.build_images == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -268,8 +345,15 @@ jobs:
             --body "$body"
 
       - name: Deployment handoff
+        env:
+          BUILD_IMAGES: ${{ steps.deploy_mode.outputs.build_images }}
         run: |
-          echo 'Images are in GHCR and the staging GitOps manifest is updated.'
-          echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
-          echo 'The public staging build was verified before promotion/staging-verified was advanced.'
-          echo 'The production promotion PR targets the verified candidate branch and still requires a manual merge.'
+          if [ "$BUILD_IMAGES" = true ]; then
+            echo 'Images are in GHCR and the staging GitOps manifest is updated.'
+            echo 'The public staging build was verified before promotion/staging-verified was advanced.'
+            echo 'The production promotion PR targets the verified candidate branch and still requires a manual merge.'
+          else
+            echo 'GitOps-only change: existing images were reused and no promotion candidate was advanced.'
+            echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
+            echo 'Run scripts/verify-staging-scaling.sh from a host with cluster access for in-cluster replica verification.'
+          fi

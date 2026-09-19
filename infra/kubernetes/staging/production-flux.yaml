@@ -1,0 +1,37 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: blog-production-source
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: production-gitops
+  secretRef:
+    name: flux-system
+  url: ssh://git@github.com/0b-ivan/Blog
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: blog-production
+  namespace: flux-system
+spec:
+  suspend: false
+  interval: 10m0s
+  path: ./infra/kubernetes/production
+  prune: true
+  wait: true
+  timeout: 10m0s
+  sourceRef:
+    kind: GitRepository
+    name: blog-production-source
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: blog
+      namespace: blog-production
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: search
+      namespace: blog-production
