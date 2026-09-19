@@ -38,6 +38,8 @@ kind: ConfigMap
 metadata:
   name: chaos-monkey-result
   namespace: blog-staging
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
 data:
   result: ""
 ---
