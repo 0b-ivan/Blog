@@ -9,7 +9,7 @@ FLUX_KUSTOMIZATION="${FLUX_KUSTOMIZATION:-blog-production}"
 kubectl apply -f infra/kubernetes/production/namespace.yaml >/dev/null
 
 if ! kubectl -n "$NAMESPACE" get secret "$SECRET_NAME" >/dev/null 2>&1; then
-  cat >&2 <<EOF
+  cat >&2 <<'EOF'
 Missing Secret: $NAMESPACE/$SECRET_NAME
 
 Create it with a minimal GHCR credential that only needs read:packages.
