@@ -11,9 +11,9 @@ images:
   - name: cloudflare/cloudflared
     newTag: 2026.9.1
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 86dd126772b0b495614a9baedcbc42205e5e5359
+    newTag: 14d10ecb2d38a88ebb6244fdc9502e7948681fc5
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 86dd126772b0b495614a9baedcbc42205e5e5359
+    newTag: 14d10ecb2d38a88ebb6244fdc9502e7948681fc5
 patches:
   - target:
       group: apps
