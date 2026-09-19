@@ -1,103 +1,95 @@
 # Kubernetes-Production auf Proxmox
 
-Die interne Production-Kopie läuft parallel zur bestehenden Hetzner-Production im K3s-Cluster.
+Die K3s-Production läuft parallel zur bestehenden Hetzner-Production. Beide werden aus `main` weiter aktuell gehalten.
 
 ```text
-blog.obivan.org
-    |
-    v
-Hetzner Docker Compose        <- bleibt öffentliche Production
-
-K3s / Proxmox
-    |
-    +-- blog-staging
-    |     +-- 3x blog
-    |     +-- 1x search
-    |
-    +-- blog-production
-          +-- 3x blog
-          +-- 1x search
+Obsidian
+   |
+   v
+Publisher -> staging -> verifizierter Promotion-PR -> main
+                                              |
+                         +--------------------+--------------------+
+                         |                                         |
+                         v                                         v
+                Deploy (Hetzner)                         Deploy K3s Production
+                         |                                         |
+                Content/Compose                           immutable SHA-Images
+                         |                                         |
+                         v                                         v
+                 Hetzner Standby                         production-gitops
+                                                                   |
+                                                                  Flux
+                                                                   |
+                                                                   v
+                                                         blog-production
+                                                         3x blog + 1x search
 ```
 
-## Gemeinsame Basis
+## Hetzner bleibt aktuell
 
-Blog und Search liegen unter `infra/kubernetes/base`. Staging und Production verwenden dieselben Services, Probes, Rolling-Update-Regeln und Ressourcenlimits.
+Der bestehende Workflow `.github/workflows/cd.yml` bleibt unverändert zuständig für Hetzner.
 
-Staging ergänzt `staging-server.js`. Production verwendet den normalen Image-Entrypoint `seo-server.js`.
+Bei reinen Content-Änderungen synchronisiert er weiterhin Posts, Snippets, Assets, Archiv und History in die bestehenden Docker-Volumes und reindiziert Kernel Grep live. Bei vollständigen Deployments aktualisiert er weiterhin Blog und Search per Docker Compose.
 
-## Flux
+Damit bleibt Hetzner auch nach einem öffentlichen K3s-Cutover ein aktueller Rollback-Standby.
 
-`blog-production` wird inzwischen aktiv von Flux reconciliert:
+## K3s bekommt denselben main-Stand
+
+Der separate Workflow `.github/workflows/cd-k8s-production.yml` läuft ebenfalls für relevante Änderungen auf `main`.
+
+Er:
+
+1. baut Blog und Search auch bei Content-Änderungen neu,
+2. pusht beide Images unter dem unveränderlichen Git-SHA nach GHCR,
+3. synchronisiert `infra/kubernetes/base` und `infra/kubernetes/production` in den Branch `production-gitops`,
+4. pinnt dort Blog und Search auf exakt den `main`-SHA,
+5. lässt Flux das Rolling Deployment durchführen,
+6. wartet anschließend auf den öffentlichen Canary `https://k8s-blog.obivan.org` und prüft Healthcheck, Build-Version und Kernel Grep.
+
+Der Build bekommt eine eindeutig prüfbare Version:
 
 ```text
-flux-system/blog-production
-  -> ./infra/kubernetes/production
+<VERSION>+<12-stelliger-main-SHA>
 ```
 
-Der parallele Production-Test ist intern erfolgreich:
+Der semantische `VERSION`-Wert im Repository bleibt davon unberührt.
+
+## Production-GitOps ist von Staging getrennt
+
+Flux liest Production nicht mehr direkt aus dem Branch `staging`.
 
 ```text
-3 Blog-Replicas
-1 Search-Replica
-Service /healthz = ok
+GitRepository blog-production-source
+  branch: production-gitops
+          |
+          v
+Kustomization blog-production
+  path: ./infra/kubernetes/production
 ```
 
-## Canary-Hostname vor dem Cutover
+Damit kann eine noch nicht nach `main` promotete Staging-Infrastruktur die Production nicht versehentlich verändern.
 
-Bevor `blog.obivan.org` umgeschaltet wird, bekommt die K3s-Production einen separaten Test-Hostname:
+Der Branch `production-gitops` wird ausschließlich vom Production-Workflow fortgeschrieben. Infrastruktur aus `base` und `production` wird erst übernommen, nachdem sie Bestandteil von `main` geworden ist.
+
+## Obsidian und LiveSync
+
+Obsidian LiveSync, CouchDB, der Headless-LiveSync-Client und der Publisher können zunächst auf Hetzner bleiben. Der Wechsel des öffentlichen Blog-Traffics zu K3s verändert diesen Authoring-Pfad nicht.
+
+Auch `.github/workflows/sync-main-to-obsidian.yml` bleibt bestehen und spiegelt veröffentlichte bzw. archivierte Notes weiterhin auf den Hetzner-Headless-Vault zurück.
+
+## Canary
+
+Vor und nach dem Cutover bleibt dieser Hostname bestehen:
 
 ```text
 https://k8s-blog.obivan.org
+  -> http://blog.blog-production.svc.cluster.local:80
 ```
 
-Dafür muss kein zweiter `cloudflared`-Pod gestartet werden. Der bestehende Tunnel kann mehrere veröffentlichte Anwendungen bedienen. Im Cloudflare-Dashboard wird auf demselben Tunnel eine zusätzliche Published Application angelegt:
+Er ist gleichzeitig der öffentliche Deployment-Gate für den K3s-Production-Workflow.
 
-```text
-Hostname:
-k8s-blog.obivan.org
+## Öffentlicher Cutover
 
-Service URL:
-http://blog.blog-production.svc.cluster.local:80
-```
+Erst wenn der Dual-Deploy einmal erfolgreich von `main` durchgelaufen ist, wird `blog.obivan.org` auf denselben K3s-Service geroutet.
 
-Der bestehende Staging-Eintrag bleibt unverändert:
-
-```text
-staging-blog.obivan.org
-  -> http://blog.blog-staging.svc.cluster.local:80
-```
-
-Damit laufen beide Hostnames über denselben Tunnel, aber auf unterschiedliche Kubernetes-Services.
-
-## Canary prüfen
-
-Sobald Cloudflare den neuen Hostnamen veröffentlicht:
-
-```bash
-cd /opt/Blog
-git fetch origin staging
-git checkout staging
-git pull --ff-only
-
-./scripts/verify-production-canary.sh
-```
-
-Das Skript prüft:
-
-- `/healthz`
-- Startseite ohne Staging-Marker
-- `/archive`
-- `/grep`
-- eine echte Kernel-Grep-Suche über `/api/search`
-
-Ein alternativer Hostname kann so geprüft werden:
-
-```bash
-TARGET_URL=https://example.obivan.org ./scripts/verify-production-canary.sh
-```
-
-## Noch kein Production-Cutover
-
-`blog.obivan.org` bleibt bis zum erfolgreichen Canary- und Failure-Test auf Hetzner.
-
-Erst danach wird der öffentliche Production-Hostname gezielt auf die K3s-Production umgestellt.
+Hetzner wird dabei nicht abgeschaltet. Dadurch bleibt der Rückweg ein reiner Cloudflare-/DNS-Rollback und benötigt keinen Restore.
