@@ -122,6 +122,8 @@ spec:
               value: /content/post-history
             - name: SEARCH_SERVICE_URL
               value: http://search:8090/search
+            - name: STATUS_SERVICE_URL
+              value: http://kube-status:8080/status
           readinessProbe:
             httpGet:
               path: /healthz

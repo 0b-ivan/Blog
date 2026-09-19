@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-status
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kube-status
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kube-status
+subjects:
+  - kind: ServiceAccount
+    name: kube-status
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kube-status
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-status
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-status
+  template:
+    metadata:
+      labels:
+        app: kube-status
+    spec:
+      serviceAccountName: kube-status
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kube-status
+          image: ghcr.io/0b-ivan/kernel-notes-status:UNPINNED
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: EXPECTED_BLOG_REPLICAS
+              value: "3"
+            - name: EXPECTED_SEARCH_REPLICAS
+              value: "1"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-status
+spec:
+  selector:
+    app: kube-status
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

@@ -4,6 +4,7 @@ resources:
   - blog.yaml
   - app
   - cloudflared.yaml
+  - chaos-monkey.yaml
   - production-flux.yaml
   - secrets/ghcr-pull.sops.yaml
   - secrets/cloudflared-token.sops.yaml
@@ -14,6 +15,10 @@ images:
     newTag: 36085063613da4eb66441e8f3714d1ec51d3ad2c
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 36085063613da4eb66441e8f3714d1ec51d3ad2c
+  - name: ghcr.io/0b-ivan/kernel-notes-status
+    newTag: UNPINNED
+  - name: ghcr.io/0b-ivan/kernel-notes-chaos
+    newTag: UNPINNED
 patches:
   - target:
       group: apps
@@ -26,3 +31,6 @@ patches:
         path: /spec/template/spec/containers/0/args
         value:
           - staging-server.js
+      - op: add
+        path: /spec/template/metadata/labels/chaos.obivan.org~1enabled
+        value: "true"

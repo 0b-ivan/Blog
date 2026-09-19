@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos-monkey
+  namespace: blog-staging
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: chaos-monkey
+  namespace: blog-staging
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: chaos-monkey
+  namespace: blog-staging
+subjects:
+  - kind: ServiceAccount
+    name: chaos-monkey
+    namespace: blog-staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: chaos-monkey
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: chaos-monkey
+  namespace: blog-staging
+spec:
+  schedule: "0 3 * * 0"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 180
+      template:
+        metadata:
+          labels:
+            app: chaos-monkey
+        spec:
+          serviceAccountName: chaos-monkey
+          restartPolicy: Never
+          imagePullSecrets:
+            - name: ghcr-pull
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: chaos-monkey
+              image: ghcr.io/0b-ivan/kernel-notes-chaos:UNPINNED
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: EXPECTED_REPLICAS
+                  value: "3"
+                - name: RECOVERY_TIMEOUT_MS
+                  value: "120000"
+                - name: HEALTH_INTERVAL_MS
+                  value: "500"
+                - name: HEALTH_URL
+                  value: https://staging-blog.obivan.org/healthz
+                - name: SEARCH_URL
+                  value: https://staging-blog.obivan.org/api/search
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 64Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                capabilities:
+                  drop: ["ALL"]

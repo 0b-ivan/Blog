@@ -113,3 +113,52 @@ unset GITHUB_TOKEN
 Der Image-Build bleibt in GitHub Actions, das eigentliche Cluster-Deployment bleibt Pull-basiert über Flux. GitHub Actions braucht dadurch keinen direkten Netzwerkzugriff auf das private K3s-Netz.
 
 Hinweis für später enforced Rulesets: Der GitHub-Actions-Bot muss die automatischen Änderungen an den Image-Pins auf `staging` schreiben dürfen. Wenn die Rulesets durch einen passenden GitHub-Plan tatsächlich enforced werden, muss dafür ein gezielter Bypass bzw. eine gleichwertige Automationsregel eingerichtet werden.
+
+## Öffentlicher Kubernetes-Status
+
+Der Blog stellt eine eigene Status-Rubrik bereit:
+
+```text
+https://staging-blog.obivan.org/status
+```
+
+Die Browser-Seite fragt ausschließlich `/api/kubernetes-status` am Blog ab. Der Blog proxyt dafür den internen Service `kube-status`.
+
+`kube-status` besitzt nur eine namespace-lokale Role mit:
+
+```text
+pods: get, list
+```
+
+Nach außen gehen ausschließlich aggregierte Readiness-Werte. Pod-Namen, Nodes, interne IPs und sonstige Cluster-Details bleiben intern.
+
+## Chaos Monkey v1
+
+Der Chaos Monkey ist absichtlich als suspendierter CronJob hinterlegt und läuft nicht automatisch:
+
+```text
+kubectl -n blog-staging get cronjob chaos-monkey
+```
+
+Ein Experiment muss mit einem expliziten manuellen Jobnamen gestartet werden:
+
+```bash
+JOB="chaos-monkey-manual-$(date +%s)"
+kubectl -n blog-staging create job --from=cronjob/chaos-monkey "$JOB"
+kubectl -n blog-staging logs -f "job/$JOB"
+```
+
+Der Runner verweigert die Ausführung, wenn der Namespace nicht exakt `blog-staging` ist oder der erzeugte Pod nicht aus einem Job mit Präfix `chaos-monkey-manual-` stammt.
+
+Weitere Guards:
+
+- ausschließlich Pods mit `app=blog` und `chaos.obivan.org/enabled=true`
+- exakt `3/3` erwartete Blog-Pods müssen vor dem Experiment Ready sein
+- jeder Kandidat muss von einem ReplicaSet kontrolliert werden
+- der öffentliche `/healthz` muss vor dem Kill grün sein
+- pro Ausführung wird exakt ein Pod gelöscht
+- danach wird bis zur vollständigen Recovery gewartet
+- HTTP-Ausfälle, Recovery-Zeit, Ready-Minimum/-Maximum und Search-Erreichbarkeit werden als JSON-Logs ausgegeben
+- RBAC erlaubt ausschließlich `get`, `list` und `delete` auf Pods im Namespace `blog-staging`
+
+Ein versehentliches Entsuspendieren des CronJobs startet daher noch kein wirksames Chaos-Experiment: automatisch erzeugte CronJob-Pods bestehen den manuellen Jobnamen-Guard nicht.
