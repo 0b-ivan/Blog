@@ -88,6 +88,7 @@ Bevor ich den Ablauf zeige, die Begriffe, die in diesem Teil ständig vorkommen:
 | **PR / Pull Request** | Ein Vorschlag, Änderungen aus einem Branch in einen anderen zu übernehmen. Vor dem Merge können Checks und Reviews laufen. |
 | **CI** | *Continuous Integration*: GitHub Actions prüft Änderungen automatisch, zum Beispiel mit Tests, Linting und Builds. |
 | **Container-Image** | Das gebaute Paket, aus dem später ein Container gestartet wird. Blog und Suche haben jeweils ein eigenes Image. |
+| **Kernel Grep / Search** | Mein eigener Suchdienst aus Teil I. „Kernel Grep“ und „Search“ meinen in dieser Serie denselben Dienst. |
 | **GHCR** | *GitHub Container Registry*: Dort speichere ich die gebauten Container-Images. |
 | **Flux** | Ein Dienst im Kubernetes-Cluster, der den gewünschten Zustand aus Git liest und im Cluster umsetzt. |
 | **GitOps** | Die gewünschte Konfiguration liegt in Git. Änderungen passieren über Commits und Pull Requests statt über spontane Befehle direkt im Cluster. |
@@ -96,6 +97,7 @@ Bevor ich den Ablauf zeige, die Begriffe, die in diesem Teil ständig vorkommen:
 | **Pin** | Eine Version bewusst festschreiben, statt immer „die neueste“ zu verwenden. Ein Kustomize-Pin legt hier fest, welches Image Staging benutzen soll. |
 | **Reconcile** | Flux vergleicht „was Git sagt“ mit „was im Cluster läuft“ und korrigiert Abweichungen. |
 | **Bootstrap** | Die einmalige Ersteinrichtung von Flux: Dienste installieren, Repository verbinden und Branch/Pfad festlegen. |
+| **Rollout** | Das Ausrollen einer neuen Version im Cluster: neue Pods starten, alte werden ersetzt und Kubernetes prüft, ob der Wechsel klappt. |
 
 
 Image bauen, SHA raussuchen, irgendwo eintragen, Rollout prüfen. Das funktioniert. Aber wenn ich zwei Tage später überlegen muss, welcher Commit gerade auf Staging läuft, ist mir das noch zu viel Handarbeit.
@@ -393,7 +395,7 @@ Nur „Flux ist installiert“ reicht mir nicht.
 
 Ich prüfe danach drei Dinge: die **Git-Quelle** (welches Repository und welcher Branch gelesen werden), die **Kustomization** (welche Manifeste Flux anwenden soll) und die laufenden Flux-Dienste:
 
-[Flux-Reconcile und Controller prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
+[Flux-Zustand und laufende Dienste prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
 
 Interessant sind vor allem:
 
@@ -595,7 +597,7 @@ Build
  ↓
 GHCR
  ↓
-GitOps-Pins
+Kustomize-Pins
  ↓
 Flux
  ↓
