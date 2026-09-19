@@ -20,10 +20,10 @@
 
 .status-summary-card,
 .status-card {
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  background: var(--card);
   border-radius: 18px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-soft);
 }
 
 .status-summary-card {
@@ -44,7 +44,7 @@
   display: block;
   margin: 0 0 0.35rem;
   color: var(--muted);
-  font-family: var(--mono);
+  font-family: "IBM Plex Mono", monospace;
   font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -94,9 +94,9 @@
 }
 
 .status-refresh {
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-border);
   border-radius: 999px;
-  background: var(--surface);
+  background: var(--card);
   color: inherit;
   padding: 0.65rem 1rem;
   cursor: pointer;
@@ -110,7 +110,7 @@
 .status-pill {
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
-  font-family: var(--mono);
+  font-family: "IBM Plex Mono", monospace;
   font-size: 0.78rem;
   background: color-mix(in srgb, #8a8f98 15%, transparent);
 }
@@ -124,7 +124,7 @@
 }
 
 .status-disclosure {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--surface-border);
   padding-top: 1.5rem;
 }
 
