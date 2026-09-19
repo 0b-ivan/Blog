@@ -1,6 +1,6 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 6
+version: 7
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
@@ -82,6 +82,30 @@ Teil I war der Teil, in dem ich den Blog überhaupt erstmal sauber auf K3s bekom
 Danach hat mich vor allem eins gestört: **Der Cluster lief, aber Deployments hatten noch zu viele Handgriffe.**
 
 Image bauen, SHA raussuchen, irgendwo eintragen, Rollout prüfen. Das funktioniert. Aber wenn ich zwei Tage später überlegen muss, welcher Commit gerade auf Staging läuft, ist mir das noch zu viel Handarbeit.
+
+## Ziel, Architektur und Stand
+
+Das Ziel von Teil II: **Ich will jederzeit sehen können, welcher Git-Stand auf Staging läuft und genau diesen Stand prüfen, bevor irgendetwas nach Production geht.**
+
+![Architektur Teil II: GitHub Actions, GHCR, Kustomize, Flux, K3s und verifizierter Promotion-Candidate](/assets/posts/k3s-proxmox-series/teil-ii-architektur.svg)
+
+Der Weg besteht aus sechs klaren Schritten:
+
+| Schritt | Ziel | Stand |
+| --- | --- | --- |
+| 1. PR nach `staging` | Änderungen nicht direkt deployen | erledigt |
+| 2. Images bauen | Blog und Search eindeutig einem Commit zuordnen | erledigt |
+| 3. Kustomize-Pins | gewünschten Image-Stand wieder in Git schreiben | erledigt |
+| 4. Flux-Reconcile | Cluster zieht den Sollzustand selbst | erledigt |
+| 5. öffentlicher Gate | wirklich den erwarteten Staging-Build prüfen | erledigt |
+| 6. Promotion | nur verifizierten Candidate nach `main` anbieten | erledigt |
+
+### Was nach Teil II noch offen war
+
+- [ ] Branch Protection beziehungsweise Ruleset wirklich erzwingen.
+- [ ] Images langfristig auf Digests statt nur auf SHA-Tags pinnen.
+- [ ] Search im öffentlichen Gate separat verifizieren.
+- [x] Secrets aus dem manuellen Cluster-Zustand in GitOps überführen – in Teil III mit SOPS/age umgesetzt.
 
 Also wollte ich den Weg einmal sauber durchziehen:
 

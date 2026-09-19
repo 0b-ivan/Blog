@@ -1,6 +1,6 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 5
+version: 6
 title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
 status: publish
 date: 2026-09-18
@@ -62,6 +62,32 @@ Teil II: Der Weg von Git bis Staging läuft automatisch über Flux.
 Damit war das Setup benutzbar. Aber „läuft“ ist für mich noch nicht dasselbe wie „ich bekomme das in sechs Monaten genauso wieder aufgebaut“.
 
 Genau darum geht es in Teil III.
+
+## Ziel, Architektur und Stand
+
+Teil III hat ein anderes Ziel als die ersten beiden Teile: **Nicht mehr nur „es läuft“, sondern „ich kann es reproduzieren, absichern und nach einem Ausfall wiederherstellen“.**
+
+![Architektur Teil III: gepinntes K3s, Flux-SOPS, verschlüsselte Secrets sowie Backup- und Monitoring-Pfad](/assets/posts/k3s-proxmox-series/teil-iii-architektur.svg)
+
+Ich teile das absichtlich in einzelne Schritte, damit bei einem Fehler klar bleibt, welche Änderung ihn verursacht hat:
+
+| Schritt | Ziel | Stand |
+| --- | --- | --- |
+| 1. K3s-Pin | Version, Installer-Commit und SHA reproduzierbar machen | erledigt |
+| 2. SOPS/age | Secrets verschlüsselt in Git verwalten | erledigt |
+| 3. Flux-Decryption | Secrets erst im Cluster entschlüsseln | erledigt |
+| 4. Staging-Gate | sicherstellen, dass der Umbau nichts kaputt gemacht hat | erledigt |
+| 5. Backup/Restore | Rücksicherung wirklich testen | offen |
+| 6. Observability | Node, Pods und öffentlichen Dienst überwachen | offen |
+
+### To-dos für Teil III
+
+- [ ] vollständigen Restore-Test durchführen und dokumentieren.
+- [ ] Off-cluster-Backup-Ziel und Retention festlegen.
+- [ ] privaten age-Key außerhalb des Clusters gesichert hinterlegen und Restore mitprüfen.
+- [ ] Monitoring-Stack auswählen und zuerst nur die wirklich hilfreichen Signale anbinden.
+- [ ] Alerts für Node, Workloads und öffentlichen Healthcheck definieren.
+- [ ] Upgrade- und Rollback-Ablauf für K3s dokumentieren.
 
 Ich will bei einem kaputten Node nicht überlegen müssen, welche K3s-Version damals zufällig im `stable`-Channel lag. Ich will Secrets nicht per Hand im Cluster verteilen. Und ein Backup ist für mich erst dann ein Backup, wenn ich weiß, wie ich es wieder einspiele.
 

@@ -1,11 +1,11 @@
 ---
 id: 2026-09-15-k3s-proxmox-cloudflare-part-1
-version: 4
+version: 5
 title: "K3s auf Proxmox – Teil I: Blog-Staging mit Cloudflare Tunnel"
 status: publish
 date: 2026-09-15
 created_at: 2026-09-15
-updated_at: 2026-09-16
+updated_at: 2026-09-18
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -64,6 +64,30 @@ snippets:
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.
 
 Ist bereits ein Docker-Image der Anwendung vorhanden, lässt sich der Ablauf weitgehend übernehmen. Im Wesentlichen müssen nur Image, Container-Port, Healthcheck und Domain an den jeweiligen Stack angepasst werden.
+
+## Ziel, Architektur und Stand
+
+Mein Ziel in Teil I ist bewusst klein: **Staging soll laufen, intern sauber erreichbar sein und von außen über Cloudflare funktionieren – ohne Production umzuziehen.**
+
+![Architektur Teil I: Proxmox, K3s, Blog, Kernel Grep und Cloudflare Tunnel](/assets/posts/k3s-proxmox-series/teil-i-architektur.svg)
+
+Die Arbeit lässt sich in sechs Schritte teilen:
+
+| Schritt | Ziel | Stand |
+| --- | --- | --- |
+| 1. VM | Debian 13 auf Proxmox als saubere Basis | erledigt |
+| 2. K3s | schlanker Single-Node ohne unnötige öffentliche Dienste | erledigt |
+| 3. Registry | private GHCR-Images aus K3s ziehen | erledigt |
+| 4. Blog + Search | beide Services nur intern über ClusterIP betreiben | erledigt |
+| 5. interne Tests | DNS, Service und Healthcheck vor Cloudflare prüfen | erledigt |
+| 6. Cloudflare Tunnel | Staging outbound-only öffentlich erreichbar machen | erledigt |
+
+### Was nach Teil I noch offen war
+
+- [x] Staging im Browser eindeutig markieren – in Teil II erledigt.
+- [x] Deployments über Git statt über manuelle `kubectl`-Schritte steuern – in Teil II erledigt.
+- [x] Nur einen wirklich getesteten Stand Richtung Production weitergeben – in Teil II erledigt.
+- [ ] Betrieb härten: Secrets, Backup/Restore und Monitoring – Thema von Teil III.
 
 Am Ende läuft diese Kette:
 
