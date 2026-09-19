@@ -91,16 +91,20 @@ function boundedNumber(value, maximum = 300000) {
   return Math.min(maximum, Math.max(0, number));
 }
 
+function normalizedTimestamp(value) {
+  if (typeof value !== 'string') return '';
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? '' : new Date(timestamp).toISOString();
+}
+
 function sanitizedChaosExperiment(payload) {
   if (!payload || typeof payload !== 'object') return null;
   if (payload.experiment !== 'single-blog-pod-delete') return null;
 
   return {
     experiment: 'single-blog-pod-delete',
-    experimentStartedAt: typeof payload.experimentStartedAt === 'string'
-      ? payload.experimentStartedAt
-      : '',
-    completedAt: typeof payload.completedAt === 'string' ? payload.completedAt : '',
+    experimentStartedAt: normalizedTimestamp(payload.experimentStartedAt),
+    completedAt: normalizedTimestamp(payload.completedAt),
     recoveryTimeMs: boundedNumber(payload.recoveryTimeMs),
     httpChecks: boundedNumber(payload.httpChecks, 100000),
     httpFailures: boundedNumber(payload.httpFailures, 100000),
