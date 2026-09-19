@@ -71,9 +71,12 @@ Bevor ich mit Secrets anfange, die Begriffe, die dafür wichtig sind:
 | **Kubernetes Secret** | Eine Kubernetes-Ressource für Zugangsdaten oder Tokens. Sie ist nicht automatisch „sicher verschlüsselt in Git“ – genau dieses Problem löse ich hier mit SOPS. |
 | **SOPS** | Ein Werkzeug, das sensible Werte in Dateien wie YAML oder JSON verschlüsselt, während Struktur und Metadaten lesbar bleiben können. |
 | **age** | Ein Werkzeug und Dateiformat für asymmetrische Verschlüsselung. Mit dem öffentlichen Schlüssel wird verschlüsselt; mit der privaten Identity wird entschlüsselt. |
+| **GitOps** | Der gewünschte technische Zustand liegt in Git. Flux liest diesen Zustand und setzt ihn im Cluster um. |
+| **Reconcile** | Der Abgleich zwischen Git und Cluster: Flux prüft, ob beides zusammenpasst, und wendet nötige Änderungen an. |
 | **Flux Decryption** | Flux entschlüsselt eine SOPS-Datei erst beim Anwenden im Cluster und übergibt danach das normale Kubernetes-Secret an die API. |
 | **Kustomization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-Manifeste angewendet werden und welche Zusatzfunktionen – hier SOPS-Decryption – dabei gelten. |
 | **Bootstrap** | Die einmalige Startkonfiguration, die nötig ist, bevor der automatische Ablauf alleine funktioniert. Beim SOPS-Setup ist das das erstmalige Hinterlegen des age-Schlüssels und Aktivieren der Entschlüsselung. |
+| **RBAC** | Das Kubernetes-Berechtigungsmodell nach Rollen. Ich führe in diesem Schritt noch keine eigene RBAC-Härtung ein; das bleibt ein separater Hardening-Punkt. |
 
 
 ## Ziel, Architektur und Stand
@@ -136,7 +139,7 @@ Also habe ich erstmal genau diesen Stand festgenagelt. Noch kein Upgrade, keine 
 
 Nur `INSTALL_K3S_VERSION` zu setzen war mir zu wenig.
 
-Ich wollte drei Dinge festhalten:
+Ich wollte drei Dinge festhalten. **SHA-256** ist dabei eine Prüfsumme – also ein Fingerabdruck, mit dem ich erkenne, ob genau die erwartete Datei heruntergeladen wurde. Mit **Upstream-Commit** meine ich den konkreten Commit im offiziellen K3s-Repository.
 
 ```text
 K3s:
@@ -167,7 +170,7 @@ Das ist simpel, aber genau die Art Fehler, die ich lieber beim Bootstrap sehe al
 
 ## 3. Der Installer prüft danach auch das eigentliche Binary
 
-Die Checksumme von `install.sh` sagt natürlich noch nichts über das heruntergeladene K3s-Binary aus.
+Die Checksumme von `install.sh` sagt natürlich noch nichts über das heruntergeladene K3s-Binary aus. Mit **Binary** meine ich hier einfach die ausführbare K3s-Datei selbst.
 
 Der offizielle Installer lädt für die gewünschte Release-Version zusätzlich die passende `sha256sum-<arch>.txt` und prüft das Binary.
 
@@ -356,7 +359,7 @@ Dafür gibt es jetzt einen einmaligen Bootstrap:
 
 [Live-Flux einmalig für SOPS bootstrappen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/05-bootstrap-live-flux-sops.sh "snippet:bash")
 
-Das Skript macht den Live-Patch **erst**, wenn es vorher geprüft hat, dass in `origin/staging` bereits alles sauber vorbereitet ist:
+Das Skript verändert die laufende Flux-Ressource einmalig direkt **erst dann**, wenn es vorher geprüft hat, dass in `origin/staging` bereits alles sauber vorbereitet ist:
 
 - Decryption-Konfiguration
 - beide Secret-Ressourcen
@@ -379,7 +382,7 @@ Genau so wollte ich es: einmaliger Bootstrap, danach wieder normaler GitOps-Betr
 
 Nur in die README zu schreiben „bitte keine Secrets committen“ reicht mir nicht.
 
-Deshalb läuft bei jedem PR:
+Deshalb läuft bei jedem PR zusätzlich eine **CI-Prüfung**, also ein automatischer GitHub-Actions-Check:
 
 ```bash
 bash scripts/check-gitops-secrets.sh
