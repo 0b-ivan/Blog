@@ -28,7 +28,21 @@ describe('public Kubernetes status contract', () => {
           status: 'operational',
           podNames: ['blog-secret-name']
         }
-      ]
+      ],
+      lastChaosExperiment: {
+        experiment: 'single-blog-pod-delete',
+        experimentStartedAt: '2026-09-19T19:00:00.000Z',
+        completedAt: '2026-09-19T19:00:02.500Z',
+        recoveryTimeMs: 2500,
+        httpChecks: 6,
+        httpFailures: 0,
+        minimumReadyPods: 2,
+        maximumReadyPods: 3,
+        searchReachableBefore: true,
+        searchReachableAfter: true,
+        passed: true,
+        victim: 'must-not-leak-victim'
+      }
     });
 
     expect(payload).toEqual({
@@ -44,11 +58,25 @@ describe('public Kubernetes status contract', () => {
           ready: 3,
           status: 'operational'
         }
-      ]
+      ],
+      lastChaosExperiment: {
+        experiment: 'single-blog-pod-delete',
+        experimentStartedAt: '2026-09-19T19:00:00.000Z',
+        completedAt: '2026-09-19T19:00:02.500Z',
+        recoveryTimeMs: 2500,
+        httpChecks: 6,
+        httpFailures: 0,
+        minimumReadyPods: 2,
+        maximumReadyPods: 3,
+        searchReachableBefore: true,
+        searchReachableAfter: true,
+        passed: true
+      }
     });
     expect(JSON.stringify(payload)).not.toContain('must-not-leak');
     expect(JSON.stringify(payload)).not.toContain('10.0.0.5');
     expect(JSON.stringify(payload)).not.toContain('blog-secret-name');
+    expect(JSON.stringify(payload)).not.toContain('must-not-leak-victim');
   });
 
   it('normalizes unexpected values instead of exposing them', () => {
@@ -70,5 +98,6 @@ describe('public Kubernetes status contract', () => {
       ready: 0,
       status: 'unavailable'
     });
+    expect(payload.lastChaosExperiment).toBeUndefined();
   });
 });
