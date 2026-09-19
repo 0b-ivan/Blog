@@ -1,0 +1,230 @@
+name: Deploy K3s Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'posts/**'
+      - 'archive/**'
+      - 'snippets/**'
+      - 'assets/**'
+      - 'config/**'
+      - 'lib/**'
+      - '*.html'
+      - '*.js'
+      - 'rag/**'
+      - 'Dockerfile'
+      - 'Dockerfile.search'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'VERSION'
+      - '.dockerignore'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+  packages: write
+
+concurrency:
+  group: k3s-production-deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  BLOG_IMAGE_NAME: kernel-notes-blog
+  SEARCH_IMAGE_NAME: kernel-notes-search
+  GITOPS_BRANCH: production-gitops
+  K8S_PRODUCTION_URL: https://k8s-blog.obivan.org
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: production
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Require merged PR for automatic deployments
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            count=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              "/repos/${REPOSITORY}/commits/${COMMIT_SHA}/pulls" \
+              --jq '[.[] | select(.merged_at != null and .base.ref == "main")] | length')
+            if [ "$count" -ge 1 ]; then
+              echo 'Main commit is associated with a merged pull request.'
+              exit 0
+            fi
+            [ "$attempt" -eq 5 ] || sleep 3
+          done
+          echo 'Refusing K3s production deployment: commit is not associated with a merged PR into main.' >&2
+          exit 1
+
+      - name: Build article version history
+        run: node scripts/build-post-history.js
+
+      - name: Set immutable image names
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          BLOG_VERSION=$(tr -d '[:space:]' < VERSION)
+          if ! printf '%s' "$BLOG_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid VERSION: $BLOG_VERSION" >&2
+            exit 1
+          fi
+
+          SHORT_SHA="${GITHUB_SHA:0:12}"
+          BUILD_VERSION="${BLOG_VERSION}+${SHORT_SHA}"
+
+          echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
+          echo "build_version=${BUILD_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push K3s blog image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          build-args: |
+            BUILD_VERSION=${{ steps.meta.outputs.build_version }}
+          tags: |
+            ${{ steps.meta.outputs.blog_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:k3s-production
+          cache-from: type=gha,scope=k3s-production-blog
+          cache-to: type=gha,mode=max,scope=k3s-production-blog
+
+      - name: Build and push K3s Kernel Grep image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.search
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.search_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.SEARCH_IMAGE_NAME }}:k3s-production
+          cache-from: type=gha,scope=k3s-production-search
+          cache-to: type=gha,mode=max,scope=k3s-production-search
+
+      - name: Publish K3s production desired state
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          WORKTREE=/tmp/kernel-notes-production-gitops
+          rm -rf "$WORKTREE"
+
+          git fetch origin "${GITOPS_BRANCH}"
+          git worktree add --detach "$WORKTREE" "origin/${GITOPS_BRANCH}"
+
+          rm -rf \
+            "$WORKTREE/infra/kubernetes/base" \
+            "$WORKTREE/infra/kubernetes/production"
+          mkdir -p "$WORKTREE/infra/kubernetes"
+
+          cp -a infra/kubernetes/base "$WORKTREE/infra/kubernetes/base"
+          cp -a infra/kubernetes/production "$WORKTREE/infra/kubernetes/production"
+
+          GITOPS_FILE="$WORKTREE/infra/kubernetes/production/kustomization.yaml"
+
+          DEPLOY_SHA="$DEPLOY_SHA" GITOPS_FILE="$GITOPS_FILE" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(os.environ["GITOPS_FILE"])
+          text = path.read_text(encoding="utf-8")
+          sha = os.environ["DEPLOY_SHA"]
+
+          for image in ("kernel-notes-blog", "kernel-notes-search"):
+              pattern = (
+                  rf"(  - name: ghcr\.io/0b-ivan/{re.escape(image)}\n"
+                  rf"    newTag: )[A-Za-z0-9._-]+"
+              )
+              text, count = re.subn(pattern, rf"\g<1>{sha}", text)
+              if count != 1:
+                  raise SystemExit(
+                      f"Expected exactly one production image pin for {image}, found {count}"
+                  )
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          git -C "$WORKTREE" checkout -B "${GITOPS_BRANCH}" "origin/${GITOPS_BRANCH}"
+          git -C "$WORKTREE" config user.name 'github-actions[bot]'
+          git -C "$WORKTREE" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$WORKTREE" add infra/kubernetes/base infra/kubernetes/production
+          git -C "$WORKTREE" diff --cached --check
+
+          if git -C "$WORKTREE" diff --cached --quiet; then
+            echo "K3s production is already pinned to ${DEPLOY_SHA}."
+          else
+            git -C "$WORKTREE" commit -m "chore(production): deploy ${DEPLOY_SHA} [skip ci]"
+            git -C "$WORKTREE" push origin "HEAD:${GITOPS_BRANCH}"
+          fi
+
+      - name: Wait for K3s production canary
+        env:
+          EXPECTED_VERSION: ${{ steps.meta.outputs.build_version }}
+        run: |
+          set -euo pipefail
+          echo "Waiting for ${EXPECTED_VERSION} on ${K8S_PRODUCTION_URL}."
+
+          for attempt in $(seq 1 90); do
+            health="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${K8S_PRODUCTION_URL}/healthz?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            build_info="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${K8S_PRODUCTION_URL}/build-info.json?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            version="$(printf '%s' "$build_info" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version", ""))' 2>/dev/null || true)"
+
+            if [ "$health" = ok ] && [ "$version" = "$EXPECTED_VERSION" ]; then
+              response="$(curl -fsS --max-time 30 \
+                -X POST \
+                -H 'Content-Type: application/json' \
+                --data '{"q":"Docker","limit":1}' \
+                "${K8S_PRODUCTION_URL}/api/search")"
+
+              printf '%s' "$response" | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          results = data.get("results")
+          if not isinstance(results, list) or not results:
+              raise SystemExit("Kernel Grep returned no result for Docker")
+          '
+
+              echo "K3s production is serving ${EXPECTED_VERSION}."
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/90: health='${health:-unavailable}', version='${version:-unavailable}'"
+            sleep 10
+          done
+
+          echo "Timed out waiting for K3s production build ${EXPECTED_VERSION}." >&2
+          exit 1
