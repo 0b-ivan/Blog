@@ -121,9 +121,9 @@ Der Weg besteht aus sechs klaren Schritten:
 
 ### Was nach Teil II noch offen war
 
-- [ ] Branch Protection beziehungsweise Ruleset wirklich erzwingen.
-- [ ] Images langfristig auf Digests statt nur auf SHA-Tags pinnen.
-- [ ] Search im öffentlichen Gate separat verifizieren.
+- [ ] GitHub-Regeln so erzwingen, dass direkte Pushes oder ungeprüfte Merges auf den wichtigen Branches blockiert werden.
+- [ ] Images später mit ihrem exakten Inhalts-Fingerabdruck statt nur mit einem Tag festschreiben.
+- [ ] Search in der öffentlichen Staging-Prüfung separat verifizieren.
 - [ ] Secrets aus dem manuellen Cluster-Zustand in GitOps überführen – das ist der nächste Schritt in Teil III.
 
 Also wollte ich den Weg einmal sauber durchziehen:
