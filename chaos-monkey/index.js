@@ -12,6 +12,7 @@ const healthIntervalMs = Number.parseInt(process.env.HEALTH_INTERVAL_MS || '500'
 const healthUrl = process.env.HEALTH_URL || 'https://staging-blog.obivan.org/healthz';
 const searchUrl = process.env.SEARCH_URL || 'https://staging-blog.obivan.org/api/search';
 const requiredJobPrefix = 'chaos-monkey-manual-';
+const resultConfigMapName = process.env.RESULT_CONFIGMAP || 'chaos-monkey-result';
 
 function readRequiredFile(filePath) {
   return fs.readFileSync(filePath, 'utf8').trim();
@@ -25,11 +26,17 @@ function log(event, data = {}) {
   })}\n`);
 }
 
-function k8sRequest(method, pathname) {
+function k8sRequest(method, pathname, payload = null, contentType = 'application/json') {
   const token = readRequiredFile(tokenPath);
   const ca = fs.readFileSync(caPath);
   const host = process.env.KUBERNETES_SERVICE_HOST || 'kubernetes.default.svc';
   const port = Number.parseInt(process.env.KUBERNETES_SERVICE_PORT_HTTPS || '443', 10);
+  const body = payload === null ? null : JSON.stringify(payload);
+  const headers = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`
+  };
+  if (body !== null) headers['Content-Type'] = contentType;
 
   return new Promise((resolve, reject) => {
     const request = https.request({
@@ -38,10 +45,7 @@ function k8sRequest(method, pathname) {
       path: pathname,
       method,
       ca,
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`
-      },
+      headers,
       timeout: 5000
     }, (response) => {
       let body = '';
@@ -58,7 +62,7 @@ function k8sRequest(method, pathname) {
 
     request.on('timeout', () => request.destroy(new Error('Kubernetes API timeout')));
     request.on('error', reject);
-    request.end();
+    request.end(body || undefined);
   });
 }
 
@@ -121,6 +125,32 @@ async function searchReachable() {
   } catch (_error) {
     return false;
   }
+}
+
+function sanitizedExperimentResult(result) {
+  return {
+    experiment: 'single-blog-pod-delete',
+    experimentStartedAt: result.experimentStartedAt,
+    completedAt: result.completedAt,
+    recoveryTimeMs: result.recoveryTimeMs,
+    httpChecks: result.httpChecks,
+    httpFailures: result.httpFailures,
+    minimumReadyPods: result.minimumReadyPods,
+    maximumReadyPods: result.maximumReadyPods,
+    searchReachableBefore: result.searchReachableBefore === true,
+    searchReachableAfter: result.searchReachableAfter === true,
+    passed: result.passed === true
+  };
+}
+
+async function publishResult(namespace, result) {
+  const path = `/api/v1/namespaces/${encodeURIComponent(namespace)}/configmaps/${encodeURIComponent(resultConfigMapName)}`;
+  await k8sRequest(
+    'PATCH',
+    path,
+    { data: { result: JSON.stringify(sanitizedExperimentResult(result)) } },
+    'application/merge-patch+json'
+  );
 }
 
 async function main() {
@@ -201,6 +231,7 @@ async function main() {
   const searchAfter = await searchReachable();
   const result = {
     experimentStartedAt,
+    completedAt: new Date().toISOString(),
     podDeletedAt: new Date(deletionStartedAt).toISOString(),
     victim: victimName,
     recoveryTimeMs,
@@ -214,6 +245,7 @@ async function main() {
   };
 
   log('experiment_result', result);
+  await publishResult(namespace, result);
 
   if (!recovered) {
     throw new Error(`recovery timeout after ${recoveryTimeMs} ms`);
