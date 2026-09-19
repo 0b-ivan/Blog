@@ -1,6 +1,6 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 8
+version: 9
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
@@ -85,12 +85,17 @@ Bevor ich den Ablauf zeige, die Begriffe, die in diesem Teil ständig vorkommen:
 
 | Begriff | Kurz erklärt |
 | --- | --- |
-| **Flux** | Ein GitOps-Controller, der **im Kubernetes-Cluster** läuft. Flux schaut in Git nach, welcher Zustand gewünscht ist, und gleicht den Cluster daran an. |
+| **PR / Pull Request** | Ein Vorschlag, Änderungen aus einem Branch in einen anderen zu übernehmen. Vor dem Merge können Checks und Reviews laufen. |
+| **CI** | *Continuous Integration*: GitHub Actions prüft Änderungen automatisch, zum Beispiel mit Tests, Linting und Builds. |
+| **Container-Image** | Das gebaute Paket, aus dem später ein Container gestartet wird. Blog und Suche haben jeweils ein eigenes Image. |
+| **GHCR** | *GitHub Container Registry*: Dort speichere ich die gebauten Container-Images. |
+| **Flux** | Ein Dienst im Kubernetes-Cluster, der den gewünschten Zustand aus Git liest und im Cluster umsetzt. |
 | **GitOps** | Die gewünschte Konfiguration liegt in Git. Änderungen passieren über Commits und Pull Requests statt über spontane Befehle direkt im Cluster. |
-| **Git-SHA** | Die eindeutige Kennung eines Git-Commits, zum Beispiel `a9bc2d…`. Ich verwende sie als Image-Tag, damit ein Container-Build einem Commit zugeordnet werden kann. |
-| **Kustomize** | Ein Kubernetes-Werkzeug, das vorhandene YAML-Manifeste anpasst. Ich nutze es für die Staging-spezifischen Image-Tags. |
+| **Git-SHA** | Die eindeutige Kennung eines Git-Commits, zum Beispiel `a9bc2d…`. Ich verwende sie als Image-Tag, damit ein Build einem Commit zugeordnet werden kann. |
+| **Kustomize** | Ein Kubernetes-Werkzeug, das YAML-Manifeste für eine konkrete Umgebung anpasst. Ich nutze es unter anderem für die Image-Tags von Staging. |
+| **Pin** | Eine Version bewusst festschreiben, statt immer „die neueste“ zu verwenden. Ein Kustomize-Pin legt hier fest, welches Image Staging benutzen soll. |
 | **Reconcile** | Flux vergleicht „was Git sagt“ mit „was im Cluster läuft“ und korrigiert Abweichungen. |
-| **Bootstrap** | Die einmalige Ersteinrichtung von Flux: Controller installieren, Repository verbinden und Branch/Pfad festlegen. |
+| **Bootstrap** | Die einmalige Ersteinrichtung von Flux: Dienste installieren, Repository verbinden und Branch/Pfad festlegen. |
 
 
 Image bauen, SHA raussuchen, irgendwo eintragen, Rollout prüfen. Das funktioniert. Aber wenn ich zwei Tage später überlegen muss, welcher Commit gerade auf Staging läuft, ist mir das noch zu viel Handarbeit.
@@ -109,8 +114,8 @@ Der Weg besteht aus sechs klaren Schritten:
 | 2. Images bauen | Blog und Search eindeutig einem Commit zuordnen | erledigt |
 | 3. Kustomize-Pins | gewünschten Image-Stand wieder in Git schreiben | erledigt |
 | 4. Flux-Reconcile | Cluster zieht den Sollzustand selbst | erledigt |
-| 5. öffentlicher Gate | wirklich den erwarteten Staging-Build prüfen | erledigt |
-| 6. Promotion | nur verifizierten Candidate nach `main` anbieten | erledigt |
+| 5. öffentliche Staging-Prüfung | wirklich den erwarteten Staging-Build prüfen | erledigt |
+| 6. Production-Freigabe vorbereiten | nur den geprüften Stand nach `main` anbieten | erledigt |
 
 ### Was nach Teil II noch offen war
 
@@ -204,7 +209,7 @@ Neue Features und Artikel gehen zuerst nach `staging`. Erst wenn der Stand dort 
 
 ## 2. Ein Image gehört zu genau einem Commit
 
-Der Staging-Workflow baut Blog und Kernel Grep mit dem Git-SHA als Tag:
+Der Staging-Workflow baut Blog und **Kernel Grep, meinen Suchdienst aus Teil I**, mit dem Git-SHA als Tag:
 
 ```text
 ghcr.io/0b-ivan/kernel-notes-blog:<git-sha>
@@ -338,9 +343,9 @@ Bei meinem privaten Repo war das Ruleset zu diesem Zeitpunkt nicht wirksam erzwi
 
 ## 6. Flux installieren, prüfen und dann einmalig einrichten
 
-Mit **Bootstrap** meine ich hier die einmalige Ersteinrichtung von Flux: Die Controller werden im Cluster installiert, das GitHub-Repository wird verbunden und Flux bekommt gesagt, welchen Branch und welchen Pfad es beobachten soll.
+Mit **Bootstrap** meine ich hier die einmalige Ersteinrichtung von Flux: Die Flux-Dienste werden im Cluster installiert, das GitHub-Repository wird verbunden und Flux bekommt gesagt, welchen Branch und welchen Pfad es beobachten soll.
 
-Die Flux CLI habe ich nicht einfach blind per `curl | bash` installiert, sondern als konkrete Version und mit Checksum-Prüfung.
+Die Flux **CLI** – also das Kommandozeilenprogramm `flux` – habe ich nicht einfach blind per `curl | bash` installiert, sondern als konkrete Version und mit Checksum-Prüfung.
 
 Vor dem Bootstrap:
 
@@ -386,7 +391,7 @@ Ohne `--read-write-key` ist der Deploy Key read-only. Das passt zu meinem Aufbau
 
 Nur „Flux ist installiert“ reicht mir nicht.
 
-Ich prüfe Source, Kustomization und Controller:
+Ich prüfe danach drei Dinge: die **Git-Quelle** (welches Repository und welcher Branch gelesen werden), die **Kustomization** (welche Manifeste Flux anwenden soll) und die laufenden Flux-Dienste:
 
 [Flux-Reconcile und Controller prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
 
@@ -424,7 +429,7 @@ Nicht besonders elegant, aber eindeutig. Genau das wollte ich.
 
 ## 10. HTTP 200 allein ist mir als Deployment-Test zu wenig
 
-Nach dem Flux-Rollout prüft GitHub Actions die öffentliche Staging-Seite.
+Nach dem Flux-Rollout prüft GitHub Actions die öffentliche Staging-Seite. Diese Prüfung nenne ich im Workflow **Gate**: Erst wenn sie erfolgreich ist, darf der getestete Stand weiter Richtung Production.
 
 Das Blog-Image bekommt dafür eine Build-Version:
 
@@ -455,6 +460,8 @@ Auch `/healthz` vom Blog ist kein Sammel-Healthcheck für alle Abhängigkeiten.
 Das ist also ein guter Gate für den Blog, aber noch kein kompletter End-to-End-Test der ganzen Plattform.
 
 ## 11. Der Production-PR darf kein bewegliches Ziel sein
+
+Mit **Promotion** meine ich hier den Übergang von einem geprüften Staging-Stand Richtung Production. Der **Candidate** ist genau der Git-Stand, der diese Prüfung bestanden hat und deshalb für diesen Übergang bereitsteht.
 
 Anfangs lag es nahe, einfach einen PR von `staging` nach `main` offen zu lassen.
 
@@ -490,7 +497,7 @@ PR nach main
 
 Wichtig: Der Candidate zeigt auf den **GitOps-Bot-Commit mit den Image-Pins**, nicht nur auf den ursprünglichen Merge-Commit. Das ist der Stand, den Flux wirklich ausgerollt hat.
 
-Der Push auf den Candidate-Branch passiert ohne Force-Push. Wenn die Historie nicht mehr passt, soll der Workflow lieber rot werden als irgendetwas still zu überschreiben.
+Der Push auf den Candidate-Branch passiert ohne **Force-Push**. Ein Force-Push würde die bestehende Branch-Historie notfalls überschreiben. Genau das will ich hier vermeiden: Wenn die Historie nicht mehr passt, soll der Workflow lieber rot werden.
 
 ## 12. Production bleibt absichtlich ein manueller Klick
 
@@ -511,7 +518,7 @@ Gerade bei meinem Blog reicht mir ein kurzer Blick auf Staging, bevor der Stand 
 
 ## 13. Obsidian muss denselben Weg nehmen
 
-Ein zweiter Pfad war mir noch wichtig: Artikel aus Obsidian dürfen die ganze Staging-Kette nicht umgehen.
+Ein zweiter Pfad war mir noch wichtig: Artikel aus Obsidian dürfen die ganze Staging-Kette nicht umgehen. **LiveSync** synchronisiert dabei meinen Obsidian-Vault mit dem Server; der **Publisher** liest den Artikelstatus und erstellt daraus den passenden Git-Branch beziehungsweise Pull Request.
 
 Der Publisher läuft deshalb mit:
 
