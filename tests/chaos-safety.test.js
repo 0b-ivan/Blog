@@ -27,6 +27,7 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosManifest).toContain('resources: ["pods"]');
     expect(chaosManifest).toContain('verbs: ["get", "list", "delete"]');
     expect(chaosManifest).toContain('resourceNames: ["chaos-monkey-result"]');
+    expect(chaosManifest).toContain('kustomize.toolkit.fluxcd.io/ssa: IfNotPresent');
     expect(chaosManifest).toContain('verbs: ["patch"]');
     expect(chaosManifest).not.toContain('verbs: ["create"]');
     expect(chaosManifest).not.toContain('resources: ["nodes"]');
