@@ -1,11 +1,11 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 6
+version: 7
 title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
 status: publish
 date: 2026-09-18
 created_at: 2026-09-18
-updated_at: 2026-09-18
+updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -62,6 +62,17 @@ Teil II: Der Weg von Git bis Staging läuft automatisch über Flux.
 Damit war das Setup benutzbar. Aber „läuft“ ist für mich noch nicht dasselbe wie „ich bekomme das in sechs Monaten genauso wieder aufgebaut“.
 
 Genau darum geht es in Teil III.
+
+Bevor ich mit Secrets anfange, die Begriffe, die dafür wichtig sind:
+
+| Begriff | Kurz erklärt |
+| --- | --- |
+| **SOPS** | Ein Werkzeug zum Verschlüsseln von Werten in Dateien wie YAML oder JSON. Die Datei kann weiter in Git liegen, sensible Werte stehen dort aber nur verschlüsselt. |
+| **age** | Das Verschlüsselungsverfahren, das ich zusammen mit SOPS verwende. Mit dem **öffentlichen** age-Schlüssel wird verschlüsselt; mit dem **privaten** Schlüssel wird entschlüsselt. |
+| **Flux Decryption** | Flux entschlüsselt die SOPS-Dateien erst beim Anwenden im Cluster und übergibt danach das normale Kubernetes-Secret an die API. Klartext muss dadurch nicht im Git-Repository liegen. |
+| **Bootstrap** | Die einmalige Startkonfiguration, die nötig ist, bevor der automatische Ablauf alleine funktioniert. Beim SOPS-Setup ist das zum Beispiel das erstmalige Hinterlegen des age-Schlüssels im Cluster. |
+| **RBAC** | *Role-Based Access Control*: Kubernetes-Regeln, die festlegen, welcher Benutzer oder ServiceAccount welche Ressourcen lesen oder verändern darf. |
+
 
 ## Ziel, Architektur und Stand
 
@@ -275,9 +286,9 @@ mit dem Eintrag:
 identity.agekey
 ```
 
-Wichtig ist aber: **Der Key im Cluster ist nicht mein Backup.**
+Wichtig ist aber: **Der Key im Cluster ist nicht mein Backup.** Der öffentliche age-Schlüssel darf in Git liegen. Entscheidend ist der private Schlüssel, denn nur mit ihm kann ich die verschlüsselten Dateien wieder entschlüsseln.
 
-Wenn der Cluster komplett weg ist, brauche ich den privaten age-Key trotzdem noch irgendwo außerhalb davon.
+Wenn der Cluster komplett weg ist, brauche ich diesen privaten age-Key deshalb zusätzlich außerhalb des Clusters.
 
 ## 6.2 Die vorhandenen Secrets habe ich aus dem laufenden Cluster übernommen
 
@@ -297,7 +308,7 @@ infra/kubernetes/staging/secrets/
 
 Name und Namespace dürfen lesbar bleiben. Die eigentlichen Werte unter `data` beziehungsweise `stringData` sind verschlüsselt.
 
-## 6.3 Bei SOPS ist die Reihenfolge wichtiger als gedacht
+## 6.3 Warum die Reihenfolge beim ersten SOPS-Setup wichtig ist
 
 Hier bin ich beim ersten Rollout tatsächlich in einen kleinen Bootstrap-Zirkel gelaufen.
 
@@ -330,11 +341,13 @@ Secret-Ressourcen in Kustomize aufnehmen
 
 Das Skript committed absichtlich nichts. Ich will danach immer noch ganz normal `git diff`, CI und den PR sehen.
 
-## 6.4 Der erste SOPS-Rollout braucht einmal Hilfe
+## 6.4 Der einmalige SOPS-Bootstrap
 
-Der interessante Haken kam danach.
+**Bootstrap** bedeutet hier: einmalig den Anfangszustand herstellen, damit danach alles automatisch über Git laufen kann.
 
-Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende** Flux-Kustomization hatte aber noch keine Decryption-Konfiguration und konnte deshalb genau den Commit nicht anwenden, der diese Konfiguration enthält.
+Der interessante Haken kam genau an dieser Stelle.
+
+Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende Flux-Kustomization** – also die Flux-Ressource, die festlegt, welche Manifeste angewendet werden und wie – hatte aber noch keine SOPS-Entschlüsselung aktiviert. Dadurch konnte Flux genau den Commit nicht anwenden, der diese Entschlüsselung erst einschalten sollte.
 
 Bei mir sah das so aus:
 
@@ -405,7 +418,7 @@ SOPS + age                  eingerichtet
 GHCR Secret                 verschlüsselt in Git
 Cloudflare Secret           verschlüsselt in Git
 Flux Decryption             aktiv
-Secret-Guard in CI          aktiv
+Secret-Prüfung in CI          aktiv
 Staging nach Migration      erfolgreich geprüft
 ```
 
