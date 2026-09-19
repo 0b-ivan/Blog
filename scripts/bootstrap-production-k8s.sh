@@ -20,7 +20,7 @@ Example:
   kubectl -n $NAMESPACE create secret docker-registry $SECRET_NAME \
     --docker-server=ghcr.io \
     --docker-username=0b-ivan \
-    --docker-password="$GHCR_READ_TOKEN"
+    --docker-password="\$GHCR_READ_TOKEN"
   unset GHCR_READ_TOKEN
 
 Then run this script again.
