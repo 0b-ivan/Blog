@@ -79,6 +79,22 @@ describe('glossary suggestions', () => {
     expect(terms.has('NEWAPI')).toBe(true);
   });
 
+  it('ignores repository paths without hiding technical slash terms', () => {
+    const suggestions = suggestGlossaryTerms([
+      'snippets/2026-09-16-k3s/01-example.sh',
+      'assets/posts/k3s/diagram.svg',
+      'SOPS/age bleibt dagegen ein echter technischer Begriff.'
+    ].join('\n'), {
+      entries,
+      file: 'posts/test.md'
+    });
+
+    const terms = new Set(suggestions.map((entry) => entry.term));
+    expect([...terms].some((term) => term.startsWith('snippets/'))).toBe(false);
+    expect([...terms].some((term) => term.startsWith('assets/'))).toBe(false);
+    expect(terms.has('SOPS/age')).toBe(true);
+  });
+
   it('honors the persistent ignore list', () => {
     const suggestions = suggestGlossaryTerms('RRF und OpenTelemetry werden getestet.', {
       entries,
