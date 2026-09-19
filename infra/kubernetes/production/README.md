@@ -50,19 +50,23 @@ Sie wird mit `suspend: true` erstellt. Ein Merge nach `staging` startet daher ni
 
 Vor dem ersten Resume muss im Namespace `blog-production` ein `ghcr-pull`-Secret mit einem minimalen Read-only-GHCR-Credential vorhanden sein. Das Secret wird in diesem Schritt bewusst noch nicht in Git erzeugt.
 
-Danach:
+Der eigentliche Start läuft über ein bewusst defensives Bootstrap-Skript. Es erstellt keine Zugangsdaten selbst und bricht ab, wenn der Pull-Secret fehlt:
 
 ```bash
 export KUBECONFIG=/root/.kube/k3s-blog-01.yaml
 
-flux resume kustomization blog-production -n flux-system
-flux reconcile kustomization blog-production -n flux-system --with-source
-
-kubectl -n blog-production rollout status deployment/search --timeout=300s
-kubectl -n blog-production rollout status deployment/blog --timeout=180s
-
-./scripts/verify-production-k8s.sh
+./scripts/bootstrap-production-k8s.sh
 ```
+
+Das Skript:
+- stellt sicher, dass der Namespace existiert,
+- prüft `blog-production/ghcr-pull`,
+- resumed die Flux-Kustomization,
+- erzwingt einen Reconcile,
+- wartet auf Search und Blog,
+- führt anschließend `scripts/verify-production-k8s.sh` aus.
+
+Wenn der Secret fehlt, zeigt das Skript nur die nötigen lokalen Schritte an. Der Token selbst gehört weder in Git noch in den Chat.
 
 ## Kein Traffic-Cutover
 
