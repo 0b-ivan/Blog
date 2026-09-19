@@ -71,11 +71,13 @@ Bevor ich mit Secrets anfange, die Begriffe, die dafür wichtig sind:
 | **Kubernetes Secret** | Eine Kubernetes-Ressource für Zugangsdaten oder Tokens. Sie ist nicht automatisch „sicher verschlüsselt in Git“ – genau dieses Problem löse ich hier mit SOPS. |
 | **SOPS** | Ein Werkzeug, das sensible Werte in Dateien wie YAML oder JSON verschlüsselt, während Struktur und Metadaten lesbar bleiben können. |
 | **age** | Ein Verschlüsselungswerkzeug mit einem Schlüsselpaar: Der öffentliche Schlüssel verschlüsselt, der private Schlüssel entschlüsselt. |
+| **Flux** | Der Dienst aus Teil II, der den gewünschten Zustand aus Git liest und im Kubernetes-Cluster umsetzt. |
 | **GitOps** | Der gewünschte technische Zustand liegt in Git. Flux liest diesen Zustand und setzt ihn im Cluster um. |
 | **Reconcile** | Der Abgleich zwischen Git und Cluster: Flux prüft, ob beides zusammenpasst, und wendet nötige Änderungen an. |
 | **Flux Decryption** | Flux entschlüsselt eine SOPS-Datei erst beim Anwenden im Cluster und übergibt danach das normale Kubernetes-Secret an die API. |
 | **Kustomization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-YAML-Dateien angewendet werden und welche Zusatzfunktionen – hier die SOPS-Entschlüsselung – dabei gelten. |
 | **Bootstrap** | Die einmalige Startkonfiguration, die nötig ist, bevor der automatische Ablauf alleine funktioniert. Beim SOPS-Setup ist das das erstmalige Hinterlegen des age-Schlüssels und Aktivieren der Entschlüsselung. |
+| **Pin / pinnen** | Eine Version oder Datei bewusst auf einen bestimmten Stand festschreiben, statt automatisch einer neuen Version zu folgen. |
 | **RBAC** | Das Kubernetes-Berechtigungsmodell nach Rollen. Ich führe in diesem Schritt noch keine eigene RBAC-Härtung ein; das bleibt ein separater Hardening-Punkt. |
 
 
@@ -89,7 +91,7 @@ Ich teile das absichtlich in einzelne Schritte, damit bei einem Fehler klar blei
 
 | Schritt | Ziel | Stand |
 | --- | --- | --- |
-| 1. K3s-Pin | Version, Installer-Commit und SHA reproduzierbar machen | erledigt |
+| 1. K3s festschreiben | K3s-Version und Installer reproduzierbar auf einen bekannten Stand setzen | erledigt |
 | 2. SOPS/age | Secrets verschlüsselt in Git verwalten | erledigt |
 | 3. Flux-Decryption | Secrets erst im Cluster entschlüsseln | erledigt |
 | 4. öffentliche Staging-Prüfung | sicherstellen, dass der Umbau nichts kaputt gemacht hat | erledigt |
