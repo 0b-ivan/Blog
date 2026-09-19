@@ -65,7 +65,9 @@ function kubernetesRequest(pathname) {
       response.on('data', (chunk) => { body += chunk; });
       response.on('end', () => {
         if (response.statusCode < 200 || response.statusCode >= 300) {
-          reject(new Error(`Kubernetes API returned HTTP ${response.statusCode}`));
+          const error = new Error(`Kubernetes API returned HTTP ${response.statusCode}`);
+          error.statusCode = response.statusCode;
+          reject(error);
           return;
         }
 
@@ -81,6 +83,48 @@ function kubernetesRequest(pathname) {
     request.on('error', reject);
     request.end();
   });
+}
+
+function boundedNumber(value, maximum = 300000) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.min(maximum, Math.max(0, number));
+}
+
+function sanitizedChaosExperiment(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+  if (payload.experiment !== 'single-blog-pod-delete') return null;
+
+  return {
+    experiment: 'single-blog-pod-delete',
+    experimentStartedAt: typeof payload.experimentStartedAt === 'string'
+      ? payload.experimentStartedAt
+      : '',
+    completedAt: typeof payload.completedAt === 'string' ? payload.completedAt : '',
+    recoveryTimeMs: boundedNumber(payload.recoveryTimeMs),
+    httpChecks: boundedNumber(payload.httpChecks, 100000),
+    httpFailures: boundedNumber(payload.httpFailures, 100000),
+    minimumReadyPods: boundedNumber(payload.minimumReadyPods, 10),
+    maximumReadyPods: boundedNumber(payload.maximumReadyPods, 10),
+    searchReachableBefore: payload.searchReachableBefore === true,
+    searchReachableAfter: payload.searchReachableAfter === true,
+    passed: payload.passed === true
+  };
+}
+
+async function readLastChaosExperiment(namespace) {
+  try {
+    const response = await kubernetesRequest(
+      `/api/v1/namespaces/${encodeURIComponent(namespace)}/configmaps/chaos-monkey-result`
+    );
+    const raw = response?.data?.result;
+    if (typeof raw !== 'string' || raw.trim() === '') return null;
+    return sanitizedChaosExperiment(JSON.parse(raw));
+  } catch (error) {
+    if (error?.statusCode === 404) return null;
+    console.error('chaos result lookup failed:', error.message || error);
+    return null;
+  }
 }
 
 async function collectStatus() {
@@ -106,6 +150,8 @@ async function collectStatus() {
     };
   });
 
+  const lastChaosExperiment = await readLastChaosExperiment(namespace);
+
   const payload = {
     status: workloads.every((workload) => workload.status === 'operational')
       ? 'operational'
@@ -114,7 +160,8 @@ async function collectStatus() {
     orchestrator: 'K3s',
     kubernetesApi: 'reachable',
     updatedAt: new Date().toISOString(),
-    workloads
+    workloads,
+    lastChaosExperiment
   };
 
   cached = {
