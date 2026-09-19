@@ -34,41 +34,26 @@ jobs:
             payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
               "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
 
-            result="$(
-              PAYLOAD="$payload" python3 - <<'PY'
-import json
-import os
+            result="$(printf '%s' "$payload" | jq -c '
+              .lastChaosExperiment
+              | select(type == "object")
+              | select(.experiment == "single-blog-pod-delete")
+              | {
+                  experiment,
+                  experimentStartedAt,
+                  completedAt,
+                  recoveryTimeMs,
+                  httpChecks,
+                  httpFailures,
+                  minimumReadyPods,
+                  maximumReadyPods,
+                  searchReachableBefore,
+                  searchReachableAfter,
+                  passed
+                }
+            ' 2>/dev/null || true)"
 
-raw = os.environ.get("PAYLOAD", "")
-try:
-    data = json.loads(raw)
-except Exception:
-    raise SystemExit(1)
-
-experiment = data.get("lastChaosExperiment")
-if not isinstance(experiment, dict):
-    raise SystemExit(1)
-if experiment.get("experiment") != "single-blog-pod-delete":
-    raise SystemExit(1)
-
-allowed = {
-    "experiment": "single-blog-pod-delete",
-    "experimentStartedAt": experiment.get("experimentStartedAt", ""),
-    "completedAt": experiment.get("completedAt", ""),
-    "recoveryTimeMs": int(experiment.get("recoveryTimeMs", 0)),
-    "httpChecks": int(experiment.get("httpChecks", 0)),
-    "httpFailures": int(experiment.get("httpFailures", 0)),
-    "minimumReadyPods": int(experiment.get("minimumReadyPods", 0)),
-    "maximumReadyPods": int(experiment.get("maximumReadyPods", 0)),
-    "searchReachableBefore": experiment.get("searchReachableBefore") is True,
-    "searchReachableAfter": experiment.get("searchReachableAfter") is True,
-    "passed": experiment.get("passed") is True,
-}
-print(json.dumps(allowed, separators=(",", ":")))
-PY
-            )" || true
-
-            if [ -n "$result" ]; then
+            if [ -n "$result" ] && [ "$result" != "null" ]; then
               printf '%s\n' "$result" > /tmp/chaos-result.json
               echo "found=true" >> "$GITHUB_OUTPUT"
               exit 0
@@ -88,35 +73,38 @@ PY
           set -euo pipefail
 
           if [ "${{ steps.result.outputs.found }}" != "true" ]; then
-            gh pr comment "$RESULT_PR" \
-              --repo "$GITHUB_REPOSITORY" \
-              --body "### Chaos experiment observer\n\nNo sanitized \`lastChaosExperiment\` result became visible before the observer timeout. The one-shot Job may have aborted during preflight or Flux may not have reconciled it yet."
+            gh api --method POST \
+              "repos/${GITHUB_REPOSITORY}/issues/${RESULT_PR}/comments" \
+              -f body='### Chaos experiment observer
+
+No sanitized `lastChaosExperiment` result became visible before the observer timeout. The one-shot Job may have aborted during preflight or Flux may not have reconciled it yet.' >/dev/null
             exit 1
           fi
 
-          body="$(
-            python3 - <<'PY'
-import json
+          status="$(jq -r 'if .passed then "PASS" else "FAIL" end' /tmp/chaos-result.json)"
+          recovery="$(jq -r '.recoveryTimeMs' /tmp/chaos-result.json)"
+          checks="$(jq -r '.httpChecks' /tmp/chaos-result.json)"
+          failures="$(jq -r '.httpFailures' /tmp/chaos-result.json)"
+          minimum="$(jq -r '.minimumReadyPods' /tmp/chaos-result.json)"
+          maximum="$(jq -r '.maximumReadyPods' /tmp/chaos-result.json)"
+          search_after="$(jq -r 'if .searchReachableAfter then "reachable" else "unreachable" end' /tmp/chaos-result.json)"
+          started="$(jq -r '.experimentStartedAt' /tmp/chaos-result.json)"
+          completed="$(jq -r '.completedAt' /tmp/chaos-result.json)"
 
-with open("/tmp/chaos-result.json", "r", encoding="utf-8") as handle:
-    r = json.load(handle)
+          body="$(printf '%s\n' \
+            '### Chaos experiment result' \
+            '' \
+            "- Result: **${status}**" \
+            "- Recovery: **${recovery} ms**" \
+            "- HTTP checks: **${checks}**" \
+            "- HTTP failures: **${failures}**" \
+            "- Ready pods observed: **${minimum} → ${maximum}**" \
+            "- Search after experiment: **${search_after}**" \
+            "- Started: \`${started}\`" \
+            "- Completed: \`${completed}\`" \
+            '' \
+            'This comment is generated only from the public sanitized status payload. Pod names, node names and internal addresses are not included.')"
 
-status = "PASS" if r["passed"] else "FAIL"
-search_after = "reachable" if r["searchReachableAfter"] else "unreachable"
-
-print(f"""### Chaos experiment result
-
-- Result: **{status}**
-- Recovery: **{r['recoveryTimeMs']} ms**
-- HTTP checks: **{r['httpChecks']}**
-- HTTP failures: **{r['httpFailures']}**
-- Ready pods observed: **{r['minimumReadyPods']} → {r['maximumReadyPods']}**
-- Search after experiment: **{search_after}**
-- Started: `{r['experimentStartedAt']}`
-- Completed: `{r['completedAt']}`
-
-This comment is generated only from the public sanitized status payload. Pod names, node names and internal addresses are not included.""")
-PY
-          )"
-
-          gh pr comment "$RESULT_PR" --repo "$GITHUB_REPOSITORY" --body "$body"
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/issues/${RESULT_PR}/comments" \
+            -f body="$body" >/dev/null
