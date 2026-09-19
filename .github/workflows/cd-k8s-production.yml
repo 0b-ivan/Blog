@@ -20,6 +20,7 @@ on:
       - 'package-lock.json'
       - 'VERSION'
       - '.dockerignore'
+      - '.github/workflows/cd-k8s-production.yml'
   workflow_dispatch:
 
 permissions:
