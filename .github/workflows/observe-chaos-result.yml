@@ -1,0 +1,122 @@
+name: Observe first staging chaos experiment
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - '.github/workflows/observe-chaos-result.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: observe-first-staging-chaos
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
+      RESULT_PR: "267"
+    steps:
+      - name: Wait for sanitized chaos result
+        id: result
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 72); do
+            payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
+
+            result="$(
+              PAYLOAD="$payload" python3 - <<'PY'
+import json
+import os
+
+raw = os.environ.get("PAYLOAD", "")
+try:
+    data = json.loads(raw)
+except Exception:
+    raise SystemExit(1)
+
+experiment = data.get("lastChaosExperiment")
+if not isinstance(experiment, dict):
+    raise SystemExit(1)
+if experiment.get("experiment") != "single-blog-pod-delete":
+    raise SystemExit(1)
+
+allowed = {
+    "experiment": "single-blog-pod-delete",
+    "experimentStartedAt": experiment.get("experimentStartedAt", ""),
+    "completedAt": experiment.get("completedAt", ""),
+    "recoveryTimeMs": int(experiment.get("recoveryTimeMs", 0)),
+    "httpChecks": int(experiment.get("httpChecks", 0)),
+    "httpFailures": int(experiment.get("httpFailures", 0)),
+    "minimumReadyPods": int(experiment.get("minimumReadyPods", 0)),
+    "maximumReadyPods": int(experiment.get("maximumReadyPods", 0)),
+    "searchReachableBefore": experiment.get("searchReachableBefore") is True,
+    "searchReachableAfter": experiment.get("searchReachableAfter") is True,
+    "passed": experiment.get("passed") is True,
+}
+print(json.dumps(allowed, separators=(",", ":")))
+PY
+            )" || true
+
+            if [ -n "$result" ]; then
+              printf '%s\n' "$result" > /tmp/chaos-result.json
+              echo "found=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/72: no sanitized result yet"
+            sleep 5
+          done
+
+          echo "found=false" >> "$GITHUB_OUTPUT"
+
+      - name: Comment result on experiment PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ steps.result.outputs.found }}" != "true" ]; then
+            gh pr comment "$RESULT_PR" \
+              --repo "$GITHUB_REPOSITORY" \
+              --body "### Chaos experiment observer\n\nNo sanitized \`lastChaosExperiment\` result became visible before the observer timeout. The one-shot Job may have aborted during preflight or Flux may not have reconciled it yet."
+            exit 1
+          fi
+
+          body="$(
+            python3 - <<'PY'
+import json
+
+with open("/tmp/chaos-result.json", "r", encoding="utf-8") as handle:
+    r = json.load(handle)
+
+status = "PASS" if r["passed"] else "FAIL"
+search_after = "reachable" if r["searchReachableAfter"] else "unreachable"
+
+print(f"""### Chaos experiment result
+
+- Result: **{status}**
+- Recovery: **{r['recoveryTimeMs']} ms**
+- HTTP checks: **{r['httpChecks']}**
+- HTTP failures: **{r['httpFailures']}**
+- Ready pods observed: **{r['minimumReadyPods']} → {r['maximumReadyPods']}**
+- Search after experiment: **{search_after}**
+- Started: `{r['experimentStartedAt']}`
+- Completed: `{r['completedAt']}`
+
+This comment is generated only from the public sanitized status payload. Pod names, node names and internal addresses are not included.""")
+PY
+          )"
+
+          gh pr comment "$RESULT_PR" --repo "$GITHUB_REPOSITORY" --body "$body"
