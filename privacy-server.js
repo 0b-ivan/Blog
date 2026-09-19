@@ -62,6 +62,7 @@ const FOOTER_META_LINKS = [
 
 const META_LINK_PATTERN = /\s*<a\b[^>]*href="(?:#about|\/#about|index\.html#about|\/about|about\.html|\/datenschutz|datenschutz\.html|\/impressum|impressum\.html)"[^>]*>(?:About|Datenschutz|Impressum)<\/a>/gi;
 const GREP_TRIGGER = '<button type="button" class="kernel-grep-nav-trigger" data-kernel-grep-trigger aria-label="Kernel Grep öffnen" title="Kernel Grep (⌘K)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path></svg></button>';
+const STATUS_LINK = '<a href="/status">Status</a>';
 
 function stripExternalFontLinks(html) {
   return html
@@ -112,6 +113,19 @@ function localizeClientScript(source) {
 
 function stripMetaLinks(fragment) {
   return fragment.replace(META_LINK_PATTERN, '');
+}
+
+function addStatusNavigation(html) {
+  return html.replace(
+    /(<nav\\b[^>]*class="[^"]*\\bmain-nav\\b[^"]*"[^>]*>)([\\s\\S]*?)(<\\/nav>)/gi,
+    (_match, openingTag, navigation, closingTag) => {
+      const content = navigation
+        .replace(/\\s*<a\\b[^>]*href="\\/status\\/?"[^>]*>Status<\\/a>/gi, '')
+        .trimEnd();
+
+      return `${openingTag}${content}\\n        ${STATUS_LINK}\\n      ${closingTag}`;
+    }
+  );
 }
 
 function addGrepNavigation(html) {
@@ -191,7 +205,9 @@ function addPrivacyNavigation(html) {
 
 function hardenHtml(html) {
   return addKernelGrepAssets(
-    moveMetaNavigationToFooter(addGrepNavigation(localizeBrowserDependencies(html)))
+    moveMetaNavigationToFooter(
+      addGrepNavigation(addStatusNavigation(localizeBrowserDependencies(html)))
+    )
   );
 }
 
@@ -252,6 +268,55 @@ async function proxyKernelGrep(queryValue, limitValue, res) {
   }
 }
 
+function sanitizedKubernetesStatus(payload) {
+  const allowedState = (value) => ['operational', 'degraded', 'unavailable'].includes(value)
+    ? value
+    : 'unavailable';
+  const allowedEnvironment = (value) => ['production', 'staging'].includes(value)
+    ? value
+    : 'unknown';
+
+  return {
+    status: allowedState(payload?.status),
+    environment: allowedEnvironment(payload?.environment),
+    orchestrator: payload?.orchestrator === 'K3s' ? 'K3s' : 'Kubernetes',
+    kubernetesApi: payload?.kubernetesApi === 'reachable' ? 'reachable' : 'unreachable',
+    updatedAt: typeof payload?.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString(),
+    workloads: Array.isArray(payload?.workloads)
+      ? payload.workloads.slice(0, 8).map((workload) => ({
+        name: ['Blog', 'Search'].includes(workload?.name) ? workload.name : 'Workload',
+        desired: Math.max(0, Number(workload?.desired) || 0),
+        ready: Math.max(0, Number(workload?.ready) || 0),
+        status: allowedState(workload?.status)
+      }))
+      : []
+  };
+}
+
+async function proxyKubernetesStatus(res) {
+  try {
+    const target = new URL(process.env.STATUS_SERVICE_URL || 'http://kube-status:8080/status');
+    const upstream = await fetch(target, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(5000)
+    });
+    const payload = await upstream.json();
+    if (!upstream.ok) {
+      throw new Error(`status service returned HTTP ${upstream.status}`);
+    }
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json(sanitizedKubernetesStatus(payload));
+  } catch (error) {
+    console.error('Kubernetes status upstream unavailable:', error.message || error);
+    res.set('Cache-Control', 'no-store');
+    res.status(503).json(sanitizedKubernetesStatus({
+      status: 'unavailable',
+      kubernetesApi: 'unreachable',
+      workloads: []
+    }));
+  }
+}
+
 async function proxyKnowledgeGraph(limitValue, res) {
   try {
     const target = searchServiceTarget('/graph/all');
@@ -304,6 +369,10 @@ function createApp() {
     await proxyKernelGrep(req.query.q, req.query.limit, res);
   });
 
+  app.get('/api/kubernetes-status', async (_req, res) => {
+    await proxyKubernetesStatus(res);
+  });
+
   app.get('/api/knowledge', async (req, res) => {
     await proxyKnowledgeGraph(req.query.limit, res);
   });
@@ -351,6 +420,15 @@ function createApp() {
     } catch (error) {
       console.error(error);
       res.status(500).type('text').send('Could not load about page');
+    }
+  });
+
+  app.get(['/status', '/status.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'status.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load status page');
     }
   });
 
@@ -431,6 +509,7 @@ module.exports = {
   localizeBrowserDependencies,
   localizeClientScript,
   stripMetaLinks,
+  addStatusNavigation,
   addGrepNavigation,
   addKernelGrepAssets,
   moveMetaNavigationToFooter,
@@ -440,6 +519,8 @@ module.exports = {
   normalizedGraphLimit,
   searchServiceTarget,
   proxyKernelGrep,
+  sanitizedKubernetesStatus,
+  proxyKubernetesStatus,
   proxyKnowledgeGraph,
   createApp,
   startServer
