@@ -1,15 +1,15 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 7
+version: 9
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
 created_at: 2026-09-16
-updated_at: 2026-09-18
+updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil II zeigt meinen Weg vom manuellen K3s-Deployment zu einem GitOps-Workflow mit Flux: Git-SHA-Images, Kustomize-Pins, öffentlich geprüftes Staging und eine Production-Freigabe, die bewusst manuell bleibt."
+excerpt: "Teil II zeigt, wie ich mein K3s-Staging automatisiert habe: GitHub Actions baut die Images, Git hält den gewünschten Stand fest, Flux rollt ihn aus und Production bleibt bewusst manuell."
 tags:
   - Kubernetes
   - K3s
@@ -81,13 +81,32 @@ Teil I war der Teil, in dem ich den Blog überhaupt erstmal sauber auf K3s bekom
 
 Danach hat mich vor allem eins gestört: **Der Cluster lief, aber Deployments hatten noch zu viele Handgriffe.**
 
+Bevor ich den Ablauf zeige, die Begriffe, die in diesem Teil ständig vorkommen:
+
+| Begriff | Kurz erklärt |
+| --- | --- |
+| **PR / Pull Request** | Ein Vorschlag, Änderungen aus einem Branch in einen anderen zu übernehmen. Vor dem Merge können Checks und Reviews laufen. |
+| **CI** | *Continuous Integration*: GitHub Actions prüft Änderungen automatisch, zum Beispiel mit Tests, Linting und Builds. |
+| **Container-Image** | Das gebaute Paket, aus dem später ein Container gestartet wird. Blog und Suche haben jeweils ein eigenes Image. |
+| **Kernel Grep / Search** | Mein eigener Suchdienst aus Teil I. „Kernel Grep“ und „Search“ meinen in dieser Serie denselben Dienst. |
+| **GHCR** | *GitHub Container Registry*: Dort speichere ich die gebauten Container-Images. |
+| **Flux** | Ein Dienst im Kubernetes-Cluster, der den gewünschten Zustand aus Git liest und im Cluster umsetzt. |
+| **GitOps** | Die gewünschte Konfiguration liegt in Git. Änderungen passieren über Commits und Pull Requests statt über spontane Befehle direkt im Cluster. |
+| **Git-SHA** | Die eindeutige Kennung eines Git-Commits, zum Beispiel `a9bc2d…`. Ich hänge sie als Versionsbezeichnung an den Image-Namen, damit ein Build einem Commit zugeordnet werden kann. |
+| **Kustomize** | Ein Kubernetes-Werkzeug, das Kubernetes-YAML-Dateien für eine konkrete Umgebung anpasst. Ich nutze es unter anderem für die Image-Tags von Staging. |
+| **Pin** | Eine Version bewusst festschreiben, statt immer „die neueste“ zu verwenden. Ein Kustomize-Pin legt hier fest, welches Image Staging benutzen soll. |
+| **Reconcile** | Flux vergleicht „was Git sagt“ mit „was im Cluster läuft“ und korrigiert Abweichungen. |
+| **Bootstrap** | Die einmalige Ersteinrichtung von Flux: Dienste installieren, Repository verbinden und Branch/Pfad festlegen. |
+| **Rollout** | Das Ausrollen einer neuen Version im Cluster: neue Pods starten, alte werden ersetzt und Kubernetes prüft, ob der Wechsel klappt. |
+
+
 Image bauen, SHA raussuchen, irgendwo eintragen, Rollout prüfen. Das funktioniert. Aber wenn ich zwei Tage später überlegen muss, welcher Commit gerade auf Staging läuft, ist mir das noch zu viel Handarbeit.
 
 ## Ziel, Architektur und Stand
 
 Das Ziel von Teil II: **Ich will jederzeit sehen können, welcher Git-Stand auf Staging läuft und genau diesen Stand prüfen, bevor irgendetwas nach Production geht.**
 
-![Architektur Teil II: GitHub Actions, GHCR, Kustomize, Flux, K3s und verifizierter Promotion-Candidate](/assets/posts/k3s-proxmox-series/teil-ii-architektur.svg)
+![Architektur Teil II: GitHub Actions baut, Flux rollt Staging aus und nur der öffentlich geprüfte Stand geht Richtung Production](/assets/posts/k3s-proxmox-series/teil-ii-architektur.svg)
 
 Der Weg besteht aus sechs klaren Schritten:
 
@@ -97,15 +116,15 @@ Der Weg besteht aus sechs klaren Schritten:
 | 2. Images bauen | Blog und Search eindeutig einem Commit zuordnen | erledigt |
 | 3. Kustomize-Pins | gewünschten Image-Stand wieder in Git schreiben | erledigt |
 | 4. Flux-Reconcile | Cluster zieht den Sollzustand selbst | erledigt |
-| 5. öffentlicher Gate | wirklich den erwarteten Staging-Build prüfen | erledigt |
-| 6. Promotion | nur verifizierten Candidate nach `main` anbieten | erledigt |
+| 5. öffentliche Staging-Prüfung | wirklich den erwarteten Staging-Build prüfen | erledigt |
+| 6. Production-Freigabe vorbereiten | nur den geprüften Stand nach `main` anbieten | erledigt |
 
 ### Was nach Teil II noch offen war
 
-- [ ] Branch Protection beziehungsweise Ruleset wirklich erzwingen.
-- [ ] Images langfristig auf Digests statt nur auf SHA-Tags pinnen.
-- [ ] Search im öffentlichen Gate separat verifizieren.
-- [x] Secrets aus dem manuellen Cluster-Zustand in GitOps überführen – in Teil III mit SOPS/age umgesetzt.
+- [ ] GitHub-Regeln so erzwingen, dass direkte Pushes oder ungeprüfte Merges auf den wichtigen Branches blockiert werden.
+- [ ] Images später mit ihrem exakten Inhalts-Fingerabdruck statt nur mit einem Tag festschreiben.
+- [ ] Search in der öffentlichen Staging-Prüfung separat verifizieren.
+- [ ] Secrets aus dem manuellen Cluster-Zustand in GitOps überführen – das ist der nächste Schritt in Teil III.
 
 Also wollte ich den Weg einmal sauber durchziehen:
 
@@ -192,7 +211,7 @@ Neue Features und Artikel gehen zuerst nach `staging`. Erst wenn der Stand dort 
 
 ## 2. Ein Image gehört zu genau einem Commit
 
-Der Staging-Workflow baut Blog und Kernel Grep mit dem Git-SHA als Tag:
+Der Staging-Workflow baut Blog und **Kernel Grep, meinen Suchdienst aus Teil I**, mit dem Git-SHA als Tag:
 
 ```text
 ghcr.io/0b-ivan/kernel-notes-blog:<git-sha>
@@ -219,21 +238,30 @@ Kustomize
 Deployment
 ```
 
-### Kleine Korrektur zum Wort „immutable“
+### SHA-Tag, „immutable“ und Digest – was ist der Unterschied?
 
-Ich habe SHA-Tags anfangs selbst schnell als „immutable“ bezeichnet. Streng genommen stimmt das nicht.
+Ein **SHA-Tag** ist bei mir ein Container-Tag, dessen Name aus dem Git-SHA kommt. Beispiel: `blog:a9bc2d…`. Damit sehe ich sofort, zu welchem Commit das Image gehört.
 
-Der Tag ist eindeutig benannt, aber eine Registry kann einen Tag grundsätzlich neu setzen. Wirklich auf den Inhalt festgenagelt wäre das Image erst mit einem Digest:
+„Immutable“ bedeutet **unveränderlich**. Genau das ist ein normaler Registry-Tag aber nicht zwingend: Ein Tag kann technisch später auf ein anderes Image zeigen.
+
+Ein **Digest** ist dagegen der kryptografische Fingerabdruck des tatsächlichen Image-Inhalts:
 
 ```text
 image@sha256:...
 ```
 
-Für meinen aktuellen Aufbau reichen die SHA-Tags erstmal, weil ich damit sauber nachvollziehen kann, welcher Build zu welchem Commit gehört. Digest-Pins sind aber die konsequentere nächste Stufe.
+Kurz gesagt:
+
+```text
+Tag     = lesbares Etikett
+Digest  = Fingerabdruck des Inhalts
+```
+
+Ein **Digest-Pin** bedeutet: Kubernetes referenziert exakt diesen Fingerabdruck. In meinem aktuellen Aufbau nutze ich noch Git-SHA-Tags; Digest-Pins sind eine spätere Härtung.
 
 ## 3. Kustomize hält fest, was Staging laufen soll
 
-Die Image-Namen stehen in den Basis-Manifesten. Den konkreten Stand halte ich in:
+Die Image-Namen stehen in den **Basis-Manifesten** – damit meine ich die allgemeinen Kubernetes-YAML-Dateien, die noch nicht auf einen konkreten Staging-Build festgelegt sind. Den konkreten Stand halte ich in:
 
 ```text
 infra/kubernetes/staging/kustomization.yaml
@@ -275,9 +303,9 @@ Der Bot-Commit sieht ungefähr so aus:
 chore(staging): deploy <sha> [skip ci]
 ```
 
-`[skip ci]` ist hier nicht die einzige Schleifenbremse. Der Workflow hat zusätzlich einen Pfadfilter und reagiert nicht auf reine Änderungen unter `infra/kubernetes/staging/**`.
+`[skip ci]` verhindert, dass dieser Bot-Commit unnötig wieder CI auslöst. Zusätzlich hat der Workflow einen **Pfadfilter**. Das ist einfach eine Liste von Dateipfaden, bei deren Änderungen der Workflow überhaupt starten darf. Reine Änderungen unter `infra/kubernetes/staging/**` lösen den Build aktuell nicht erneut aus.
 
-Ich lasse `[skip ci]` trotzdem drin. Es macht die Absicht sofort sichtbar und verhindert später Überraschungen, falls ich die Pfadfilter ändere.
+Ich lasse `[skip ci]` trotzdem drin. So ist direkt sichtbar: Dieser Commit schreibt nur den bereits gebauten Sollzustand zurück und soll keinen neuen Build anstoßen.
 
 ## 5. Nicht jeder Push darf automatisch ein Deployment auslösen
 
@@ -293,29 +321,33 @@ Passt das nicht, endet der Workflow mit:
 Refusing staging deployment
 ```
 
-`workflow_dispatch` bleibt absichtlich möglich, falls ich den Lauf bewusst manuell starten will.
+`workflow_dispatch` ist der technische Name für den **manuellen Startknopf eines GitHub-Actions-Workflows**. Den lasse ich absichtlich zu, damit ich einen Lauf bewusst von Hand anstoßen kann.
 
-### Der Guard ist keine Branch Protection
+### Diese Prüfung schützt den Workflow – nicht den Branch
 
-Das ist mir wichtig, weil man sich hier sonst schnell mehr Sicherheit einredet als tatsächlich da ist.
+Vorher habe ich das „Guard“ genannt. Gemeint ist nur: Der Workflow prüft vor dem Deployment, ob der Commit wirklich aus einem gemergten Pull Request nach `staging` kommt.
 
-Der Guard schützt den Actions-Workflow. **Er schützt nicht den Branch selbst.**
+Das ist aber **keine Branch Protection**. Branch Protection beziehungsweise ein Ruleset ist eine GitHub-Regel direkt auf dem Branch. Damit kann GitHub zum Beispiel direkte Pushes verbieten oder erfolgreiche Checks vor einem Merge verlangen.
 
-Flux liest Git direkt. Wenn jemand eine Änderung direkt in den beobachteten GitOps-Pfad bekommt, ist der Build-Guard nicht beteiligt.
+Meine Workflow-Prüfung greift erst, **wenn der Workflow bereits läuft**. Flux liest Git dagegen direkt. Würde eine Änderung auf anderem Weg direkt in den von Flux beobachteten Pfad gelangen, kann diese Workflow-Prüfung das nicht verhindern.
 
-Sauber wären deshalb zwei Ebenen:
+Darum sind das zwei verschiedene Schutzschichten:
 
 ```text
 Branch Protection / Ruleset
-        +
-Workflow-Guard
+    schützt den Branch selbst
+
+Workflow-Prüfung
+    schützt den automatischen Deployment-Ablauf
 ```
 
-Bei meinem privaten Repo war das Ruleset zu diesem Zeitpunkt nicht wirksam erzwingbar. Der Guard ist also eine zusätzliche Schranke, aber kein Ersatz dafür.
+Bei meinem privaten Repo war das Ruleset zu diesem Zeitpunkt nicht wirksam erzwingbar. Die Workflow-Prüfung ist hilfreich, ersetzt den Branch-Schutz aber nicht.
 
-## 6. Flux installieren, prüfen und dann bootstrappen
+## 6. Flux installieren, prüfen und dann einmalig einrichten
 
-Die Flux CLI habe ich nicht einfach blind per `curl | bash` installiert, sondern als konkrete Version und mit Checksum-Prüfung.
+Mit **Bootstrap** meine ich hier die einmalige Ersteinrichtung von Flux: Die Flux-Dienste werden im Cluster installiert, das GitHub-Repository wird verbunden und Flux bekommt gesagt, welchen Branch und welchen Pfad es beobachten soll.
+
+Die Flux **CLI** – also das Kommandozeilenprogramm `flux` – habe ich nicht einfach blind per `curl | bash` installiert, sondern als konkrete Version und mit Checksum-Prüfung.
 
 Vor dem Bootstrap:
 
@@ -341,27 +373,29 @@ Entscheidend sind für mich diese beiden Werte:
 
 Mehr Magie steckt dahinter im Grunde nicht: Flux bekommt gesagt, welchen Branch und welchen Pfad es beobachten soll.
 
-## 7. Kein persönlicher PAT als Dauer-Credential im Cluster
+## 7. Warum ich keinen persönlichen GitHub-Token im Cluster haben will
 
-Beim Bootstrap verwende ich:
+Ein **PAT** ist ein *Personal Access Token*, also ein persönlicher Zugriffsschlüssel für GitHub. Je nach Berechtigung kann so ein Token deutlich mehr dürfen als nur dieses eine Repository zu lesen.
+
+Beim Flux-Bootstrap verwende ich deshalb:
 
 ```text
 --token-auth=false
 ```
 
-Damit arbeitet Flux später per SSH Deploy Key gegen das Repository.
+Damit legt Flux für den späteren Repository-Zugriff einen **SSH Deploy Key** an. Ein Deploy Key gehört zu genau diesem Repository und kann hier read-only bleiben.
 
-Die Flux CLI braucht beim Einrichten natürlich trotzdem GitHub-Zugriff, damit sie den Deploy Key anlegen kann. Aber mein persönlicher Token bleibt nicht als normales Git-Credential im Cluster liegen.
+Die Flux CLI braucht beim einmaligen Einrichten trotzdem GitHub-Zugriff, um diesen Schlüssel zu hinterlegen. Mein persönlicher GitHub-Token wird aber nicht als dauerhaftes Zugangsmittel im Cluster gespeichert.
 
-Ohne `--read-write-key` ist der Deploy Key read-only. Genau das will ich hier auch: Flux soll lesen und anwenden. Zurückschreiben darf GitHub Actions.
+Ohne `--read-write-key` ist der Deploy Key read-only. Das passt zu meinem Aufbau: Flux liest und deployed; GitHub Actions schreibt Änderungen wie die Kustomize-Pins zurück.
 
 ## 8. Nach dem Bootstrap will ich sehen, was wirklich läuft
 
 Nur „Flux ist installiert“ reicht mir nicht.
 
-Ich prüfe Source, Kustomization und Controller:
+Ich prüfe danach drei Dinge: die **Git-Quelle** (welches Repository und welcher Branch gelesen werden), die **Kustomization** (welche Manifeste Flux anwenden soll) und die laufenden Flux-Dienste:
 
-[Flux-Reconcile und Controller prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
+[Flux-Zustand und laufende Dienste prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
 
 Interessant sind vor allem:
 
@@ -397,7 +431,7 @@ Nicht besonders elegant, aber eindeutig. Genau das wollte ich.
 
 ## 10. HTTP 200 allein ist mir als Deployment-Test zu wenig
 
-Nach dem Flux-Rollout prüft GitHub Actions die öffentliche Staging-Seite.
+Nach dem Flux-Rollout prüft GitHub Actions die öffentliche Staging-Seite. Diese Prüfung nenne ich im Workflow **Gate**: Erst wenn sie erfolgreich ist, darf der getestete Stand weiter Richtung Production.
 
 Das Blog-Image bekommt dafür eine Build-Version:
 
@@ -428,6 +462,8 @@ Auch `/healthz` vom Blog ist kein Sammel-Healthcheck für alle Abhängigkeiten.
 Das ist also ein guter Gate für den Blog, aber noch kein kompletter End-to-End-Test der ganzen Plattform.
 
 ## 11. Der Production-PR darf kein bewegliches Ziel sein
+
+Mit **Promotion** meine ich hier den Übergang von einem geprüften Staging-Stand Richtung Production. Der **Candidate** ist genau der Git-Stand, der diese Prüfung bestanden hat und deshalb für diesen Übergang bereitsteht.
 
 Anfangs lag es nahe, einfach einen PR von `staging` nach `main` offen zu lassen.
 
@@ -463,7 +499,7 @@ PR nach main
 
 Wichtig: Der Candidate zeigt auf den **GitOps-Bot-Commit mit den Image-Pins**, nicht nur auf den ursprünglichen Merge-Commit. Das ist der Stand, den Flux wirklich ausgerollt hat.
 
-Der Push auf den Candidate-Branch passiert ohne Force-Push. Wenn die Historie nicht mehr passt, soll der Workflow lieber rot werden als irgendetwas still zu überschreiben.
+Der Push auf den Candidate-Branch passiert ohne **Force-Push**. Ein Force-Push würde die bestehende Branch-Historie notfalls überschreiben. Genau das will ich hier vermeiden: Wenn die Historie nicht mehr passt, soll der Workflow lieber rot werden.
 
 ## 12. Production bleibt absichtlich ein manueller Klick
 
@@ -484,7 +520,7 @@ Gerade bei meinem Blog reicht mir ein kurzer Blick auf Staging, bevor der Stand 
 
 ## 13. Obsidian muss denselben Weg nehmen
 
-Ein zweiter Pfad war mir noch wichtig: Artikel aus Obsidian dürfen die ganze Staging-Kette nicht umgehen.
+Ein zweiter Pfad war mir noch wichtig: Artikel aus Obsidian dürfen die ganze Staging-Kette nicht umgehen. **LiveSync** synchronisiert dabei meinen Obsidian-Vault mit dem Server; der **Publisher** liest den Artikelstatus und erstellt daraus den passenden Git-Branch beziehungsweise Pull Request.
 
 Der Publisher läuft deshalb mit:
 
@@ -561,7 +597,7 @@ Build
  ↓
 GHCR
  ↓
-GitOps-Pins
+Kustomize-Pins
  ↓
 Flux
  ↓
@@ -665,8 +701,8 @@ Nicht Flux allein macht das Setup besser. Die Kette wird einfach nachvollziehbar
 
 ## Weiter in Teil III
 
-Teil III kümmert sich um die Sachen, die ich bis hierhin bewusst liegen gelassen habe: feste K3s-Versionen, Secrets mit SOPS/age, Backup und Restore sowie Monitoring.
+Teil III kümmert sich um die Sachen, die ich bis hierhin bewusst liegen gelassen habe: feste K3s-Versionen, verschlüsselte Secrets in Git, Backup und Restore sowie Monitoring.
 
-**Fortsetzung: Teil III – K3s im Homelab härten: Secrets, Backups, Updates und Observability.**
+**Fortsetzung: Teil III – K3s im Homelab härten: feste Versionen und verschlüsselte Secrets.**
 
 <!-- series-next: k3s-proxmox-part-3-hardening-secrets-backups-observability -->

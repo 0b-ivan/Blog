@@ -7,6 +7,17 @@
       "Git Branch"
     ]
   },
+  "Branch Protection": {
+    "full": "GitHub Branch Protection",
+    "short": "Regeln, die Änderungen an einem Git-Branch einschränken oder an Bedingungen knüpfen.",
+    "description": "Branch Protection kann beispielsweise direkte Pushes verhindern oder erfolgreiche Statuschecks und Reviews vor einem Merge verlangen. Sie schützt den Branch selbst und ist damit etwas anderes als eine Prüfung innerhalb eines Deployment-Workflows.",
+    "aliases": [
+      "Branch-Schutz",
+      "Branch Protection",
+      "Ruleset",
+      "GitHub Ruleset"
+    ]
+  },
   "Commit": {
     "full": "Git Commit",
     "short": "Versionierter Änderungspunkt in einem Git-Repository.",
@@ -22,7 +33,20 @@
     "aliases": [
       "Commit-SHA",
       "SHA-Image",
-      "SHA-getaggten"
+      "SHA-getaggten",
+      "Git-SHA",
+      "Git SHA"
+    ]
+  },
+  "Container Image Digest": {
+    "full": "Container Image Digest",
+    "short": "Kryptografischer Fingerabdruck des tatsächlichen Inhalts eines Container-Images.",
+    "description": "Ein Digest wie sha256:… identifiziert den Image-Inhalt unabhängig von einem veränderbaren Tag. Ein Digest-Pin referenziert deshalb exakt ein bestimmtes Image.",
+    "aliases": [
+      "Digest",
+      "Digests",
+      "Digest-Pin",
+      "Digest-Pins"
     ]
   },
   "Dependabot": {
@@ -66,6 +90,18 @@
     "short": "Verteiltes Versionskontrollsystem für Dateien und Quellcode.",
     "description": "Git speichert Änderungshistorien, Branches und Commits lokal und ermöglicht kollaborative Entwicklungs- und Review-Prozesse.",
     "aliases": []
+  },
+  "Image Tag": {
+    "full": "Container Image Tag",
+    "short": "Lesbare Versionsbezeichnung eines Container-Images innerhalb einer Registry.",
+    "description": "Ein Image-Tag wie latest, staging oder ein Git-SHA verweist auf ein Image. Tags können technisch neu gesetzt werden und sind deshalb nicht automatisch unveränderlich.",
+    "aliases": [
+      "Image-Tag",
+      "Image-Tags",
+      "SHA-Tag",
+      "SHA-Tags",
+      "Git-SHA-Tag"
+    ]
   },
   "Linting": {
     "full": "Linting",

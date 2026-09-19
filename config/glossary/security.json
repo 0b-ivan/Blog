@@ -1,4 +1,14 @@
 {
+  "age": {
+    "full": "age",
+    "short": "Einfaches Werkzeug für moderne dateibasierte Verschlüsselung mit öffentlichen und privaten Schlüsseln.",
+    "description": "age verschlüsselt Daten für einen oder mehrere öffentliche Empfänger. Entschlüsselt wird mit der passenden privaten Identity. In dieser Serie dient age als Schlüsselverfahren für SOPS.",
+    "aliases": [
+      "age-Key",
+      "age-Schlüssel",
+      "age-Schlüssels"
+    ]
+  },
   "Break-Glass-Zugang": {
     "full": "Break-Glass Access",
     "short": "Dokumentierter Notfallzugang für den Fall, dass normale Zugriffswege ausfallen.",
@@ -87,6 +97,16 @@
       "Mutual TLS"
     ]
   },
+  "Personal Access Token": {
+    "full": "Personal Access Token",
+    "short": "Persönlicher Zugriffstoken, mit dem sich Werkzeuge gegenüber einer Plattform wie GitHub authentifizieren.",
+    "description": "Ein Personal Access Token, kurz PAT, kann je nach vergebenen Rechten Repository- oder Kontofunktionen nutzen. Für dauerhafte Maschinenzugriffe sind enger begrenzte, zweckgebundene Credentials häufig die bessere Wahl.",
+    "aliases": [
+      "PAT",
+      "PATs",
+      "GitHub-Token"
+    ]
+  },
   "Private Vulnerability Reporting": {
     "full": "Private Vulnerability Reporting",
     "short": "GitHub-Funktion zum vertraulichen Melden von Sicherheitslücken an Repository-Verantwortliche.",
@@ -98,6 +118,14 @@
     "short": "Begrenzt die Anzahl von Anfragen innerhalb eines Zeitraums.",
     "description": "Rate Limiting schützt Dienste unter anderem vor Überlastung, automatisierten Login-Versuchen und missbräuchlicher Nutzung.",
     "aliases": []
+  },
+  "RBAC": {
+    "full": "Role-Based Access Control",
+    "short": "Berechtigungsmodell, bei dem Zugriffe über Rollen und deren Zuordnung zu Identitäten gesteuert werden.",
+    "description": "Kubernetes verwendet RBAC, um festzulegen, welche Benutzer, ServiceAccounts oder Dienste bestimmte Ressourcen lesen oder verändern dürfen.",
+    "aliases": [
+      "Role-Based Access Control"
+    ]
   },
   "Secret Scanning": {
     "full": "Secret Scanning",
@@ -136,6 +164,15 @@
     "short": "Einstufung der Schwere eines Fehlers oder einer Sicherheitslücke.",
     "description": "Severity-Stufen wie Critical, High oder Moderate helfen dabei, Findings nach potenzieller Auswirkung zu priorisieren.",
     "aliases": []
+  },
+  "SOPS": {
+    "full": "SOPS",
+    "short": "Werkzeug zum Verschlüsseln sensibler Werte in strukturierten Dateien wie YAML oder JSON.",
+    "description": "SOPS verschlüsselt ausgewählte Werte, während die Struktur einer Datei lesbar und versionierbar bleiben kann. Zusammen mit age lassen sich damit Secrets verschlüsselt in Git verwalten und erst beim Deployment entschlüsseln.",
+    "aliases": [
+      "SOPS/age",
+      "SOPS-Setup"
+    ]
   },
   "Supply Chain": {
     "full": "Software Supply Chain",

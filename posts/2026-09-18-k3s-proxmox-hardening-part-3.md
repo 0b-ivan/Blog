@@ -1,15 +1,15 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
-version: 6
-title: "K3s auf Proxmox – Teil III: Hardening, Backups und Observability"
+version: 8
+title: "K3s auf Proxmox – Teil III: Feste Versionen und verschlüsselte Secrets"
 status: publish
 date: 2026-09-18
 created_at: 2026-09-18
-updated_at: 2026-09-18
+updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil III räumt die Stellen auf, die beim ersten Aufbau noch pragmatisch gelöst waren: feste K3s-Versionen, SOPS/age für Secrets und als nächster Schritt ein Backup, das auch wirklich zurückgespielt wird."
+excerpt: "Teil III macht den bestehenden K3s-Aufbau reproduzierbarer: feste Versionen, verschlüsselte Secrets in Git und als nächster Schritt ein Backup, das auch wirklich zurückgespielt wird."
 tags:
   - Kubernetes
   - K3s
@@ -57,11 +57,29 @@ snippets:
 ---
 Teil I: Der Blog läuft auf K3s.
 
-Teil II: Der Weg von Git bis Staging läuft automatisch über Flux.
+Teil II: Der Weg von Git bis Staging läuft automatisch.
 
 Damit war das Setup benutzbar. Aber „läuft“ ist für mich noch nicht dasselbe wie „ich bekomme das in sechs Monaten genauso wieder aufgebaut“.
 
 Genau darum geht es in Teil III.
+
+Bevor ich mit Secrets anfange, die Begriffe, die dafür wichtig sind:
+
+| Begriff | Kurz erklärt |
+| --- | --- |
+| **Hardening** | Einen funktionierenden Dienst gezielt robuster und schwerer angreifbar machen, zum Beispiel durch feste Versionen, weniger Rechte und reproduzierbare Konfiguration. |
+| **Kubernetes Secret** | Eine Kubernetes-Ressource für Zugangsdaten oder Tokens. Sie ist nicht automatisch „sicher verschlüsselt in Git“ – genau dieses Problem löse ich hier mit SOPS. |
+| **SOPS** | Ein Werkzeug, das sensible Werte in Dateien wie YAML oder JSON verschlüsselt, während Struktur und Metadaten lesbar bleiben können. |
+| **age** | Ein Verschlüsselungswerkzeug mit einem Schlüsselpaar: Der öffentliche Schlüssel verschlüsselt, der private Schlüssel entschlüsselt. |
+| **Flux** | Der Dienst aus Teil II, der den gewünschten Zustand aus Git liest und im Kubernetes-Cluster umsetzt. |
+| **GitOps** | Der gewünschte technische Zustand liegt in Git. Flux liest diesen Zustand und setzt ihn im Cluster um. |
+| **Reconcile** | Der Abgleich zwischen Git und Cluster: Flux prüft, ob beides zusammenpasst, und wendet nötige Änderungen an. |
+| **Flux Decryption** | Flux entschlüsselt eine SOPS-Datei erst beim Anwenden im Cluster und übergibt danach das normale Kubernetes-Secret an die API. |
+| **Kustomization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-YAML-Dateien angewendet werden und welche Zusatzfunktionen – hier die SOPS-Entschlüsselung – dabei gelten. |
+| **Bootstrap** | Die einmalige Startkonfiguration, die nötig ist, bevor der automatische Ablauf alleine funktioniert. Beim SOPS-Setup ist das das erstmalige Hinterlegen des age-Schlüssels und Aktivieren der Entschlüsselung. |
+| **Pin / pinnen** | Eine Version oder Datei bewusst auf einen bestimmten Stand festschreiben, statt automatisch einer neuen Version zu folgen. |
+| **RBAC** | Das Kubernetes-Berechtigungsmodell nach Rollen. Ich führe in diesem Schritt noch keine eigene RBAC-Härtung ein; das bleibt ein separater Hardening-Punkt. |
+
 
 ## Ziel, Architektur und Stand
 
@@ -73,34 +91,26 @@ Ich teile das absichtlich in einzelne Schritte, damit bei einem Fehler klar blei
 
 | Schritt | Ziel | Stand |
 | --- | --- | --- |
-| 1. K3s-Pin | Version, Installer-Commit und SHA reproduzierbar machen | erledigt |
+| 1. K3s festschreiben | K3s-Version und Installer reproduzierbar auf einen bekannten Stand setzen | erledigt |
 | 2. SOPS/age | Secrets verschlüsselt in Git verwalten | erledigt |
 | 3. Flux-Decryption | Secrets erst im Cluster entschlüsseln | erledigt |
-| 4. Staging-Gate | sicherstellen, dass der Umbau nichts kaputt gemacht hat | erledigt |
+| 4. öffentliche Staging-Prüfung | sicherstellen, dass der Umbau nichts kaputt gemacht hat | erledigt |
 | 5. Backup/Restore | Rücksicherung wirklich testen | offen |
-| 6. Observability | Node, Pods und öffentlichen Dienst überwachen | offen |
+| 6. Monitoring | Node, Pods und öffentlichen Dienst überwachen | offen |
 
 ### To-dos für Teil III
 
 - [ ] vollständigen Restore-Test durchführen und dokumentieren.
-- [ ] Off-cluster-Backup-Ziel und Retention festlegen.
+- [ ] Backup-Ziel **außerhalb des Clusters** festlegen und bestimmen, wie lange alte Sicherungen aufgehoben werden.
 - [ ] privaten age-Key außerhalb des Clusters gesichert hinterlegen und Restore mitprüfen.
-- [ ] Monitoring-Stack auswählen und zuerst nur die wirklich hilfreichen Signale anbinden.
-- [ ] Alerts für Node, Workloads und öffentlichen Healthcheck definieren.
+- [ ] Monitoring auswählen und zuerst nur die wirklich hilfreichen Messwerte und Zustände anbinden.
+- [ ] Warnungen für Node, laufende Anwendungen und den öffentlichen Healthcheck definieren.
 - [ ] Upgrade- und Rollback-Ablauf für K3s dokumentieren.
+- [ ] Kubernetes-Rollen und Rechte für Secret-Zugriffe gezielt prüfen (RBAC-Härtung).
 
 Ich will bei einem kaputten Node nicht überlegen müssen, welche K3s-Version damals zufällig im `stable`-Channel lag. Ich will Secrets nicht per Hand im Cluster verteilen. Und ein Backup ist für mich erst dann ein Backup, wenn ich weiß, wie ich es wieder einspiele.
 
-Der Plan ist deshalb bewusst in einzelne Baustellen aufgeteilt:
-
-| Schritt | Was ich erreichen will | Stand |
-| --- | --- | --- |
-| K3s Bootstrap | exakt dieselbe Version und denselben Installer wieder bekommen | umgesetzt |
-| Secrets | GHCR- und Cloudflare-Secrets verschlüsselt über Git verwalten | umgesetzt und getestet |
-| Backup / Restore | Datastore sichern und eine Rücksicherung wirklich durchführen | als Nächstes |
-| Observability | Node, Pods und öffentlichen Blog sinnvoll überwachen | danach |
-
-Ich ändere diese Punkte absichtlich nacheinander. Wenn ich gleichzeitig Kubernetes upgrade, Secrets umbaue und Monitoring einziehe, weiß ich beim ersten Fehler wieder nicht, welche Änderung ihn verursacht hat.
+Die Reihenfolge bleibt bewusst: erst Reproduzierbarkeit, dann Secrets, danach Restore und Monitoring. Wenn ich Kubernetes-Upgrade, Secret-Umbau und Monitoring gleichzeitig ändere, weiß ich beim ersten Fehler nicht mehr, wo ich anfangen soll zu suchen.
 
 ## 1. `stable` war mir zu schwammig
 
@@ -132,7 +142,7 @@ Also habe ich erstmal genau diesen Stand festgenagelt. Noch kein Upgrade, keine 
 
 Nur `INSTALL_K3S_VERSION` zu setzen war mir zu wenig.
 
-Ich wollte drei Dinge festhalten:
+Ich wollte drei Dinge festhalten. **SHA-256** ist dabei eine Prüfsumme – also ein Fingerabdruck, mit dem ich erkenne, ob genau die erwartete Datei heruntergeladen wurde. Mit **Upstream-Commit** meine ich den konkreten Commit im offiziellen K3s-Repository.
 
 ```text
 K3s:
@@ -163,7 +173,7 @@ Das ist simpel, aber genau die Art Fehler, die ich lieber beim Bootstrap sehe al
 
 ## 3. Der Installer prüft danach auch das eigentliche Binary
 
-Die Checksumme von `install.sh` sagt natürlich noch nichts über das heruntergeladene K3s-Binary aus.
+Die Checksumme von `install.sh` sagt natürlich noch nichts über das heruntergeladene K3s-Binary aus. Mit **Binary** meine ich hier einfach die ausführbare K3s-Datei selbst.
 
 Der offizielle Installer lädt für die gewünschte Release-Version zusätzlich die passende `sha256sum-<arch>.txt` und prüft das Binary.
 
@@ -221,7 +231,7 @@ Das gefällt mir deutlich besser, weil die Entscheidung für ein Upgrade im Git-
 
 ## 5. Warum ich nicht direkt auf die nächste Minor-Version gegangen bin
 
-Zu dem Zeitpunkt war K3s 1.37 schon verfügbar.
+Zu dem Zeitpunkt war bereits die nächste K3s-Minor-Version verfügbar. Mit **Minor-Version** meine ich hier den Sprung von 1.36 auf 1.37.
 
 Ich habe trotzdem zuerst 1.36.4 gepinnt.
 
@@ -275,13 +285,13 @@ mit dem Eintrag:
 identity.agekey
 ```
 
-Wichtig ist aber: **Der Key im Cluster ist nicht mein Backup.**
+Wichtig ist aber: **Der Key im Cluster ist nicht mein Backup.** Der öffentliche age-Schlüssel darf in Git liegen. Entscheidend ist der private Schlüssel, denn nur mit ihm kann ich die verschlüsselten Dateien wieder entschlüsseln.
 
-Wenn der Cluster komplett weg ist, brauche ich den privaten age-Key trotzdem noch irgendwo außerhalb davon.
+Wenn der Cluster komplett weg ist, brauche ich diesen privaten age-Key deshalb zusätzlich außerhalb des Clusters.
 
 ## 6.2 Die vorhandenen Secrets habe ich aus dem laufenden Cluster übernommen
 
-Ich wollte nicht neue GHCR- oder Cloudflare-Credentials erfinden, obwohl die vorhandenen bereits funktionieren.
+Ich wollte keine neuen GHCR- oder Cloudflare-Zugangsdaten erzeugen, obwohl die vorhandenen bereits funktionieren.
 
 Darum liest das Skript die beiden Secrets direkt aus Kubernetes, legt die Klartextdaten nur in einem temporären Verzeichnis ab und verschlüsselt sie sofort mit SOPS:
 
@@ -297,9 +307,9 @@ infra/kubernetes/staging/secrets/
 
 Name und Namespace dürfen lesbar bleiben. Die eigentlichen Werte unter `data` beziehungsweise `stringData` sind verschlüsselt.
 
-## 6.3 Bei SOPS ist die Reihenfolge wichtiger als gedacht
+## 6.3 Warum die Reihenfolge beim ersten SOPS-Setup wichtig ist
 
-Hier bin ich beim ersten Rollout tatsächlich in einen kleinen Bootstrap-Zirkel gelaufen.
+Hier bin ich beim ersten Rollout tatsächlich in ein Henne-Ei-Problem gelaufen.
 
 Flux soll die verschlüsselten Secrets aus Git lesen. Dafür muss die laufende Kustomization aber bereits wissen, **wie** sie SOPS entschlüsseln soll.
 
@@ -330,11 +340,13 @@ Secret-Ressourcen in Kustomize aufnehmen
 
 Das Skript committed absichtlich nichts. Ich will danach immer noch ganz normal `git diff`, CI und den PR sehen.
 
-## 6.4 Der erste SOPS-Rollout braucht einmal Hilfe
+## 6.4 Der einmalige SOPS-Bootstrap
 
-Der interessante Haken kam danach.
+**Bootstrap** bedeutet hier: einmalig den Anfangszustand herstellen, damit danach alles automatisch über Git laufen kann.
 
-Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende** Flux-Kustomization hatte aber noch keine Decryption-Konfiguration und konnte deshalb genau den Commit nicht anwenden, der diese Konfiguration enthält.
+Der interessante Haken kam genau an dieser Stelle.
+
+Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende Flux-Kustomization** – also die Flux-Ressource, die festlegt, welche Manifeste angewendet werden und wie – hatte aber noch keine SOPS-Entschlüsselung aktiviert. Dadurch konnte Flux genau den Commit nicht anwenden, der diese Entschlüsselung erst einschalten sollte.
 
 Bei mir sah das so aus:
 
@@ -350,11 +362,11 @@ Dafür gibt es jetzt einen einmaligen Bootstrap:
 
 [Live-Flux einmalig für SOPS bootstrappen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/05-bootstrap-live-flux-sops.sh "snippet:bash")
 
-Das Skript macht den Live-Patch **erst**, wenn es vorher geprüft hat, dass in `origin/staging` bereits alles sauber vorbereitet ist:
+Das Skript verändert die laufende Flux-Ressource einmalig direkt **erst dann**, wenn es vorher geprüft hat, dass in `origin/staging` bereits alles sauber vorbereitet ist:
 
 - Decryption-Konfiguration
 - beide Secret-Ressourcen
-- echte SOPS-Ciphertexte
+- tatsächlich verschlüsselte SOPS-Werte
 
 Danach patcht es die laufende Kustomization, startet den Reconcile und wartet auf `Ready=True`.
 
@@ -373,7 +385,7 @@ Genau so wollte ich es: einmaliger Bootstrap, danach wieder normaler GitOps-Betr
 
 Nur in die README zu schreiben „bitte keine Secrets committen“ reicht mir nicht.
 
-Deshalb läuft bei jedem PR:
+Deshalb läuft bei jedem PR zusätzlich eine **CI-Prüfung**, also ein automatischer GitHub-Actions-Check:
 
 ```bash
 bash scripts/check-gitops-secrets.sh
@@ -405,7 +417,7 @@ SOPS + age                  eingerichtet
 GHCR Secret                 verschlüsselt in Git
 Cloudflare Secret           verschlüsselt in Git
 Flux Decryption             aktiv
-Secret-Guard in CI          aktiv
+Secret-Prüfung in CI         aktiv
 Staging nach Migration      erfolgreich geprüft
 ```
 
@@ -417,4 +429,4 @@ Als Nächstes kommt der Punkt, bei dem sich entscheidet, ob das Ganze wirklich b
 
 Nicht nur ein Cronjob, der irgendwo Dateien hinlegt, sondern ein Restore, den ich auf einem frischen beziehungsweise bewusst zurückgesetzten Zustand wirklich teste.
 
-Danach kommt Monitoring. Erst wenn ich weiß, dass ich den Cluster wiederherstellen kann, lohnt sich für mich die nächste Runde an Metriken und Alarmen.
+Danach kommt Monitoring – also Messwerte, Zustände und Warnungen. Erst wenn ich weiß, dass ich den Cluster wiederherstellen kann, lohnt sich für mich die nächste Runde an Metriken und Alarmen.
