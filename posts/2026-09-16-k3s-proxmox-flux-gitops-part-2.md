@@ -1,11 +1,11 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
-version: 7
+version: 8
 title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
 status: publish
 date: 2026-09-16
 created_at: 2026-09-16
-updated_at: 2026-09-18
+updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -81,6 +81,18 @@ Teil I war der Teil, in dem ich den Blog überhaupt erstmal sauber auf K3s bekom
 
 Danach hat mich vor allem eins gestört: **Der Cluster lief, aber Deployments hatten noch zu viele Handgriffe.**
 
+Bevor ich den Ablauf zeige, die Begriffe, die in diesem Teil ständig vorkommen:
+
+| Begriff | Kurz erklärt |
+| --- | --- |
+| **Flux** | Ein GitOps-Controller, der **im Kubernetes-Cluster** läuft. Flux schaut in Git nach, welcher Zustand gewünscht ist, und gleicht den Cluster daran an. |
+| **GitOps** | Die gewünschte Konfiguration liegt in Git. Änderungen passieren über Commits und Pull Requests statt über spontane Befehle direkt im Cluster. |
+| **Git-SHA** | Die eindeutige Kennung eines Git-Commits, zum Beispiel `a9bc2d…`. Ich verwende sie als Image-Tag, damit ein Container-Build einem Commit zugeordnet werden kann. |
+| **Kustomize** | Ein Kubernetes-Werkzeug, das vorhandene YAML-Manifeste anpasst. Ich nutze es für die Staging-spezifischen Image-Tags. |
+| **Reconcile** | Flux vergleicht „was Git sagt“ mit „was im Cluster läuft“ und korrigiert Abweichungen. |
+| **Bootstrap** | Die einmalige Ersteinrichtung von Flux: Controller installieren, Repository verbinden und Branch/Pfad festlegen. |
+
+
 Image bauen, SHA raussuchen, irgendwo eintragen, Rollout prüfen. Das funktioniert. Aber wenn ich zwei Tage später überlegen muss, welcher Commit gerade auf Staging läuft, ist mir das noch zu viel Handarbeit.
 
 ## Ziel, Architektur und Stand
@@ -105,7 +117,7 @@ Der Weg besteht aus sechs klaren Schritten:
 - [ ] Branch Protection beziehungsweise Ruleset wirklich erzwingen.
 - [ ] Images langfristig auf Digests statt nur auf SHA-Tags pinnen.
 - [ ] Search im öffentlichen Gate separat verifizieren.
-- [x] Secrets aus dem manuellen Cluster-Zustand in GitOps überführen – in Teil III mit SOPS/age umgesetzt.
+- [ ] Secrets aus dem manuellen Cluster-Zustand in GitOps überführen – das ist der nächste Schritt in Teil III.
 
 Also wollte ich den Weg einmal sauber durchziehen:
 
@@ -219,21 +231,30 @@ Kustomize
 Deployment
 ```
 
-### Kleine Korrektur zum Wort „immutable“
+### SHA-Tag, „immutable“ und Digest – was ist der Unterschied?
 
-Ich habe SHA-Tags anfangs selbst schnell als „immutable“ bezeichnet. Streng genommen stimmt das nicht.
+Ein **SHA-Tag** ist bei mir ein Container-Tag, dessen Name aus dem Git-SHA kommt. Beispiel: `blog:a9bc2d…`. Damit sehe ich sofort, zu welchem Commit das Image gehört.
 
-Der Tag ist eindeutig benannt, aber eine Registry kann einen Tag grundsätzlich neu setzen. Wirklich auf den Inhalt festgenagelt wäre das Image erst mit einem Digest:
+„Immutable“ bedeutet **unveränderlich**. Genau das ist ein normaler Registry-Tag aber nicht zwingend: Ein Tag kann technisch später auf ein anderes Image zeigen.
+
+Ein **Digest** ist dagegen der kryptografische Fingerabdruck des tatsächlichen Image-Inhalts:
 
 ```text
 image@sha256:...
 ```
 
-Für meinen aktuellen Aufbau reichen die SHA-Tags erstmal, weil ich damit sauber nachvollziehen kann, welcher Build zu welchem Commit gehört. Digest-Pins sind aber die konsequentere nächste Stufe.
+Kurz gesagt:
+
+```text
+Tag     = lesbares Etikett
+Digest  = Fingerabdruck des Inhalts
+```
+
+Ein **Digest-Pin** bedeutet: Kubernetes referenziert exakt diesen Fingerabdruck. In meinem aktuellen Aufbau nutze ich noch Git-SHA-Tags; Digest-Pins sind eine spätere Härtung.
 
 ## 3. Kustomize hält fest, was Staging laufen soll
 
-Die Image-Namen stehen in den Basis-Manifesten. Den konkreten Stand halte ich in:
+Die Image-Namen stehen in den **Basis-Manifesten** – damit meine ich die allgemeinen Kubernetes-YAML-Dateien, die noch nicht auf einen konkreten Staging-Build festgelegt sind. Den konkreten Stand halte ich in:
 
 ```text
 infra/kubernetes/staging/kustomization.yaml
@@ -275,9 +296,9 @@ Der Bot-Commit sieht ungefähr so aus:
 chore(staging): deploy <sha> [skip ci]
 ```
 
-`[skip ci]` ist hier nicht die einzige Schleifenbremse. Der Workflow hat zusätzlich einen Pfadfilter und reagiert nicht auf reine Änderungen unter `infra/kubernetes/staging/**`.
+`[skip ci]` verhindert, dass dieser Bot-Commit unnötig wieder CI auslöst. Zusätzlich hat der Workflow einen **Pfadfilter**. Das ist einfach eine Liste von Dateipfaden, bei deren Änderungen der Workflow überhaupt starten darf. Reine Änderungen unter `infra/kubernetes/staging/**` lösen den Build aktuell nicht erneut aus.
 
-Ich lasse `[skip ci]` trotzdem drin. Es macht die Absicht sofort sichtbar und verhindert später Überraschungen, falls ich die Pfadfilter ändere.
+Ich lasse `[skip ci]` trotzdem drin. So ist direkt sichtbar: Dieser Commit schreibt nur den bereits gebauten Sollzustand zurück und soll keinen neuen Build anstoßen.
 
 ## 5. Nicht jeder Push darf automatisch ein Deployment auslösen
 
@@ -293,27 +314,31 @@ Passt das nicht, endet der Workflow mit:
 Refusing staging deployment
 ```
 
-`workflow_dispatch` bleibt absichtlich möglich, falls ich den Lauf bewusst manuell starten will.
+`workflow_dispatch` ist der technische Name für den **manuellen Startknopf eines GitHub-Actions-Workflows**. Den lasse ich absichtlich zu, damit ich einen Lauf bewusst von Hand anstoßen kann.
 
-### Der Guard ist keine Branch Protection
+### Diese Prüfung schützt den Workflow – nicht den Branch
 
-Das ist mir wichtig, weil man sich hier sonst schnell mehr Sicherheit einredet als tatsächlich da ist.
+Vorher habe ich das „Guard“ genannt. Gemeint ist nur: Der Workflow prüft vor dem Deployment, ob der Commit wirklich aus einem gemergten Pull Request nach `staging` kommt.
 
-Der Guard schützt den Actions-Workflow. **Er schützt nicht den Branch selbst.**
+Das ist aber **keine Branch Protection**. Branch Protection beziehungsweise ein Ruleset ist eine GitHub-Regel direkt auf dem Branch. Damit kann GitHub zum Beispiel direkte Pushes verbieten oder erfolgreiche Checks vor einem Merge verlangen.
 
-Flux liest Git direkt. Wenn jemand eine Änderung direkt in den beobachteten GitOps-Pfad bekommt, ist der Build-Guard nicht beteiligt.
+Meine Workflow-Prüfung greift erst, **wenn der Workflow bereits läuft**. Flux liest Git dagegen direkt. Würde eine Änderung auf anderem Weg direkt in den von Flux beobachteten Pfad gelangen, kann diese Workflow-Prüfung das nicht verhindern.
 
-Sauber wären deshalb zwei Ebenen:
+Darum sind das zwei verschiedene Schutzschichten:
 
 ```text
 Branch Protection / Ruleset
-        +
-Workflow-Guard
+    schützt den Branch selbst
+
+Workflow-Prüfung
+    schützt den automatischen Deployment-Ablauf
 ```
 
-Bei meinem privaten Repo war das Ruleset zu diesem Zeitpunkt nicht wirksam erzwingbar. Der Guard ist also eine zusätzliche Schranke, aber kein Ersatz dafür.
+Bei meinem privaten Repo war das Ruleset zu diesem Zeitpunkt nicht wirksam erzwingbar. Die Workflow-Prüfung ist hilfreich, ersetzt den Branch-Schutz aber nicht.
 
-## 6. Flux installieren, prüfen und dann bootstrappen
+## 6. Flux installieren, prüfen und dann einmalig einrichten
+
+Mit **Bootstrap** meine ich hier die einmalige Ersteinrichtung von Flux: Die Controller werden im Cluster installiert, das GitHub-Repository wird verbunden und Flux bekommt gesagt, welchen Branch und welchen Pfad es beobachten soll.
 
 Die Flux CLI habe ich nicht einfach blind per `curl | bash` installiert, sondern als konkrete Version und mit Checksum-Prüfung.
 
@@ -341,19 +366,21 @@ Entscheidend sind für mich diese beiden Werte:
 
 Mehr Magie steckt dahinter im Grunde nicht: Flux bekommt gesagt, welchen Branch und welchen Pfad es beobachten soll.
 
-## 7. Kein persönlicher PAT als Dauer-Credential im Cluster
+## 7. Warum ich keinen persönlichen GitHub-Token im Cluster haben will
 
-Beim Bootstrap verwende ich:
+Ein **PAT** ist ein *Personal Access Token*, also ein persönlicher Zugriffsschlüssel für GitHub. Je nach Berechtigung kann so ein Token deutlich mehr dürfen als nur dieses eine Repository zu lesen.
+
+Beim Flux-Bootstrap verwende ich deshalb:
 
 ```text
 --token-auth=false
 ```
 
-Damit arbeitet Flux später per SSH Deploy Key gegen das Repository.
+Damit legt Flux für den späteren Repository-Zugriff einen **SSH Deploy Key** an. Ein Deploy Key gehört zu genau diesem Repository und kann hier read-only bleiben.
 
-Die Flux CLI braucht beim Einrichten natürlich trotzdem GitHub-Zugriff, damit sie den Deploy Key anlegen kann. Aber mein persönlicher Token bleibt nicht als normales Git-Credential im Cluster liegen.
+Die Flux CLI braucht beim einmaligen Einrichten trotzdem GitHub-Zugriff, um diesen Schlüssel zu hinterlegen. Mein persönlicher GitHub-Token wird aber nicht als dauerhaftes Zugangsmittel im Cluster gespeichert.
 
-Ohne `--read-write-key` ist der Deploy Key read-only. Genau das will ich hier auch: Flux soll lesen und anwenden. Zurückschreiben darf GitHub Actions.
+Ohne `--read-write-key` ist der Deploy Key read-only. Das passt zu meinem Aufbau: Flux liest und deployed; GitHub Actions schreibt Änderungen wie die Kustomize-Pins zurück.
 
 ## 8. Nach dem Bootstrap will ich sehen, was wirklich läuft
 
