@@ -1,18 +1,18 @@
-name: Observe first staging chaos experiment
+name: Observe staging chaos experiment
 
 on:
-  push:
-    branches:
-      - staging
-    paths:
-      - '.github/workflows/observe-chaos-result.yml'
   workflow_dispatch:
+    inputs:
+      completed_after:
+        description: 'Optional ISO-8601 lower bound for completedAt, e.g. 2026-09-19T19:57:00Z'
+        required: false
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: observe-first-staging-chaos
+  group: observe-staging-chaos
   cancel-in-progress: false
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 7
     env:
       STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
-      RESULT_PR: "267"
+      COMPLETED_AFTER: ${{ inputs.completed_after }}
     steps:
       - name: Wait for sanitized chaos result
         id: result
@@ -33,10 +33,14 @@ jobs:
             payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
               "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
 
-            result="$(printf '%s' "$payload" | jq -c '
+            result="$(printf '%s' "$payload" | jq -c --arg lower "${COMPLETED_AFTER}" '
               .lastChaosExperiment
               | select(type == "object")
               | select(.experiment == "single-blog-pod-delete")
+              | select(
+                  ($lower == "")
+                  or ((.completedAt // "") != "" and (.completedAt >= $lower))
+                )
               | {
                   experiment,
                   experimentStartedAt,
@@ -58,7 +62,7 @@ jobs:
               exit 0
             fi
 
-            echo "Attempt ${attempt}/72: no sanitized result yet"
+            echo "Attempt ${attempt}/72: no matching sanitized result yet"
             sleep 5
           done
 
@@ -70,7 +74,7 @@ jobs:
           set -euo pipefail
 
           if [ "${{ steps.result.outputs.found }}" != "true" ]; then
-            echo "Chaos experiment observer: no sanitized lastChaosExperiment result became visible before the observer timeout." >&2
+            echo "No matching sanitized lastChaosExperiment result became visible before the observer timeout." >&2
             exit 1
           fi
 
