@@ -1,7 +1,7 @@
 const {
   buildGraphData,
   filterGraphData,
-  limitSemanticLinks,
+  primarySemanticLinkKeys,
   semanticLinkLabel
 } = require('../assets/knowledge-network');
 
@@ -58,7 +58,7 @@ describe('global knowledge network', () => {
     });
   });
 
-  it('limits semantic clutter for compact views', () => {
+  it('selects primary compact-view links without deleting graph information', () => {
     const links = [
       { source: 'post:a', target: 'post:b', type: 'semantic', score: 0.98 },
       { source: 'post:a', target: 'post:c', type: 'semantic', score: 0.94 },
@@ -67,19 +67,14 @@ describe('global knowledge network', () => {
       { source: 'post:a', target: 'tag:docker', type: 'tag' }
     ];
 
-    const limited = limitSemanticLinks(links, 2);
-    const semantic = limited.filter((link) => link.type === 'semantic');
-    const degree = new Map();
-    semantic.forEach((link) => {
-      degree.set(link.source, (degree.get(link.source) || 0) + 1);
-      degree.set(link.target, (degree.get(link.target) || 0) + 1);
-    });
+    const primary = primarySemanticLinkKeys(links, 2);
 
-    expect(semantic).toHaveLength(3);
-    expect(semantic.map((link) => link.score)).toEqual([0.98, 0.94, 0.8]);
-    expect(semantic.some((link) => link.score === 0.82)).toBe(false);
-    expect(Math.max(...degree.values())).toBeLessThanOrEqual(2);
-    expect(limited.some((link) => link.type === 'tag')).toBe(true);
+    expect(primary.size).toBe(3);
+    expect(links).toHaveLength(5);
+    expect(links.filter((link) => link.type === 'semantic')).toHaveLength(4);
+    expect(primary.has('post:a::post:b')).toBe(true);
+    expect(primary.has('post:a::post:c')).toBe(true);
+    expect(primary.has('post:a::post:d')).toBe(false);
   });
 
   it('can hide graph layers without removing article nodes', () => {
