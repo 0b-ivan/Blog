@@ -1,7 +1,7 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
 version: 8
-title: "K3s auf Proxmox – Teil III: K3s-Pins und Secrets mit SOPS/age"
+title: "K3s auf Proxmox – Teil III: Feste Versionen und verschlüsselte Secrets"
 status: publish
 date: 2026-09-18
 created_at: 2026-09-18
@@ -9,7 +9,7 @@ updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil III räumt die Stellen auf, die beim ersten Aufbau noch pragmatisch gelöst waren: feste K3s-Versionen, SOPS/age für Secrets und als nächster Schritt ein Backup, das auch wirklich zurückgespielt wird."
+excerpt: "Teil III macht den bestehenden K3s-Aufbau reproduzierbarer: feste Versionen, verschlüsselte Secrets in Git und als nächster Schritt ein Backup, das auch wirklich zurückgespielt wird."
 tags:
   - Kubernetes
   - K3s
@@ -57,7 +57,7 @@ snippets:
 ---
 Teil I: Der Blog läuft auf K3s.
 
-Teil II: Der Weg von Git bis Staging läuft automatisch über Flux.
+Teil II: Der Weg von Git bis Staging läuft automatisch.
 
 Damit war das Setup benutzbar. Aber „läuft“ ist für mich noch nicht dasselbe wie „ich bekomme das in sechs Monaten genauso wieder aufgebaut“.
 
@@ -70,11 +70,11 @@ Bevor ich mit Secrets anfange, die Begriffe, die dafür wichtig sind:
 | **Hardening** | Einen funktionierenden Dienst gezielt robuster und schwerer angreifbar machen, zum Beispiel durch feste Versionen, weniger Rechte und reproduzierbare Konfiguration. |
 | **Kubernetes Secret** | Eine Kubernetes-Ressource für Zugangsdaten oder Tokens. Sie ist nicht automatisch „sicher verschlüsselt in Git“ – genau dieses Problem löse ich hier mit SOPS. |
 | **SOPS** | Ein Werkzeug, das sensible Werte in Dateien wie YAML oder JSON verschlüsselt, während Struktur und Metadaten lesbar bleiben können. |
-| **age** | Ein Werkzeug und Dateiformat für asymmetrische Verschlüsselung. Mit dem öffentlichen Schlüssel wird verschlüsselt; mit der privaten Identity wird entschlüsselt. |
+| **age** | Ein Verschlüsselungswerkzeug mit einem Schlüsselpaar: Der öffentliche Schlüssel verschlüsselt, der private Schlüssel entschlüsselt. |
 | **GitOps** | Der gewünschte technische Zustand liegt in Git. Flux liest diesen Zustand und setzt ihn im Cluster um. |
 | **Reconcile** | Der Abgleich zwischen Git und Cluster: Flux prüft, ob beides zusammenpasst, und wendet nötige Änderungen an. |
 | **Flux Decryption** | Flux entschlüsselt eine SOPS-Datei erst beim Anwenden im Cluster und übergibt danach das normale Kubernetes-Secret an die API. |
-| **Kustomization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-Manifeste angewendet werden und welche Zusatzfunktionen – hier SOPS-Decryption – dabei gelten. |
+| **Kustomization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-YAML-Dateien angewendet werden und welche Zusatzfunktionen – hier die SOPS-Entschlüsselung – dabei gelten. |
 | **Bootstrap** | Die einmalige Startkonfiguration, die nötig ist, bevor der automatische Ablauf alleine funktioniert. Beim SOPS-Setup ist das das erstmalige Hinterlegen des age-Schlüssels und Aktivieren der Entschlüsselung. |
 | **RBAC** | Das Kubernetes-Berechtigungsmodell nach Rollen. Ich führe in diesem Schritt noch keine eigene RBAC-Härtung ein; das bleibt ein separater Hardening-Punkt. |
 
@@ -92,9 +92,9 @@ Ich teile das absichtlich in einzelne Schritte, damit bei einem Fehler klar blei
 | 1. K3s-Pin | Version, Installer-Commit und SHA reproduzierbar machen | erledigt |
 | 2. SOPS/age | Secrets verschlüsselt in Git verwalten | erledigt |
 | 3. Flux-Decryption | Secrets erst im Cluster entschlüsseln | erledigt |
-| 4. Staging-Gate | sicherstellen, dass der Umbau nichts kaputt gemacht hat | erledigt |
+| 4. öffentliche Staging-Prüfung | sicherstellen, dass der Umbau nichts kaputt gemacht hat | erledigt |
 | 5. Backup/Restore | Rücksicherung wirklich testen | offen |
-| 6. Observability | Node, Pods und öffentlichen Dienst überwachen | offen |
+| 6. Monitoring | Node, Pods und öffentlichen Dienst überwachen | offen |
 
 ### To-dos für Teil III
 
@@ -104,6 +104,7 @@ Ich teile das absichtlich in einzelne Schritte, damit bei einem Fehler klar blei
 - [ ] Monitoring auswählen und zuerst nur die wirklich hilfreichen Messwerte und Zustände anbinden.
 - [ ] Warnungen für Node, laufende Anwendungen und den öffentlichen Healthcheck definieren.
 - [ ] Upgrade- und Rollback-Ablauf für K3s dokumentieren.
+- [ ] Kubernetes-Rollen und Rechte für Secret-Zugriffe gezielt prüfen (RBAC-Härtung).
 
 Ich will bei einem kaputten Node nicht überlegen müssen, welche K3s-Version damals zufällig im `stable`-Channel lag. Ich will Secrets nicht per Hand im Cluster verteilen. Und ein Backup ist für mich erst dann ein Backup, wenn ich weiß, wie ich es wieder einspiele.
 
