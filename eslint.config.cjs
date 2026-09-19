@@ -60,7 +60,8 @@ module.exports = [
       'assets/grep.js',
       'assets/kernel-grep-overlay.js',
       'assets/glossary.js',
-      'assets/sources.js'
+      'assets/sources.js',
+      'assets/status.js'
     ],
     languageOptions: {
       globals: {
@@ -73,6 +74,16 @@ module.exports = [
         HTMLElement: 'readonly',
         MutationObserver: 'readonly',
         IntersectionObserver: 'readonly'
+      }
+    }
+  },
+  {
+    files: ['chaos-monkey/index.js'],
+    languageOptions: {
+      globals: {
+        AbortSignal: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly'
       }
     }
   },
