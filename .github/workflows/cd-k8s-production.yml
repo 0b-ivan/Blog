@@ -16,6 +16,10 @@ on:
       - 'rag/**'
       - 'Dockerfile'
       - 'Dockerfile.search'
+      - 'Dockerfile.status'
+      - 'status-monitor/**'
+      - 'infra/kubernetes/base/**'
+      - 'infra/kubernetes/production/**'
       - 'package.json'
       - 'package-lock.json'
       - 'VERSION'
@@ -36,8 +40,9 @@ env:
   REGISTRY: ghcr.io
   BLOG_IMAGE_NAME: kernel-notes-blog
   SEARCH_IMAGE_NAME: kernel-notes-search
+  STATUS_IMAGE_NAME: kernel-notes-status
   GITOPS_BRANCH: production-gitops
-  K8S_PRODUCTION_URL: https://k8s-blog.obivan.org
+  K8S_PRODUCTION_URL: https://blog.obivan.org
 
 jobs:
   deploy:
@@ -95,6 +100,7 @@ jobs:
           echo "build_version=${BUILD_VERSION}" >> "$GITHUB_OUTPUT"
           echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
           echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "status_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.STATUS_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
@@ -132,6 +138,18 @@ jobs:
           cache-from: type=gha,scope=k3s-production-search
           cache-to: type=gha,mode=max,scope=k3s-production-search
 
+      - name: Build and push K3s Kubernetes status image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.status
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.status_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.STATUS_IMAGE_NAME }}:k3s-production
+          cache-from: type=gha,scope=k3s-production-status
+          cache-to: type=gha,mode=max,scope=k3s-production-status
+
       - name: Publish K3s production desired state
         env:
           DEPLOY_SHA: ${{ github.sha }}
@@ -163,7 +181,7 @@ jobs:
           text = path.read_text(encoding="utf-8")
           sha = os.environ["DEPLOY_SHA"]
 
-          for image in ("kernel-notes-blog", "kernel-notes-search"):
+          for image in ("kernel-notes-blog", "kernel-notes-search", "kernel-notes-status"):
               pattern = (
                   rf"(  - name: ghcr\.io/0b-ivan/{re.escape(image)}\n"
                   rf"    newTag: )[A-Za-z0-9._-]+"
