@@ -117,13 +117,13 @@ function stripMetaLinks(fragment) {
 
 function addStatusNavigation(html) {
   return html.replace(
-    /(<nav\\b[^>]*class="[^"]*\\bmain-nav\\b[^"]*"[^>]*>)([\\s\\S]*?)(<\\/nav>)/gi,
+    /(<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
     (_match, openingTag, navigation, closingTag) => {
       const content = navigation
-        .replace(/\\s*<a\\b[^>]*href="\\/status\\/?"[^>]*>Status<\\/a>/gi, '')
+        .replace(/\s*<a\b[^>]*href="\/status\/?"[^>]*>Status<\/a>/gi, '')
         .trimEnd();
 
-      return `${openingTag}${content}\\n        ${STATUS_LINK}\\n      ${closingTag}`;
+      return `${openingTag}${content}\n        ${STATUS_LINK}\n      ${closingTag}`;
     }
   );
 }
