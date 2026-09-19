@@ -75,8 +75,9 @@ describe('global knowledge network', () => {
       degree.set(link.target, (degree.get(link.target) || 0) + 1);
     });
 
-    expect(semantic).toHaveLength(2);
-    expect(semantic.map((link) => link.score)).toEqual([0.98, 0.94]);
+    expect(semantic).toHaveLength(3);
+    expect(semantic.map((link) => link.score)).toEqual([0.98, 0.94, 0.8]);
+    expect(semantic.some((link) => link.score === 0.82)).toBe(false);
     expect(Math.max(...degree.values())).toBeLessThanOrEqual(2);
     expect(limited.some((link) => link.type === 'tag')).toBe(true);
   });
