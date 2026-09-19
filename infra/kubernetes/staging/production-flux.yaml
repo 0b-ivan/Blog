@@ -1,0 +1,24 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: blog-production
+  namespace: flux-system
+spec:
+  suspend: true
+  interval: 10m0s
+  path: ./infra/kubernetes/production
+  prune: true
+  wait: true
+  timeout: 10m0s
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: blog
+      namespace: blog-production
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: search
+      namespace: blog-production

@@ -1,6 +1,6 @@
 # Staging-Cluster
 
-Die Manifeste veröffentlichen selbst keine NodePorts oder LoadBalancer. Der Zugriff erfolgt ausschließlich über einen Cloudflare Tunnel, der aus dem Cluster nach außen verbindet.
+Die Staging-Manifeste veröffentlichen selbst keine NodePorts oder LoadBalancer. Der Zugriff erfolgt ausschließlich über einen Cloudflare Tunnel. Blog und Search kommen aus der gemeinsamen Basis unter `infra/kubernetes/base`; das Staging-Overlay setzt Namespace, drei Blog-Replicas und den Staging-Entrypoint.
 
 Der öffentliche Staging-Hostname ist:
 
@@ -28,9 +28,11 @@ Flux -> K3s -> staging-blog.obivan.org
    | PR staging -> main
    v
 main -> bestehendes Hetzner-Production-Deployment -> blog.obivan.org
+
+staging -> Flux -> interne K3s-Production-Kopie (zunächst suspendiert, ohne öffentlichen Traffic)
 ```
 
-Ein Merge nach `staging` veröffentlicht damit noch nichts auf Production. Production bleibt ausschließlich an `main` gebunden.
+Ein Merge nach `staging` veröffentlicht weiterhin nichts auf der öffentlichen Production. `blog.obivan.org` bleibt am Hetzner-Deploy von `main`. Die zusätzliche Flux-Kustomization `blog-production` startet suspendiert und muss für den internen Paralleltest bewusst freigegeben werden.
 
 Der Workflow `.github/workflows/cd-staging.yml` akzeptiert automatische Staging-Deployments nur für Commits, die zu einem gemergten Pull Request mit Zielbranch `staging` gehören. Danach werden Blog und Kernel Grep unter dem unveränderlichen Git-Commit-SHA nach GHCR gepusht. Der Workflow aktualisiert anschließend nur die Image-Pins in `kustomization.yaml`.
 
