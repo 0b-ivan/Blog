@@ -75,9 +75,7 @@ jobs:
           if [ "${{ steps.result.outputs.found }}" != "true" ]; then
             gh api --method POST \
               "repos/${GITHUB_REPOSITORY}/issues/${RESULT_PR}/comments" \
-              -f body='### Chaos experiment observer
-
-No sanitized `lastChaosExperiment` result became visible before the observer timeout. The one-shot Job may have aborted during preflight or Flux may not have reconciled it yet.' >/dev/null
+              -f body="Chaos experiment observer: no sanitized lastChaosExperiment result became visible before the observer timeout. The one-shot Job may have aborted during preflight or Flux may not have reconciled it yet." >/dev/null
             exit 1
           fi
 
