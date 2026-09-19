@@ -49,10 +49,17 @@ function stripFencedCode(markdown) {
   }).join('\n');
 }
 
+function stripMarkdownDestinations(markdown) {
+  return String(markdown || '')
+    .replace(/!?\[([^\]\n]*)\]\([^\n)]*\)/g, '$1')
+    .replace(/^\s*\[[^\]\n]+\]:\s+\S+.*$/gm, ' ');
+}
+
 function searchableMarkdown(markdown) {
   let text = stripManagedBlock(markdown);
   text = text.replace(/^---\s*\n[\s\S]*?\n---\s*\n/, '');
   text = stripFencedCode(text);
+  text = stripMarkdownDestinations(text);
   text = text.replace(/`[^`\n]+`/g, ' ');
   text = text.replace(/^\*\[[^\]]+\]:.*$/gm, ' ');
   text = text.replace(/https?:\/\/[^\s)\]>]+/g, ' ');
@@ -175,6 +182,7 @@ module.exports = {
   searchableMarkdown,
   stripFencedCode,
   stripManagedBlock,
+  stripMarkdownDestinations,
   syncMarkdown,
   usedGlossaryLabels
 };

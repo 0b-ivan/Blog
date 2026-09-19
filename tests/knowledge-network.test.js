@@ -1,5 +1,7 @@
 const {
   buildGraphData,
+  filterGraphData,
+  primarySemanticLinkKeys,
   semanticLinkLabel
 } = require('../assets/knowledge-network');
 
@@ -54,6 +56,40 @@ describe('global knowledge network', () => {
       sharedTags: ['Docker'],
       sameCategory: true
     });
+  });
+
+  it('selects primary compact-view links without deleting graph information', () => {
+    const links = [
+      { source: 'post:a', target: 'post:b', type: 'semantic', score: 0.98 },
+      { source: 'post:a', target: 'post:c', type: 'semantic', score: 0.94 },
+      { source: 'post:a', target: 'post:d', type: 'semantic', score: 0.82 },
+      { source: 'post:b', target: 'post:c', type: 'semantic', score: 0.8 },
+      { source: 'post:a', target: 'tag:docker', type: 'tag' }
+    ];
+
+    const primary = primarySemanticLinkKeys(links, 2);
+
+    expect(primary.size).toBe(3);
+    expect(links).toHaveLength(5);
+    expect(links.filter((link) => link.type === 'semantic')).toHaveLength(4);
+    expect(primary.has('post:a::post:b')).toBe(true);
+    expect(primary.has('post:a::post:c')).toBe(true);
+    expect(primary.has('post:a::post:d')).toBe(false);
+  });
+
+  it('can hide graph layers without removing article nodes', () => {
+    const graph = buildGraphData(posts, [{
+      source: 'docker-compose',
+      target: 'docker-deployment',
+      similarity: 0.91
+    }]);
+    const filtered = filterGraphData(graph, { semantic: false, tags: false, categories: true });
+
+    expect(filtered.nodes.filter((node) => node.type === 'article')).toHaveLength(3);
+    expect(filtered.nodes.some((node) => node.type === 'tag')).toBe(false);
+    expect(filtered.nodes.some((node) => node.type === 'category')).toBe(true);
+    expect(filtered.links.some((link) => link.type === 'semantic')).toBe(false);
+    expect(filtered.links.some((link) => link.type === 'tag')).toBe(false);
   });
 
   it('renders explainable semantic edge labels without exposing embeddings', () => {

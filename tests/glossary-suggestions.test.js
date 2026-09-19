@@ -79,6 +79,43 @@ describe('glossary suggestions', () => {
     expect(terms.has('NEWAPI')).toBe(true);
   });
 
+  it('ignores repository paths without hiding technical slash terms', () => {
+    const suggestions = suggestGlossaryTerms([
+      'snippets/2026-09-16-k3s/01-example.sh',
+      'assets/posts/k3s/diagram.svg',
+      'SOPS/age bleibt dagegen ein echter technischer Begriff.'
+    ].join('\n'), {
+      entries,
+      file: 'posts/test.md'
+    });
+
+    const terms = new Set(suggestions.map((entry) => entry.term));
+    expect([...terms].some((term) => term.startsWith('snippets/'))).toBe(false);
+    expect([...terms].some((term) => term.startsWith('assets/'))).toBe(false);
+    expect(terms.has('SOPS/age')).toBe(true);
+  });
+
+  it('filters ordinary hyphen compounds and markdown link destinations', () => {
+    const suggestions = suggestGlossaryTerms([
+      'Admin-Rechner, Staging-Prüfung und Minor-Version sind normale zusammengesetzte Wörter.',
+      '[K3s-Version mit Ansible fest pinnen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/01-k3s-version-pin.yml "snippet:yaml")',
+      '[Cloudflare Deployment](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/05-cloudflared-deployment.yml "snippet:yaml")',
+      'OpenTelemetry und NodePortLike bleiben als CamelCase-Kandidaten sichtbar.'
+    ].join('\n'), {
+      entries,
+      file: 'posts/test.md'
+    });
+
+    const terms = new Set(suggestions.map((entry) => entry.term));
+    expect(terms.has('Admin-Rechner')).toBe(false);
+    expect(terms.has('Staging-Prüfung')).toBe(false);
+    expect(terms.has('Minor-Version')).toBe(false);
+    expect([...terms].some((term) => term.includes('cloudflare-part-1/'))).toBe(false);
+    expect([...terms].some((term) => term.includes('k3s-proxmox-hardening-part-3/'))).toBe(false);
+    expect(terms.has('OpenTelemetry')).toBe(true);
+    expect(terms.has('NodePortLike')).toBe(true);
+  });
+
   it('honors the persistent ignore list', () => {
     const suggestions = suggestGlossaryTerms('RRF und OpenTelemetry werden getestet.', {
       entries,

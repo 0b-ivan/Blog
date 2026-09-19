@@ -7,6 +7,14 @@
       "Audit Trail"
     ]
   },
+  "Backup": {
+    "full": "Backup",
+    "short": "Zusätzliche Sicherung von Daten oder Systemzuständen für eine spätere Wiederherstellung.",
+    "description": "Ein Backup schützt gegen Datenverlust nur dann verlässlich, wenn es unabhängig vom Ursprung gespeichert und seine Wiederherstellung regelmäßig getestet wird.",
+    "aliases": [
+      "Backups"
+    ]
+  },
   "Bastion Host": {
     "full": "Bastion Host",
     "short": "Speziell abgesicherter Zugangspunkt zu internen Systemen.",
@@ -203,6 +211,15 @@
     "description": "Docker Port-Mapping macht einen Containerdienst über einen Port des Hosts erreichbar, beispielsweise 8080:80.",
     "aliases": []
   },
+  "Restore": {
+    "full": "Restore",
+    "short": "Wiederherstellung von Daten oder Systemzuständen aus einer Sicherung.",
+    "description": "Ein Restore zeigt praktisch, ob ein Backup vollständig, zugänglich und im Ernstfall nutzbar ist. Deshalb gehört ein getesteter Restore zu jeder belastbaren Backup-Strategie.",
+    "aliases": [
+      "Rücksicherung",
+      "Wiederherstellung"
+    ]
+  },
   "Reverse Proxy": {
     "full": "Reverse Proxy",
     "short": "Vorgeschalteter Server, der Anfragen an interne Dienste weiterleitet.",
@@ -301,6 +318,14 @@
       "Unit-File",
       "Unit",
       "Unit-Datei"
+    ]
+  },
+  "URL": {
+    "full": "Uniform Resource Locator",
+    "short": "Adresse einer Ressource, beispielsweise einer Webseite oder API im Netzwerk.",
+    "description": "Eine URL beschreibt unter anderem Schema, Host und Pfad einer Ressource, zum Beispiel https://staging-blog.obivan.org/healthz.",
+    "aliases": [
+      "URLs"
     ]
   },
   "Zero Downtime": {

@@ -1,11 +1,11 @@
 ---
 id: 2026-09-15-k3s-proxmox-cloudflare-part-1
-version: 4
+version: 6
 title: "K3s auf Proxmox – Teil I: Blog-Staging mit Cloudflare Tunnel"
 status: publish
 date: 2026-09-15
 created_at: 2026-09-15
-updated_at: 2026-09-16
+updated_at: 2026-09-19
 author: obivan
 reviewed_by: pending
 category: DevOps
@@ -63,7 +63,45 @@ snippets:
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.
 
+Bevor ich loslege, vier Begriffe, die ich im Rest des Artikels benutze:
+
+| Begriff | Was ich damit meine |
+| --- | --- |
+| **K3s** | Eine schlanke Kubernetes-Distribution. Sie bringt die wichtigsten Kubernetes-Komponenten in einem Paket mit und eignet sich gut für kleine Cluster und Homelabs. |
+| **ClusterIP** | Ein Kubernetes-Service, der nur **innerhalb** des Clusters erreichbar ist. Genau das nutze ich für Blog und Suche. |
+| **Kernel Grep / Search** | Mein eigener Suchdienst für den Blog. Blog und Suche laufen als getrennte Container. |
+| **Bootstrap** | Die einmalige Ersteinrichtung eines Systems. In meinem Fall: VM vorbereiten, K3s installieren und die Grundkonfiguration setzen. |
+
+
 Ist bereits ein Docker-Image der Anwendung vorhanden, lässt sich der Ablauf weitgehend übernehmen. Im Wesentlichen müssen nur Image, Container-Port, Healthcheck und Domain an den jeweiligen Stack angepasst werden.
+
+## Ziel, Architektur und Stand
+
+Mein Ziel in Teil I ist bewusst klein: **Staging soll laufen, intern sauber erreichbar sein und von außen über Cloudflare funktionieren – ohne Production umzuziehen.**
+
+![Architektur Teil I: Proxmox, K3s, Blog, Kernel Grep und Cloudflare Tunnel](/assets/posts/k3s-proxmox-series/teil-i-architektur.svg)
+
+Die Arbeit lässt sich in sechs Schritte teilen:
+
+| Schritt | Ziel | Stand |
+| --- | --- | --- |
+| 1. VM | Debian 13 auf Proxmox als saubere Basis | erledigt |
+| 2. K3s | schlanker Single-Node ohne unnötige öffentliche Dienste | erledigt |
+| 3. Registry | private GHCR-Images aus K3s ziehen | erledigt |
+| 4. Blog + Search | beide Services nur intern über ClusterIP betreiben | erledigt |
+| 5. interne Tests | DNS, Service und Healthcheck vor Cloudflare prüfen | erledigt |
+| 6. Cloudflare Tunnel | Staging outbound-only öffentlich erreichbar machen | erledigt |
+
+### Was am Ende von Teil I noch offen ist
+
+Wichtig: Das ist der Stand **am Ende dieses Teils**. Dinge aus Teil II oder III markiere ich hier nicht rückwirkend als erledigt.
+
+- [ ] Staging im Browser eindeutig markieren.
+- [ ] Deployments über Git statt über manuelle `kubectl`-Schritte steuern.
+- [ ] Einen getesteten Staging-Stand kontrolliert Richtung Production weitergeben.
+- [ ] Secrets sauber verwalten.
+- [ ] Backup und Restore planen und testen.
+- [ ] Monitoring ergänzen.
 
 Am Ende läuft diese Kette:
 
@@ -157,7 +195,7 @@ Nach dem Boot muss zuerst nur SSH funktionieren:
 ssh obivan@<VM-IP>
 ```
 
-Für meinen Ansible-Bootstrap kann der Benutzer außerdem `sudo` ohne interaktive Passworteingabe verwenden:
+Für meinen Ansible-Bootstrap – also die automatisierte Ersteinrichtung mit Ansible – kann der Benutzer außerdem `sudo` ohne interaktive Passworteingabe verwenden:
 
 ```bash
 sudo -n true
@@ -693,7 +731,7 @@ Das ist die Grenze von Teil I: **Die Anwendung läuft reproduzierbar auf Kuberne
 
 ## Ausblick auf Teil II
 
-Teil II automatisiert genau diesen funktionierenden Pfad. Dort kommen der `staging`-Branch, immutable Git-SHA-Images, Kustomize-Pins und Flux dazu.
+Teil II automatisiert genau diesen funktionierenden Pfad. Dort kommen der `staging`-Branch, eindeutig einem Git-Commit zugeordnete Container-Images, Kustomize und Flux dazu. Die Begriffe führe ich dort Schritt für Schritt ein.
 
 Der Ablauf wird dann:
 

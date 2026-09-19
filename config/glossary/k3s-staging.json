@@ -5,6 +5,16 @@
     "description": "Ansible beschreibt Infrastrukturaufgaben deklarativ in Playbooks und führt sie typischerweise per SSH auf Zielsystemen aus, ohne dort einen dauerhaften Agenten zu benötigen.",
     "aliases": []
   },
+  "Bootstrap": {
+    "full": "Bootstrap",
+    "short": "Einmalige Ersteinrichtung, die ein System in einen arbeitsfähigen Ausgangszustand bringt.",
+    "description": "Beim Bootstrap werden die grundlegenden Komponenten und Verbindungen eingerichtet, die spätere automatische Abläufe benötigen. In dieser Serie betrifft das unter anderem die erste K3s- beziehungsweise Flux-Einrichtung.",
+    "aliases": [
+      "bootstrappen",
+      "Bootstrap-Prozess",
+      "Bootstrap-Skript"
+    ]
+  },
   "Cert-Manager": {
     "full": "cert-manager",
     "short": "Kubernetes-Controller zur automatischen Verwaltung von TLS-Zertifikaten.",
@@ -21,6 +31,15 @@
       "cloud-init"
     ]
   },
+  "ClusterIP": {
+    "full": "Kubernetes ClusterIP Service",
+    "short": "Kubernetes-Service, der nur innerhalb des Clusters erreichbar ist.",
+    "description": "ClusterIP ist der Standard-Service-Typ in Kubernetes. Er stellt eine stabile interne IP und einen DNS-Namen bereit, ohne den Dienst direkt außerhalb des Clusters zu veröffentlichen.",
+    "aliases": [
+      "ClusterIP-Service",
+      "ClusterIP Services"
+    ]
+  },
   "CNI": {
     "full": "Container Network Interface",
     "short": "Standardschnittstelle für die Netzwerkanbindung von Containern.",
@@ -28,6 +47,12 @@
     "aliases": [
       "Container Network Interface"
     ]
+  },
+  "CoreDNS": {
+    "full": "CoreDNS",
+    "short": "DNS-Dienst, der in Kubernetes Service- und Pod-Namen innerhalb des Clusters auflöst.",
+    "description": "CoreDNS beantwortet interne DNS-Anfragen im Kubernetes-Cluster. Dadurch können Workloads Dienste über Namen wie service.namespace.svc.cluster.local erreichen, statt feste IP-Adressen zu verwenden.",
+    "aliases": []
   },
   "Flux": {
     "full": "Flux",
@@ -59,6 +84,30 @@
       "K3s"
     ]
   },
+  "Kubernetes Secret": {
+    "full": "Kubernetes Secret",
+    "short": "Kubernetes-Ressource zum Bereitstellen sensibler Daten wie Tokens, Passwörter oder Registry-Zugänge.",
+    "description": "Ein Kubernetes Secret trennt sensible Werte von normalen Anwendungsmanifesten. Es ist damit aber nicht automatisch sicher für ein Git-Repository verschlüsselt; dafür werden zusätzliche Verfahren wie SOPS benötigt.",
+    "aliases": [
+      "Kubernetes Secrets",
+      "Secret-Ressource",
+      "Secret-Ressourcen"
+    ]
+  },
+  "Kustomize": {
+    "full": "Kustomize",
+    "short": "Werkzeug zum Anpassen und Zusammensetzen von Kubernetes-YAML ohne Vorlagen-Syntax.",
+    "description": "Kustomize verwendet Basis-Manifeste und darauf aufbauende Anpassungen, um beispielsweise je Umgebung andere Image-Versionen, Labels oder Ressourcen zu setzen.",
+    "aliases": []
+  },
+  "NodePort": {
+    "full": "Kubernetes NodePort Service",
+    "short": "Kubernetes-Service, der einen Dienst über einen Port auf jedem Cluster-Node erreichbar macht.",
+    "description": "NodePort öffnet auf jedem Kubernetes-Node einen Port und leitet darüber zum Service weiter. Im beschriebenen Staging-Setup ist das nicht nötig, weil der öffentliche Zugriff über Cloudflare Tunnel erfolgt.",
+    "aliases": [
+      "NodePort-Service"
+    ]
+  },
   "Proxmox": {
     "full": "Proxmox Virtual Environment",
     "short": "Virtualisierungsplattform für virtuelle Maschinen und Linux-Container.",
@@ -80,6 +129,16 @@
     "short": "Emulator und Virtualisierungssoftware für unterschiedliche Rechnerarchitekturen.",
     "description": "QEMU stellt virtuelle Hardware für virtuelle Maschinen bereit und wird unter Linux häufig zusammen mit KVM für hardwarebeschleunigte Virtualisierung eingesetzt.",
     "aliases": []
+  },
+  "Version Pinning": {
+    "full": "Version Pinning",
+    "short": "Bewusstes Festschreiben einer konkreten Version statt automatischer Verwendung der jeweils neuesten Version.",
+    "description": "Version Pinning verbessert Reproduzierbarkeit, weil Builds oder Installationen denselben bekannten Stand verwenden. Updates werden dadurch zu einer bewussten Änderung im Versionsverlauf.",
+    "aliases": [
+      "Version-Pinning",
+      "Version pinnen",
+      "Version gepinnt"
+    ]
   },
   "VM": {
     "full": "Virtual Machine",
