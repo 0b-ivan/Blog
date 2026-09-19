@@ -1,0 +1,10 @@
+FROM gcr.io/distroless/nodejs22-debian13:nonroot
+
+WORKDIR /app
+
+COPY status-monitor/server.js ./server.js
+
+ENV PORT=8080
+
+EXPOSE 8080
+CMD ["server.js"]
