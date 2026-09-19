@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Status | Kernel Notes</title>
+    <meta
+      name="description"
+      content="Öffentlicher Betriebsstatus der Kubernetes-Infrastruktur hinter Kernel Notes."
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260819-2" />
+    <link rel="stylesheet" href="/assets/css/status.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="logo" href="/" aria-label="Kernel Notes – Startseite">Kernel Notes</a>
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <a href="/#posts">Artikel</a>
+        <a href="/#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
+        <a href="/sources">Quellen</a>
+      </nav>
+    </header>
+
+    <main class="status-main">
+      <section class="status-hero">
+        <p class="eyebrow">Live · Kubernetes</p>
+        <h1>Systemstatus</h1>
+        <p>
+          Hier siehst du den öffentlich freigegebenen Betriebszustand der K3s-Infrastruktur,
+          die Kernel Notes ausliefert. Die Ansicht zeigt ausschließlich aggregierte Daten.
+        </p>
+      </section>
+
+      <section class="status-overview" aria-live="polite">
+        <div class="status-summary-card">
+          <div>
+            <p class="status-kicker">Gesamtstatus</p>
+            <h2 id="status-overall">Wird geladen …</h2>
+          </div>
+          <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+        </div>
+
+        <div class="status-meta-grid">
+          <article class="status-card">
+            <span class="status-label">Umgebung</span>
+            <strong id="status-environment">–</strong>
+          </article>
+          <article class="status-card">
+            <span class="status-label">Orchestrator</span>
+            <strong id="status-orchestrator">K3s</strong>
+          </article>
+          <article class="status-card">
+            <span class="status-label">Build</span>
+            <strong id="status-build">–</strong>
+          </article>
+          <article class="status-card">
+            <span class="status-label">Letzte Messung</span>
+            <strong id="status-updated">–</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="status-section">
+        <div class="status-section-heading">
+          <div>
+            <p class="eyebrow">Workloads</p>
+            <h2>Kubernetes Readiness</h2>
+          </div>
+          <button type="button" class="status-refresh" id="status-refresh">Aktualisieren</button>
+        </div>
+        <div class="status-workloads" id="status-workloads">
+          <article class="status-card"><p>Statusdaten werden geladen …</p></article>
+        </div>
+      </section>
+
+      <section class="status-section status-disclosure">
+        <p class="eyebrow">Sicherheitsgrenze</p>
+        <h2>Was absichtlich nicht öffentlich ist</h2>
+        <p>
+          Pod-Namen, Node-Namen, interne IP-Adressen, Kubernetes-Versionen, Secrets,
+          ServiceAccount-Daten und Cluster-Topologie werden nicht an den Browser ausgegeben.
+          Öffentlich sind nur Readiness-Zähler und der daraus abgeleitete Betriebsstatus.
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 Kernel Notes</p>
+      <div class="footer-links"></div>
+    </footer>
+
+    <script src="/script.js" defer></script>
+    <script src="/assets/status.js" defer></script>
+  </body>
+</html>

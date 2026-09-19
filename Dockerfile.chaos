@@ -1,0 +1,7 @@
+FROM gcr.io/distroless/nodejs22-debian13:nonroot
+
+WORKDIR /app
+
+COPY chaos-monkey/index.js ./index.js
+
+CMD ["index.js"]

@@ -4,6 +4,7 @@ resources:
   - blog.yaml
   - app
   - cloudflared.yaml
+  - chaos-monkey.yaml
   - production-flux.yaml
   - secrets/ghcr-pull.sops.yaml
   - secrets/cloudflared-token.sops.yaml
@@ -11,9 +12,13 @@ images:
   - name: cloudflare/cloudflared
     newTag: 2026.9.1
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 36085063613da4eb66441e8f3714d1ec51d3ad2c
+    newTag: 5499bccdc39f5b1cab1b49f157abdd33d675e06d
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 36085063613da4eb66441e8f3714d1ec51d3ad2c
+    newTag: 5499bccdc39f5b1cab1b49f157abdd33d675e06d
+  - name: ghcr.io/0b-ivan/kernel-notes-status
+    newTag: 5499bccdc39f5b1cab1b49f157abdd33d675e06d
+  - name: ghcr.io/0b-ivan/kernel-notes-chaos
+    newTag: 5499bccdc39f5b1cab1b49f157abdd33d675e06d
 patches:
   - target:
       group: apps
@@ -26,3 +31,6 @@ patches:
         path: /spec/template/spec/containers/0/args
         value:
           - staging-server.js
+      - op: add
+        path: /spec/template/metadata/labels/chaos.obivan.org~1enabled
+        value: "true"

@@ -1,0 +1,147 @@
+.status-main {
+  width: min(100% - 2rem, 980px);
+  margin: 0 auto;
+  padding: 7.5rem 0 4rem;
+}
+
+.status-hero {
+  max-width: 760px;
+  margin-bottom: 2rem;
+}
+
+.status-hero h1 {
+  margin: 0.25rem 0 1rem;
+}
+
+.status-overview,
+.status-section {
+  margin-top: 1.5rem;
+}
+
+.status-summary-card,
+.status-card {
+  border: 1px solid var(--surface-border);
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow-soft);
+}
+
+.status-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem 1.5rem;
+}
+
+.status-summary-card h2,
+.status-card strong {
+  margin: 0;
+}
+
+.status-kicker,
+.status-label {
+  display: block;
+  margin: 0 0 0.35rem;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.status-dot {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #8a8f98;
+  box-shadow: 0 0 0 6px color-mix(in srgb, #8a8f98 18%, transparent);
+}
+
+.status-dot[data-state="operational"] {
+  background: #2da44e;
+  box-shadow: 0 0 0 6px color-mix(in srgb, #2da44e 18%, transparent);
+}
+
+.status-dot[data-state="degraded"] {
+  background: #bf8700;
+  box-shadow: 0 0 0 6px color-mix(in srgb, #bf8700 18%, transparent);
+}
+
+.status-meta-grid,
+.status-workloads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.status-card {
+  padding: 1.15rem 1.25rem;
+}
+
+.status-section-heading,
+.status-workload-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.status-section-heading h2 {
+  margin: 0.25rem 0 0;
+}
+
+.status-refresh {
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: var(--card);
+  color: inherit;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+}
+
+.status-refresh:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.status-pill {
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  background: color-mix(in srgb, #8a8f98 15%, transparent);
+}
+
+.status-card--operational .status-pill {
+  background: color-mix(in srgb, #2da44e 15%, transparent);
+}
+
+.status-card--degraded .status-pill {
+  background: color-mix(in srgb, #bf8700 18%, transparent);
+}
+
+.status-disclosure {
+  border-top: 1px solid var(--surface-border);
+  padding-top: 1.5rem;
+}
+
+@media (max-width: 620px) {
+  .status-main {
+    width: min(100% - 1.25rem, 980px);
+    padding-top: 6.5rem;
+  }
+
+  .status-meta-grid,
+  .status-workloads {
+    grid-template-columns: 1fr;
+  }
+
+  .status-section-heading,
+  .status-workload-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

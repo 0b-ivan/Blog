@@ -20,6 +20,7 @@ const STATIC_DESCRIPTIONS = new Map([
   ['/snippets/', 'Wiederverwendbare Code- und Konfigurations-Snippets aus der Praxis.'],
   ['/glossary', 'Glossar für Fachbegriffe aus Cloud, Linux, Security, DevOps und Self-Hosting.'],
   ['/sources', 'Zentrale Quellen und Referenzen der Kernel-Notes-Artikel.'],
+  ['/status', 'Öffentlicher Betriebsstatus der Kubernetes-Infrastruktur hinter Kernel Notes.'],
   ['/archive', 'Archivierte Kernel-Notes-Artikel mit dauerhaft lesbaren historischen Inhalten.']
 ]);
 
@@ -54,6 +55,7 @@ function normalizeCanonicalPath(requestPath) {
     ['/impressum.html', '/impressum'],
     ['/datenschutz.html', '/datenschutz'],
     ['/sources.html', '/sources'],
+    ['/status.html', '/status'],
     ['/snippets', '/snippets/'],
     ['/snippets/index.html', '/snippets/']
   ]);
@@ -281,7 +283,7 @@ function sitemapEntry(requestPath, lastModified = '') {
 async function generateSitemapXml() {
   const activePosts = await readSeoPosts(postsDir, 'active');
   const archivedPosts = await readSeoPosts(archiveDir, 'archived');
-  const staticPaths = ['/', '/about', '/snippets/', '/glossary', '/sources', '/archive'];
+  const staticPaths = ['/', '/about', '/snippets/', '/glossary', '/sources', '/status', '/archive'];
   const entries = [
     ...staticPaths.map((requestPath) => sitemapEntry(requestPath)),
     ...activePosts.map((post) => sitemapEntry(`/posts/${post.slug}`, post.dateModified || post.datePublished)),
@@ -320,6 +322,7 @@ function createApp() {
     ['/impressum.html', '/impressum'],
     ['/datenschutz.html', '/datenschutz'],
     ['/sources.html', '/sources'],
+    ['/status.html', '/status'],
     ['/grep.html', '/grep'],
     ['/snippets/index.html', '/snippets/']
   ]);

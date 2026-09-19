@@ -14,6 +14,8 @@ concurrency:
 env:
   BLOG_IMAGE: kernel-notes-blog:ci
   SEARCH_IMAGE: kernel-notes-search:ci
+  STATUS_IMAGE: kernel-notes-status:ci
+  CHAOS_IMAGE: kernel-notes-chaos:ci
 
 jobs:
   checks:
@@ -49,7 +51,7 @@ jobs:
 
           while IFS= read -r file; do
             case "$file" in
-              package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
+              package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|Dockerfile.status|Dockerfile.chaos|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
                 security=true
                 ;;
             esac
@@ -190,6 +192,28 @@ jobs:
           tags: ${{ env.SEARCH_IMAGE }}
           cache-from: type=gha,scope=pr-search
           cache-to: type=gha,mode=max,scope=pr-search
+
+      - name: Build Kubernetes status image once
+        if: steps.changes.outputs.heavy == 'true'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.status
+          load: true
+          tags: ${{ env.STATUS_IMAGE }}
+          cache-from: type=gha,scope=pr-status
+          cache-to: type=gha,mode=max,scope=pr-status
+
+      - name: Build Chaos Monkey image once
+        if: steps.changes.outputs.heavy == 'true'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.chaos
+          load: true
+          tags: ${{ env.CHAOS_IMAGE }}
+          cache-from: type=gha,scope=pr-chaos
+          cache-to: type=gha,mode=max,scope=pr-chaos
 
       - name: Start stack without rebuilding images
         if: steps.changes.outputs.heavy == 'true'
