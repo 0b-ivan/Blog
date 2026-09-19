@@ -14,6 +14,10 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["chaos-monkey-result"]
+    verbs: ["patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -28,6 +32,16 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: chaos-monkey
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chaos-monkey-result
+  namespace: blog-staging
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
+data:
+  result: ""
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -71,6 +85,8 @@ spec:
                   value: https://staging-blog.obivan.org/healthz
                 - name: SEARCH_URL
                   value: https://staging-blog.obivan.org/api/search
+                - name: RESULT_CONFIGMAP
+                  value: chaos-monkey-result
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:

@@ -6,6 +6,8 @@ const build = document.getElementById('status-build');
 const updated = document.getElementById('status-updated');
 const workloads = document.getElementById('status-workloads');
 const refresh = document.getElementById('status-refresh');
+const chaosSection = document.getElementById('chaos-experiment-section');
+const chaosExperiment = document.getElementById('chaos-experiment');
 
 function labelStatus(value) {
   if (value === 'operational') return 'Alle Systeme betriebsbereit';
@@ -49,6 +51,50 @@ function renderWorkloads(items) {
   }).join('');
 }
 
+function formatDuration(value) {
+  const milliseconds = Number(value);
+  if (!Number.isFinite(milliseconds)) return '–';
+  return `${(milliseconds / 1000).toFixed(2)} s`;
+}
+
+function renderChaosExperiment(experiment) {
+  if (!experiment || experiment.experiment !== 'single-blog-pod-delete') {
+    chaosSection.hidden = true;
+    chaosExperiment.innerHTML = '';
+    return;
+  }
+
+  chaosSection.hidden = false;
+  const result = experiment.passed ? 'Bestanden' : 'Fehlgeschlagen';
+  const search = experiment.searchReachableAfter ? 'Erreichbar' : 'Nicht erreichbar';
+  chaosExperiment.innerHTML = `
+    <article class="status-card">
+      <span class="status-label">Ergebnis</span>
+      <strong>${result}</strong>
+    </article>
+    <article class="status-card">
+      <span class="status-label">Recovery</span>
+      <strong>${formatDuration(experiment.recoveryTimeMs)}</strong>
+    </article>
+    <article class="status-card">
+      <span class="status-label">HTTP-Fehler</span>
+      <strong>${experiment.httpFailures}</strong>
+    </article>
+    <article class="status-card">
+      <span class="status-label">Minimum Ready</span>
+      <strong>${experiment.minimumReadyPods} / 3</strong>
+    </article>
+    <article class="status-card">
+      <span class="status-label">Search danach</span>
+      <strong>${search}</strong>
+    </article>
+    <article class="status-card">
+      <span class="status-label">Experiment</span>
+      <strong>${formatTime(experiment.completedAt)}</strong>
+    </article>
+  `;
+}
+
 async function loadStatus() {
   refresh.disabled = true;
   try {
@@ -68,11 +114,13 @@ async function loadStatus() {
     build.textContent = buildInfo.version || '–';
     updated.textContent = formatTime(status.updatedAt);
     renderWorkloads(status.workloads);
+    renderChaosExperiment(status.lastChaosExperiment);
   } catch (_error) {
     overall.textContent = labelStatus('unavailable');
     dot.dataset.state = 'unavailable';
     updated.textContent = formatTime(new Date().toISOString());
     renderWorkloads([]);
+    renderChaosExperiment(null);
   } finally {
     refresh.disabled = false;
   }
