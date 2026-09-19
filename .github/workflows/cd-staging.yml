@@ -21,8 +21,11 @@ on:
       - 'VERSION'
       - '.dockerignore'
       - '.github/workflows/cd-staging.yml'
+      - 'infra/kubernetes/base/**'
       - 'infra/kubernetes/staging/**'
+      - 'infra/kubernetes/production/**'
       - 'scripts/verify-staging-scaling.sh'
+      - 'scripts/verify-production-k8s.sh'
   workflow_dispatch:
 
 permissions:
@@ -94,7 +97,7 @@ jobs:
           build_images=false
           while IFS= read -r file; do
             case "$file" in
-              infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|scripts/verify-staging-scaling.sh|.github/workflows/cd-staging.yml)
+              infra/kubernetes/base/*|infra/kubernetes/base/**/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|infra/kubernetes/production/*|infra/kubernetes/production/**/*|scripts/verify-staging-scaling.sh|scripts/verify-production-k8s.sh|.github/workflows/cd-staging.yml)
                 ;;
               *)
                 build_images=true
