@@ -44,7 +44,7 @@ Er:
 3. synchronisiert `infra/kubernetes/base` und `infra/kubernetes/production` in den Branch `production-gitops`,
 4. pinnt dort Blog und Search auf exakt den `main`-SHA,
 5. lässt Flux das Rolling Deployment durchführen,
-6. wartet anschließend auf den öffentlichen Canary `https://k8s-blog.obivan.org` und prüft Healthcheck, Build-Version und Kernel Grep.
+6. wartet anschließend auf den öffentlichen Canary `https://blog.obivan.org` und prüft Healthcheck, Build-Version und Kernel Grep.
 
 Der Build bekommt eine eindeutig prüfbare Version:
 
@@ -77,19 +77,30 @@ Obsidian LiveSync, CouchDB, der Headless-LiveSync-Client und der Publisher könn
 
 Auch `.github/workflows/sync-main-to-obsidian.yml` bleibt bestehen und spiegelt veröffentlichte bzw. archivierte Notes weiterhin auf den Hetzner-Headless-Vault zurück.
 
-## Canary
+## Production-Gate
 
-Vor und nach dem Cutover bleibt dieser Hostname bestehen:
+Der aktuelle öffentliche Deployment-Gate ist der echte Production-Hostname:
 
 ```text
-https://k8s-blog.obivan.org
+https://blog.obivan.org
+  -> K3s Production
   -> http://blog.blog-production.svc.cluster.local:80
 ```
 
-Er ist gleichzeitig der öffentliche Deployment-Gate für den K3s-Production-Workflow.
+Ein separater direkter K3s-Origin ist aktuell bewusst nicht veröffentlicht. Sobald der geplante HAProxy-Failover vor K3s und Hetzner steht, soll die Trennung so aussehen:
 
-## Öffentlicher Cutover
+```text
+blog.obivan.org
+  -> HAProxy / Failover Entry Point
 
-Erst wenn der Dual-Deploy einmal erfolgreich von `main` durchgelaufen ist, wird `blog.obivan.org` auf denselben K3s-Service geroutet.
+origin-blog.obivan.org
+  -> ausschließlich K3s
+```
 
-Hetzner wird dabei nicht abgeschaltet. Dadurch bleibt der Rückweg ein reiner Cloudflare-/DNS-Rollback und benötigt keinen Restore.
+Dann kann der Deployment-Gate wieder den dedizierten Origin prüfen, ohne den Failover-Pfad mit dem direkten K3s-Ziel zu vermischen.
+
+## Öffentlicher Betrieb
+
+`blog.obivan.org` zeigt inzwischen auf K3s Production. Hetzner wird trotzdem weiterhin aus `main` aktualisiert und bleibt als aktueller Standby-Origin bestehen.
+
+Dadurch bleibt der spätere Failover auf Hetzner ohne Restore möglich. Der nächste Ausbau ist ein eigener HAProxy-/Failover-Einstiegspunkt vor beiden Origins.
