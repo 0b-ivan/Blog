@@ -1,16 +1,14 @@
-const {
-  addStatusNavigation,
-  sanitizedKubernetesStatus
-} = require('../privacy-server');
+const fs = require('node:fs');
+const path = require('node:path');
+const { sanitizedKubernetesStatus } = require('../lib/kubernetes-status');
 
 describe('public Kubernetes status contract', () => {
-  it('adds exactly one Status entry to the main navigation', () => {
-    const input = '<nav class="main-nav"><a href="/#posts">Artikel</a></nav>';
-    const once = addStatusNavigation(input);
-    const twice = addStatusNavigation(once);
+  it('adds Status to the shared hardened navigation', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'privacy-server.js'), 'utf8');
 
-    expect(once).toContain('<a href="/status">Status</a>');
-    expect((twice.match(/href="\/status"/g) || []).length).toBe(1);
+    expect(source).toContain('function addStatusNavigation(html)');
+    expect(source).toContain('const STATUS_LINK = \'<a href="/status">Status</a>\'');
+    expect(source).toContain('addGrepNavigation(addStatusNavigation(localizeBrowserDependencies(html)))');
   });
 
   it('only exposes the sanitized aggregate status shape', () => {
@@ -51,5 +49,26 @@ describe('public Kubernetes status contract', () => {
     expect(JSON.stringify(payload)).not.toContain('must-not-leak');
     expect(JSON.stringify(payload)).not.toContain('10.0.0.5');
     expect(JSON.stringify(payload)).not.toContain('blog-secret-name');
+  });
+
+  it('normalizes unexpected values instead of exposing them', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'secret-state',
+      environment: 'internal-lab',
+      orchestrator: 'CustomControlPlane',
+      kubernetesApi: 'maybe',
+      workloads: [{ name: 'InternalThing', desired: -1, ready: -2, status: 'secret-state' }]
+    });
+
+    expect(payload.status).toBe('unavailable');
+    expect(payload.environment).toBe('unknown');
+    expect(payload.orchestrator).toBe('Kubernetes');
+    expect(payload.kubernetesApi).toBe('unreachable');
+    expect(payload.workloads[0]).toEqual({
+      name: 'Workload',
+      desired: 0,
+      ready: 0,
+      status: 'unavailable'
+    });
   });
 });
