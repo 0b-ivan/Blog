@@ -386,14 +386,18 @@
     return typeof endpoint === 'object' ? endpoint?.id : endpoint;
   }
 
-  function limitSemanticLinks(links, maxPerArticle = 2) {
-    const safeLinks = Array.isArray(links) ? links : [];
-    const semantic = safeLinks
+  function semanticLinkKey(link) {
+    const source = linkEndpointId(link.source);
+    const target = linkEndpointId(link.target);
+    return [source, target].sort().join('::');
+  }
+
+  function primarySemanticLinkKeys(links, maxPerArticle = 2) {
+    const semantic = (Array.isArray(links) ? links : [])
       .filter((link) => link.type === 'semantic')
       .sort((left, right) => Number(right.score || right.similarity || 0) - Number(left.score || left.similarity || 0));
-    const nonSemantic = safeLinks.filter((link) => link.type !== 'semantic');
     const degree = new Map();
-    const selected = [];
+    const selected = new Set();
 
     for (const link of semantic) {
       const source = linkEndpointId(link.source);
@@ -404,10 +408,10 @@
       }
       degree.set(source, (degree.get(source) || 0) + 1);
       degree.set(target, (degree.get(target) || 0) + 1);
-      selected.push(link);
+      selected.add(semanticLinkKey(link));
     }
 
-    return [...nonSemantic, ...selected];
+    return selected;
   }
 
   function filterGraphData(graphData, layers) {
@@ -470,8 +474,9 @@
     const compact = window.matchMedia('(max-width: 620px)').matches;
     const sourceData = {
       nodes: graphData.nodes,
-      links: compact ? limitSemanticLinks(graphData.links, 2) : graphData.links
+      links: graphData.links
     };
+    const primarySemantic = compact ? primarySemanticLinkKeys(graphData.links, 2) : new Set();
     const layers = { semantic: true, tags: true, categories: true };
     let hoveredNode = null;
     let selectedNode = null;
@@ -518,7 +523,14 @@
       selectionType.textContent = type;
       selectionTitle.textContent = node.label;
       if (node.type === 'article') {
-        const details = [node.category, ...(node.tags || []).slice(0, 4)].filter(Boolean);
+        const semanticRelations = sourceData.links.filter((link) => (
+          link.type === 'semantic' && connectedTo(link, node)
+        )).length;
+        const details = [
+          semanticRelations ? `${semanticRelations} semantische Beziehungen` : '',
+          node.category,
+          ...(node.tags || []).slice(0, 4)
+        ].filter(Boolean);
         selectionMeta.textContent = details.join(' · ') || 'Artikel im Wissensnetz';
       } else {
         selectionMeta.textContent = node.type === 'tag'
@@ -570,13 +582,23 @@
         if (focus) {
           return connectedTo(link, focus) ? 'rgba(0, 71, 62, 0.72)' : 'rgba(42, 48, 54, 0.025)';
         }
-        if (link.type === 'semantic') return compact ? 'rgba(91, 156, 246, 0.14)' : 'rgba(91, 156, 246, 0.2)';
+        if (link.type === 'semantic') {
+          if (compact && !primarySemantic.has(semanticLinkKey(link))) {
+            return 'rgba(91, 156, 246, 0.015)';
+          }
+          return compact ? 'rgba(91, 156, 246, 0.14)' : 'rgba(91, 156, 246, 0.2)';
+        }
         return 'rgba(42, 48, 54, 0.09)';
       })
       .linkWidth((link) => {
         const focus = focusNode();
         if (focus && connectedTo(link, focus)) return 2.6;
-        if (link.type === 'semantic') return Math.min(1.7, 0.45 + ((Number(link.score) || 0) * 0.9));
+        if (link.type === 'semantic') {
+          if (compact && !primarySemantic.has(semanticLinkKey(link))) {
+            return 0.08;
+          }
+          return Math.min(1.7, 0.45 + ((Number(link.score) || 0) * 0.9));
+        }
         return 0.65;
       })
       .onNodeHover((node) => {
@@ -679,7 +701,7 @@
     module.exports = {
       buildGraphData,
       filterGraphData,
-      limitSemanticLinks,
+      primarySemanticLinkKeys,
       semanticLinkLabel,
       publicationHeatmap,
       categoryRadar
