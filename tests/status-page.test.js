@@ -220,6 +220,7 @@ describe('public Kubernetes status contract', () => {
         target: 'search',
         outcome: 'aborted',
         failureStage: 'preflight',
+        failureReason: 'target-not-ready',
         experimentStartedAt: '2026-09-20T07:10:00.000Z',
         completedAt: '2026-09-20T07:10:01.000Z',
         iterationCount: 1,
@@ -239,9 +240,36 @@ describe('public Kubernetes status contract', () => {
 
     expect(payload.lastChaosExperiment.outcome).toBe('aborted');
     expect(payload.lastChaosExperiment.failureStage).toBe('preflight');
+    expect(payload.lastChaosExperiment.failureReason).toBe('target-not-ready');
     expect(payload.lastChaosExperiment.passed).toBe(false);
     expect(JSON.stringify(payload)).not.toContain('must-not-leak');
     expect(JSON.stringify(payload)).not.toContain('raw pod');
+  });
+
+  it('drops unknown preflight failure reasons', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'operational',
+      environment: 'staging',
+      orchestrator: 'K3s',
+      kubernetesApi: 'reachable',
+      workloads: [],
+      lastChaosExperiment: {
+        experiment: 'search-restart-under-load',
+        target: 'search',
+        outcome: 'aborted',
+        failureStage: 'preflight',
+        failureReason: 'secret-internal-reason',
+        experimentStartedAt: '2026-09-20T07:10:00.000Z',
+        completedAt: '2026-09-20T07:10:01.000Z',
+        iterationCount: 1,
+        completedIterations: 0,
+        passed: false
+      }
+    });
+
+    expect(payload.lastChaosExperiment.failureStage).toBe('preflight');
+    expect(payload.lastChaosExperiment.failureReason).toBeUndefined();
+    expect(JSON.stringify(payload)).not.toContain('secret-internal-reason');
   });
 
   it('normalizes unexpected values instead of exposing them', () => {
