@@ -163,6 +163,32 @@ Weitere Guards:
 
 Ein versehentliches Entsuspendieren des CronJobs startet daher noch kein wirksames Chaos-Experiment: automatisch erzeugte CronJob-Pods bestehen den manuellen Jobnamen-Guard nicht.
 
+## Chaos Mesh für Netzwerk-Experimente
+
+Für die späteren Fehlerklassen DNS, Latenz und Packet Loss wird Chaos Mesh separat über Flux installiert. Die Plattform ist absichtlich enger begrenzt als eine Standardinstallation:
+
+- Chart-Version fest auf `2.8.4` gepinnt
+- `clusterScoped: false`
+- Ziel-Namespace ausschließlich `blog-staging`
+- zusätzliche Namespace-Filterung mit `chaos-mesh.org/inject=enabled`
+- K3s-`containerd` über `/run/k3s/containerd/containerd.sock`
+- Dashboard deaktiviert
+- DNS-Server zunächst deaktiviert
+- nur ein Controller-Manager im kleinen Staging-Cluster
+
+Die Namespace-Freigabe steht bewusst direkt am Staging-Namespace. Production besitzt diese Annotation nicht.
+
+Die Installation selbst injiziert **noch keinen Fehler**. Vor dem ersten `NetworkChaos` müssen Control Plane und Kernel-Voraussetzung geprüft werden:
+
+```bash
+kubectl -n flux-system get helmrelease chaos-mesh
+kubectl -n chaos-mesh get pods -l app.kubernetes.io/instance=chaos-mesh
+kubectl get crd networkchaos.chaos-mesh.org
+lsmod | grep sch_netem || sudo modprobe sch_netem
+```
+
+Der letzte Befehl läuft auf dem K3s-Node. Erst wenn diese Checks sauber sind, wird ein zeitlich begrenztes Netzwerkexperiment als eigener One-shot-Commit aktiviert.
+
 ## Chaos-Experiment-Lifecycle
 
 Der `chaos-monkey` CronJob bleibt dauerhaft `suspend: true`. Ein Experiment wird bewusst als
@@ -177,4 +203,3 @@ Nach einem Experiment:
    damit kein älteres Ergebnis als aktuelles Experiment interpretiert wird.
 
 Der öffentliche Status enthält weiterhin keine Pod-Namen, Node-Namen, internen IPs oder Cluster-Credentials.
-

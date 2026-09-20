@@ -5,6 +5,7 @@ resources:
   - app
   - cloudflared.yaml
   - chaos-monkey.yaml
+  - chaos-mesh.yaml
   - production-flux.yaml
   - secrets/ghcr-pull.sops.yaml
   - secrets/cloudflared-token.sops.yaml
