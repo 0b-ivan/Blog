@@ -160,10 +160,58 @@ function experimentName() {
   return iterationCount === 1 ? 'single-blog-pod-delete' : 'repeated-blog-pod-delete';
 }
 
+function classifyFailureStage(error) {
+  const message = String(error?.message || error || '');
+  if (message.includes('preflight failed:')) return 'preflight';
+  if (
+    message.startsWith('refusing ')
+    || message.startsWith('unsupported CHAOS_TARGET:')
+    || message.startsWith('CHAOS_ITERATIONS must be')
+    || message.startsWith('search chaos supports exactly one iteration')
+  ) {
+    return 'guard';
+  }
+  if (message.startsWith('Kubernetes API ')) return 'kubernetes-api';
+  return 'runtime';
+}
+
+function abortedExperimentResult(experimentStartedAt, failureStage) {
+  return {
+    experiment: experimentName(),
+    target: chaosTarget,
+    outcome: 'aborted',
+    failureStage,
+    experimentStartedAt,
+    completedAt: new Date().toISOString(),
+    iterationCount,
+    completedIterations: 0,
+    recoveryTimesMs: [],
+    totalRecoveryTimeMs: 0,
+    maxRecoveryTimeMs: 0,
+    kubernetesRecoveryTimeMs: 0,
+    httpChecks: 0,
+    httpFailures: 0,
+    searchChecks: 0,
+    searchFailures: 0,
+    firstSearchFailureMs: 0,
+    searchRecoveredAfterFailureMs: 0,
+    observedSearchOutageMs: 0,
+    minimumReadyPods: 0,
+    maximumReadyPods: 0,
+    searchReachableBefore: false,
+    searchReachableAfter: false,
+    passed: false
+  };
+}
+
 function sanitizedExperimentResult(result) {
   return {
     experiment: result.experiment,
     target: result.target,
+    ...(result.outcome === 'aborted' ? {
+      outcome: 'aborted',
+      failureStage: result.failureStage
+    } : {}),
     experimentStartedAt: result.experimentStartedAt,
     completedAt: result.completedAt,
     iterationCount: result.iterationCount,
@@ -481,62 +529,85 @@ async function runBlogExperiment(namespace, config, experimentStartedAt, searchB
 async function main() {
   const namespace = readRequiredFile(namespacePath);
   const podName = process.env.POD_NAME || '';
-  const config = targetConfig();
-
-  if (namespace !== 'blog-staging') {
-    throw new Error(`refusing chaos outside blog-staging (current namespace: ${namespace})`);
-  }
-
-  if (!podName.startsWith(requiredJobPrefix)) {
-    throw new Error(
-      `refusing non-manual execution: pod name must start with ${requiredJobPrefix}`
-    );
-  }
-
-  if (!Number.isInteger(iterationCount) || iterationCount < 1 || iterationCount > maximumIterations) {
-    throw new Error(`CHAOS_ITERATIONS must be between 1 and ${maximumIterations}`);
-  }
-
-  if (chaosTarget === 'search' && iterationCount !== 1) {
-    throw new Error('search chaos supports exactly one iteration');
-  }
-
   const experimentStartedAt = new Date().toISOString();
-  await preflight(namespace, config);
-  const searchBefore = await searchReachable();
-  if (!searchBefore) {
-    throw new Error('preflight failed: search API is not healthy');
-  }
+  let resultPublished = false;
 
-  log('experiment_started', {
-    experiment: experimentName(),
-    experimentStartedAt,
-    namespace,
-    target: chaosTarget,
-    expectedReplicas,
-    iterationCount,
-    searchReachableBefore: searchBefore
-  });
+  try {
+    const config = targetConfig();
 
-  const execution = chaosTarget === 'search'
-    ? await runSearchExperiment(namespace, config, experimentStartedAt, searchBefore)
-    : await runBlogExperiment(namespace, config, experimentStartedAt, searchBefore);
+    if (namespace !== 'blog-staging') {
+      throw new Error(`refusing chaos outside blog-staging (current namespace: ${namespace})`);
+    }
 
-  await publishResult(namespace, execution.result);
+    if (!podName.startsWith(requiredJobPrefix)) {
+      throw new Error(
+        `refusing non-manual execution: pod name must start with ${requiredJobPrefix}`
+      );
+    }
 
-  if (!execution.recovered) {
-    throw new Error(`recovery timeout after ${execution.result.maxRecoveryTimeMs} ms`);
-  }
+    if (!Number.isInteger(iterationCount) || iterationCount < 1 || iterationCount > maximumIterations) {
+      throw new Error(`CHAOS_ITERATIONS must be between 1 and ${maximumIterations}`);
+    }
 
-  if (!execution.result.passed) {
-    process.exitCode = 1;
+    if (chaosTarget === 'search' && iterationCount !== 1) {
+      throw new Error('search chaos supports exactly one iteration');
+    }
+
+    await preflight(namespace, config);
+    const searchBefore = await searchReachable();
+    if (!searchBefore) {
+      throw new Error('preflight failed: search API is not healthy');
+    }
+
+    log('experiment_started', {
+      experiment: experimentName(),
+      experimentStartedAt,
+      namespace,
+      target: chaosTarget,
+      expectedReplicas,
+      iterationCount,
+      searchReachableBefore: searchBefore
+    });
+
+    const execution = chaosTarget === 'search'
+      ? await runSearchExperiment(namespace, config, experimentStartedAt, searchBefore)
+      : await runBlogExperiment(namespace, config, experimentStartedAt, searchBefore);
+
+    await publishResult(namespace, execution.result);
+    resultPublished = true;
+
+    if (!execution.recovered) {
+      throw new Error(`recovery timeout after ${execution.result.maxRecoveryTimeMs} ms`);
+    }
+
+    if (!execution.result.passed) {
+      process.exitCode = 1;
+    }
+  } catch (error) {
+    const failureStage = classifyFailureStage(error);
+    log('experiment_aborted', {
+      error: error.message || String(error),
+      failureStage,
+      passed: false
+    });
+
+    if (namespace === 'blog-staging' && !resultPublished) {
+      try {
+        await publishResult(
+          namespace,
+          abortedExperimentResult(experimentStartedAt, failureStage)
+        );
+      } catch (publishError) {
+        log('abort_result_publish_failed', {
+          error: publishError.message || String(publishError)
+        });
+      }
+    }
+
+    throw error;
   }
 }
 
-main().catch((error) => {
-  log('experiment_aborted', {
-    error: error.message || String(error),
-    passed: false
-  });
+main().catch(() => {
   process.exitCode = 1;
 });
