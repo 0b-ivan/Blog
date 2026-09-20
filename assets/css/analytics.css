@@ -1,0 +1,113 @@
+.analytics-main {
+  width: min(100% - 2rem, 980px);
+  margin: 0 auto;
+  padding: 5rem 0 4rem;
+}
+
+.analytics-hero {
+  max-width: 760px;
+}
+
+.analytics-hero h1 {
+  max-width: none;
+}
+
+.analytics-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.analytics-range button {
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+}
+
+.analytics-range button.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+}
+
+.analytics-kpis article,
+.analytics-section {
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+}
+
+.analytics-kpis article {
+  padding: 1rem;
+}
+
+.analytics-kpis span,
+.analytics-row span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.analytics-kpis strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.55rem;
+}
+
+.analytics-section {
+  margin-top: 1rem;
+  padding: 1.2rem;
+}
+
+.analytics-section h2 {
+  margin-top: 0.2rem;
+}
+
+.analytics-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+
+.analytics-table {
+  margin-top: 0.8rem;
+}
+
+.analytics-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.analytics-row b {
+  white-space: nowrap;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.analytics-empty {
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .analytics-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-split {
+    grid-template-columns: 1fr;
+  }
+}
