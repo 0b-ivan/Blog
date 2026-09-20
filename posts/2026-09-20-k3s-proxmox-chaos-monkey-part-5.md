@@ -389,6 +389,97 @@ Der Fehler ist also tatsächlich eingetreten.
 
 Und der öffentliche Dienst blieb in allen beobachteten Checks erreichbar.
 
+## Experiment #2: drei Ausfälle hintereinander
+
+Ein einzelner erfolgreicher Failover kann Zufall, günstiges Timing oder einfach ein besonders guter Lauf sein.
+
+Deshalb habe ich den Runner danach um einen zweiten Modus erweitert:
+
+```text
+3 sequenzielle Pod-Ausfälle
+```
+
+Wichtig ist das Wort **sequenziell**.
+
+Der Chaos Monkey löscht nicht drei Pods gleichzeitig.
+
+Vor jeder neuen Iteration gilt wieder:
+
+```text
+3 / 3 geeignete Blog-Pods vorhanden
+3 / 3 Ready
+öffentlicher Healthcheck gesund
+```
+
+Erst dann wird genau ein weiterer Pod gelöscht.
+
+Der Ablauf sieht damit so aus:
+
+```text
+3 / 3
+↓
+Kill #1
+↓
+2 / 3
+↓
+3 / 3
+↓
+Kill #2
+↓
+2 / 3
+↓
+3 / 3
+↓
+Kill #3
+↓
+2 / 3
+↓
+3 / 3
+```
+
+Das zweite Experiment lief am 20. September 2026.
+
+Das Ergebnis:
+
+| Messwert | Ergebnis |
+| --- | ---: |
+| geplante Iterationen | 3 |
+| abgeschlossene Iterationen | **3 / 3** |
+| Recovery #1 | **6.815 ms** |
+| Recovery #2 | **6.932 ms** |
+| Recovery #3 | **6.938 ms** |
+| maximale Recovery-Zeit | **6.938 ms** |
+| Summe der Recovery-Fenster | **20.685 ms** |
+| öffentliche HTTP-Checks | **32** |
+| beobachtete HTTP-Fehler | **0** |
+| niedrigster beobachteter Stand | **2 / 3 Ready** |
+| Endzustand | **3 / 3 Ready** |
+| Search vorher | erreichbar |
+| Search nachher | erreichbar |
+| Ergebnis | **PASS** |
+
+Interessant ist vor allem, wie stabil die Recovery-Zeiten waren:
+
+```text
+6.815 ms
+6.932 ms
+6.938 ms
+```
+
+Zwischen schnellstem und langsamstem Lauf lagen nur 123 ms.
+
+Das ist noch keine statistisch belastbare Langzeitmessung.
+
+Aber es ist ein deutlich stärkeres Signal als ein einzelner erfolgreicher Pod-Neustart.
+
+Auch über alle drei Recovery-Fenster hinweg blieb die beobachtete HTTP-Fehlerrate:
+
+```text
+0 / 32
+```
+
+Und wieder gilt: Das bedeutet **kein beobachteter Fehler**, nicht mathematisch garantierte Null-Downtime.
+
 ## 0 HTTP-Fehler bedeutet nicht „0 Millisekunden Ausfall garantiert“
 
 Hier ist mir eine Einschränkung wichtig.
@@ -599,16 +690,17 @@ privilegierte Kubeconfig
 Cluster
 ```
 
-## Was der Test bewiesen hat
+## Was die Tests bewiesen haben
 
 Für meinen aktuellen Aufbau kann ich jetzt konkret sagen:
 
 1. Ein einzelner Blog-Pod darf während des Betriebs verschwinden.
 2. Der ReplicaSet-Controller stellt die gewünschte Replikazahl wieder her.
 3. Die Readiness fällt messbar von drei auf zwei und wieder auf drei.
-4. Die vollständige Wiederherstellung der Redundanz dauerte im ersten Versuch 6,95 Sekunden.
-5. Während zehn öffentlichen Healthchecks wurde kein HTTP-Fehler beobachtet.
-6. Search blieb vor und nach dem Experiment erreichbar.
+4. Dieses Verhalten hat sich auch über drei direkt aufeinanderfolgende, vollständig getrennte Failover-Zyklen wiederholt.
+5. Die Recovery-Zeit lag dabei zwischen 6,815 und 6,938 Sekunden.
+6. Über Experiment #2 wurden 32 öffentliche Healthchecks ausgeführt und kein HTTP-Fehler beobachtet.
+7. Search blieb vor und nach dem wiederholten Experiment erreichbar.
 
 Das ist deutlich besser als:
 
@@ -654,6 +746,7 @@ ein Blog-Pod
 
 Experiment 2
 wiederholte Blog-Pod-Ausfälle
+✓ bestanden
 
 Experiment 3
 Search kontrolliert neu starten
@@ -693,7 +786,8 @@ Die Architektur ist damit um eine kleine Test- und Beobachtungsschicht gewachsen
                   ▼
              Chaos Monkey
                   │
-          delete max. 1 Pod
+       delete max. 1 Pod
+          pro Iteration
                   │
                   ▼
              Kubernetes
@@ -713,11 +807,13 @@ Der wichtigste Unterschied ist für mich aber weniger die zusätzliche Technik.
 
 Vorher hatte ich eine Annahme:
 
-> Drei Pods sollten einen einzelnen Pod-Ausfall abfangen.
+> Drei Pods sollten einzelne Pod-Ausfälle abfangen.
 
-Jetzt habe ich eine Messung:
+Jetzt habe ich zwei Messreihen:
 
-> Ein Pod wurde absichtlich entfernt. Readiness fiel auf 2/3, nach 6,95 Sekunden waren wieder 3/3 Ready, und in zehn öffentlichen Healthchecks trat kein Fehler auf.
+> Experiment #1: ein Pod wurde absichtlich entfernt. Readiness fiel auf 2/3, nach 6,95 Sekunden waren wieder 3/3 Ready, und in zehn öffentlichen Healthchecks trat kein Fehler auf.
+
+> Experiment #2: derselbe Fehler wurde dreimal nacheinander ausgelöst. Alle drei Zyklen erholten sich in rund 6,8 bis 6,9 Sekunden, bei 32 beobachteten HTTP-Checks ohne Fehler.
 
 Genau dafür wollte ich Chaos Engineering in diesem Homelab einsetzen.
 
@@ -734,12 +830,14 @@ Sondern um Behauptungen über Zuverlässigkeit in überprüfbare Experimente zu 
 
 ## Als Nächstes
 
-Ein einzelner Pod-Ausfall ist jetzt sauber getestet.
+Der Blog-Pfad hat jetzt nicht nur einen einzelnen, sondern auch drei aufeinanderfolgende Pod-Ausfälle sauber überstanden.
 
-Der deutlich interessantere nächste Schritt ist der Fehler **unterhalb** von Kubernetes:
+Als Nächstes will ich deshalb eine andere Fehlerklasse testen:
 
-> Was passiert, wenn die gesamte K3s-VM oder der Proxmox-Host verschwindet?
+> Was passiert, wenn Search kontrolliert neu gestartet wird, während der Blog selbst weiterläuft?
 
-Dann können mir drei Replicas innerhalb desselben Nodes nicht mehr helfen.
+Danach kommt `cloudflared`.
 
-Genau dort muss der zweite Standort auf Hetzner aus Teil IV anfangen, echten Wert zu liefern.
+Erst anschließend gehe ich eine Ebene tiefer und nehme die gesamte K3s-VM oder den Proxmox-Host aus dem Spiel.
+
+Spätestens dort können mir drei Replicas innerhalb desselben Nodes nicht mehr helfen und der zweite Standort auf Hetzner aus Teil IV muss echten Wert liefern.
