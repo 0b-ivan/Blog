@@ -220,6 +220,7 @@ describe('public Kubernetes status contract', () => {
         target: 'search',
         outcome: 'aborted',
         failureStage: 'preflight',
+        failureReason: 'search-api-unhealthy',
         experimentStartedAt: '2026-09-20T07:10:00.000Z',
         completedAt: '2026-09-20T07:10:01.000Z',
         iterationCount: 1,
@@ -239,6 +240,7 @@ describe('public Kubernetes status contract', () => {
 
     expect(payload.lastChaosExperiment.outcome).toBe('aborted');
     expect(payload.lastChaosExperiment.failureStage).toBe('preflight');
+    expect(payload.lastChaosExperiment.failureReason).toBe('search-api-unhealthy');
     expect(payload.lastChaosExperiment.passed).toBe(false);
     expect(JSON.stringify(payload)).not.toContain('must-not-leak');
     expect(JSON.stringify(payload)).not.toContain('raw pod');

@@ -12,6 +12,8 @@ const expectedBlogReplicas = Number.parseInt(process.env.EXPECTED_BLOG_REPLICAS 
 const recoveryTimeoutMs = Number.parseInt(process.env.RECOVERY_TIMEOUT_MS || '120000', 10);
 const healthIntervalMs = Number.parseInt(process.env.HEALTH_INTERVAL_MS || '500', 10);
 const settleDelayMs = Number.parseInt(process.env.SETTLE_DELAY_MS || '2000', 10);
+const preflightTimeoutMs = Number.parseInt(process.env.PREFLIGHT_TIMEOUT_MS || '30000', 10);
+const preflightIntervalMs = Number.parseInt(process.env.PREFLIGHT_INTERVAL_MS || '1000', 10);
 const searchProbeTimeoutMs = Number.parseInt(process.env.SEARCH_PROBE_TIMEOUT_MS || '3000', 10);
 const iterationCount = Number.parseInt(process.env.CHAOS_ITERATIONS || '1', 10);
 const healthUrl = process.env.HEALTH_URL || 'https://staging-blog.obivan.org/healthz';
@@ -162,7 +164,7 @@ function experimentName() {
 
 function classifyFailureStage(error) {
   const message = String(error?.message || error || '');
-  if (message.includes('preflight failed:')) return 'preflight';
+  if (error?.failureReason || message.includes('preflight failed:')) return 'preflight';
   if (
     message.startsWith('refusing ')
     || message.startsWith('unsupported CHAOS_TARGET:')
@@ -175,12 +177,13 @@ function classifyFailureStage(error) {
   return 'runtime';
 }
 
-function abortedExperimentResult(experimentStartedAt, failureStage) {
+function abortedExperimentResult(experimentStartedAt, failureStage, failureReason = '') {
   return {
     experiment: experimentName(),
     target: chaosTarget,
     outcome: 'aborted',
     failureStage,
+    ...(failureReason ? { failureReason } : {}),
     experimentStartedAt,
     completedAt: new Date().toISOString(),
     iterationCount,
@@ -210,7 +213,8 @@ function sanitizedExperimentResult(result) {
     target: result.target,
     ...(result.outcome === 'aborted' ? {
       outcome: 'aborted',
-      failureStage: result.failureStage
+      failureStage: result.failureStage,
+      ...(result.failureReason ? { failureReason: result.failureReason } : {})
     } : {}),
     experimentStartedAt: result.experimentStartedAt,
     completedAt: result.completedAt,
@@ -246,14 +250,21 @@ async function publishResult(namespace, result) {
   );
 }
 
+function preflightError(failureReason, message) {
+  const error = new Error(`preflight failed: ${message}`);
+  error.failureReason = failureReason;
+  return error;
+}
+
 async function preflight(namespace, config) {
   const pods = await listEligiblePods(namespace, config);
   pods.forEach((pod) => validateEligiblePod(pod, config));
 
   const ready = pods.filter(podReady).length;
   if (pods.length !== expectedReplicas || ready !== expectedReplicas) {
-    throw new Error(
-      `preflight failed: expected exactly ${expectedReplicas}/${expectedReplicas} eligible ready ${config.app} pods, got ${ready}/${pods.length}`
+    throw preflightError(
+      'target-not-ready',
+      `expected exactly ${expectedReplicas}/${expectedReplicas} eligible ready ${config.app} pods, got ${ready}/${pods.length}`
     );
   }
 
@@ -261,17 +272,41 @@ async function preflight(namespace, config) {
     const blogPods = await listPods(namespace, 'app=blog');
     const readyBlogs = blogPods.filter(podReady).length;
     if (blogPods.length !== expectedBlogReplicas || readyBlogs !== expectedBlogReplicas) {
-      throw new Error(
-        `preflight failed: expected exactly ${expectedBlogReplicas}/${expectedBlogReplicas} ready blog pods before search chaos, got ${readyBlogs}/${blogPods.length}`
+      throw preflightError(
+        'blog-not-ready',
+        `expected exactly ${expectedBlogReplicas}/${expectedBlogReplicas} ready blog pods before search chaos, got ${readyBlogs}/${blogPods.length}`
       );
     }
   }
 
   if (!(await publicHealth())) {
-    throw new Error('preflight failed: public health endpoint is not healthy');
+    throw preflightError('health-unhealthy', 'public health endpoint is not healthy');
+  }
+
+  if (chaosTarget === 'search' && !(await searchReachable(searchProbeTimeoutMs))) {
+    throw preflightError('search-api-unhealthy', 'search API is not healthy');
   }
 
   return pods;
+}
+
+async function waitForPreflight(namespace, config) {
+  const startedAt = Date.now();
+  let lastError = null;
+
+  while (Date.now() - startedAt <= preflightTimeoutMs) {
+    try {
+      return await preflight(namespace, config);
+    } catch (error) {
+      if (!error?.failureReason) throw error;
+      lastError = error;
+    }
+
+    if (Date.now() - startedAt >= preflightTimeoutMs) break;
+    await new Promise((resolve) => setTimeout(resolve, preflightIntervalMs));
+  }
+
+  throw lastError || preflightError('target-not-ready', 'preflight timeout');
 }
 
 async function deletePod(namespace, podName) {
@@ -282,7 +317,7 @@ async function deletePod(namespace, podName) {
 }
 
 async function runBlogIteration(namespace, config, iteration) {
-  const before = await preflight(namespace, config);
+  const before = await waitForPreflight(namespace, config);
   const victim = before[crypto.randomInt(before.length)];
   const victimName = victim.metadata.name;
   const deletionStartedAt = Date.now();
@@ -349,7 +384,7 @@ async function runBlogIteration(namespace, config, iteration) {
 }
 
 async function runSearchExperiment(namespace, config, experimentStartedAt, searchBefore) {
-  const before = await preflight(namespace, config);
+  const before = await waitForPreflight(namespace, config);
   const victim = before[0];
   const victimName = victim.metadata.name;
   const deletionStartedAt = Date.now();
@@ -553,10 +588,10 @@ async function main() {
       throw new Error('search chaos supports exactly one iteration');
     }
 
-    await preflight(namespace, config);
-    const searchBefore = await searchReachable();
+    await waitForPreflight(namespace, config);
+    const searchBefore = chaosTarget === 'search' ? true : await searchReachable();
     if (!searchBefore) {
-      throw new Error('preflight failed: search API is not healthy');
+      throw preflightError('search-api-unhealthy', 'search API is not healthy');
     }
 
     log('experiment_started', {
@@ -585,9 +620,13 @@ async function main() {
     }
   } catch (error) {
     const failureStage = classifyFailureStage(error);
+    const failureReason = typeof error?.failureReason === 'string'
+      ? error.failureReason
+      : '';
     log('experiment_aborted', {
       error: error.message || String(error),
       failureStage,
+      ...(failureReason ? { failureReason } : {}),
       passed: false
     });
 
@@ -595,7 +634,7 @@ async function main() {
       try {
         await publishResult(
           namespace,
-          abortedExperimentResult(experimentStartedAt, failureStage)
+          abortedExperimentResult(experimentStartedAt, failureStage, failureReason)
         );
       } catch (publishError) {
         log('abort_result_publish_failed', {

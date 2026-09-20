@@ -116,9 +116,18 @@ function sanitizedChaosExperiment(payload) {
     ? 'search'
     : 'blog';
   const failureStages = ['guard', 'preflight', 'kubernetes-api', 'runtime'];
+  const failureReasons = [
+    'target-not-ready',
+    'blog-not-ready',
+    'health-unhealthy',
+    'search-api-unhealthy'
+  ];
   const aborted = payload.outcome === 'aborted';
   const failureStage = aborted && failureStages.includes(payload.failureStage)
     ? payload.failureStage
+    : '';
+  const failureReason = aborted && failureReasons.includes(payload.failureReason)
+    ? payload.failureReason
     : '';
   const suppliedRecoveryTimes = sanitizedRecoveryTimes(payload.recoveryTimesMs);
   const maxRecoveryTimeMs = boundedNumber(
@@ -141,7 +150,8 @@ function sanitizedChaosExperiment(payload) {
     target,
     ...(aborted ? {
       outcome: 'aborted',
-      failureStage
+      failureStage,
+      ...(failureReason ? { failureReason } : {})
     } : {}),
     experimentStartedAt: normalizedTimestamp(payload.experimentStartedAt),
     completedAt: normalizedTimestamp(payload.completedAt),
