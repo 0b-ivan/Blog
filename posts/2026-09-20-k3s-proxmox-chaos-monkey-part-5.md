@@ -9,7 +9,7 @@ updated_at: 2026-09-20
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Erst ein Pod, dann drei Failover-Zyklen hintereinander: Mein K3s-Staging blieb in 42 öffentlichen Healthchecks ohne beobachteten HTTP-Fehler und stellte die Redundanz jeweils in rund 6,9 Sekunden wieder her."
+excerpt: "Kubernetes Pod Failover mit Chaos Engineering in K3s: Erst ein Pod, dann drei Failover-Zyklen hintereinander – mit messbarer Recovery und 0 beobachteten HTTP-Fehlern in 42 Checks."
 tags:
   - Kubernetes
   - K3s
@@ -77,6 +77,28 @@ ReplicaSet startet Ersatz
 ```
 
 Und währenddessen blieb der öffentliche Healthcheck in allen beobachteten Requests erreichbar.
+
+## Kubernetes Pod Failover in meinem K3s-Staging
+
+Genau dieser Beitrag beantwortet die konkrete Praxisfrage:
+
+> Wie teste ich **Kubernetes Pod Failover mit Chaos Engineering** in K3s, ohne den Blast Radius aus dem Ruder laufen zu lassen?
+
+Der Testpfad bleibt bewusst spezifisch:
+
+```text
+K3s Staging
+↓
+opt-in Blog-Pod
+↓
+gezielter Pod-Delete
+↓
+ReplicaSet-Recovery
+↓
+öffentliche HTTP-Messung
+```
+
+Der allgemeine Grundlagenartikel erklärt dagegen die Methodik und weitere Fehlerklassen.
 
 ## Warum überhaupt ein Chaos Monkey?
 
