@@ -56,6 +56,15 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain('function classifyFailureStage(error)');
     expect(chaosSource).toContain("outcome: 'aborted'");
     expect(chaosSource).toContain("failureStage");
+    expect(chaosSource).toContain("failureReason");
+    expect(chaosSource).toContain("PREFLIGHT_TIMEOUT_MS");
+    expect(chaosSource).toContain("PREFLIGHT_INTERVAL_MS");
+    expect(chaosSource).toContain("const preflightStablePasses = 2");
+    expect(chaosSource).toContain("async function waitForPreflight");
+    expect(chaosSource).toContain("target-not-ready");
+    expect(chaosSource).toContain("blog-not-ready");
+    expect(chaosSource).toContain("public-health");
+    expect(chaosSource).toContain("search-api");
     expect(chaosSource).toContain("abort_result_publish_failed");
   });
 
