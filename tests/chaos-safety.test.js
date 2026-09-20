@@ -47,7 +47,7 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain('`app=${config.app},chaos.obivan.org/enabled=true`');
     expect(chaosSource).toContain('const maximumIterations = 3');
     expect(chaosSource).toContain("process.env.CHAOS_ITERATIONS || '1'");
-    expect(chaosSource).toContain('const before = await preflight(namespace)');
+    expect(chaosSource).toContain('const before = await preflight(namespace, config)');
     expect(chaosSource).toContain("CHAOS_TARGET");
     expect(chaosSource).toContain("search-restart-under-load");
     expect(chaosSource).toContain("search chaos supports exactly one iteration");
