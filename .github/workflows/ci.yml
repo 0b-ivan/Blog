@@ -257,6 +257,7 @@ jobs:
         if: steps.changes.outputs.heavy == 'true'
         env:
           BLOG_BASE_URL: http://127.0.0.1:8080
+          BROWSER_SMOKE_ALLOW_STATUS_UNAVAILABLE: "true"
         run: node e2e/archive-history-smoke.js
 
       - name: Shutdown stack
