@@ -6,6 +6,7 @@ on:
       - staging
     paths:
       - 'infra/kubernetes/staging/chaos-experiment-*.yaml'
+      - '.github/workflows/observe-chaos-result.yml'
   workflow_dispatch:
     inputs:
       completed_after:
@@ -26,22 +27,26 @@ jobs:
     timeout-minutes: 8
     env:
       STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
-      COMPLETED_AFTER: ${{ inputs.completed_after || github.event.head_commit.timestamp || '' }}
+      MANUAL_COMPLETED_AFTER: ${{ inputs.completed_after || '' }}
     steps:
       - name: Checkout experiment state
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
 
       - name: Detect active one-shot experiment
         id: active
         shell: bash
         run: |
           set -euo pipefail
-          if [ "$GITHUB_EVENT_NAME" = "push" ] && ! compgen -G 'infra/kubernetes/staging/chaos-experiment-*.yaml' >/dev/null; then
+          active_file="$(compgen -G 'infra/kubernetes/staging/chaos-experiment-*.yaml' | head -n 1 || true)"
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ -z "$active_file" ]; then
             echo "active=false" >> "$GITHUB_OUTPUT"
             echo "Experiment manifest was removed; nothing to observe."
             exit 0
           fi
           echo "active=true" >> "$GITHUB_OUTPUT"
+          echo "file=$active_file" >> "$GITHUB_OUTPUT"
 
       - name: Wait for sanitized chaos result
         if: steps.active.outputs.active == 'true'
@@ -50,19 +55,35 @@ jobs:
         run: |
           set -euo pipefail
 
+          completed_after="${MANUAL_COMPLETED_AFTER}"
+          if [ -z "$completed_after" ] && [ -n "${{ steps.active.outputs.file }}" ]; then
+            completed_after="$(git log --diff-filter=A -1 --format=%cI -- "${{ steps.active.outputs.file }}")"
+          fi
+
+          lower_epoch=0
+          if [ -n "$completed_after" ]; then
+            lower_epoch="$(date -u -d "$completed_after" +%s)"
+            echo "Accepting chaos results completed at or after: $completed_after"
+          fi
+
           for attempt in $(seq 1 84); do
             payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
               "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
 
-            result="$(printf '%s' "$payload" | jq -c --arg lower "${COMPLETED_AFTER}" '
+            candidate="$(printf '%s' "$payload" | jq -c '
               .lastChaosExperiment
               | select(type == "object")
               | select(.experiment == "single-blog-pod-delete" or .experiment == "repeated-blog-pod-delete")
-              | select(
-                  ($lower == "")
-                  or ((.completedAt // "") != "" and (.completedAt >= $lower))
-                )
-              | {
+            ' 2>/dev/null || true)"
+
+            result=""
+            if [ -n "$candidate" ] && [ "$candidate" != "null" ]; then
+              completed_at="$(printf '%s' "$candidate" | jq -r '.completedAt // ""')"
+              if [ -n "$completed_at" ]; then
+                completed_epoch="$(date -u -d "$completed_at" +%s 2>/dev/null || echo 0)"
+                if [ "$lower_epoch" -eq 0 ] || [ "$completed_epoch" -ge "$lower_epoch" ]; then
+                  result="$(printf '%s' "$candidate" | jq -c '{
+
                   experiment,
                   experimentStartedAt,
                   completedAt,
@@ -79,8 +100,10 @@ jobs:
                   searchReachableBefore,
                   searchReachableAfter,
                   passed
-                }
-            ' 2>/dev/null || true)"
+                }')"
+                fi
+              fi
+            fi
 
             if [ -n "$result" ] && [ "$result" != "null" ]; then
               printf '%s\n' "$result" > /tmp/chaos-result.json
