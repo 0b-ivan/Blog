@@ -4,6 +4,13 @@ const { chromium } = require('playwright');
 
 const baseUrl = process.env.BLOG_BASE_URL || 'http://127.0.0.1:8080';
 const baseOrigin = new URL(baseUrl).origin;
+const allowStatusUnavailable = process.env.BROWSER_SMOKE_ALLOW_STATUS_UNAVAILABLE === 'true';
+
+function isAllowedUnavailableStatus(url, status) {
+  if (!allowStatusUnavailable || status !== 503) return false;
+  const parsed = new URL(url);
+  return parsed.origin === baseOrigin && parsed.pathname === '/api/kubernetes-status';
+}
 
 async function clickTopic(page, topic) {
   await page.locator('#topics-list [data-topic]').evaluateAll((buttons, wantedTopic) => {
@@ -92,7 +99,11 @@ async function main() {
 
   page.on('response', (response) => {
     const url = response.url();
-    if (new URL(url).origin === baseOrigin && response.status() >= 500) {
+    if (
+      new URL(url).origin === baseOrigin
+      && response.status() >= 500
+      && !isAllowedUnavailableStatus(url, response.status())
+    ) {
       failures.push(`HTTP ${response.status()}: ${url}`);
     }
   });
@@ -120,6 +131,16 @@ async function main() {
     assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
     await page.locator('.hero-profile a[href="/about"]').waitFor({ state: 'visible' });
     await assertKernelGrepTrigger(page);
+
+    if (allowStatusUnavailable) {
+      const statusResponse = await page.request.get(`${baseUrl}/api/kubernetes-status`);
+      assert.equal(statusResponse.status(), 503, 'Local Compose smoke test expects no Kubernetes status backend');
+      await page.locator('[data-home-status-label]').waitFor({ state: 'visible' });
+      await page.waitForFunction(() => {
+        const label = document.querySelector('[data-home-status-label]');
+        return label?.textContent?.trim() === 'Status nicht verfügbar';
+      });
+    }
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
       cards.map((card) => card.dataset.href).filter(Boolean)
