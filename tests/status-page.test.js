@@ -132,6 +132,68 @@ describe('public Kubernetes status contract', () => {
     expect(JSON.stringify(payload)).not.toContain('must-not-leak');
   });
 
+  it('sanitizes Search restart metrics without leaking pod identity', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'operational',
+      environment: 'staging',
+      orchestrator: 'K3s',
+      kubernetesApi: 'reachable',
+      workloads: [],
+      lastChaosExperiment: {
+        experiment: 'search-restart-under-load',
+        target: 'search',
+        experimentStartedAt: '2026-09-20T06:30:00.000Z',
+        completedAt: '2026-09-20T06:30:18.000Z',
+        iterationCount: 1,
+        completedIterations: 1,
+        recoveryTimesMs: [18000],
+        totalRecoveryTimeMs: 18000,
+        maxRecoveryTimeMs: 18000,
+        kubernetesRecoveryTimeMs: 15000,
+        httpChecks: 20,
+        httpFailures: 0,
+        searchChecks: 20,
+        searchFailures: 8,
+        firstSearchFailureMs: 500,
+        searchRecoveredAfterFailureMs: 17500,
+        observedSearchOutageMs: 17000,
+        minimumReadyPods: 0,
+        maximumReadyPods: 1,
+        searchReachableBefore: true,
+        searchReachableAfter: true,
+        passed: true,
+        victim: 'search-must-not-leak'
+      }
+    });
+
+    expect(payload.lastChaosExperiment).toEqual({
+      experiment: 'search-restart-under-load',
+      target: 'search',
+      experimentStartedAt: '2026-09-20T06:30:00.000Z',
+      completedAt: '2026-09-20T06:30:18.000Z',
+      iterationCount: 1,
+      completedIterations: 1,
+      recoveryTimeMs: 18000,
+      recoveryTimesMs: [18000],
+      totalRecoveryTimeMs: 18000,
+      maxRecoveryTimeMs: 18000,
+      kubernetesRecoveryTimeMs: 15000,
+      httpChecks: 20,
+      httpFailures: 0,
+      searchChecks: 20,
+      searchFailures: 8,
+      firstSearchFailureMs: 500,
+      searchRecoveredAfterFailureMs: 17500,
+      observedSearchOutageMs: 17000,
+      minimumReadyPods: 0,
+      maximumReadyPods: 1,
+      searchReachableBefore: true,
+      searchReachableAfter: true,
+      passed: true
+    });
+    expect(JSON.stringify(payload)).not.toContain('search-must-not-leak');
+  });
+
   it('normalizes unexpected values instead of exposing them', () => {
     const payload = sanitizedKubernetesStatus({
       status: 'secret-state',
