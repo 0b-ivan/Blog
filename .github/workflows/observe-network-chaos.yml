@@ -9,6 +9,7 @@ on:
       - 'status-monitor/server.js'
       - 'lib/kubernetes-status.js'
       - 'infra/kubernetes/base/status-monitor.yaml'
+      - 'scripts/network-chaos-probe.js'
       - '.github/workflows/observe-network-chaos.yml'
   workflow_dispatch:
 
@@ -23,9 +24,11 @@ concurrency:
 jobs:
   observe:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
+      HEALTH_URL: https://staging-blog.obivan.org/healthz
+      SEARCH_URL: https://staging-blog.obivan.org/api/search?q=Kubernetes&limit=3
     steps:
       - name: Checkout experiment state
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -61,6 +64,82 @@ jobs:
           echo "file=$active_file" >> "$GITHUB_OUTPUT"
           echo "experiment=$experiment" >> "$GITHUB_OUTPUT"
 
+      - name: Wait for NetworkChaos injection
+        if: steps.active.outputs.active == 'true'
+        id: injected
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          active_file="${{ steps.active.outputs.file }}"
+          experiment="${{ steps.active.outputs.experiment }}"
+          completed_after="$(git log --diff-filter=A -1 --format=%cI -- "$active_file")"
+          lower_epoch="$(date -u -d "$completed_after" +%s)"
+
+          echo "Waiting for active NetworkChaos '$experiment' created at or after $completed_after"
+
+          for attempt in $(seq 1 180); do
+            payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${STATUS_URL}?network-chaos-injected=${GITHUB_RUN_ID}-${attempt}" 2>/dev/null || true)"
+
+            candidate="$(printf '%s' "$payload" | jq -c --arg experiment "$experiment" '
+              .lastNetworkChaosExperiment
+              | select(type == "object")
+              | select(.experiment == $experiment)
+            ' 2>/dev/null || true)"
+
+            if [ -n "$candidate" ] && [ "$candidate" != "null" ]; then
+              created_at="$(printf '%s' "$candidate" | jq -r '.createdAt // ""')"
+              created_epoch="$(date -u -d "$created_at" +%s 2>/dev/null || echo 0)"
+              selected="$(printf '%s' "$candidate" | jq -r '.selected == true')"
+              injected="$(printf '%s' "$candidate" | jq -r '.allInjected == true')"
+              recovered="$(printf '%s' "$candidate" | jq -r '.allRecovered == true')"
+
+              if [ "$created_epoch" -ge "$lower_epoch" ] \
+                && [ "$selected" = "true" ] \
+                && [ "$injected" = "true" ] \
+                && [ "$recovered" != "true" ]; then
+                printf '%s\n' "$candidate" > /tmp/network-chaos-active.json
+                echo "found=true" >> "$GITHUB_OUTPUT"
+                echo "Injection observed on attempt ${attempt}/180."
+                exit 0
+              fi
+
+              if [ "$created_epoch" -ge "$lower_epoch" ] && [ "$recovered" = "true" ]; then
+                echo "NetworkChaos recovered before the active probe window was observed." >&2
+                echo "found=false" >> "$GITHUB_OUTPUT"
+                exit 1
+              fi
+            fi
+
+            echo "Attempt ${attempt}/180: active injection not visible yet"
+            sleep 1
+          done
+
+          echo "found=false" >> "$GITHUB_OUTPUT"
+          echo "No matching injected NetworkChaos became visible before timeout." >&2
+          exit 1
+
+      - name: Probe public application during injected fault
+        if: steps.active.outputs.active == 'true' && steps.injected.outputs.found == 'true'
+        id: chaos_probe
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          probe_exit=0
+          PROBE_PHASE=chaos \
+          PROBE_DURATION_MS=20000 \
+          PROBE_PAUSE_MS=100 \
+          PROBE_TIMEOUT_MS=5000 \
+          PROBE_OUTPUT=/tmp/network-chaos-probe-chaos.json \
+          HEALTH_URL="$HEALTH_URL" \
+          SEARCH_URL="$SEARCH_URL" \
+          node scripts/network-chaos-probe.js || probe_exit=$?
+
+          echo "exit_code=$probe_exit" >> "$GITHUB_OUTPUT"
+          echo "passed=$(jq -r '.applicationPassed == true' /tmp/network-chaos-probe-chaos.json)" >> "$GITHUB_OUTPUT"
+
       - name: Wait for sanitized NetworkChaos recovery
         if: steps.active.outputs.active == 'true'
         id: result
@@ -74,9 +153,9 @@ jobs:
           lower_epoch="$(date -u -d "$completed_after" +%s)"
           echo "Waiting for recovered NetworkChaos '$experiment' created at or after $completed_after"
 
-          for attempt in $(seq 1 96); do
+          for attempt in $(seq 1 120); do
             payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
-              "${STATUS_URL}?network-chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
+              "${STATUS_URL}?network-chaos-recovered=${GITHUB_RUN_ID}-${attempt}" 2>/dev/null || true)"
 
             candidate="$(printf '%s' "$payload" | jq -c --arg experiment "$experiment" '
               .lastNetworkChaosExperiment
@@ -96,63 +175,161 @@ jobs:
               fi
             fi
 
-            echo "Attempt ${attempt}/96: matching recovered NetworkChaos not visible yet"
-            sleep 5
+            echo "Attempt ${attempt}/120: matching recovered NetworkChaos not visible yet"
+            sleep 2
           done
 
           echo "found=false" >> "$GITHUB_OUTPUT"
+          echo "No matching recovered NetworkChaos became visible before timeout." >&2
+          exit 1
 
-      - name: Publish NetworkChaos result summary
-        if: steps.active.outputs.active == 'true'
+      - name: Probe post-recovery baseline
+        if: steps.active.outputs.active == 'true' && steps.result.outputs.found == 'true'
+        id: baseline_probe
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ "${{ steps.result.outputs.found }}" != "true" ]; then
-            echo "No matching recovered NetworkChaos became visible before timeout." >&2
+          sleep 3
+          probe_exit=0
+          PROBE_PHASE=post-recovery-baseline \
+          PROBE_DURATION_MS=8000 \
+          PROBE_PAUSE_MS=100 \
+          PROBE_TIMEOUT_MS=5000 \
+          PROBE_OUTPUT=/tmp/network-chaos-probe-baseline.json \
+          HEALTH_URL="$HEALTH_URL" \
+          SEARCH_URL="$SEARCH_URL" \
+          node scripts/network-chaos-probe.js || probe_exit=$?
+
+          echo "exit_code=$probe_exit" >> "$GITHUB_OUTPUT"
+          echo "passed=$(jq -r '.applicationPassed == true' /tmp/network-chaos-probe-baseline.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish NetworkChaos result summary
+        if: steps.active.outputs.active == 'true'
+        id: summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ steps.result.outputs.found }}" != "true" ] \
+            || [ ! -f /tmp/network-chaos-result.json ] \
+            || [ ! -f /tmp/network-chaos-probe-chaos.json ] \
+            || [ ! -f /tmp/network-chaos-probe-baseline.json ]; then
+            echo "Required NetworkChaos result or probe output is missing." >&2
             exit 1
           fi
 
-          passed="$(jq -r '.passed == true' /tmp/network-chaos-result.json)"
+          technical_passed="$(jq -r '.passed == true' /tmp/network-chaos-result.json)"
+          chaos_passed="$(jq -r '.applicationPassed == true' /tmp/network-chaos-probe-chaos.json)"
+          baseline_passed="$(jq -r '.applicationPassed == true' /tmp/network-chaos-probe-baseline.json)"
+
           experiment="$(jq -r '.experiment' /tmp/network-chaos-result.json)"
           action="$(jq -r '.action' /tmp/network-chaos-result.json)"
           source="$(jq -r '.source' /tmp/network-chaos-result.json)"
           target="$(jq -r '.target' /tmp/network-chaos-result.json)"
           duration="$(jq -r '.durationMs' /tmp/network-chaos-result.json)"
           latency="$(jq -r '.latencyMs' /tmp/network-chaos-result.json)"
-          loss="$(jq -r '.packetLossPercent' /tmp/network-chaos-result.json)"
-          selected="$(jq -r '.selected' /tmp/network-chaos-result.json)"
-          injected="$(jq -r '.allInjected' /tmp/network-chaos-result.json)"
-          recovered="$(jq -r '.allRecovered' /tmp/network-chaos-result.json)"
           failed_events="$(jq -r '.failedEvents' /tmp/network-chaos-result.json)"
           created="$(jq -r '.createdAt' /tmp/network-chaos-result.json)"
           completed="$(jq -r '.completedAt' /tmp/network-chaos-result.json)"
-          status="FAIL"
-          [ "$passed" = "true" ] && status="PASS"
+
+          chaos_health_checks="$(jq -r '.health.checks' /tmp/network-chaos-probe-chaos.json)"
+          chaos_health_failures="$(jq -r '.health.failures' /tmp/network-chaos-probe-chaos.json)"
+          chaos_health_p95="$(jq -r '.health.latencyMs.p95' /tmp/network-chaos-probe-chaos.json)"
+          chaos_health_p99="$(jq -r '.health.latencyMs.p99' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_checks="$(jq -r '.search.checks' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_failures="$(jq -r '.search.failures' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_avg="$(jq -r '.search.latencyMs.avg' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_p50="$(jq -r '.search.latencyMs.p50' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_p95="$(jq -r '.search.latencyMs.p95' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_p99="$(jq -r '.search.latencyMs.p99' /tmp/network-chaos-probe-chaos.json)"
+          chaos_search_max="$(jq -r '.search.latencyMs.max' /tmp/network-chaos-probe-chaos.json)"
+
+          baseline_search_avg="$(jq -r '.search.latencyMs.avg' /tmp/network-chaos-probe-baseline.json)"
+          baseline_search_p50="$(jq -r '.search.latencyMs.p50' /tmp/network-chaos-probe-baseline.json)"
+          baseline_search_p95="$(jq -r '.search.latencyMs.p95' /tmp/network-chaos-probe-baseline.json)"
+          baseline_search_p99="$(jq -r '.search.latencyMs.p99' /tmp/network-chaos-probe-baseline.json)"
+          baseline_search_failures="$(jq -r '.search.failures' /tmp/network-chaos-probe-baseline.json)"
+          baseline_health_failures="$(jq -r '.health.failures' /tmp/network-chaos-probe-baseline.json)"
+
+          search_avg_delta=$((chaos_search_avg - baseline_search_avg))
+          search_p50_delta=$((chaos_search_p50 - baseline_search_p50))
+          search_p95_delta=$((chaos_search_p95 - baseline_search_p95))
+          search_p99_delta=$((chaos_search_p99 - baseline_search_p99))
+
+          combined_passed=false
+          if [ "$technical_passed" = "true" ] \
+            && [ "$chaos_passed" = "true" ] \
+            && [ "$baseline_passed" = "true" ]; then
+            combined_passed=true
+          fi
+
+          delay_observed=false
+          if [ "$action" = "delay" ] && [ "$search_p50_delta" -ge 250 ]; then
+            delay_observed=true
+          fi
 
           {
-            echo "### NetworkChaos experiment result"
+            echo "### NetworkChaos experiment + application probe"
             echo
-            echo "- Result: **${status}**"
+            echo "- Combined result: **$([ "$combined_passed" = "true" ] && echo PASS || echo FAIL)**"
+            echo "- Technical Chaos Mesh result: **$([ "$technical_passed" = "true" ] && echo PASS || echo FAIL)**"
             echo "- Experiment: **${experiment}**"
-            echo "- Action: **${action}**"
             echo "- Traffic: **${source} → ${target}**"
+            echo "- Configured delay: **${latency} ms**"
             echo "- Duration: **${duration} ms**"
-            if [ "$action" = "delay" ]; then
-              echo "- Added latency: **${latency} ms**"
-            fi
-            if [ "$action" = "loss" ]; then
-              echo "- Packet loss: **${loss}%**"
-            fi
-            echo "- Selected: **${selected}**"
-            echo "- All injected: **${injected}**"
-            echo "- All recovered: **${recovered}**"
             echo "- Failed Chaos Mesh events: **${failed_events}**"
-            echo "- Created: ${created}"
-            echo "- Recovery observed: ${completed}"
+            echo "- Created: \`${created}\`"
+            echo "- Recovery observed: \`${completed}\`"
+            echo
+            echo "#### During injected fault"
+            echo
+            echo "| Probe | Checks | Failures | avg | p50 | p95 | p99 | max |"
+            echo "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"
+            echo "| Blog health | ${chaos_health_checks} | ${chaos_health_failures} | $(jq -r '.health.latencyMs.avg' /tmp/network-chaos-probe-chaos.json) ms | $(jq -r '.health.latencyMs.p50' /tmp/network-chaos-probe-chaos.json) ms | ${chaos_health_p95} ms | ${chaos_health_p99} ms | $(jq -r '.health.latencyMs.max' /tmp/network-chaos-probe-chaos.json) ms |"
+            echo "| Search API | ${chaos_search_checks} | ${chaos_search_failures} | ${chaos_search_avg} ms | ${chaos_search_p50} ms | ${chaos_search_p95} ms | ${chaos_search_p99} ms | ${chaos_search_max} ms |"
+            echo
+            echo "#### Post-recovery baseline"
+            echo
+            echo "- Health failures: **${baseline_health_failures}**"
+            echo "- Search failures: **${baseline_search_failures}**"
+            echo "- Search avg: **${baseline_search_avg} ms**"
+            echo "- Search p50: **${baseline_search_p50} ms**"
+            echo "- Search p95: **${baseline_search_p95} ms**"
+            echo "- Search p99: **${baseline_search_p99} ms**"
+            echo
+            echo "#### Observed Search latency delta"
+            echo
+            echo "- avg: **${search_avg_delta} ms**"
+            echo "- p50: **${search_p50_delta} ms**"
+            echo "- p95: **${search_p95_delta} ms**"
+            echo "- p99: **${search_p99_delta} ms**"
+            echo "- Expected delay visible in p50 (>=250 ms delta): **${delay_observed}**"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
-          if [ "$passed" != "true" ]; then
+          jq -n \
+            --argjson combinedPassed "$combined_passed" \
+            --argjson technicalPassed "$technical_passed" \
+            --argjson applicationPassed "$chaos_passed" \
+            --argjson delayObserved "$delay_observed" \
+            --argjson searchP95 "$chaos_search_p95" \
+            --argjson searchP95Delta "$search_p95_delta" \
+            --argjson searchFailures "$chaos_search_failures" \
+            --argjson healthFailures "$chaos_health_failures" \
+            '{
+              combinedPassed: $combinedPassed,
+              technicalPassed: $technicalPassed,
+              applicationPassed: $applicationPassed,
+              delayObserved: $delayObserved,
+              searchP95Ms: $searchP95,
+              searchP95DeltaMs: $searchP95Delta,
+              searchFailures: $searchFailures,
+              healthFailures: $healthFailures
+            }' > /tmp/network-chaos-summary.json
+
+          echo "combined_passed=$combined_passed" >> "$GITHUB_OUTPUT"
+
+          if [ "$combined_passed" != "true" ]; then
             exit 1
           fi
 
@@ -166,20 +343,20 @@ jobs:
           set -euo pipefail
 
           state=failure
-          description="No matching recovered NetworkChaos"
+          description="NetworkChaos probe did not produce a complete result"
 
-          if [ -f /tmp/network-chaos-result.json ]; then
-            passed="$(jq -r '.passed == true' /tmp/network-chaos-result.json)"
-            action="$(jq -r '.action // ""' /tmp/network-chaos-result.json)"
-            duration="$(jq -r '.durationMs // 0' /tmp/network-chaos-result.json)"
-            latency="$(jq -r '.latencyMs // 0' /tmp/network-chaos-result.json)"
-            failed_events="$(jq -r '.failedEvents // 0' /tmp/network-chaos-result.json)"
+          if [ -f /tmp/network-chaos-summary.json ]; then
+            combined="$(jq -r '.combinedPassed == true' /tmp/network-chaos-summary.json)"
+            search_p95="$(jq -r '.searchP95Ms' /tmp/network-chaos-summary.json)"
+            delta="$(jq -r '.searchP95DeltaMs' /tmp/network-chaos-summary.json)"
+            search_failures="$(jq -r '.searchFailures' /tmp/network-chaos-summary.json)"
+            health_failures="$(jq -r '.healthFailures' /tmp/network-chaos-summary.json)"
 
-            if [ "$passed" = "true" ]; then
+            if [ "$combined" = "true" ]; then
               state=success
-              description="PASS NetworkChaos ${action}; ${duration}ms; latency ${latency}ms; failed events ${failed_events}"
+              description="PASS NetworkChaos; Search p95 ${search_p95}ms (${delta}ms delta); failures S:${search_failures} H:${health_failures}"
             else
-              description="FAIL NetworkChaos ${action}; recovered with ${failed_events} failed events"
+              description="FAIL NetworkChaos; Search p95 ${search_p95}ms; failures S:${search_failures} H:${health_failures}"
             fi
           fi
 
