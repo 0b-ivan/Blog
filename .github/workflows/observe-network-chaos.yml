@@ -229,6 +229,7 @@ jobs:
           target="$(jq -r '.target' /tmp/network-chaos-result.json)"
           duration="$(jq -r '.durationMs' /tmp/network-chaos-result.json)"
           latency="$(jq -r '.latencyMs' /tmp/network-chaos-result.json)"
+          packet_loss="$(jq -r '.packetLossPercent' /tmp/network-chaos-result.json)"
           failed_events="$(jq -r '.failedEvents' /tmp/network-chaos-result.json)"
           created="$(jq -r '.createdAt' /tmp/network-chaos-result.json)"
           completed="$(jq -r '.completedAt' /tmp/network-chaos-result.json)"
@@ -271,7 +272,12 @@ jobs:
             echo "- Technical Chaos Mesh result: **$([ "$technical_passed" = "true" ] && echo PASS || echo FAIL)**"
             echo "- Experiment: **${experiment}**"
             echo "- Traffic: **${source} → ${target}**"
-            echo "- Configured delay: **${latency} ms**"
+            if [ "$action" = "delay" ]; then
+              echo "- Configured delay: **${latency} ms**"
+            fi
+            if [ "$action" = "loss" ]; then
+              echo "- Configured packet loss: **${packet_loss}%**"
+            fi
             echo "- Duration: **${duration} ms**"
             echo "- Failed Chaos Mesh events: **${failed_events}**"
             echo "- Created: \`${created}\`"
@@ -306,7 +312,9 @@ jobs:
           jq -n \
             --argjson combinedPassed "$combined_passed" \
             --argjson technicalPassed "$technical_passed" \
+            --arg action "$action" \
             --argjson applicationPassed "$chaos_passed" \
+            --argjson packetLossPercent "$packet_loss" \
             --argjson searchP95 "$chaos_search_p95" \
             --argjson searchP95Delta "$search_p95_delta" \
             --argjson searchFailures "$chaos_search_failures" \
@@ -314,7 +322,9 @@ jobs:
             '{
               combinedPassed: $combinedPassed,
               technicalPassed: $technicalPassed,
+              action: $action,
               applicationPassed: $applicationPassed,
+              packetLossPercent: $packetLossPercent,
               searchP95Ms: $searchP95,
               searchP95DeltaMs: $searchP95Delta,
               searchFailures: $searchFailures,
