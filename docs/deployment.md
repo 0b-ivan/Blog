@@ -78,6 +78,8 @@ Der Gate prüft unter anderem:
 
 Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verifizierten Stand gebracht und der Promotion-PR nach `main` geöffnet bzw. aktualisiert.
 
+`promotion/staging-verified` ist dabei bewusst **kein Entwicklungsbranch**, sondern ein beweglicher Zeiger auf den zuletzt öffentlich verifizierten Staging-Commit. Der Workflow aktualisiert diesen Zeiger mit `--force-with-lease`, damit auch eine zuvor divergierte Promotion-Historie sicher ersetzt werden kann, ohne parallele Änderungen unbemerkt zu überschreiben.
+
 Der Merge dieses Promotion-PRs bleibt manuell.
 
 ## Production
