@@ -1,6 +1,6 @@
 ---
 id: 2026-09-20-k3s-proxmox-chaos-monkey-part-5
-version: 4
+version: 5
 title: "K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog"
 status: publish
 date: 2026-09-20
@@ -9,7 +9,7 @@ updated_at: 2026-09-20
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Chaos Engineering im eigenen K3s-Staging: Pod-Failover mit 0 beobachteten HTTP-Fehlern in 42 Checks – plus erster Chaos-Mesh-NetworkChaos mit 500 ms Latenz und sauberer Recovery nach 30 Sekunden."
+excerpt: "Chaos Engineering im eigenen K3s-Staging: Pod-Failover, Chaos Mesh und ein gemessener 500-ms-NetworkChaos – mit 0 HTTP-Fehlern, vollständiger Recovery und deutlich sichtbarer Tail-Latency."
 tags:
   - Kubernetes
   - K3s
@@ -765,41 +765,151 @@ Nach außen werden nur sanitisiert veröffentlicht:
 
 Pod-Namen, Nodes und interne IP-Adressen bleiben intern.
 
-### Was dieser Lauf noch nicht beweist
+### Zweiter Lauf: diesmal mit Request-Prober
 
-Der erste NetworkChaos-Lauf bestätigt die technische Seite:
+Der technische PASS war mir nicht genug.
 
-```text
-NetworkChaos wurde verarbeitet
-↓
-30-Sekunden-Fenster
-↓
-vollständige Recovery
-↓
-0 fehlgeschlagene Chaos-Mesh-Events
-```
-
-Was ich in diesem Lauf **noch nicht** kontinuierlich gemessen habe:
-
-- öffentliche HTTP-Fehler während genau dieser 30 Sekunden
-- Search-Request-Latenzen während des Delay-Fensters
-- p95- oder p99-Latenzen
-- Timeouts einzelner Search-Anfragen
-- Degradationsverhalten des Blog-UIs
-
-Deshalb nenne ich das Ergebnis bewusst:
+Deshalb habe ich denselben Fault ein zweites Mal ausgeführt und den Observer erweitert:
 
 ```text
-technischer NetworkChaos-PASS
+AllInjected=true
+↓
+20 Sekunden öffentliche Requests messen
+↓
+auf AllRecovered=true warten
+↓
+3 Sekunden Settle-Zeit
+↓
+8 Sekunden Post-Recovery-Baseline
 ```
 
-und nicht:
+Parallel wurden zwei Endpunkte geprüft:
 
 ```text
-500 ms Latenz hatte garantiert keinerlei Benutzerwirkung
+/healthz
+/api/search?q=Kubernetes&limit=3
 ```
 
-Der nächste Netzwerktest bekommt deshalb einen eigenen Request-Prober, der parallel zum Fehlerfenster die Applikationswirkung misst.
+Für beide wurden erfasst:
+
+- Checks
+- Fehler
+- Fehlerquote
+- Minimum
+- Durchschnitt
+- p50
+- p95
+- p99
+- Maximum
+
+Der zweite Lauf startete am 20. September 2026 um:
+
+```text
+17:39:22 UTC
+```
+
+Die Recovery wurde beobachtet um:
+
+```text
+17:39:52 UTC
+```
+
+Also wieder exakt 30 Sekunden später.
+
+#### Während des injizierten Fehlers
+
+| Probe | Checks | Fehler | avg | p50 | p95 | p99 | max |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Blog Health | **56** | **0** | **172 ms** | **148 ms** | **267 ms** | **969 ms** | **969 ms** |
+| Search API | **56** | **0** | **253 ms** | **215 ms** | **534 ms** | **684 ms** | **684 ms** |
+
+#### Nach der Recovery
+
+Für Search ergab die Post-Recovery-Baseline:
+
+| Messwert | Baseline |
+| --- | ---: |
+| Fehler | **0** |
+| avg | **212 ms** |
+| p50 | **203 ms** |
+| p95 | **281 ms** |
+| p99 | **284 ms** |
+
+Die Baseline lief bewusst nur acht Sekunden nach der Recovery. Sie ist damit ein kurzer Vergleichspunkt und kein langfristiger Performance-Benchmark.
+
+Damit ergibt sich für Search:
+
+| Perzentil | während Fault | Baseline | Delta |
+| --- | ---: | ---: | ---: |
+| avg | 253 ms | 212 ms | **+41 ms** |
+| p50 | 215 ms | 203 ms | **+12 ms** |
+| p95 | 534 ms | 281 ms | **+253 ms** |
+| p99 | 684 ms | 284 ms | **+400 ms** |
+
+Das ist der für mich spannendste Teil des Experiments.
+
+Die konfigurierten 500 ms tauchten **nicht gleichmäßig in jedem öffentlichen Request** auf.
+
+Das ist zunächst kein Widerspruch zur Chaos-Mesh-Konfiguration: `delay.latency` beschreibt die Verzögerung auf Netzwerkpaket-Ebene für den ausgewählten Traffic. Die End-to-End-Latenz eines HTTP-Requests hängt zusätzlich vom konkreten Verbindungs- und Request-Verlauf ab. Der YAML-Wert ist deshalb nicht einfach mit „Baseline plus exakt 500 ms pro HTTP-Request“ gleichzusetzen.
+
+Der Median veränderte sich kaum:
+
+```text
+p50
+203 ms
+→
+215 ms
+```
+
+Die langsameren Requests wurden dagegen deutlich schlechter:
+
+```text
+p95
+281 ms
+→
+534 ms
+
+p99
+284 ms
+→
+684 ms
+```
+
+Der Fault war also in der Tail-Latency klar sichtbar, ohne dass im Messfenster ein HTTP-Fehler auftrat.
+
+Das Ergebnis lautet deshalb nicht:
+
+```text
+jeder Search-Request war exakt 500 ms langsamer
+```
+
+sondern:
+
+```text
+0 / 56 Search-Fehler
+0 / 56 Health-Fehler
+
++
+deutlich höhere Tail-Latency
++
+vollständige Recovery nach 30 Sekunden
+```
+
+### Was ich daraus nicht vorschnell ableite
+
+`AllInjected=true` bestätigt, dass Chaos Mesh die Injection als aktiv betrachtet.
+
+Es beweist aber nicht, dass der Effekt auf meinem gesamten öffentlichen Request-Pfad für jeden einzelnen Request identisch sichtbar sein muss.
+
+Warum der p50 fast unverändert blieb, während p95 und p99 deutlich anzogen, ist ein eigener Diagnosepunkt.
+
+Mögliche Faktoren wie Request-Verteilung, bestehende Verbindungen oder der konkrete Netzwerkpfad möchte ich nicht einfach behaupten, ohne sie separat zu messen.
+
+Der nächste sinnvolle Schritt für dieses Detail wäre deshalb ein zeitaufgelöster beziehungsweise pod-näherer Probe-Lauf.
+
+Für den Resilience-Test selbst ist die Aussage dagegen belastbar:
+
+> Während eines technisch aktiven 30-Sekunden-NetworkChaos wurden 56 öffentliche Search-Requests und 56 Healthchecks ohne einen beobachteten Fehler beantwortet. Die Search-Tail-Latency stieg gleichzeitig deutlich an und normalisierte sich nach der Recovery wieder.
 
 ## 0 HTTP-Fehler bedeutet nicht „0 Millisekunden Ausfall garantiert“
 
@@ -1052,6 +1162,8 @@ Für meinen aktuellen Aufbau kann ich jetzt konkret sagen:
 7. Search blieb vor und nach beiden Pod-Experimenten erreichbar.
 8. Der auf 30 Sekunden begrenzte 500-ms-Delay von Blog zu Search wurde anschließend vollständig zurückgenommen.
 9. Beim NetworkChaos wurden keine fehlgeschlagenen Chaos-Mesh-Events beobachtet.
+10. Im zweiten NetworkChaos-Lauf wurden während des Faults 56 Search-Requests und 56 Healthchecks ausgeführt, jeweils ohne beobachteten Fehler.
+11. Die Search-Tail-Latency stieg dabei deutlich: p95 um 253 ms und p99 um 400 ms gegenüber der Post-Recovery-Baseline.
 
 Das ist deutlich besser als:
 
@@ -1069,8 +1181,8 @@ der Proxmox-Host ausfällt
 mein Internetanschluss ausfällt
 cloudflared komplett verschwindet
 Search während einer Anfrage neu startet
-500 ms Netzwerklatenz auf Anwendungsebene tatsächlich zu HTTP-Fehlern oder erhöhten p95/p99-Werten führt
 Packet Loss zwischen Blog und Search auftritt
+der 500-ms-Delay pod-nah auf jedem Request-Pfad gleich sichtbar ist
 der gesamte Standort nicht erreichbar ist
 ```
 
@@ -1118,7 +1230,10 @@ DNS-Störung
 Experiment 8
 Netzwerkfehler
 8a 500 ms Blog → Search
-✓ technisch bestanden
+✓ technisch + öffentlich gemessen
+0 / 56 Search-Fehler
+p95 +253 ms
+p99 +400 ms
 8b Packet Loss
 ○ offen
 
@@ -1242,9 +1357,9 @@ Sondern um Behauptungen über Zuverlässigkeit in überprüfbare Experimente zu 
 
 Der Blog selbst hat einen einzelnen und mehrere aufeinanderfolgende Pod-Ausfälle bestanden.
 
-Auch der erste technische NetworkChaos-Lauf ist abgeschlossen: 500 ms zusätzliche Latenz von Blog zu Search für 30 Sekunden, anschließend vollständige Recovery.
+Auch NetworkChaos ist inzwischen nicht mehr nur technisch getestet. Im zweiten 500-ms-Lauf liefen parallel 56 Search-Requests und 56 Healthchecks ohne beobachteten Fehler. Gleichzeitig stieg die Search-Tail-Latency gegenüber der Post-Recovery-Baseline deutlich an: p95 um 253 ms und p99 um 400 ms.
 
-Der nächste Schritt bleibt Search unter realen Anfragen. Für das Netzwerk folgt außerdem ein zweiter Lauf mit paralleler Request-Messung und danach separat Packet Loss.
+Der nächste Schritt bleibt Search unter realen Restart-Bedingungen. Für das Netzwerk folgt als eigene Fehlerklasse jetzt separat Packet Loss.
 
 Ich will also nicht einfach immer neue Pods löschen, sondern die Fehlerklassen weiter gezielt wechseln:
 
