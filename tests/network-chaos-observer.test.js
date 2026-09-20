@@ -20,6 +20,10 @@ describe('NetworkChaos observer safety contract', () => {
     path.join(root, '.github', 'workflows', 'observe-chaos-result.yml'),
     'utf8'
   );
+  const requestProbe = fs.readFileSync(
+    path.join(root, 'scripts', 'network-chaos-probe.js'),
+    'utf8'
+  );
 
   it('keeps NetworkChaos access read-only and namespace-local', () => {
     expect(rbac).toContain('apiGroups: ["chaos-mesh.org"]');
@@ -41,11 +45,18 @@ describe('NetworkChaos observer safety contract', () => {
     expect(statusMonitor).not.toContain('lastNetworkChaosExperiment: payload');
   });
 
-  it('uses a dedicated recovery observer for native Chaos Mesh experiments', () => {
+  it('uses a dedicated injection, probe and recovery observer for native Chaos Mesh experiments', () => {
     expect(networkObserver).toContain('.lastNetworkChaosExperiment');
+    expect(networkObserver).toContain('.allInjected == true');
     expect(networkObserver).toContain('.allRecovered == true');
+    expect(networkObserver).toContain('PROBE_DURATION_MS=20000');
+    expect(networkObserver).toContain('PROBE_DURATION_MS=8000');
+    expect(networkObserver).toContain('searchP95DeltaMs');
     expect(networkObserver).toContain('network-chaos-observer');
     expect(networkObserver).toContain('No matching recovered NetworkChaos');
+    expect(requestProbe).toContain('p95');
+    expect(requestProbe).toContain('p99');
+    expect(requestProbe).toContain('applicationPassed');
     expect(legacyObserver).toContain('NetworkChaos is handled by the dedicated NetworkChaos observer.');
   });
 });
