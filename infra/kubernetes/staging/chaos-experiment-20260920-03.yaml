@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chaos-monkey-manual-20260920-03
+  namespace: blog-staging
+  labels:
+    app: chaos-monkey
+    chaos.obivan.org/experiment: search-restart-under-load
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 360
+  template:
+    metadata:
+      labels:
+        app: chaos-monkey
+        chaos.obivan.org/experiment: search-restart-under-load
+    spec:
+      serviceAccountName: chaos-monkey
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: chaos-monkey
+          image: ghcr.io/0b-ivan/kernel-notes-chaos:UNPINNED
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CHAOS_TARGET
+              value: search
+            - name: CHAOS_ITERATIONS
+              value: "1"
+            - name: EXPECTED_REPLICAS
+              value: "1"
+            - name: EXPECTED_BLOG_REPLICAS
+              value: "3"
+            - name: RECOVERY_TIMEOUT_MS
+              value: "240000"
+            - name: HEALTH_INTERVAL_MS
+              value: "500"
+            - name: SEARCH_PROBE_TIMEOUT_MS
+              value: "3000"
+            - name: HEALTH_URL
+              value: https://staging-blog.obivan.org/healthz
+            - name: SEARCH_URL
+              value: https://staging-blog.obivan.org/api/search
+            - name: RESULT_CONFIGMAP
+              value: chaos-monkey-result
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
