@@ -41,8 +41,36 @@
     root.append(...items.map(formatter));
   }
 
-  async function load(days) {
-    const response = await fetch(`/api/analytics/summary?days=${days}`, { cache: 'no-store' });
+  function readToken() {
+    try {
+      return window.sessionStorage.getItem('kernel-notes:analytics-token') || '';
+    } catch (_error) {
+      return '';
+    }
+  }
+
+  function rememberToken(value) {
+    try {
+      window.sessionStorage.setItem('kernel-notes:analytics-token', value);
+    } catch (_error) {
+      // A private browser session may reject storage; the current request still works.
+    }
+  }
+
+  async function load(days, allowPrompt = true) {
+    const token = readToken();
+    const response = await fetch(`/api/analytics/summary?days=${days}`, {
+      cache: 'no-store',
+      headers: token ? { 'X-Analytics-Token': token } : {}
+    });
+    if (response.status === 401 && allowPrompt) {
+      const supplied = window.prompt('Analytics-Zugriffstoken');
+      if (supplied) {
+        rememberToken(supplied.trim());
+        return load(days, false);
+      }
+      return;
+    }
     if (!response.ok) return;
     const payload = await response.json();
     const totals = payload.totals || {};
