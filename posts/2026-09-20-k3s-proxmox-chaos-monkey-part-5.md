@@ -1,6 +1,6 @@
 ---
 id: 2026-09-20-k3s-proxmox-chaos-monkey-part-5
-version: 1
+version: 2
 title: "K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog"
 status: publish
 date: 2026-09-20
@@ -9,7 +9,7 @@ updated_at: 2026-09-20
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Statt nur zu behaupten, dass Kubernetes Ausfälle abfängt, lösche ich in Staging absichtlich einen laufenden Blog-Pod. Das Ergebnis: 3 → 2 → 3 Ready Pods, 6,95 Sekunden Recovery und kein beobachteter HTTP-Fehler."
+excerpt: "Erst ein Pod, dann drei Failover-Zyklen hintereinander: Mein K3s-Staging blieb in 42 öffentlichen Healthchecks ohne beobachteten HTTP-Fehler und stellte die Redundanz jeweils in rund 6,9 Sekunden wieder her."
 tags:
   - Kubernetes
   - K3s
@@ -389,6 +389,106 @@ Der Fehler ist also tatsächlich eingetreten.
 
 Und der öffentliche Dienst blieb in allen beobachteten Checks erreichbar.
 
+## Experiment #2: drei Failover-Zyklen hintereinander
+
+Ein einzelner erfolgreicher Lauf ist gut.
+
+Er sagt aber noch wenig darüber aus, ob die Recovery-Zeit stabil bleibt.
+
+Für Experiment #2 habe ich den Runner deshalb erweitert:
+
+```text
+3 / 3 Ready
+↓
+1 Pod löschen
+↓
+vollständig auf 3 / 3 warten
+↓
+2 Sekunden Settle-Zeit
+↓
+nächsten Pod löschen
+↓
+wieder vollständig recovern
+↓
+insgesamt 3 Iterationen
+```
+
+Wichtig war mir dabei:
+
+> Nie zwei absichtliche Pod-Ausfälle gleichzeitig.
+
+Vor **jeder** Iteration prüft der Runner erneut, ob exakt drei geeignete Blog-Pods vorhanden und Ready sind.
+
+Erst dann darf der nächste Delete stattfinden.
+
+Der zweite Versuch lief am 20. September 2026 von:
+
+```text
+01:53:04.096 UTC
+```
+
+bis:
+
+```text
+01:53:31.828 UTC
+```
+
+Das sanitisiert veröffentlichte Ergebnis:
+
+```text
+Result: PASS
+Experiment: repeated-blog-pod-delete
+Iterations: 3 / 3
+Recovery times: 6815, 6932, 6938 ms
+Max recovery: 6938 ms
+Total recovery: 20685 ms
+HTTP checks: 32
+HTTP failures: 0
+Ready pods observed: 2 → 3
+Search before experiment: reachable
+Search after experiment: reachable
+```
+
+Die drei Recovery-Zeiten lagen damit bei:
+
+| Iteration | Recovery |
+| --- | ---: |
+| 1 | 6,815 s |
+| 2 | 6,932 s |
+| 3 | 6,938 s |
+| Durchschnitt | **6,895 s** |
+| Spannweite | **123 ms** |
+
+Das ist für mich fast interessanter als ein einzelner besonders schneller Lauf.
+
+Die Wiederherstellung war über drei absichtliche Ausfälle hinweg sehr ähnlich.
+
+## Experiment #1 und #2 im Vergleich
+
+| Messwert | Experiment #1 | Experiment #2 |
+| --- | ---: | ---: |
+| absichtliche Pod-Ausfälle | 1 | 3 |
+| Recovery-Zeit | 6,950 s | 6,815 / 6,932 / 6,938 s |
+| durchschnittliche Recovery | 6,950 s | **6,895 s** |
+| maximale Recovery | 6,950 s | **6,938 s** |
+| öffentliche HTTP-Checks | 10 | 32 |
+| beobachtete HTTP-Fehler | **0** | **0** |
+| niedrigster Ready-Stand | 2 / 3 | 2 / 3 |
+| Search vorher/nachher | erreichbar | erreichbar |
+| Ergebnis | **PASS** | **PASS** |
+
+Über beide Experimente zusammen sind das:
+
+```text
+4 absichtliche Pod-Ausfälle
+42 öffentliche Healthchecks
+0 beobachtete HTTP-Fehler
+```
+
+Das beweist weiterhin keine mathematisch lückenlose Null-Downtime.
+
+Es ist aber ein deutlich stärkerer Messpunkt als ein einzelner erfolgreicher Pod-Delete.
+
 ## 0 HTTP-Fehler bedeutet nicht „0 Millisekunden Ausfall garantiert“
 
 Hier ist mir eine Einschränkung wichtig.
@@ -565,7 +665,7 @@ So bleibt das letzte Experiment sichtbar.
 
 ## Der Observer ist absichtlich langweilig
 
-Für die Auswertung existiert zusätzlich ein manueller GitHub-Actions-Workflow:
+Für die Auswertung existiert zusätzlich ein GitHub-Actions-Workflow:
 
 ```text
 Observe staging chaos experiment
@@ -575,13 +675,41 @@ Der bekommt keine Kubeconfig.
 
 Er fragt nur die ohnehin öffentliche, bereits sanitisiert ausgegebene Status-API ab.
 
-Optional kann ich für spätere Tests einen unteren Zeitstempel angeben:
+Bei einem One-shot-Experiment startet der Observer automatisch. Manuell lässt er sich weiterhin per `workflow_dispatch` ausführen.
+
+Damit ein alter PASS nicht versehentlich als neues Experiment gilt, bestimmt der Workflow den ursprünglichen Commit-Zeitpunkt des aktiven Experiment-Manifests und akzeptiert nur Ergebnisse danach.
+
+Dabei bin ich direkt in einen schönen Zeitstempel-Fehler gelaufen.
+
+Der erste Filter verglich beispielsweise:
 
 ```text
-completed_after
+2026-09-20T03:52:48+02:00
 ```
 
-Damit wird bei Experiment Nummer zwei nicht versehentlich das alte PASS-Ergebnis von Experiment Nummer eins angezeigt.
+mit:
+
+```text
+2026-09-20T01:53:31.828Z
+```
+
+als einfachen String.
+
+Beide Zeitpunkte benutzen aber unterschiedliche UTC-Offsets.
+
+Die Lösung:
+
+```text
+ISO-8601
+↓
+Unix Epoch
+↓
+numerischer Vergleich
+```
+
+Seitdem wird nicht mehr die Schreibweise des Zeitpunkts verglichen, sondern der tatsächliche Zeitpunkt.
+
+Der Observer schreibt sein Ergebnis in die GitHub-Job-Summary und zusätzlich in einen Commit-Status `chaos-observer`. Dieser Status verlinkt direkt auf den zugehörigen Actions-Run.
 
 Auch hier ist die Trennung bewusst:
 
@@ -589,6 +717,8 @@ Auch hier ist die Trennung bewusst:
 GitHub Actions
 ↓
 öffentliche Status-API
+↓
+sanitisiertes Ergebnis
 
 nicht:
 
@@ -599,16 +729,17 @@ privilegierte Kubeconfig
 Cluster
 ```
 
-## Was der Test bewiesen hat
+## Was die Tests bewiesen haben
 
 Für meinen aktuellen Aufbau kann ich jetzt konkret sagen:
 
 1. Ein einzelner Blog-Pod darf während des Betriebs verschwinden.
-2. Der ReplicaSet-Controller stellt die gewünschte Replikazahl wieder her.
-3. Die Readiness fällt messbar von drei auf zwei und wieder auf drei.
-4. Die vollständige Wiederherstellung der Redundanz dauerte im ersten Versuch 6,95 Sekunden.
-5. Während zehn öffentlichen Healthchecks wurde kein HTTP-Fehler beobachtet.
-6. Search blieb vor und nach dem Experiment erreichbar.
+2. Auch drei nacheinander ausgelöste Pod-Ausfälle wurden vollständig abgefangen.
+3. Der ReplicaSet-Controller stellt die gewünschte Replikazahl wieder her.
+4. Die Readiness fiel im Experiment bis auf zwei Ready-Pods und anschließend wieder auf drei.
+5. Die drei Recovery-Zeiten von Experiment #2 lagen nur 123 ms auseinander.
+6. Über beide Experimente wurden 42 öffentliche Healthchecks ausgeführt und kein HTTP-Fehler beobachtet.
+7. Search blieb vor und nach beiden Experimenten erreichbar.
 
 Das ist deutlich besser als:
 
@@ -654,6 +785,7 @@ ein Blog-Pod
 
 Experiment 2
 wiederholte Blog-Pod-Ausfälle
+✓ bestanden
 
 Experiment 3
 Search kontrolliert neu starten
@@ -693,7 +825,7 @@ Die Architektur ist damit um eine kleine Test- und Beobachtungsschicht gewachsen
                   ▼
              Chaos Monkey
                   │
-          delete max. 1 Pod
+      delete max. 1 Pod / Iteration
                   │
                   ▼
              Kubernetes
@@ -715,9 +847,9 @@ Vorher hatte ich eine Annahme:
 
 > Drei Pods sollten einen einzelnen Pod-Ausfall abfangen.
 
-Jetzt habe ich eine Messung:
+Jetzt habe ich mehrere Messpunkte:
 
-> Ein Pod wurde absichtlich entfernt. Readiness fiel auf 2/3, nach 6,95 Sekunden waren wieder 3/3 Ready, und in zehn öffentlichen Healthchecks trat kein Fehler auf.
+> Vier Pod-Ausfälle wurden absichtlich ausgelöst. Im wiederholten Experiment lagen die drei Recovery-Zeiten bei 6,815, 6,932 und 6,938 Sekunden. Über beide Experimente trat in 42 öffentlichen Healthchecks kein beobachteter Fehler auf.
 
 Genau dafür wollte ich Chaos Engineering in diesem Homelab einsetzen.
 
@@ -734,12 +866,24 @@ Sondern um Behauptungen über Zuverlässigkeit in überprüfbare Experimente zu 
 
 ## Als Nächstes
 
-Ein einzelner Pod-Ausfall ist jetzt sauber getestet.
+Der Blog selbst hat jetzt sowohl einen einzelnen als auch wiederholte Pod-Ausfälle bestanden.
 
-Der deutlich interessantere nächste Schritt ist der Fehler **unterhalb** von Kubernetes:
+Als nächstes will ich eine andere Workload treffen:
 
-> Was passiert, wenn die gesamte K3s-VM oder der Proxmox-Host verschwindet?
+> Was passiert, wenn Search kontrolliert neu startet, während gleichzeitig echte Suchanfragen laufen?
 
-Dann können mir drei Replicas innerhalb desselben Nodes nicht mehr helfen.
+Danach wird es deutlich unangenehmer.
+
+Dann geht der Fehler **unterhalb** von Kubernetes:
+
+```text
+K3s-VM weg
+↓
+Proxmox-Host weg
+↓
+gesamter Standort weg
+```
+
+Ab diesem Punkt helfen mir drei Replicas auf demselben Node nicht mehr.
 
 Genau dort muss der zweite Standort auf Hetzner aus Teil IV anfangen, echten Wert zu liefern.
