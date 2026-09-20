@@ -22,7 +22,7 @@ tags:
   - Self-Hosting
   - DevOps
 search_queries:
-  - query: Wie teste ich Kubernetes Pod Failover mit Chaos Engineering?
+  - query: Wie teste ich Kubernetes Pod Failover mit einem Chaos Monkey in K3s Staging?
     maxRank: 1
   - query: Wie begrenze ich den Blast Radius eines Chaos Monkey in K3s?
     maxRank: 1
