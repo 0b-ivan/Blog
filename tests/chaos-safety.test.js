@@ -39,6 +39,8 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
 
   it('requires explicit blog opt-in and manual execution', () => {
     expect(stagingKustomization).toContain('chaos.obivan.org~1enabled');
+    expect(stagingKustomization.match(/chaos\.obivan\.org~1enabled/g)).toHaveLength(2);
+    expect(stagingKustomization).toContain('name: search');
     expect(stagingKustomization).toContain('value: "true"');
     expect(chaosSource).toContain("namespace !== 'blog-staging'");
     expect(chaosSource).toContain("const requiredJobPrefix = 'chaos-monkey-manual-'");
@@ -46,11 +48,18 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain('const maximumIterations = 3');
     expect(chaosSource).toContain("process.env.CHAOS_ITERATIONS || '1'");
     expect(chaosSource).toContain('const before = await preflight(namespace)');
+    expect(chaosSource).toContain("CHAOS_TARGET");
+    expect(chaosSource).toContain("search-restart-under-load");
+    expect(chaosSource).toContain("search chaos supports exactly one iteration");
+    expect(chaosSource).toContain("sawSearchFailure");
+    expect(chaosSource).toContain("searchFailures > 0");
   });
 
   it('keeps repeated experiments observable without write access', () => {
     expect(observerWorkflow).toContain("infra/kubernetes/staging/chaos-experiment-*.yaml");
     expect(observerWorkflow).toContain('repeated-blog-pod-delete');
+    expect(observerWorkflow).toContain('search-restart-under-load');
+    expect(observerWorkflow).toContain('Search failures');
     expect(observerWorkflow).toContain('contents: read');
     expect(observerWorkflow).not.toContain('issues: write');
     expect(observerWorkflow).not.toContain('contents: write');
