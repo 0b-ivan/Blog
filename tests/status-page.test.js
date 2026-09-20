@@ -246,6 +246,54 @@ describe('public Kubernetes status contract', () => {
     expect(JSON.stringify(payload)).not.toContain('raw pod');
   });
 
+  it('sanitizes NetworkChaos recovery without leaking Kubernetes identities', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'operational',
+      environment: 'staging',
+      orchestrator: 'K3s',
+      kubernetesApi: 'reachable',
+      workloads: [],
+      lastNetworkChaosExperiment: {
+        experiment: 'network-delay',
+        action: 'delay',
+        source: 'blog',
+        target: 'search',
+        createdAt: '2026-09-20T15:07:30.000Z',
+        completedAt: '2026-09-20T15:08:00.000Z',
+        durationMs: 30000,
+        latencyMs: 500,
+        packetLossPercent: 0,
+        selected: true,
+        allInjected: true,
+        allRecovered: true,
+        failedEvents: 0,
+        passed: true,
+        podName: 'must-not-leak-pod',
+        nodeName: 'must-not-leak-node',
+        internalIp: '10.42.0.99'
+      }
+    });
+
+    expect(payload.lastNetworkChaosExperiment).toEqual({
+      experiment: 'network-delay',
+      action: 'delay',
+      source: 'blog',
+      target: 'search',
+      createdAt: '2026-09-20T15:07:30.000Z',
+      completedAt: '2026-09-20T15:08:00.000Z',
+      durationMs: 30000,
+      latencyMs: 500,
+      packetLossPercent: 0,
+      selected: true,
+      allInjected: true,
+      allRecovered: true,
+      failedEvents: 0,
+      passed: true
+    });
+    expect(JSON.stringify(payload)).not.toContain('must-not-leak');
+    expect(JSON.stringify(payload)).not.toContain('10.42.0.99');
+  });
+
   it('normalizes unexpected values instead of exposing them', () => {
     const payload = sanitizedKubernetesStatus({
       status: 'secret-state',
