@@ -71,7 +71,7 @@ function dayBucket(date = today()) {
 
 function pruneDaily() {
   const threshold = new Date();
-  threshold.setUTCDate(threshold.getUTCDate() - retentionDays);
+  threshold.setUTCDate(threshold.getUTCDate() - (retentionDays - 1));
   const minimum = threshold.toISOString().slice(0, 10);
   for (const date of Object.keys(state.daily)) {
     if (date < minimum) delete state.daily[date];
