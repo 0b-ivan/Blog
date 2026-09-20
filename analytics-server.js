@@ -2,6 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
+const { URL } = require('node:url');
 const crypto = require('node:crypto');
 
 const port = Number.parseInt(process.env.PORT || '8080', 10);
