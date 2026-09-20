@@ -6,6 +6,7 @@ resources:
   - cloudflared.yaml
   - chaos-monkey.yaml
   - chaos-mesh.yaml
+  - chaos-experiment-network-delay.yaml
   - production-flux.yaml
   - secrets/ghcr-pull.sops.yaml
   - secrets/cloudflared-token.sops.yaml
