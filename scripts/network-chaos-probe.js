@@ -1,8 +1,7 @@
 const fs = require('node:fs');
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+const { performance } = require('node:perf_hooks');
+const { setTimeout: sleep } = require('node:timers/promises');
+const { URL } = require('node:url');
 
 function boundedInteger(value, fallback, minimum, maximum) {
   const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -47,13 +46,13 @@ function withCacheBuster(value) {
 async function measureRequest(url, timeoutMs) {
   const started = performance.now();
   try {
-    const response = await fetch(withCacheBuster(url), {
+    const response = await globalThis.fetch(withCacheBuster(url), {
       headers: {
         Accept: 'application/json, text/plain, */*',
         'Cache-Control': 'no-cache',
         'User-Agent': 'kernel-notes-network-chaos-probe'
       },
-      signal: AbortSignal.timeout(timeoutMs)
+      signal: globalThis.AbortSignal.timeout(timeoutMs)
     });
     await response.arrayBuffer();
     return {
