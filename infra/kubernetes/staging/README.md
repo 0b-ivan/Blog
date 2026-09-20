@@ -124,13 +124,9 @@ https://staging-blog.obivan.org/status
 
 Die Browser-Seite fragt ausschließlich `/api/kubernetes-status` am Blog ab. Der Blog proxyt dafür den internen Service `kube-status`.
 
-`kube-status` besitzt nur eine namespace-lokale Role mit:
+`kube-status` besitzt nur read-only Rechte im Namespace: Pods werden mit `get/list` gelesen, `chaos-monkey-result` nur per `get` und native `NetworkChaos`-Ressourcen nur per `get/list`. Schreibrechte auf Chaos-Ressourcen besitzt der Status-Service nicht.
 
-```text
-pods: get, list
-```
-
-Nach außen gehen ausschließlich aggregierte Readiness-Werte. Pod-Namen, Nodes, interne IPs und sonstige Cluster-Details bleiben intern.
+Nach außen gehen ausschließlich aggregierte und sanitisiert ausgewählte Zustände. Pod-Namen, Nodes, interne IPs und sonstige Cluster-Details bleiben intern.
 
 ## Chaos Monkey v1
 
@@ -188,7 +184,7 @@ kubectl get crd networkchaos.chaos-mesh.org
 lsmod | grep sch_netem || sudo modprobe sch_netem
 ```
 
-Der letzte Befehl läuft auf dem K3s-Node. Erst wenn diese Checks sauber sind, wird ein zeitlich begrenztes Netzwerkexperiment als eigener One-shot-Commit aktiviert.
+Der letzte Befehl läuft auf dem K3s-Node. Erst wenn diese Checks sauber sind, wird ein zeitlich begrenztes Netzwerkexperiment als eigener One-shot-Commit aktiviert. Nach erfolgreicher Injection und Recovery wird das Experiment-Manifest wieder aus dem GitOps-Sollzustand entfernt; das Ergebnis bleibt im GitHub-Actions-Observer nachvollziehbar.
 
 ## Chaos-Experiment-Lifecycle
 
