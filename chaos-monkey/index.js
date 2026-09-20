@@ -272,6 +272,9 @@ async function main() {
   const experimentStartedAt = new Date().toISOString();
   await preflight(namespace);
   const searchBefore = await searchReachable();
+  if (!searchBefore) {
+    throw new Error('preflight failed: search API is not healthy');
+  }
 
   log('experiment_started', {
     experiment: experimentName(),
@@ -330,6 +333,7 @@ async function main() {
     passed: allRecovered
       && completedIterations === iterationCount
       && httpFailures === 0
+      && searchBefore
       && searchAfter
   };
 
