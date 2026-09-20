@@ -44,7 +44,7 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(stagingKustomization).toContain('value: "true"');
     expect(chaosSource).toContain("namespace !== 'blog-staging'");
     expect(chaosSource).toContain("const requiredJobPrefix = 'chaos-monkey-manual-'");
-    expect(chaosSource).toContain("'app=blog,chaos.obivan.org/enabled=true'");
+    expect(chaosSource).toContain('`app=${config.app},chaos.obivan.org/enabled=true`');
     expect(chaosSource).toContain('const maximumIterations = 3');
     expect(chaosSource).toContain("process.env.CHAOS_ITERATIONS || '1'");
     expect(chaosSource).toContain('const before = await preflight(namespace)');
