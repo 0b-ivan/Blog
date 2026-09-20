@@ -183,6 +183,100 @@ function sanitizedChaosExperiment(payload) {
   };
 }
 
+
+function conditionIsTrue(payload, type) {
+  return Array.isArray(payload?.status?.conditions)
+    && payload.status.conditions.some((condition) => condition?.type === type && condition?.status === 'True');
+}
+
+function durationToMs(value) {
+  if (typeof value !== 'string') return 0;
+  const match = value.match(/^(\d+(?:\.\d+)?)(ms|s|m)$/);
+  if (!match) return 0;
+  const amount = Number(match[1]);
+  const multiplier = match[2] === 'ms' ? 1 : match[2] === 's' ? 1000 : 60000;
+  return boundedNumber(amount * multiplier, 600000);
+}
+
+function latestNetworkEventTimestamp(payload) {
+  const records = Array.isArray(payload?.status?.experiment?.containerRecords)
+    ? payload.status.experiment.containerRecords
+    : [];
+  const timestamps = records
+    .flatMap((record) => Array.isArray(record?.events) ? record.events : [])
+    .map((event) => normalizedTimestamp(event?.timestamp))
+    .filter(Boolean)
+    .sort();
+  return timestamps.length ? timestamps[timestamps.length - 1] : '';
+}
+
+function networkFailedEvents(payload) {
+  const records = Array.isArray(payload?.status?.experiment?.containerRecords)
+    ? payload.status.experiment.containerRecords
+    : [];
+  return records
+    .flatMap((record) => Array.isArray(record?.events) ? record.events : [])
+    .filter((event) => event?.type === 'Failed')
+    .length;
+}
+
+function sanitizedNetworkChaosExperiment(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+
+  const experiment = payload?.metadata?.labels?.['chaos.obivan.org/experiment'];
+  if (!['network-delay', 'network-loss'].includes(experiment)) return null;
+
+  const action = payload?.spec?.action;
+  if (!['delay', 'loss'].includes(action)) return null;
+
+  const source = payload?.spec?.selector?.labelSelectors?.app;
+  const target = payload?.spec?.target?.selector?.labelSelectors?.app;
+  if (!['blog', 'search'].includes(source) || !['blog', 'search'].includes(target)) return null;
+
+  const selected = conditionIsTrue(payload, 'Selected');
+  const allInjected = conditionIsTrue(payload, 'AllInjected');
+  const allRecovered = conditionIsTrue(payload, 'AllRecovered');
+  const failedEvents = boundedNumber(networkFailedEvents(payload), 100);
+  const latencyMs = action === 'delay' ? durationToMs(payload?.spec?.delay?.latency) : 0;
+  const packetLossPercent = action === 'loss'
+    ? Math.min(100, Math.max(0, Number(payload?.spec?.loss?.loss) || 0))
+    : 0;
+
+  return {
+    experiment,
+    action,
+    source,
+    target,
+    createdAt: normalizedTimestamp(payload?.metadata?.creationTimestamp),
+    completedAt: allRecovered ? latestNetworkEventTimestamp(payload) : '',
+    durationMs: durationToMs(payload?.spec?.duration),
+    latencyMs,
+    packetLossPercent,
+    selected,
+    allInjected,
+    allRecovered,
+    failedEvents,
+    passed: selected && allRecovered && failedEvents === 0
+  };
+}
+
+async function readLastNetworkChaosExperiment(namespace) {
+  try {
+    const response = await kubernetesRequest(
+      `/apis/chaos-mesh.org/v1alpha1/namespaces/${encodeURIComponent(namespace)}/networkchaos`
+    );
+    const experiments = (Array.isArray(response?.items) ? response.items : [])
+      .map(sanitizedNetworkChaosExperiment)
+      .filter(Boolean)
+      .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
+    return experiments[0] || null;
+  } catch (error) {
+    if (error?.statusCode === 404) return null;
+    console.error('network chaos lookup failed:', error.message || error);
+    return null;
+  }
+}
+
 async function readLastChaosExperiment(namespace) {
   try {
     const response = await kubernetesRequest(
@@ -221,7 +315,10 @@ async function collectStatus() {
     };
   });
 
-  const lastChaosExperiment = await readLastChaosExperiment(namespace);
+  const [lastChaosExperiment, lastNetworkChaosExperiment] = await Promise.all([
+    readLastChaosExperiment(namespace),
+    readLastNetworkChaosExperiment(namespace)
+  ]);
 
   const payload = {
     status: workloads.every((workload) => workload.status === 'operational')
@@ -232,7 +329,8 @@ async function collectStatus() {
     kubernetesApi: 'reachable',
     updatedAt: new Date().toISOString(),
     workloads,
-    lastChaosExperiment
+    lastChaosExperiment,
+    lastNetworkChaosExperiment
   };
 
   cached = {
