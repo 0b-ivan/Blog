@@ -41,6 +41,12 @@
     "description": "Chaos Engineering formuliert eine überprüfbare Hypothese über ein System, erzeugt anschließend einen begrenzten Fehler und misst, ob der beobachtbare Steady State innerhalb definierter Grenzen erhalten bleibt oder wiederhergestellt wird.",
     "aliases": []
   },
+  "Chaos Mesh": {
+    "full": "Chaos Mesh",
+    "short": "Kubernetes-native Plattform für kontrollierte Chaos-Experimente.",
+    "description": "Chaos Mesh erweitert Kubernetes um eigene Ressourcen und Controller für gezielte Fehler wie Pod-Ausfälle, Netzwerklatenz, Packet Loss oder Ressourcenstress. Experimente lassen sich über Selektoren, Dauer und Namespace-Filter begrenzen.",
+    "aliases": []
+  },
   "Chaos Monkey": {
     "full": "Chaos Monkey",
     "short": "Werkzeug oder Mechanismus, der kontrolliert laufende Komponenten beendet, um Resilience zu testen.",
@@ -101,6 +107,16 @@
     "description": "Apache CouchDB speichert JSON-Dokumente und unterstützt Replikation zwischen Datenbanken. In meinem Blog-Setup wird CouchDB unter anderem von Obsidian LiveSync verwendet.",
     "aliases": [
       "Apache CouchDB"
+    ]
+  },
+  "CRD": {
+    "full": "Custom Resource Definition",
+    "short": "Kubernetes-Erweiterung zum Definieren eigener API-Ressourcentypen.",
+    "description": "Eine Custom Resource Definition erweitert die Kubernetes-API um zusätzliche Ressourcentypen. Controller können diese Custom Resources beobachten und daraus eigenes Verhalten ableiten.",
+    "aliases": [
+      "Custom Resource Definition",
+      "CustomResourceDefinition",
+      "CRDs"
     ]
   },
   "Cron": {
@@ -242,6 +258,14 @@
     "short": "Kontinuierliche Beobachtung von Zustand und Verhalten technischer Systeme.",
     "description": "Monitoring sammelt Kennzahlen, Logs oder Zustände, um Ausfälle, Trends und ungewöhnliches Verhalten früh sichtbar zu machen.",
     "aliases": []
+  },
+  "NetworkChaos": {
+    "full": "Chaos Mesh NetworkChaos",
+    "short": "Chaos-Mesh-Ressource zum kontrollierten Stören von Netzwerkverkehr zwischen ausgewählten Kubernetes-Workloads.",
+    "description": "NetworkChaos kann Netzwerkfehler wie zusätzliche Latenz, Packet Loss, Partitionen oder Paketkorruption auf ausgewählte Pods begrenzen und zeitlich befristet anwenden.",
+    "aliases": [
+      "Network Chaos"
+    ]
   },
   "Node.js": {
     "full": "Node.js",

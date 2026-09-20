@@ -8,7 +8,7 @@ Das komplette Repository kann als Obsidian-Vault geoeffnet werden. Die eigentlic
 2. In Obsidian `Open folder as vault` waehlen und den Repository-Ordner `Blog` oeffnen.
 3. Den Obsidian-Core-Plugin `Templates` aktivieren.
 4. Als Template-Ordner `templates` konfigurieren.
-5. Unter `Files & Links` den Attachment-Ordner auf `assets` setzen, wenn Bilder direkt aus Obsidian eingefuegt werden sollen.
+5. Unter `Files & Links` den Attachment-Ordner fuer Artikelbilder auf `assets/posts` setzen, wenn Bilder direkt aus Obsidian eingefuegt werden sollen.
 
 Lokale Workspace-Zustaende von Obsidian werden nicht committed. Die eigentlichen Inhalte und Templates bleiben dagegen Teil des Repositories.
 
@@ -78,7 +78,7 @@ Danach liegt die Datei beispielsweise hier:
 archive/2026-08-19-mein-artikel.md
 ```
 
-Archivierte Beitraege sind damit nicht mehr als normale Blog-URL verfuegbar. Der Inhalt bleibt aber in Git und Obsidian erhalten.
+Archivierte Beitraege sind damit nicht mehr unter ihrer normalen `/posts/<slug>`-URL verfuegbar. Sie bleiben jedoch ueber `/archive` und `/archive/<slug>` oeffentlich lesbar und bleiben zusaetzlich in Git und Obsidian erhalten.
 
 ## Artikel wiederherstellen
 
@@ -161,7 +161,7 @@ npm run test:coverage
 Danach normal committen und pushen:
 
 ```bash
-git add posts/ archive/ assets/
+git add posts/ archive/ assets/posts/
 git commit -m "Update blog posts"
 git push -u origin HEAD
 ```
@@ -170,10 +170,10 @@ Anschliessend einen Pull Request gegen `staging` erstellen. Nach erfolgreicher C
 
 ## Bilder
 
-Bilder fuer Artikel sollten unter `assets/` liegen. Im Markdown koennen sie beispielsweise so referenziert werden:
+Bilder fuer Artikel sollten unter `assets/posts/` liegen. Dadurch werden sie vom Content-Deployment und von der automatischen Artikelhistorie gemeinsam mit dem Artikel behandelt. Im Markdown koennen sie beispielsweise so referenziert werden:
 
 ```md
-![Beschreibung](/assets/mein-bild.png)
+![Beschreibung](/assets/posts/mein-bild.png)
 ```
 
 Root-relative Pfade funktionieren sowohl auf der Website als auch im RSS-Feed korrekt.

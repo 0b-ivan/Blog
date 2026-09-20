@@ -1,6 +1,8 @@
 # Hetzner deployment user
 
-Production deployments use a dedicated SSH account instead of a personal administrator account.
+The Hetzner deployment is kept current from `main` as a standby and rollback origin alongside the public K3s production environment.
+
+Deployments to this host use a dedicated SSH account instead of a personal administrator account.
 
 Recommended account name: `blog-deploy`.
 

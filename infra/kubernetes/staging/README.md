@@ -19,22 +19,28 @@ feature/*
    v
 staging
    |
-   | GitHub Actions baut Blog + Kernel Grep
+   | GitHub Actions baut Blog, Search, Status und Chaos
    | Images -> GHCR
    | SHA-Pins -> infra/kubernetes/staging/kustomization.yaml
    v
-Flux -> K3s -> staging-blog.obivan.org
+Flux -> K3s Staging -> staging-blog.obivan.org
    |
-   | PR staging -> main
+   | öffentlicher Staging-Gate
    v
-main -> bestehendes Hetzner-Production-Deployment -> blog.obivan.org
-
-staging -> Flux -> interne K3s-Production-Kopie (zunächst suspendiert, ohne öffentlichen Traffic)
+promotion/staging-verified
+   |
+   | manueller Merge
+   v
+main
+   |
+   +--> K3s Production -> blog.obivan.org
+   |
+   +--> Hetzner Standby / Rollback
 ```
 
-Ein Merge nach `staging` veröffentlicht weiterhin nichts auf der öffentlichen Production. `blog.obivan.org` bleibt am Hetzner-Deploy von `main`. Die zusätzliche Flux-Kustomization `blog-production` startet suspendiert und muss für den internen Paralleltest bewusst freigegeben werden.
+Ein Merge nach `staging` veröffentlicht weiterhin nichts direkt in Production. Nach erfolgreicher öffentlicher Verifikation aktualisiert GitHub Actions den Branch `promotion/staging-verified` und öffnet bzw. aktualisiert den Promotion-PR nach `main`. Erst dessen manueller Merge gibt den Stand für Production frei.
 
-Der Workflow `.github/workflows/cd-staging.yml` akzeptiert automatische Staging-Deployments nur für Commits, die zu einem gemergten Pull Request mit Zielbranch `staging` gehören. Danach werden Blog und Kernel Grep unter dem unveränderlichen Git-Commit-SHA nach GHCR gepusht. Der Workflow aktualisiert anschließend nur die Image-Pins in `kustomization.yaml`.
+Der Workflow `.github/workflows/cd-staging.yml` akzeptiert automatische Staging-Deployments nur für Commits, die zu einem gemergten Pull Request mit Zielbranch `staging` gehören. Bei Anwendungs- oder Content-Änderungen werden Blog, Kernel Grep, Kubernetes-Status und Chaos Runner unter dem unveränderlichen Git-Commit-SHA nach GHCR gepusht. Der Workflow aktualisiert anschließend die Image-Pins in `kustomization.yaml`. Reine GitOps-Änderungen können die bereits gepinnten Images wiederverwenden.
 
 ## Benötigte Secrets
 
@@ -64,7 +70,7 @@ Dafür ist keine Portfreigabe am Router, pfSense oder Proxmox erforderlich.
 
 ## Images und Staging-Runtime
 
-Blog und Kernel Grep verwenden im Cluster keine `latest`-Tags. Die Kustomize-Konfiguration pinnt beide Images auf einen exakten Git-Commit. Der Staging-Workflow aktualisiert diese Pins nach einem erfolgreichen Build automatisch.
+Die Staging-Workloads verwenden im Cluster keine `latest`-Tags. Die Kustomize-Konfiguration pinnt Blog, Kernel Grep, Kubernetes-Status und Chaos Runner auf einen exakten Git-Commit. Der Staging-Workflow aktualisiert diese Pins nach einem erfolgreichen Build automatisch.
 
 Der Blog bekommt in Staging zusätzlich per Kustomize-Patch den Entrypoint:
 
@@ -124,13 +130,9 @@ https://staging-blog.obivan.org/status
 
 Die Browser-Seite fragt ausschließlich `/api/kubernetes-status` am Blog ab. Der Blog proxyt dafür den internen Service `kube-status`.
 
-`kube-status` besitzt nur eine namespace-lokale Role mit:
+`kube-status` besitzt nur read-only Rechte im Namespace: Pods werden mit `get/list` gelesen, `chaos-monkey-result` nur per `get` und native `NetworkChaos`-Ressourcen nur per `get/list`. Schreibrechte auf Chaos-Ressourcen besitzt der Status-Service nicht.
 
-```text
-pods: get, list
-```
-
-Nach außen gehen ausschließlich aggregierte Readiness-Werte. Pod-Namen, Nodes, interne IPs und sonstige Cluster-Details bleiben intern.
+Nach außen gehen ausschließlich aggregierte und sanitisiert ausgewählte Zustände. Pod-Namen, Nodes, interne IPs und sonstige Cluster-Details bleiben intern.
 
 ## Chaos Monkey v1
 
@@ -163,6 +165,33 @@ Weitere Guards:
 
 Ein versehentliches Entsuspendieren des CronJobs startet daher noch kein wirksames Chaos-Experiment: automatisch erzeugte CronJob-Pods bestehen den manuellen Jobnamen-Guard nicht.
 
+## Chaos Mesh für Netzwerk-Experimente
+
+Für die späteren Fehlerklassen DNS, Latenz und Packet Loss wird Chaos Mesh separat über Flux installiert. Die Plattform ist absichtlich enger begrenzt als eine Standardinstallation:
+
+- Chart-Version fest auf `2.8.4` gepinnt
+- Controller-Cache `clusterScoped: true`, damit auch die von Chaos Mesh gestarteten clusterweiten CRD-Controller ihre Informer synchronisieren können
+- eigentliche Fault-Injection weiterhin über `enableFilterNamespace: true` begrenzt
+- nur `blog-staging` trägt `chaos-mesh.org/inject=enabled`
+- K3s-`containerd` über `/run/k3s/containerd/containerd.sock`
+- Dashboard deaktiviert
+- DNS-Server zunächst deaktiviert
+- nur ein Controller-Manager im kleinen Staging-Cluster
+
+Die Cluster-Sichtbarkeit des Controllers ist damit bewusst von der Injection-Freigabe getrennt. Der Controller darf die benötigten cluster-scoped CRDs beobachten; Chaos wird nur in Namespaces injiziert, die explizit mit `chaos-mesh.org/inject=enabled` freigegeben sind. Im GitOps-Sollzustand besitzt nur `blog-staging` diese Annotation.
+
+Die Installation selbst injiziert **noch keinen Fehler**. Vor dem ersten `NetworkChaos` müssen Control Plane und Kernel-Voraussetzung geprüft werden:
+
+```bash
+kubectl -n flux-system get helmrelease chaos-mesh
+kubectl -n chaos-mesh get pods -l app.kubernetes.io/instance=chaos-mesh
+kubectl -n chaos-mesh get pods
+kubectl get crd networkchaos.chaos-mesh.org
+lsmod | grep sch_netem || sudo modprobe sch_netem
+```
+
+Der letzte Befehl läuft auf dem K3s-Node. Erst wenn diese Checks sauber sind, wird ein zeitlich begrenztes Netzwerkexperiment als eigener One-shot-Commit aktiviert. Nach erfolgreicher Injection und Recovery wird das Experiment-Manifest wieder aus dem GitOps-Sollzustand entfernt; das Ergebnis bleibt im GitHub-Actions-Observer nachvollziehbar.
+
 ## Chaos-Experiment-Lifecycle
 
 Der `chaos-monkey` CronJob bleibt dauerhaft `suspend: true`. Ein Experiment wird bewusst als
@@ -177,4 +206,3 @@ Nach einem Experiment:
    damit kein älteres Ergebnis als aktuelles Experiment interpretiert wird.
 
 Der öffentliche Status enthält weiterhin keine Pod-Namen, Node-Namen, internen IPs oder Cluster-Credentials.
-

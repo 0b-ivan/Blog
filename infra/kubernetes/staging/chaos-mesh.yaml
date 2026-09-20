@@ -1,0 +1,50 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: chaos-mesh
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://charts.chaos-mesh.org
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: chaos-mesh
+  namespace: flux-system
+spec:
+  interval: 30m
+  targetNamespace: chaos-mesh
+  install:
+    createNamespace: true
+    remediation:
+      retries: 1
+  upgrade:
+    remediation:
+      retries: 1
+  chart:
+    spec:
+      chart: chaos-mesh
+      version: "2.8.4"
+      sourceRef:
+        kind: HelmRepository
+        name: chaos-mesh
+        namespace: flux-system
+      interval: 1h
+  values:
+    # Chaos Mesh starts controllers for cluster-scoped CRDs such as
+    # PhysicalMachineChaos and RemoteCluster even though our injected faults
+    # are namespace-filtered. Keep the controller cache cluster-scoped and
+    # restrict actual injection through chaos-mesh.org/inject annotations.
+    clusterScoped: true
+    controllerManager:
+      replicaCount: 1
+      enableFilterNamespace: true
+    dashboard:
+      create: false
+    dnsServer:
+      create: false
+      targetNamespace: blog-staging
+    chaosDaemon:
+      runtime: containerd
+      socketPath: /run/k3s/containerd/containerd.sock

@@ -8,7 +8,7 @@ const {
 
 const DEFAULT_VAULT_PATH = '/vault';
 const DEFAULT_REPOSITORY = '0b-ivan/Blog';
-const DEFAULT_BASE_BRANCH = 'main';
+const DEFAULT_BASE_BRANCH = 'staging';
 const DEFAULT_DEBOUNCE_SECONDS = 300;
 const DEFAULT_POLL_SECONDS = 30;
 

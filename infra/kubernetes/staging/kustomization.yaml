@@ -5,6 +5,7 @@ resources:
   - app
   - cloudflared.yaml
   - chaos-monkey.yaml
+  - chaos-mesh.yaml
   - production-flux.yaml
   - secrets/ghcr-pull.sops.yaml
   - secrets/cloudflared-token.sops.yaml
@@ -12,13 +13,13 @@ images:
   - name: cloudflare/cloudflared
     newTag: 2026.9.1
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 96db00bc01a6c4779253a564b0f9b45ad65a086a
+    newTag: ca494728099a7ed5b6f30ab232c0a5b046f6c008
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 96db00bc01a6c4779253a564b0f9b45ad65a086a
+    newTag: ca494728099a7ed5b6f30ab232c0a5b046f6c008
   - name: ghcr.io/0b-ivan/kernel-notes-status
-    newTag: 96db00bc01a6c4779253a564b0f9b45ad65a086a
+    newTag: ca494728099a7ed5b6f30ab232c0a5b046f6c008
   - name: ghcr.io/0b-ivan/kernel-notes-chaos
-    newTag: 96db00bc01a6c4779253a564b0f9b45ad65a086a
+    newTag: ca494728099a7ed5b6f30ab232c0a5b046f6c008
 patches:
   - target:
       group: apps
