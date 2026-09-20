@@ -213,7 +213,7 @@ jobs:
             passed="$(jq -r '.passed == true' /tmp/chaos-result.json)"
             outcome="$(jq -r '.outcome // "completed"' /tmp/chaos-result.json)"
             failure_stage="$(jq -r '.failureStage // ""' /tmp/chaos-result.json)"
-            iterations="$(jq -r '.completedIterations // 0' /tmp/chaos-result.json)
+            iterations="$(jq -r '.completedIterations // 0' /tmp/chaos-result.json)"
             planned="$(jq -r '.iterationCount // 0' /tmp/chaos-result.json)"
             max_recovery="$(jq -r '.maxRecoveryTimeMs // .recoveryTimeMs // 0' /tmp/chaos-result.json)"
             failures="$(jq -r '.httpFailures // 0' /tmp/chaos-result.json)"
