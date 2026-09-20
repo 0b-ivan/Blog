@@ -33,9 +33,27 @@ describe('Chaos Mesh staging safety contract', () => {
     expect(manifest.match(/create: false/g)).toHaveLength(2);
   });
 
-  it('installs only the platform foundation and no active network fault', () => {
+  it('keeps the platform manifest free of embedded fault objects', () => {
     expect(kustomization).toContain('- chaos-mesh.yaml');
-    expect(kustomization).not.toContain('chaos-experiment-network');
     expect(manifest).not.toContain('kind: NetworkChaos');
+  });
+
+  it('guards the active one-shot delay experiment', () => {
+    const experiment = fs.readFileSync(
+      path.join(root, 'infra', 'kubernetes', 'staging', 'chaos-experiment-network-delay.yaml'),
+      'utf8'
+    );
+
+    expect(kustomization).toContain('- chaos-experiment-network-delay.yaml');
+    expect(experiment).toContain('kind: NetworkChaos');
+    expect(experiment).toContain('namespace: blog-staging');
+    expect(experiment).toContain('action: delay');
+    expect(experiment).toContain('duration: "30s"');
+    expect(experiment).toContain('latency: "500ms"');
+    expect(experiment).toContain('direction: to');
+    expect(experiment.match(/app: blog/g)).toHaveLength(1);
+    expect(experiment.match(/app: search/g)).toHaveLength(1);
+    expect(experiment.match(/chaos\.obivan\.org\/enabled: "true"/g)).toHaveLength(2);
+    expect(experiment).not.toContain('externalTargets:');
   });
 });
