@@ -398,6 +398,8 @@ async function runSearchExperiment(namespace, config, experimentStartedAt, searc
     searchReachableBefore: searchBefore,
     searchReachableAfter: searchAfter,
     passed: recovered
+      && sawSearchFailure
+      && searchFailures > 0
       && httpFailures === 0
       && searchBefore
       && searchAfter
