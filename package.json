@@ -2,7 +2,7 @@
   "name": "kernel-notes-blog",
   "version": "1.0.0",
   "private": true,
-  "description": "Static IT blog served via Node and containerized with Docker Compose",
+  "description": "Self-hosted technical publishing and knowledge platform with semantic search, GraphRAG and GitOps deployment",
   "main": "seo-server.js",
   "scripts": {
     "start": "node seo-server.js",
