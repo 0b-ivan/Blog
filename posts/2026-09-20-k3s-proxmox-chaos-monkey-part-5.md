@@ -1,6 +1,6 @@
 ---
 id: 2026-09-20-k3s-proxmox-chaos-monkey-part-5
-version: 3
+version: 4
 title: "K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog"
 status: publish
 date: 2026-09-20
@@ -9,7 +9,7 @@ updated_at: 2026-09-20
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Kubernetes Pod Failover mit Chaos Engineering in K3s: Erst ein Pod, dann drei Failover-Zyklen hintereinander – mit messbarer Recovery und 0 beobachteten HTTP-Fehlern in 42 Checks."
+excerpt: "Chaos Engineering im eigenen K3s-Staging: Pod-Failover mit 0 beobachteten HTTP-Fehlern in 42 Checks – plus erster Chaos-Mesh-NetworkChaos mit 500 ms Latenz und sauberer Recovery nach 30 Sekunden."
 tags:
   - Kubernetes
   - K3s
@@ -27,6 +27,8 @@ search_queries:
   - query: Wie begrenze ich den Blast Radius eines Chaos Monkey in K3s?
     maxRank: 1
   - query: Wie messe ich Recovery Zeit und HTTP Fehler bei einem Kubernetes Pod Ausfall?
+    maxRank: 1
+  - query: Wie teste ich Netzwerklatenz zwischen Kubernetes Services mit Chaos Mesh?
     maxRank: 1
 ---
 
@@ -521,6 +523,284 @@ Das beweist weiterhin keine mathematisch lückenlose Null-Downtime.
 
 Es ist aber ein deutlich stärkerer Messpunkt als ein einzelner erfolgreicher Pod-Delete.
 
+## Von Pod-Chaos zu NetworkChaos
+
+Nach den Pod-Deletes wollte ich die Fehlerklasse wechseln.
+
+Der nächste Schritt sollte nicht wieder heißen:
+
+```text
+noch einen Pod löschen
+```
+
+sondern:
+
+```text
+Blog bleibt gesund
+↓
+Verbindung Blog → Search wird absichtlich schlechter
+↓
+nach kurzer Zeit muss der Normalzustand zurückkehren
+```
+
+Dafür habe ich Chaos Mesh in Staging über Flux installiert.
+
+Der Scope bleibt bewusst eng:
+
+```text
+Chaos Mesh Controller
+↓
+Namespace-Filter aktiv
+↓
+nur blog-staging ist per
+chaos-mesh.org/inject=enabled
+freigegeben
+```
+
+Auf K3s läuft der Daemon gegen den vorhandenen containerd-Socket:
+
+```text
+/run/k3s/containerd/containerd.sock
+```
+
+Für NetworkChaos musste auf dem K3s-Node außerdem `sch_netem` verfügbar sein.
+
+### Eine kleine Falle: clusterScoped war zu eng
+
+Der erste Helm-Stand sah auf dem Papier besonders restriktiv aus:
+
+```yaml
+clusterScoped: false
+controllerManager:
+  enableFilterNamespace: true
+  targetNamespace: blog-staging
+```
+
+In der Praxis lief der Controller damit aber in einen `CrashLoopBackOff`.
+
+Die Logs zeigten Cache-Sync-Timeouts unter anderem für:
+
+```text
+PhysicalMachineChaos
+RemoteCluster
+```
+
+Der Grund war nicht mein NetworkChaos selbst.
+
+Chaos Mesh startet standardmäßig auch Controller für clusterweite CRDs. Mit dem zu eng gesetzten Controller-Cache konnten deren Informer nicht vollständig synchronisieren.
+
+Die stabile Trennung ist jetzt:
+
+```yaml
+clusterScoped: true
+
+controllerManager:
+  enableFilterNamespace: true
+```
+
+Das klingt zunächst weiter gefasst, trennt aber zwei unterschiedliche Dinge:
+
+```text
+Controller darf benötigte CRDs beobachten
+≠
+Chaos darf überall injiziert werden
+```
+
+Die eigentliche Injection bleibt über den Namespace-Filter opt-in und damit auf `blog-staging` beschränkt.
+
+Nach dem Fix liefen Controller und Daemon stabil mit:
+
+```text
+1 / 1 Running
+0 Restarts
+```
+
+## Experiment #8a: 500 ms Latenz von Blog zu Search
+
+Damit konnte der erste echte Netzwerkfehler starten.
+
+Die Hypothese bestand aus zwei Ebenen:
+
+> Chaos Mesh kann die Verbindung Blog → Search für 30 Sekunden um 500 ms verzögern und danach vollständig recovern.
+
+Und auf Anwendungsebene:
+
+> Der öffentliche Blog soll dabei erreichbar bleiben; Search darf langsamer werden, aber der Fehler soll nicht kaskadieren.
+
+Das Experiment war bewusst klein:
+
+```yaml
+kind: NetworkChaos
+metadata:
+  name: blog-to-search-delay-500ms
+spec:
+  action: delay
+  direction: to
+  duration: "30s"
+
+  selector:
+    labelSelectors:
+      app: blog
+
+  target:
+    selector:
+      labelSelectors:
+        app: search
+
+  delay:
+    latency: "500ms"
+    jitter: "0ms"
+```
+
+Zusätzlich mussten sowohl Quelle als auch Ziel das bestehende Chaos-Opt-in tragen.
+
+Keine externen Ziele.
+
+Kein Packet Loss im selben Lauf.
+
+Damit bleibt die Ursache des beobachteten Verhaltens eindeutig.
+
+Der Versuch wurde am 20. September 2026 um:
+
+```text
+15:07:57 UTC
+```
+
+erstellt.
+
+Die Recovery wurde beobachtet um:
+
+```text
+15:08:27 UTC
+```
+
+Also exakt 30 Sekunden später.
+
+| Messwert | Ergebnis |
+| --- | ---: |
+| Fehlerklasse | NetworkChaos / Delay |
+| Traffic | Blog → Search |
+| zusätzliche Latenz | **500 ms** |
+| geplante Dauer | **30 s** |
+| Zielauswahl erfolgt | **ja** |
+| vollständig recovered | **ja** |
+| fehlgeschlagene Chaos-Mesh-Events | **0** |
+| technisches Ergebnis | **PASS** |
+
+Der finale Status enthielt dabei:
+
+```text
+Selected: true
+AllInjected: false
+AllRecovered: true
+Failed events: 0
+```
+
+`AllInjected=false` im Endzustand ist hier kein Widerspruch.
+
+Der Observer sieht den Zustand **nach** dem Experiment. Zu diesem Zeitpunkt soll der Fehler gerade nicht mehr injiziert sein.
+
+Entscheidend für diesen technischen Lauf sind daher:
+
+```text
+Ziel wurde selektiert
++
+Recovery vollständig
++
+keine Failed Events
+```
+
+### Der erste Observer war dafür der falsche
+
+Direkt nach dem ersten NetworkChaos-Lauf wurden zwei GitHub-Checks rot.
+
+Nicht weil die Injection oder Recovery fehlgeschlagen war.
+
+Der bisherige Workflow wartete ausschließlich auf:
+
+```text
+chaos-monkey-result
+```
+
+Diese ConfigMap wird aber nur von meinem eigenen Pod-Chaos-Runner geschrieben.
+
+Ein nativer Chaos-Mesh-`NetworkChaos` kennt sie nicht.
+
+Der alte Observer wartete deshalb 84 Polls lang auf ein Ergebnis, das technisch niemals erscheinen konnte.
+
+Die Beobachtung ist jetzt getrennt:
+
+```text
+Pod-Delete Chaos
+→ chaos-monkey-result
+→ alter Observer
+
+NetworkChaos
+→ Chaos-Mesh-Status
+→ eigener NetworkChaos-Observer
+```
+
+Der Status-Service bekommt dafür ausschließlich read-only Zugriff auf `NetworkChaos`:
+
+```text
+get
+list
+```
+
+Keine Create-, Patch-, Update- oder Delete-Rechte.
+
+Nach außen werden nur sanitisiert veröffentlicht:
+
+- Experimenttyp
+- Action
+- Quelle und Ziel als bekannte Workload-Namen
+- Dauer
+- Delay beziehungsweise Packet Loss
+- Selected
+- AllInjected
+- AllRecovered
+- Anzahl fehlgeschlagener Chaos-Mesh-Events
+- Zeitstempel
+- PASS oder FAIL
+
+Pod-Namen, Nodes und interne IP-Adressen bleiben intern.
+
+### Was dieser Lauf noch nicht beweist
+
+Der erste NetworkChaos-Lauf bestätigt die technische Seite:
+
+```text
+NetworkChaos wurde verarbeitet
+↓
+30-Sekunden-Fenster
+↓
+vollständige Recovery
+↓
+0 fehlgeschlagene Chaos-Mesh-Events
+```
+
+Was ich in diesem Lauf **noch nicht** kontinuierlich gemessen habe:
+
+- öffentliche HTTP-Fehler während genau dieser 30 Sekunden
+- Search-Request-Latenzen während des Delay-Fensters
+- p95- oder p99-Latenzen
+- Timeouts einzelner Search-Anfragen
+- Degradationsverhalten des Blog-UIs
+
+Deshalb nenne ich das Ergebnis bewusst:
+
+```text
+technischer NetworkChaos-PASS
+```
+
+und nicht:
+
+```text
+500 ms Latenz hatte garantiert keinerlei Benutzerwirkung
+```
+
+Der nächste Netzwerktest bekommt deshalb einen eigenen Request-Prober, der parallel zum Fehlerfenster die Applikationswirkung misst.
+
 ## 0 HTTP-Fehler bedeutet nicht „0 Millisekunden Ausfall garantiert“
 
 Hier ist mir eine Einschränkung wichtig.
@@ -768,8 +1048,10 @@ Für meinen aktuellen Aufbau kann ich jetzt konkret sagen:
 3. Der ReplicaSet-Controller stellt die gewünschte Replikazahl wieder her.
 4. Die Readiness fiel im Experiment bis auf zwei Ready-Pods und anschließend wieder auf drei.
 5. Die drei Recovery-Zeiten von Experiment #2 lagen nur 123 ms auseinander.
-6. Über beide Experimente wurden 42 öffentliche Healthchecks ausgeführt und kein HTTP-Fehler beobachtet.
-7. Search blieb vor und nach beiden Experimenten erreichbar.
+6. Über beide Pod-Experimente wurden 42 öffentliche Healthchecks ausgeführt und kein HTTP-Fehler beobachtet.
+7. Search blieb vor und nach beiden Pod-Experimenten erreichbar.
+8. Chaos Mesh konnte einen auf 30 Sekunden begrenzten 500-ms-Delay von Blog zu Search vollständig recovern.
+9. Beim NetworkChaos wurden keine fehlgeschlagenen Chaos-Mesh-Events beobachtet.
 
 Das ist deutlich besser als:
 
@@ -787,6 +1069,8 @@ der Proxmox-Host ausfällt
 mein Internetanschluss ausfällt
 cloudflared komplett verschwindet
 Search während einer Anfrage neu startet
+500 ms Netzwerklatenz auf Anwendungsebene tatsächlich zu HTTP-Fehlern oder erhöhten p95/p99-Werten führt
+Packet Loss zwischen Blog und Search auftritt
 der gesamte Standort nicht erreichbar ist
 ```
 
@@ -832,7 +1116,11 @@ Experiment 7
 DNS-Störung
 
 Experiment 8
-Netzwerklatenz / Packet Loss
+Netzwerkfehler
+8a 500 ms Blog → Search
+✓ technisch bestanden
+8b Packet Loss
+○ offen
 
 Experiment 9
 fehlerhafter oder stockender Rollout
@@ -900,6 +1188,16 @@ Die Architektur ist damit um eine kleine Test- und Beobachtungsschicht gewachsen
                   ▼
              Kubernetes
 
+             Chaos Mesh
+                  │
+      30 s NetworkChaos
+                  │
+          Blog → Search
+          +500 ms Delay
+                  │
+                  ▼
+        automatische Recovery
+
 /status
    ↓
 Blog Proxy
@@ -913,13 +1211,19 @@ letztes Chaos-Ergebnis
 
 Der wichtigste Unterschied ist für mich aber weniger die zusätzliche Technik.
 
-Vorher hatte ich eine Annahme:
+Vorher hatte ich zwei Annahmen:
 
 > Drei Pods sollten einen einzelnen Pod-Ausfall abfangen.
 
+Und:
+
+> Eine vorübergehend schlechtere Verbindung zu Search sollte nach Ablauf des Experiments wieder vollständig verschwinden.
+
 Jetzt habe ich mehrere Messpunkte:
 
-> Vier Pod-Ausfälle wurden absichtlich ausgelöst. Im wiederholten Experiment lagen die drei Recovery-Zeiten bei 6,815, 6,932 und 6,938 Sekunden. Über beide Experimente trat in 42 öffentlichen Healthchecks kein beobachteter Fehler auf.
+> Vier Pod-Ausfälle wurden absichtlich ausgelöst. Im wiederholten Experiment lagen die drei Recovery-Zeiten bei 6,815, 6,932 und 6,938 Sekunden. Über beide Pod-Experimente trat in 42 öffentlichen Healthchecks kein beobachteter Fehler auf.
+
+Zusätzlich wurde ein 30 Sekunden langer NetworkChaos mit 500 ms zusätzlicher Latenz von Blog zu Search vollständig recovered, ohne fehlgeschlagene Chaos-Mesh-Events. Die konkrete Benutzerwirkung während dieses Netzwerkfensters ist aber noch Gegenstand des nächsten Messlaufs.
 
 Genau dafür wollte ich Chaos Engineering in diesem Homelab einsetzen.
 
@@ -938,9 +1242,11 @@ Sondern um Behauptungen über Zuverlässigkeit in überprüfbare Experimente zu 
 
 Der Blog selbst hat einen einzelnen und mehrere aufeinanderfolgende Pod-Ausfälle bestanden.
 
-Der nächste Schritt bleibt Search unter realen Anfragen.
+Auch der erste technische NetworkChaos-Lauf ist abgeschlossen: 500 ms zusätzliche Latenz von Blog zu Search für 30 Sekunden, anschließend vollständige Recovery.
 
-Danach will ich aber nicht einfach immer neue Pods löschen, sondern die Fehlerklasse wechseln:
+Der nächste Schritt bleibt Search unter realen Anfragen. Für das Netzwerk folgt außerdem ein zweiter Lauf mit paralleler Request-Messung und danach separat Packet Loss.
+
+Ich will also nicht einfach immer neue Pods löschen, sondern die Fehlerklassen weiter gezielt wechseln:
 
 ~~~text
 Search / Dependency
@@ -973,3 +1279,4 @@ Teil V bleibt das Praxisprotokoll dazu.
 - [Kubernetes: Liveness, Readiness, and Startup Probes](/sources.html#kubernetes-probes)
 - [Kubernetes: Disruptions und PodDisruptionBudgets](/sources.html#kubernetes-disruptions)
 - [Kubernetes: Debugging DNS Resolution](/sources.html#kubernetes-dns-debugging)
+- [Chaos Mesh Dokumentation](/sources.html#chaos-mesh-docs)
