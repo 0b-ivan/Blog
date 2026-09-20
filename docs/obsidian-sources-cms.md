@@ -53,7 +53,7 @@ obsidian-source/docker-compose
 Quelle: docker-compose
 ```
 
-Weitere Änderungen an derselben Obsidian-Datei aktualisieren denselben offenen PR. Erst nach dem Merge wird `posts/_sources.json` auf `main` geändert.
+Weitere Änderungen an derselben Obsidian-Datei aktualisieren denselben offenen PR. Der Publisher zielt auf `staging`. Nach dem Merge wird die Quellenänderung dort zusammen mit dem restlichen Blog auf Staging geprüft. Erst der verifizierte Promotion-PR von `staging` nach `main` veröffentlicht sie für Production.
 
 ## Neue Quellen
 
