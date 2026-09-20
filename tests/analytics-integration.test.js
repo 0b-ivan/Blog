@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { renderPostPage } = require('../server');
-const { analyticsServiceTarget } = require('../privacy-server');
+const { analyticsServiceTarget } = require('../lib/analytics-target');
 const { sanitizedKubernetesStatus } = require('../lib/kubernetes-status');
 
 describe('analytics integration', () => {
