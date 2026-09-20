@@ -12,6 +12,23 @@
   if (!slug || !content) return;
 
   const likedKey = `kernel-notes:liked:${slug}`;
+
+  function hasLiked() {
+    try {
+      return window.localStorage.getItem(likedKey) === '1';
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function rememberLike() {
+    try {
+      window.localStorage.setItem(likedKey, '1');
+    } catch (_error) {
+      // The like still counts even when browser storage is unavailable.
+    }
+  }
+
   const thresholds = new Set();
   let lastActivity = Date.now();
   let pendingActiveSeconds = 0;
@@ -95,12 +112,12 @@
   window.addEventListener('pagehide', flushActive);
 
   if (likeButton) {
-    const alreadyLiked = localStorage.getItem(likedKey) === '1';
+    const alreadyLiked = hasLiked();
     likeButton.setAttribute('aria-pressed', String(alreadyLiked));
     if (alreadyLiked) likeButton.classList.add('is-liked');
 
     likeButton.addEventListener('click', async () => {
-      if (localStorage.getItem(likedKey) === '1') return;
+      if (hasLiked()) return;
       likeButton.disabled = true;
       try {
         const metrics = await request(`/api/analytics/like/${encodeURIComponent(slug)}`, {
@@ -108,7 +125,7 @@
           body: '{}'
         });
         if (metrics) {
-          localStorage.setItem(likedKey, '1');
+          rememberLike();
           likeButton.classList.add('is-liked');
           likeButton.setAttribute('aria-pressed', 'true');
           render(metrics);
@@ -119,8 +136,10 @@
     });
   }
 
-  void request(`/api/analytics/article/${encodeURIComponent(slug)}`)
-    .then((metrics) => { if (metrics) render(metrics); });
   event({ type: 'article_view' });
+  window.setTimeout(() => {
+    void request(`/api/analytics/article/${encodeURIComponent(slug)}`)
+      .then((metrics) => { if (metrics) render(metrics); });
+  }, 150);
   checkScroll();
 })();
