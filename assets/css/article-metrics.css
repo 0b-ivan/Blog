@@ -1,0 +1,46 @@
+.article-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 1rem 0 0.85rem;
+}
+
+.article-metric,
+.article-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 34px;
+  padding: 0.38rem 0.65rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+}
+
+.article-metric strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.article-like {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.article-like:hover,
+.article-like.is-liked {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--surface-border));
+  background: color-mix(in srgb, var(--accent) 9%, var(--card));
+}
+
+.article-like.is-liked::before {
+  content: "♥";
+}
+
+.article-like:not(.is-liked)::before {
+  content: "♡";
+}

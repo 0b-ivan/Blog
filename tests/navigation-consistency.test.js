@@ -9,6 +9,8 @@ const navigationSources = [
   'datenschutz.html',
   'grep.html',
   'sources.html',
+  'status.html',
+  'analytics.html',
   'snippets/index.html',
   'server.js',
   'enhanced-server.js',

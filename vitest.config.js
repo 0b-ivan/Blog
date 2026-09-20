@@ -7,7 +7,8 @@ module.exports = defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      include: ['server.js'],
+      include: ['server.js', 'analytics-server.js'],
+      exclude: ['enhanced-server.js', 'privacy-server.js'],
       thresholds: {
         lines: 85,
         statements: 85,

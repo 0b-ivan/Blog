@@ -1,7 +1,16 @@
 const assert = require('node:assert/strict');
+const { URL } = require('node:url');
 const { chromium } = require('playwright');
 
 const baseUrl = process.env.BLOG_BASE_URL || 'http://127.0.0.1:8080';
+const baseOrigin = new URL(baseUrl).origin;
+const allowStatusUnavailable = process.env.BROWSER_SMOKE_ALLOW_STATUS_UNAVAILABLE === 'true';
+
+function isAllowedUnavailableStatus(url, status) {
+  if (!allowStatusUnavailable || status !== 503) return false;
+  const parsed = new URL(url);
+  return parsed.origin === baseOrigin && parsed.pathname === '/api/kubernetes-status';
+}
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
@@ -10,8 +19,13 @@ async function main() {
 
   page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
   page.on('response', (response) => {
-    if (response.url().startsWith(baseUrl) && response.status() >= 500) {
-      failures.push(`HTTP ${response.status()}: ${response.url()}`);
+    const url = response.url();
+    if (
+      new URL(url).origin === baseOrigin
+      && response.status() >= 500
+      && !isAllowedUnavailableStatus(url, response.status())
+    ) {
+      failures.push(`HTTP ${response.status()}: ${url}`);
     }
   });
 

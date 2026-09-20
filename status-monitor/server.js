@@ -25,6 +25,11 @@ function workloadConfig() {
       key: 'search',
       label: 'Search',
       desired: Number.parseInt(process.env.EXPECTED_SEARCH_REPLICAS || '1', 10)
+    },
+    {
+      key: 'analytics',
+      label: 'Analytics',
+      desired: Number.parseInt(process.env.EXPECTED_ANALYTICS_REPLICAS || '1', 10)
     }
   ];
 }
