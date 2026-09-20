@@ -1,6 +1,8 @@
 # Kernel Notes
 
-Persönlicher IT-Blog mit Node.js, Express, Markdown, Docker und GitHub Actions.
+Kernel Notes ist eine selbst gehostete Publishing- und Knowledge-Plattform für technische Inhalte. Artikel werden als Markdown gepflegt und durch Snippets, Glossar, zentrale Quellen, Artikelhistorie, semantische Suche, Knowledge Graph und GraphRAG ergänzt.
+
+Staging und Production werden GitOps-basiert über GitHub Actions, GHCR, Flux und K3s betrieben. Die weiterhin aus `main` aktualisierte Hetzner-Installation dient als Standby- und Rollback-Origin.
 
 ## Features
 
@@ -8,17 +10,20 @@ Persönlicher IT-Blog mit Node.js, Express, Markdown, Docker und GitHub Actions.
 - Tags mit eigenen Tag-Seiten und verwandten Beiträgen
 - RSS-Feed unter `/rss.xml`
 - Snippet Library für größere Codebeispiele
-- Zentrales Glossar mit Tooltips und eigener Glossar-Seite
+- Zentrales Glossar mit Tooltips, eigener Glossar-Seite und automatischen Begriffsvorschlägen
 - Zentrale Quellenverwaltung und Wiki-Links zwischen Artikeln
-- Kernel Grep als semantische Suche
-- Wissensnetz / Knowledge Graph
-- Artikel archivieren und wiederherstellen
+- Kernel Grep als semantische Suche auf Basis von E5 und DuckDB
+- Wissensnetz / Knowledge Graph und GraphRAG-Retrieval
+- Artikel archivieren und unter `/archive` weiterhin öffentlich lesen
 - Automatische Artikel-Versionierung inklusive referenzierter Snippets und Bilder
 - Historische Artikelstände unter `/history/<slug>`
 - Obsidian-Workflow für Authoring und Publishing
 - Content-Checks für Frontmatter, Referenzen, Glossar, Rechtschreibung und Regressionen
 - Privacy-/Security-Hardening mit Security Headers und lokal ausgelieferten Browser-Dependencies
-- CI/CD nach Hetzner mit getrenntem Content-Deployment und App-Deployment
+- GitOps-Staging und K3s-Production mit immutable SHA-Images
+- Öffentlicher, sanitizierter Kubernetes-Status
+- Kontrollierte Chaos-Experimente in Staging mit Recovery-Metriken
+- Synchron gehaltenes Hetzner-Deployment als Standby und Rollback-Pfad
 
 ## Lokal starten
 
@@ -66,7 +71,7 @@ npm run rag:test:regression
 
 ## Content
 
-Aktive Artikel liegen unter `posts/`, archivierte unter `archive/`.
+Aktive Artikel liegen unter `posts/`, archivierte unter `archive/`. Artikelbilder gehören unter `assets/posts/`, damit Versionierung und Deployment sie eindeutig dem Content-Lifecycle zuordnen können.
 
 Die Artikelhistorie wird automatisch aus Git erzeugt. Änderungen an Markdown, referenzierten Snippets oder Bildern erzeugen eine neue Artikelversion.
 
@@ -74,17 +79,57 @@ Die Artikelhistorie wird automatisch aus Git erzeugt. Änderungen an Markdown, r
 npm run posts:build-history
 ```
 
-Reine Content-Änderungen werden ohne Neubau des App-Images deployed.
+Archivierte Artikel verschwinden aus der normalen Artikelliste und dem RSS-Feed, bleiben aber unter `/archive` öffentlich lesbar.
 
 ## Deployment
 
+Der normale Veröffentlichungsweg ist:
+
 ```text
-Feature Branch -> Pull Request -> CI -> Merge -> Hetzner
+feature/*
+   |
+   | Pull Request + CI
+   v
+staging
+   |
+   | GitHub Actions -> GHCR
+   | immutable SHA-Images
+   v
+Flux -> K3s Staging -> staging-blog.obivan.org
+   |
+   | öffentlicher Staging-Gate
+   v
+promotion/staging-verified
+   |
+   | manueller Merge
+   v
+main
+   |
+   +--> K3s Production -> blog.obivan.org
+   |
+   +--> Hetzner Standby / Rollback
 ```
 
-App-Änderungen bauen Images in GHCR. Content-only-Änderungen synchronisieren Artikel, Archiv, Snippets, Bilder und Historie separat.
+Ein Merge nach `staging` veröffentlicht nichts direkt in Production. Erst der manuell gemergte Promotion-PR nach `main` gibt den Stand für Production frei.
 
-Production verwendet `docker-compose.prod.yml`; `/healthz` dient als Healthcheck.
+K3s Production erhält auch bei Content-Änderungen neu gebaute, auf den Git-SHA gepinnte Images. Der parallele Hetzner-Pfad optimiert reine Content-Änderungen weiterhin über persistente Docker-Volumes und einen Live-Reindex von Kernel Grep.
+
+Details stehen in `docs/deployment.md`.
+
+## Runtime
+
+Production startet den Blog über `seo-server.js`. Die Server-Schichten bauen aufeinander auf:
+
+```text
+server.js
+  -> enhanced-server.js
+  -> privacy-server.js
+  -> seo-server.js
+```
+
+Staging verwendet zusätzlich `staging-server.js`, um die Umgebung sichtbar zu kennzeichnen.
+
+Kernel Grep läuft als eigener Search-Service. In K3s ergänzt ein Status-Service die sanitizierte Betriebsansicht; Staging enthält zusätzlich den kontrollierten Chaos-Runner.
 
 ## Struktur
 
@@ -96,25 +141,34 @@ snippets/               Codebeispiele
 assets/                 Statische Assets und Artikelbilder
 config/                 Glossar und Konfiguration
 templates/              Markdown-/Obsidian-Templates
-scripts/                Content- und Build-Tools
-rag/                    Semantische Suche
-ops/                    Betrieb und Deployment
-docs/                   Technische Dokumentation
-.github/workflows/      CI/CD
-privacy-server.js       Express-Einstiegspunkt
-docker-compose.yml      Lokale Umgebung
-docker-compose.prod.yml Production
+scripts/                Content-, Build- und Deployment-Tools
+rag/                    Kernel Grep, Vektorsuche und GraphRAG
+status-monitor/          Sanitizierter Kubernetes-Status
+chaos-monkey/            Kontrollierte Staging-Chaos-Experimente
+infra/                   Ansible, K3s, Kustomize und Flux
+ops/                     Betrieb, Hetzner und Obsidian LiveSync
+docs/                    Technische Dokumentation
+.github/workflows/       CI/CD und Promotion
+seo-server.js            Production-Einstiegspunkt
+staging-server.js        Staging-Einstiegspunkt
+docker-compose.yml       Lokale Umgebung
+docker-compose.prod.yml  Hetzner-Standby
 ```
 
 ## Dokumentation
 
+- `docs/architecture.md` – Produkt- und Runtime-Architektur
+- `docs/deployment.md` – Branches, Staging, Promotion und Production
+- `docs/reliability.md` – Status, Chaos Engineering und Guardrails
 - `docs/article-lifecycle.md` – Archiv und Artikel-Versionierung
 - `docs/glossary.md` – Glossar und Tooltips
-- `docs/knowledge-graph.md` – Wissensnetz
+- `docs/knowledge-graph.md` – Wissensnetz und GraphRAG
 - `docs/sources.md` – Quellen und Querverweise
 - `docs/obsidian-sources-cms.md` – Quellenverwaltung über Obsidian
 - `docs/obsidian.md` – Authoring mit Obsidian
-- `ops/hetzner/README.md` – Production-Deployment
+- `infra/kubernetes/staging/README.md` – K3s-Staging
+- `infra/kubernetes/production/README.md` – K3s-Production
+- `ops/hetzner/README.md` – Hetzner-Standby und Deployment-Account
 
 ## Versionierung
 
