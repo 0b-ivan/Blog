@@ -23,7 +23,7 @@ tags:
   - DevOps
 search_queries:
   - query: Wie teste ich Pod Failover bei K3s hinter einem Cloudflare Tunnel?
-    maxRank: 1
+    maxRank: 2
   - query: Warum sind drei Kubernetes Pods noch keine echte Hochverfügbarkeit?
     maxRank: 1
   - query: Wie halte ich Hetzner parallel zu K3s als Rollback Standby aktuell?
@@ -599,3 +599,7 @@ Das ist der nächste Schritt.
 - [[k3s-proxmox-cloudflare-part-1|Teil I: Blog-Staging mit Cloudflare Tunnel]]
 - [[k3s-proxmox-flux-gitops-part-2|Teil II: GitOps mit Flux und echtem Staging]]
 - [[k3s-proxmox-hardening-part-3|Teil III: Feste Versionen und verschlüsselte Secrets]]
+
+## Weiter mit Teil V
+
+- [[k3s-proxmox-chaos-monkey-part-5|Teil V: Chaos Monkey gegen meinen eigenen Blog]]
