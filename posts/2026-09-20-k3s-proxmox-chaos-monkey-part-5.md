@@ -835,6 +835,8 @@ Für Search ergab die Post-Recovery-Baseline:
 | p95 | **281 ms** |
 | p99 | **284 ms** |
 
+Die Baseline lief bewusst nur acht Sekunden nach der Recovery. Sie ist damit ein kurzer Vergleichspunkt und kein langfristiger Performance-Benchmark.
+
 Damit ergibt sich für Search:
 
 | Perzentil | während Fault | Baseline | Delta |
@@ -847,6 +849,8 @@ Damit ergibt sich für Search:
 Das ist der für mich spannendste Teil des Experiments.
 
 Die konfigurierten 500 ms tauchten **nicht gleichmäßig in jedem öffentlichen Request** auf.
+
+Das ist zunächst kein Widerspruch zur Chaos-Mesh-Konfiguration: `delay.latency` beschreibt die Verzögerung auf Netzwerkpaket-Ebene für den ausgewählten Traffic. Die End-to-End-Latenz eines HTTP-Requests hängt zusätzlich vom konkreten Verbindungs- und Request-Verlauf ab. Der YAML-Wert ist deshalb nicht einfach mit „Baseline plus exakt 500 ms pro HTTP-Request“ gleichzusetzen.
 
 Der Median veränderte sich kaum:
 
