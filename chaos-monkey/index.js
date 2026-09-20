@@ -9,10 +9,13 @@ const namespacePath = '/var/run/secrets/kubernetes.io/serviceaccount/namespace';
 const expectedReplicas = Number.parseInt(process.env.EXPECTED_REPLICAS || '3', 10);
 const recoveryTimeoutMs = Number.parseInt(process.env.RECOVERY_TIMEOUT_MS || '120000', 10);
 const healthIntervalMs = Number.parseInt(process.env.HEALTH_INTERVAL_MS || '500', 10);
+const settleDelayMs = Number.parseInt(process.env.SETTLE_DELAY_MS || '2000', 10);
+const iterationCount = Number.parseInt(process.env.CHAOS_ITERATIONS || '1', 10);
 const healthUrl = process.env.HEALTH_URL || 'https://staging-blog.obivan.org/healthz';
 const searchUrl = process.env.SEARCH_URL || 'https://staging-blog.obivan.org/api/search';
 const requiredJobPrefix = 'chaos-monkey-manual-';
 const resultConfigMapName = process.env.RESULT_CONFIGMAP || 'chaos-monkey-result';
+const maximumIterations = 3;
 
 function readRequiredFile(filePath) {
   return fs.readFileSync(filePath, 'utf8').trim();
@@ -48,15 +51,15 @@ function k8sRequest(method, pathname, payload = null, contentType = 'application
       headers,
       timeout: 5000
     }, (response) => {
-      let body = '';
+      let responseBody = '';
       response.setEncoding('utf8');
-      response.on('data', (chunk) => { body += chunk; });
+      response.on('data', (chunk) => { responseBody += chunk; });
       response.on('end', () => {
         if (response.statusCode < 200 || response.statusCode >= 300) {
-          reject(new Error(`Kubernetes API ${method} ${pathname} returned HTTP ${response.statusCode}: ${body.slice(0, 300)}`));
+          reject(new Error(`Kubernetes API ${method} ${pathname} returned HTTP ${response.statusCode}: ${responseBody.slice(0, 300)}`));
           return;
         }
-        resolve(body ? JSON.parse(body) : {});
+        resolve(responseBody ? JSON.parse(responseBody) : {});
       });
     });
 
@@ -127,12 +130,21 @@ async function searchReachable() {
   }
 }
 
+function experimentName() {
+  return iterationCount === 1 ? 'single-blog-pod-delete' : 'repeated-blog-pod-delete';
+}
+
 function sanitizedExperimentResult(result) {
   return {
-    experiment: 'single-blog-pod-delete',
+    experiment: experimentName(),
     experimentStartedAt: result.experimentStartedAt,
     completedAt: result.completedAt,
-    recoveryTimeMs: result.recoveryTimeMs,
+    iterationCount: result.iterationCount,
+    completedIterations: result.completedIterations,
+    recoveryTimeMs: result.maxRecoveryTimeMs,
+    recoveryTimesMs: result.recoveryTimesMs,
+    totalRecoveryTimeMs: result.totalRecoveryTimeMs,
+    maxRecoveryTimeMs: result.maxRecoveryTimeMs,
     httpChecks: result.httpChecks,
     httpFailures: result.httpFailures,
     minimumReadyPods: result.minimumReadyPods,
@@ -153,28 +165,14 @@ async function publishResult(namespace, result) {
   );
 }
 
-async function main() {
-  const namespace = readRequiredFile(namespacePath);
-  const podName = process.env.POD_NAME || '';
+async function preflight(namespace) {
+  const pods = await listEligiblePods(namespace);
+  pods.forEach(validateEligiblePod);
 
-  if (namespace !== 'blog-staging') {
-    throw new Error(`refusing chaos outside blog-staging (current namespace: ${namespace})`);
-  }
-
-  if (!podName.startsWith(requiredJobPrefix)) {
+  const ready = pods.filter(podReady).length;
+  if (pods.length !== expectedReplicas || ready !== expectedReplicas) {
     throw new Error(
-      `refusing non-manual execution: pod name must start with ${requiredJobPrefix}`
-    );
-  }
-
-  const experimentStartedAt = new Date().toISOString();
-  const before = await listEligiblePods(namespace);
-  before.forEach(validateEligiblePod);
-
-  const readyBefore = before.filter(podReady).length;
-  if (before.length !== expectedReplicas || readyBefore !== expectedReplicas) {
-    throw new Error(
-      `preflight failed: expected exactly ${expectedReplicas}/${expectedReplicas} eligible ready blog pods, got ${readyBefore}/${before.length}`
+      `preflight failed: expected exactly ${expectedReplicas}/${expectedReplicas} eligible ready blog pods, got ${ready}/${pods.length}`
     );
   }
 
@@ -182,17 +180,21 @@ async function main() {
     throw new Error('preflight failed: public health endpoint is not healthy');
   }
 
-  const searchBefore = await searchReachable();
+  return pods;
+}
+
+async function runIteration(namespace, iteration) {
+  const before = await preflight(namespace);
   const victim = before[crypto.randomInt(before.length)];
   const victimName = victim.metadata.name;
   const deletionStartedAt = Date.now();
 
-  log('experiment_started', {
-    experimentStartedAt,
+  log('iteration_started', {
+    iteration,
+    iterationCount,
     namespace,
     expectedReplicas,
-    victim: victimName,
-    searchReachableBefore: searchBefore
+    victim: victimName
   });
 
   await k8sRequest(
@@ -228,27 +230,114 @@ async function main() {
   }
 
   const recoveryTimeMs = Date.now() - deletionStartedAt;
+  log('iteration_result', {
+    iteration,
+    recovered,
+    recoveryTimeMs,
+    httpChecks,
+    httpFailures,
+    minimumReadyPods,
+    maximumReadyPods,
+    victim: victimName
+  });
+
+  return {
+    recovered,
+    recoveryTimeMs,
+    httpChecks,
+    httpFailures,
+    minimumReadyPods,
+    maximumReadyPods
+  };
+}
+
+async function main() {
+  const namespace = readRequiredFile(namespacePath);
+  const podName = process.env.POD_NAME || '';
+
+  if (namespace !== 'blog-staging') {
+    throw new Error(`refusing chaos outside blog-staging (current namespace: ${namespace})`);
+  }
+
+  if (!podName.startsWith(requiredJobPrefix)) {
+    throw new Error(
+      `refusing non-manual execution: pod name must start with ${requiredJobPrefix}`
+    );
+  }
+
+  if (!Number.isInteger(iterationCount) || iterationCount < 1 || iterationCount > maximumIterations) {
+    throw new Error(`CHAOS_ITERATIONS must be between 1 and ${maximumIterations}`);
+  }
+
+  const experimentStartedAt = new Date().toISOString();
+  await preflight(namespace);
+  const searchBefore = await searchReachable();
+
+  log('experiment_started', {
+    experiment: experimentName(),
+    experimentStartedAt,
+    namespace,
+    expectedReplicas,
+    iterationCount,
+    searchReachableBefore: searchBefore
+  });
+
+  const recoveryTimesMs = [];
+  let completedIterations = 0;
+  let httpChecks = 0;
+  let httpFailures = 0;
+  let minimumReadyPods = expectedReplicas;
+  let maximumReadyPods = expectedReplicas;
+  let allRecovered = true;
+
+  for (let iteration = 1; iteration <= iterationCount; iteration += 1) {
+    const result = await runIteration(namespace, iteration);
+    recoveryTimesMs.push(result.recoveryTimeMs);
+    httpChecks += result.httpChecks;
+    httpFailures += result.httpFailures;
+    minimumReadyPods = Math.min(minimumReadyPods, result.minimumReadyPods);
+    maximumReadyPods = Math.max(maximumReadyPods, result.maximumReadyPods);
+
+    if (!result.recovered) {
+      allRecovered = false;
+      break;
+    }
+
+    completedIterations += 1;
+
+    if (iteration < iterationCount) {
+      await new Promise((resolve) => setTimeout(resolve, settleDelayMs));
+    }
+  }
+
   const searchAfter = await searchReachable();
+  const totalRecoveryTimeMs = recoveryTimesMs.reduce((sum, value) => sum + value, 0);
+  const maxRecoveryTimeMs = recoveryTimesMs.length ? Math.max(...recoveryTimesMs) : 0;
   const result = {
     experimentStartedAt,
     completedAt: new Date().toISOString(),
-    podDeletedAt: new Date(deletionStartedAt).toISOString(),
-    victim: victimName,
-    recoveryTimeMs,
+    iterationCount,
+    completedIterations,
+    recoveryTimesMs,
+    totalRecoveryTimeMs,
+    maxRecoveryTimeMs,
     httpChecks,
     httpFailures,
     minimumReadyPods,
     maximumReadyPods,
     searchReachableBefore: searchBefore,
     searchReachableAfter: searchAfter,
-    passed: recovered && httpFailures === 0 && searchAfter
+    passed: allRecovered
+      && completedIterations === iterationCount
+      && httpFailures === 0
+      && searchAfter
   };
 
   log('experiment_result', result);
   await publishResult(namespace, result);
 
-  if (!recovered) {
-    throw new Error(`recovery timeout after ${recoveryTimeMs} ms`);
+  if (!allRecovered) {
+    throw new Error(`recovery timeout during iteration ${completedIterations + 1}`);
   }
 
   if (!result.passed) {
