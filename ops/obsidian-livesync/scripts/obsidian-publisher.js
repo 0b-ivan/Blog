@@ -288,7 +288,7 @@ class GitHubPublisher {
       '- Jeder veröffentlichte Artikel braucht mindestens eine Regression-Frage; die CI prüft das.',
       '- Weitere Aenderungen in Obsidian aktualisieren diesen PR nach dem Debounce-Fenster.',
       '',
-      `Der Artikel wird nach Merge nach \`${this.baseBranch}\` zuerst auf Staging geprüft; Production folgt erst nach verifizierter Promotion nach \`main\`.`
+      `Der Artikel wird erst nach Merge nach \`${this.baseBranch}\` in den konfigurierten Basisbranch übernommen.`
     ].join('\n');
   }
 
