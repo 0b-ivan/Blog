@@ -199,7 +199,7 @@ function summary(daysValue) {
     views: bucket.views,
     averageActiveSeconds: bucket.views ? Math.round(bucket.activeSeconds / bucket.views) : 0,
     completionRate: bucket.views ? Math.round((bucket.completions / bucket.views) * 100) : 0,
-    likes: state.articles[slug]?.likes || 0
+    likes: bucket.likes
   })).sort((a, b) => b.views - a.views || a.slug.localeCompare(b.slug));
 
   const allSearchRows = Object.values(searches)
@@ -232,7 +232,7 @@ function summary(daysValue) {
     },
     topArticles: articleRows.slice(0, 20),
     topSearches: searchRows,
-    contentGaps: searchRows.filter((item) => item.zeroResults > 0)
+    contentGaps: allSearchRows.filter((item) => item.zeroResults > 0)
       .sort((a, b) => b.zeroResults - a.zeroResults)
       .slice(0, 12),
     trend
