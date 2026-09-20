@@ -69,6 +69,14 @@
     "description": "Im Cloud-Kontext bezeichnet Compute typischerweise virtuelle Maschinen, Container oder andere Ressourcen, auf denen Code ausgeführt wird.",
     "aliases": []
   },
+  "ConfigMap": {
+    "full": "Kubernetes ConfigMap",
+    "short": "Kubernetes-Ressource für nicht geheime Konfigurationsdaten.",
+    "description": "Eine ConfigMap speichert Konfiguration als Schlüssel-Wert-Daten und kann von Pods beispielsweise über Umgebungsvariablen oder Dateien eingebunden werden. Geheimnisse gehören stattdessen in Secrets.",
+    "aliases": [
+      "ConfigMaps"
+    ]
+  },
   "Container": {
     "full": "Container",
     "short": "Isolierte Laufzeitumgebung für einen Prozess samt benötigter Dateien und Abhängigkeiten.",
@@ -85,6 +93,14 @@
     "aliases": [
       "Registry",
       "Container-Registry"
+    ]
+  },
+  "CouchDB": {
+    "full": "Apache CouchDB",
+    "short": "Dokumentenorientierte Datenbank mit HTTP-API und Replikationsmechanismen.",
+    "description": "Apache CouchDB speichert JSON-Dokumente und unterstützt Replikation zwischen Datenbanken. In meinem Blog-Setup wird CouchDB unter anderem von Obsidian LiveSync verwendet.",
+    "aliases": [
+      "Apache CouchDB"
     ]
   },
   "Cron": {
@@ -167,6 +183,12 @@
       "Express.js"
     ]
   },
+  "HAProxy": {
+    "full": "HAProxy",
+    "short": "Open-Source-Load-Balancer und Reverse Proxy für TCP- und HTTP-Dienste.",
+    "description": "HAProxy verteilt oder schaltet Netzwerkverkehr zwischen Backends um und kann dabei Healthchecks, Primary/Backup-Verhalten und verschiedene Routing-Regeln verwenden.",
+    "aliases": []
+  },
   "Healthcheck": {
     "full": "Healthcheck",
     "short": "Automatisierte Prüfung, ob ein Dienst funktionsfähig und erreichbar ist.",
@@ -175,11 +197,28 @@
       "Healthchecks"
     ]
   },
+  "High Availability": {
+    "full": "High Availability",
+    "short": "Architekturziel, einen Dienst trotz Ausfällen möglichst verfügbar zu halten.",
+    "description": "High Availability reduziert Single Points of Failure durch Redundanz, Failover und geeignete Betriebsmechanismen. Mehrere Pods auf demselben Host erhöhen dabei noch nicht automatisch die Infrastruktur-Hochverfügbarkeit.",
+    "aliases": [
+      "HA",
+      "Hochverfügbarkeit"
+    ]
+  },
   "Kubernetes": {
     "full": "Kubernetes",
     "short": "Orchestrierungsplattform für Container über einen Cluster aus mehreren Systemen.",
     "description": "Kubernetes verwaltet Deployment, Skalierung, Netzwerk, Konfiguration und Wiederherstellung containerisierter Anwendungen anhand eines gewünschten Zustands.",
     "aliases": []
+  },
+  "LitmusChaos": {
+    "full": "LitmusChaos",
+    "short": "Cloud-Native-Plattform zum Definieren und Orchestrieren von Chaos-Experimenten.",
+    "description": "LitmusChaos stellt wiederverwendbare Chaos-Experimente und Workflows bereit und kann in Kubernetes- und CI/CD-Umgebungen eingesetzt werden, um Resilience kontrolliert zu testen.",
+    "aliases": [
+      "Litmus"
+    ]
   },
   "Liveness Probe": {
     "full": "Kubernetes Liveness Probe",
@@ -260,7 +299,8 @@
     "aliases": [
       "PDB",
       "Pod Disruption Budget",
-      "PodDisruptionBudgets"
+      "PodDisruptionBudgets",
+      "PDBs"
     ]
   },
   "Port": {
@@ -284,6 +324,14 @@
     "aliases": [
       "Readiness-Probe",
       "Readiness Probes"
+    ]
+  },
+  "ReplicaSet": {
+    "full": "Kubernetes ReplicaSet",
+    "short": "Kubernetes-Controller, der eine gewünschte Anzahl gleichartiger Pod-Replikas aufrechterhält.",
+    "description": "Ein ReplicaSet vergleicht gewünschten und tatsächlichen Zustand und erzeugt oder entfernt Pods, bis die konfigurierte Anzahl erreicht ist. Deployments verwalten ReplicaSets typischerweise automatisch.",
+    "aliases": [
+      "ReplicaSets"
     ]
   },
   "Restore": {
