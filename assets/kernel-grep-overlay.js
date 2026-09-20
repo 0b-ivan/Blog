@@ -49,10 +49,26 @@
     status.dataset.state = 'success';
   }
 
-  function resultLine(result, index) {
+  function trackSearchClick(query, result, index) {
+    void fetch('/api/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        type: 'search_click',
+        query,
+        slug: result.slug || '',
+        rank: index + 1,
+        source: 'grep-overlay'
+      }),
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  function resultLine(result, index, query) {
     const link = document.createElement('a');
     link.className = 'kernel-grep-console__result';
     link.href = result.url || `/posts/${result.slug}`;
+    link.addEventListener('click', () => trackSearchClick(query, result, index));
 
     const pathLine = document.createElement('div');
     pathLine.className = 'kernel-grep-console__result-path';
@@ -93,7 +109,7 @@
     appendLine(output, `${results.length} match${results.length === 1 ? '' : 'es'} · ${elapsed} ms`, 'kernel-grep-console__line--muted');
     const resultRoot = document.createElement('div');
     resultRoot.className = 'kernel-grep-console__results';
-    resultRoot.append(...results.map(resultLine));
+    resultRoot.append(...results.map((result, index) => resultLine(result, index, query)));
     output.append(resultRoot);
     status.textContent = `${results.length} treffer`;
     status.dataset.state = 'success';
@@ -141,7 +157,7 @@
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ q: normalized, limit: 6 }),
+        body: JSON.stringify({ q: normalized, limit: 6, source: 'grep-overlay' }),
         signal: controller.signal
       });
       const payload = await response.json();
