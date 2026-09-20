@@ -50,19 +50,29 @@ jobs:
         run: |
           set -euo pipefail
 
+          lower_epoch=0
+          if [ -n "${COMPLETED_AFTER}" ]; then
+            lower_epoch="$(date -u -d "${COMPLETED_AFTER}" +%s)"
+          fi
+
           for attempt in $(seq 1 84); do
             payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
               "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
 
-            result="$(printf '%s' "$payload" | jq -c --arg lower "${COMPLETED_AFTER}" '
+            candidate="$(printf '%s' "$payload" | jq -c '
               .lastChaosExperiment
               | select(type == "object")
               | select(.experiment == "single-blog-pod-delete" or .experiment == "repeated-blog-pod-delete")
-              | select(
-                  ($lower == "")
-                  or ((.completedAt // "") != "" and (.completedAt >= $lower))
-                )
-              | {
+            ' 2>/dev/null || true)"
+
+            result=""
+            if [ -n "$candidate" ] && [ "$candidate" != "null" ]; then
+              completed_at="$(printf '%s' "$candidate" | jq -r '.completedAt // ""')"
+              if [ -n "$completed_at" ]; then
+                completed_epoch="$(date -u -d "$completed_at" +%s 2>/dev/null || echo 0)"
+                if [ "$lower_epoch" -eq 0 ] || [ "$completed_epoch" -ge "$lower_epoch" ]; then
+                  result="$(printf '%s' "$candidate" | jq -c '{
+
                   experiment,
                   experimentStartedAt,
                   completedAt,
@@ -79,8 +89,10 @@ jobs:
                   searchReachableBefore,
                   searchReachableAfter,
                   passed
-                }
-            ' 2>/dev/null || true)"
+                }')"
+                fi
+              fi
+            fi
 
             if [ -n "$result" ] && [ "$result" != "null" ]; then
               printf '%s\n' "$result" > /tmp/chaos-result.json
