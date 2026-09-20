@@ -30,12 +30,12 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/build-info.json ./build-info.json
-COPY index.html about.html grep.html sources.html status.html impressum.html datenschutz.html script.js ./
+COPY index.html about.html grep.html sources.html status.html analytics.html impressum.html datenschutz.html script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets
 COPY config ./config
 COPY lib ./lib
-COPY server.js enhanced-server.js privacy-server.js seo-server.js staging-server.js ./
+COPY server.js enhanced-server.js privacy-server.js seo-server.js staging-server.js analytics-server.js ./
 
 # Current article content remains in the image as a bootstrap/fallback.
 # Production mounts persistent volumes over these paths.
