@@ -226,5 +226,53 @@
     "publisher": "authentik",
     "url": "https://integrations.goauthentik.io/services/immich/",
     "accessed_at": "2026-08-27"
+  },
+  "chaos-engineering-kubernetes-medium": {
+    "title": "Chaos Engineering in Kubernetes: Why It Matters and How Teams Actually Use It",
+    "publisher": "Medium / Sridhar T S",
+    "url": "https://medium.com/@sridharts98/chaos-engineering-in-kubernetes-why-it-matters-and-how-teams-actually-use-it-b25610763a0f",
+    "accessed_at": "2026-09-20"
+  },
+  "principles-chaos-engineering": {
+    "title": "Principles of Chaos Engineering",
+    "publisher": "Principles of Chaos Engineering",
+    "url": "https://principlesofchaos.org/",
+    "accessed_at": "2026-09-20"
+  },
+  "netflix-chaos-monkey": {
+    "title": "Chaos Monkey",
+    "publisher": "Netflix / GitHub",
+    "url": "https://github.com/Netflix/chaosmonkey",
+    "accessed_at": "2026-09-20"
+  },
+  "kubernetes-probes": {
+    "title": "Liveness, Readiness, and Startup Probes",
+    "publisher": "Kubernetes Documentation",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/probes/",
+    "accessed_at": "2026-09-20"
+  },
+  "kubernetes-disruptions": {
+    "title": "Disruptions",
+    "publisher": "Kubernetes Documentation",
+    "url": "https://kubernetes.io/docs/concepts/workloads/pods/disruptions/",
+    "accessed_at": "2026-09-20"
+  },
+  "kubernetes-dns-debugging": {
+    "title": "Debugging DNS Resolution",
+    "publisher": "Kubernetes Documentation",
+    "url": "https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/",
+    "accessed_at": "2026-09-20"
+  },
+  "litmus-chaos-docs": {
+    "title": "Litmus Docs",
+    "publisher": "LitmusChaos",
+    "url": "https://docs.litmuschaos.io/",
+    "accessed_at": "2026-09-20"
+  },
+  "chaos-mesh-docs": {
+    "title": "Chaos Mesh Overview",
+    "publisher": "Chaos Mesh",
+    "url": "https://chaos-mesh.org/docs/",
+    "accessed_at": "2026-09-20"
   }
 }
