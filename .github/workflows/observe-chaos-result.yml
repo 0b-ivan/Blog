@@ -46,6 +46,11 @@ jobs:
             echo "Experiment manifest was removed; nothing to observe."
             exit 0
           fi
+          if [ -n "$active_file" ] && grep -Eq '^kind:[[:space:]]+NetworkChaos[[:space:]]*$' "$active_file"; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "NetworkChaos is handled by the dedicated NetworkChaos observer."
+            exit 0
+          fi
           echo "active=true" >> "$GITHUB_OUTPUT"
           echo "file=$active_file" >> "$GITHUB_OUTPUT"
 
