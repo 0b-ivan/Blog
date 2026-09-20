@@ -229,6 +229,7 @@ jobs:
           target="$(jq -r '.target' /tmp/network-chaos-result.json)"
           duration="$(jq -r '.durationMs' /tmp/network-chaos-result.json)"
           latency="$(jq -r '.latencyMs' /tmp/network-chaos-result.json)"
+          packet_loss="$(jq -r '.packetLossPercent' /tmp/network-chaos-result.json)"
           failed_events="$(jq -r '.failedEvents' /tmp/network-chaos-result.json)"
           created="$(jq -r '.createdAt' /tmp/network-chaos-result.json)"
           completed="$(jq -r '.completedAt' /tmp/network-chaos-result.json)"
@@ -264,11 +265,6 @@ jobs:
             combined_passed=true
           fi
 
-          delay_observed=false
-          if [ "$action" = "delay" ] && [ "$search_p50_delta" -ge 250 ]; then
-            delay_observed=true
-          fi
-
           {
             echo "### NetworkChaos experiment + application probe"
             echo
@@ -276,7 +272,12 @@ jobs:
             echo "- Technical Chaos Mesh result: **$([ "$technical_passed" = "true" ] && echo PASS || echo FAIL)**"
             echo "- Experiment: **${experiment}**"
             echo "- Traffic: **${source} → ${target}**"
-            echo "- Configured delay: **${latency} ms**"
+            if [ "$action" = "delay" ]; then
+              echo "- Configured delay: **${latency} ms**"
+            fi
+            if [ "$action" = "loss" ]; then
+              echo "- Configured packet loss: **${packet_loss}%**"
+            fi
             echo "- Duration: **${duration} ms**"
             echo "- Failed Chaos Mesh events: **${failed_events}**"
             echo "- Created: \`${created}\`"
@@ -304,14 +305,16 @@ jobs:
             echo "- p50: **${search_p50_delta} ms**"
             echo "- p95: **${search_p95_delta} ms**"
             echo "- p99: **${search_p99_delta} ms**"
-            echo "- Expected delay visible in p50 (>=250 ms delta): **${delay_observed}**"
+            echo
+            echo "_Hinweis: Der konfigurierte NetworkChaos-Delay wirkt auf Netzwerkpakete. Die End-to-End-HTTP-Latenz wird deshalb als beobachtete Verteilung dokumentiert und nicht gegen einen künstlichen p50-Schwellenwert bewertet._"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
           jq -n \
             --argjson combinedPassed "$combined_passed" \
             --argjson technicalPassed "$technical_passed" \
+            --arg action "$action" \
             --argjson applicationPassed "$chaos_passed" \
-            --argjson delayObserved "$delay_observed" \
+            --argjson packetLossPercent "$packet_loss" \
             --argjson searchP95 "$chaos_search_p95" \
             --argjson searchP95Delta "$search_p95_delta" \
             --argjson searchFailures "$chaos_search_failures" \
@@ -319,8 +322,9 @@ jobs:
             '{
               combinedPassed: $combinedPassed,
               technicalPassed: $technicalPassed,
+              action: $action,
               applicationPassed: $applicationPassed,
-              delayObserved: $delayObserved,
+              packetLossPercent: $packetLossPercent,
               searchP95Ms: $searchP95,
               searchP95DeltaMs: $searchP95Delta,
               searchFailures: $searchFailures,

@@ -52,6 +52,11 @@ describe('NetworkChaos observer safety contract', () => {
     expect(networkObserver).toContain('PROBE_DURATION_MS=20000');
     expect(networkObserver).toContain('PROBE_DURATION_MS=8000');
     expect(networkObserver).toContain('searchP95DeltaMs');
+    expect(networkObserver).not.toContain('delayObserved');
+    expect(networkObserver).not.toContain('>=250 ms delta');
+    expect(networkObserver).toContain('Configured packet loss');
+    expect(networkObserver).toContain('packetLossPercent');
+    expect(networkObserver).toContain('NetworkChaos-Delay wirkt auf Netzwerkpakete');
     expect(networkObserver).toContain('network-chaos-observer');
     expect(networkObserver).toContain('No matching recovered NetworkChaos');
     expect(requestProbe).toContain('p95');
