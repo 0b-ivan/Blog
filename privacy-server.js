@@ -250,8 +250,9 @@ function searchServiceTarget(pathname) {
 
 function analyticsServiceTarget(pathname) {
   const target = new URL(process.env.ANALYTICS_SERVICE_URL || 'http://analytics:8080');
-  target.pathname = pathname;
-  target.search = '';
+  const requested = new URL(String(pathname || '/'), 'http://analytics.internal');
+  target.pathname = requested.pathname;
+  target.search = requested.search;
   return target;
 }
 
