@@ -44,6 +44,10 @@ Nicht als Shell-Befehl, den ich irgendwann vergesse.
 
 Sondern als kleines kontrolliertes Chaos-Experiment mit festen Sicherheitsgrenzen, Messwerten und einem öffentlich sichtbaren Ergebnis.
 
+Hier geht es bewusst um die konkrete Praxisfrage:
+
+> Wie teste ich Kubernetes Pod Failover mit Chaos Engineering in meinem K3s-Staging – und wie begrenze ich dabei den Blast Radius meines eigenen Chaos Monkey?
+
 Das Ergebnis des ersten Laufs:
 
 | Messwert | Ergebnis |
