@@ -1,0 +1,192 @@
+name: Observe staging NetworkChaos
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'infra/kubernetes/staging/chaos-experiment-network*.yaml'
+      - 'status-monitor/server.js'
+      - 'lib/kubernetes-status.js'
+      - 'infra/kubernetes/base/status-monitor.yaml'
+      - '.github/workflows/observe-network-chaos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: observe-staging-network-chaos
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
+    steps:
+      - name: Checkout experiment state
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+
+      - name: Detect active NetworkChaos experiment
+        id: active
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          active_file="$(compgen -G 'infra/kubernetes/staging/chaos-experiment-network*.yaml' | head -n 1 || true)"
+          if [ -z "$active_file" ]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "No active NetworkChaos manifest."
+            exit 0
+          fi
+
+          if ! grep -Eq '^kind:[[:space:]]+NetworkChaos[[:space:]]*$' "$active_file"; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Active network experiment file is not a NetworkChaos resource."
+            exit 0
+          fi
+
+          experiment="$(awk '/chaos\.obivan\.org\/experiment:/ { print $2; exit }' "$active_file")"
+          if [ -z "$experiment" ]; then
+            echo "NetworkChaos experiment label is missing." >&2
+            exit 1
+          fi
+
+          echo "active=true" >> "$GITHUB_OUTPUT"
+          echo "file=$active_file" >> "$GITHUB_OUTPUT"
+          echo "experiment=$experiment" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for sanitized NetworkChaos recovery
+        if: steps.active.outputs.active == 'true'
+        id: result
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          active_file="${{ steps.active.outputs.file }}"
+          experiment="${{ steps.active.outputs.experiment }}"
+          completed_after="$(git log --diff-filter=A -1 --format=%cI -- "$active_file")"
+          lower_epoch="$(date -u -d "$completed_after" +%s)"
+          echo "Waiting for recovered NetworkChaos '$experiment' created at or after $completed_after"
+
+          for attempt in $(seq 1 96); do
+            payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${STATUS_URL}?network-chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
+
+            candidate="$(printf '%s' "$payload" | jq -c --arg experiment "$experiment" '
+              .lastNetworkChaosExperiment
+              | select(type == "object")
+              | select(.experiment == $experiment)
+            ' 2>/dev/null || true)"
+
+            if [ -n "$candidate" ] && [ "$candidate" != "null" ]; then
+              created_at="$(printf '%s' "$candidate" | jq -r '.createdAt // ""')"
+              created_epoch="$(date -u -d "$created_at" +%s 2>/dev/null || echo 0)"
+              recovered="$(printf '%s' "$candidate" | jq -r '.allRecovered == true')"
+
+              if [ "$created_epoch" -ge "$lower_epoch" ] && [ "$recovered" = "true" ]; then
+                printf '%s\n' "$candidate" > /tmp/network-chaos-result.json
+                echo "found=true" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+
+            echo "Attempt ${attempt}/96: matching recovered NetworkChaos not visible yet"
+            sleep 5
+          done
+
+          echo "found=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish NetworkChaos result summary
+        if: steps.active.outputs.active == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ steps.result.outputs.found }}" != "true" ]; then
+            echo "No matching recovered NetworkChaos became visible before timeout." >&2
+            exit 1
+          fi
+
+          passed="$(jq -r '.passed == true' /tmp/network-chaos-result.json)"
+          experiment="$(jq -r '.experiment' /tmp/network-chaos-result.json)"
+          action="$(jq -r '.action' /tmp/network-chaos-result.json)"
+          source="$(jq -r '.source' /tmp/network-chaos-result.json)"
+          target="$(jq -r '.target' /tmp/network-chaos-result.json)"
+          duration="$(jq -r '.durationMs' /tmp/network-chaos-result.json)"
+          latency="$(jq -r '.latencyMs' /tmp/network-chaos-result.json)"
+          loss="$(jq -r '.packetLossPercent' /tmp/network-chaos-result.json)"
+          selected="$(jq -r '.selected' /tmp/network-chaos-result.json)"
+          injected="$(jq -r '.allInjected' /tmp/network-chaos-result.json)"
+          recovered="$(jq -r '.allRecovered' /tmp/network-chaos-result.json)"
+          failed_events="$(jq -r '.failedEvents' /tmp/network-chaos-result.json)"
+          created="$(jq -r '.createdAt' /tmp/network-chaos-result.json)"
+          completed="$(jq -r '.completedAt' /tmp/network-chaos-result.json)"
+          status="FAIL"
+          [ "$passed" = "true" ] && status="PASS"
+
+          {
+            echo "### NetworkChaos experiment result"
+            echo
+            echo "- Result: **${status}**"
+            echo "- Experiment: **${experiment}**"
+            echo "- Action: **${action}**"
+            echo "- Traffic: **${source} → ${target}**"
+            echo "- Duration: **${duration} ms**"
+            if [ "$action" = "delay" ]; then
+              echo "- Added latency: **${latency} ms**"
+            fi
+            if [ "$action" = "loss" ]; then
+              echo "- Packet loss: **${loss}%**"
+            fi
+            echo "- Selected: **${selected}**"
+            echo "- All injected: **${injected}**"
+            echo "- All recovered: **${recovered}**"
+            echo "- Failed Chaos Mesh events: **${failed_events}**"
+            echo "- Created: ${created}"
+            echo "- Recovery observed: ${completed}"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$passed" != "true" ]; then
+            exit 1
+          fi
+
+      - name: Publish machine-readable NetworkChaos status
+        if: always() && steps.active.outputs.active == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          state=failure
+          description="No matching recovered NetworkChaos"
+
+          if [ -f /tmp/network-chaos-result.json ]; then
+            passed="$(jq -r '.passed == true' /tmp/network-chaos-result.json)"
+            action="$(jq -r '.action // ""' /tmp/network-chaos-result.json)"
+            duration="$(jq -r '.durationMs // 0' /tmp/network-chaos-result.json)"
+            latency="$(jq -r '.latencyMs // 0' /tmp/network-chaos-result.json)"
+            failed_events="$(jq -r '.failedEvents // 0' /tmp/network-chaos-result.json)"
+
+            if [ "$passed" = "true" ]; then
+              state=success
+              description="PASS NetworkChaos ${action}; ${duration}ms; latency ${latency}ms; failed events ${failed_events}"
+            else
+              description="FAIL NetworkChaos ${action}; recovered with ${failed_events} failed events"
+            fi
+          fi
+
+          description="${description:0:140}"
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context="network-chaos-observer" \
+            -f description="$description" \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >/dev/null
