@@ -16,6 +16,7 @@ describe('analytics service', () => {
   });
 
   afterAll(async () => {
+    await analytics.flushPersistence();
     delete process.env.ANALYTICS_DATA_DIR;
     delete process.env.ANALYTICS_DASHBOARD_TOKEN;
     if (tmpDir) await fs.rm(tmpDir, { recursive: true, force: true });
