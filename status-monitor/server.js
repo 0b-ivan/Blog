@@ -133,7 +133,7 @@ function sanitizedChaosExperiment(payload) {
 
   return {
     experiment: payload.experiment,
-    target,
+    ...(target === 'search' ? { target } : {}),
     experimentStartedAt: normalizedTimestamp(payload.experimentStartedAt),
     completedAt: normalizedTimestamp(payload.completedAt),
     iterationCount,
@@ -146,16 +146,18 @@ function sanitizedChaosExperiment(payload) {
       900000
     ),
     maxRecoveryTimeMs,
-    kubernetesRecoveryTimeMs: boundedNumber(
-      payload.kubernetesRecoveryTimeMs ?? maxRecoveryTimeMs
-    ),
+    ...(target === 'search' ? {
+      kubernetesRecoveryTimeMs: boundedNumber(
+        payload.kubernetesRecoveryTimeMs ?? maxRecoveryTimeMs
+      ),
+      searchChecks: boundedNumber(payload.searchChecks, 100000),
+      searchFailures: boundedNumber(payload.searchFailures, 100000),
+      firstSearchFailureMs: boundedNumber(payload.firstSearchFailureMs),
+      searchRecoveredAfterFailureMs: boundedNumber(payload.searchRecoveredAfterFailureMs),
+      observedSearchOutageMs: boundedNumber(payload.observedSearchOutageMs)
+    } : {}),
     httpChecks: boundedNumber(payload.httpChecks, 100000),
     httpFailures: boundedNumber(payload.httpFailures, 100000),
-    searchChecks: boundedNumber(payload.searchChecks, 100000),
-    searchFailures: boundedNumber(payload.searchFailures, 100000),
-    firstSearchFailureMs: boundedNumber(payload.firstSearchFailureMs),
-    searchRecoveredAfterFailureMs: boundedNumber(payload.searchRecoveredAfterFailureMs),
-    observedSearchOutageMs: boundedNumber(payload.observedSearchOutageMs),
     minimumReadyPods: boundedNumber(payload.minimumReadyPods, 10),
     maximumReadyPods: boundedNumber(payload.maximumReadyPods, 10),
     searchReachableBefore: payload.searchReachableBefore === true,
