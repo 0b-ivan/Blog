@@ -9,7 +9,7 @@ updated_at: 2026-09-20
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Praxisprotokoll meines K3s-Chaos-Setups: Pod-Failover, begrenzter Blast Radius und ein gemessener 500-ms-NetworkChaos gegen Search."
+excerpt: "Kubernetes Pod Failover mit Chaos Engineering: Recovery-Zeit, HTTP-Fehler und ein gemessener 500-ms-NetworkChaos in meinem K3s-Staging."
 tags:
   - Kubernetes
   - K3s
@@ -43,6 +43,8 @@ Die allgemeine Methodik – Steady State, Hypothese, Blast Radius, PASS/FAIL und
 - [[chaos-engineering-chaos-monkey-kubernetes|Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen]]
 
 Teil V bleibt bewusst konkret.
+
+Kurz gesagt: Ich teste **Kubernetes Pod Failover mit Chaos Engineering**, indem ich gezielt einen opt-in Blog-Pod entferne und gleichzeitig **Recovery-Zeit und öffentliche HTTP-Fehler** messe. Danach erweitere ich denselben Ansatz auf NetworkChaos zwischen Blog und Search.
 
 ## Der Sicherheitsrahmen
 
