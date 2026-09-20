@@ -2,11 +2,13 @@ const http = require('node:http');
 const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 const port = Number.parseInt(process.env.PORT || '8080', 10);
 const dataDir = process.env.ANALYTICS_DATA_DIR || path.join(__dirname, '.data', 'analytics');
 const dataFile = path.join(dataDir, 'analytics.json');
 const retentionDays = Math.max(7, Math.min(365, Number.parseInt(process.env.ANALYTICS_RETENTION_DAYS || '90', 10)));
+const dashboardToken = process.env.ANALYTICS_DASHBOARD_TOKEN || crypto.randomBytes(24).toString('base64url');
 
 function emptyState() {
   return { version: 1, articles: {}, daily: {} };
@@ -255,6 +257,12 @@ function readJson(req) {
   });
 }
 
+function dashboardAuthorized(req) {
+  const supplied = String(req.headers['x-analytics-token'] || '');
+  if (!supplied || supplied.length !== dashboardToken.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(supplied), Buffer.from(dashboardToken));
+}
+
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -274,6 +282,10 @@ function createServer() {
   }
 
   if (req.method === 'GET' && url.pathname === '/summary') {
+    if (!dashboardAuthorized(req)) {
+      sendJson(res, 401, { error: 'analytics_dashboard_auth_required' });
+      return;
+    }
     sendJson(res, 200, summary(url.searchParams.get('days')));
     return;
   }
@@ -321,6 +333,9 @@ function createServer() {
 function startServer() {
   return createServer().listen(port, '0.0.0.0', () => {
     console.log(`kernel-notes analytics listening on :${port}`);
+    if (!process.env.ANALYTICS_DASHBOARD_TOKEN) {
+      console.log(`analytics dashboard token: ${dashboardToken}`);
+    }
   });
 }
 
