@@ -135,11 +135,19 @@ async function main() {
     if (allowStatusUnavailable) {
       const statusResponse = await page.request.get(`${baseUrl}/api/kubernetes-status`);
       assert.equal(statusResponse.status(), 503, 'Local Compose smoke test expects no Kubernetes status backend');
-      await page.locator('[data-home-status-label]').waitFor({ state: 'visible' });
-      await page.waitForFunction(() => {
-        const label = document.querySelector('[data-home-status-label]');
-        return label?.textContent?.trim() === 'Status nicht verfügbar';
-      });
+      const homeStatusLabel = page.locator('[data-home-status-label]');
+      await homeStatusLabel.waitFor({ state: 'visible' });
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        if ((await homeStatusLabel.innerText()).trim() === 'Status nicht verfügbar') {
+          break;
+        }
+        await page.waitForTimeout(50);
+      }
+      assert.equal(
+        (await homeStatusLabel.innerText()).trim(),
+        'Status nicht verfügbar',
+        'Homepage must render the unavailable status fallback when no Kubernetes backend exists'
+      );
     }
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
