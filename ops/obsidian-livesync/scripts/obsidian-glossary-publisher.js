@@ -361,7 +361,7 @@ class GitHubGlossaryPublisher {
             '- Freigabe: `status: publish` in `_Glossar`',
             '- Weitere Änderungen am Begriff aktualisieren denselben PR nach dem Debounce-Fenster.',
             '',
-            `Die Glossar-Änderung wird nach Merge nach \`${this.baseBranch}\` zuerst auf Staging geprüft; Production folgt erst nach verifizierter Promotion nach \`main\`.`
+            `Die Glossar-Änderung wird erst nach Merge nach \`${this.baseBranch}\` in den konfigurierten Basisbranch übernommen.`
           ].join('\n')
         }
       });
