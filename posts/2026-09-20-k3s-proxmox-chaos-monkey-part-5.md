@@ -28,7 +28,7 @@ search_queries:
     maxRank: 1
   - query: Wie messe ich Recovery Zeit und HTTP Fehler bei einem Kubernetes Pod Ausfall?
     maxRank: 1
-  - query: Wie teste ich Netzwerklatenz zwischen Kubernetes Services mit Chaos Mesh?
+  - query: Wie teste ich 500 ms Latenz von Blog zu Search mit Chaos Mesh?
     maxRank: 1
 ---
 
@@ -442,7 +442,7 @@ vollständig auf 3 / 3 warten
 ↓
 nächsten Pod löschen
 ↓
-wieder vollständig recovern
+wieder vollständig auf 3 / 3 warten
 ↓
 insgesamt 3 Iterationen
 ```
@@ -621,7 +621,7 @@ Damit konnte der erste echte Netzwerkfehler starten.
 
 Die Hypothese bestand aus zwei Ebenen:
 
-> Chaos Mesh kann die Verbindung Blog → Search für 30 Sekunden um 500 ms verzögern und danach vollständig recovern.
+> Chaos Mesh kann die Verbindung Blog → Search für 30 Sekunden um 500 ms verzögern; anschließend muss die Netzwerkverbindung vollständig in den Normalzustand zurückkehren.
 
 Und auf Anwendungsebene:
 
@@ -1050,7 +1050,7 @@ Für meinen aktuellen Aufbau kann ich jetzt konkret sagen:
 5. Die drei Recovery-Zeiten von Experiment #2 lagen nur 123 ms auseinander.
 6. Über beide Pod-Experimente wurden 42 öffentliche Healthchecks ausgeführt und kein HTTP-Fehler beobachtet.
 7. Search blieb vor und nach beiden Pod-Experimenten erreichbar.
-8. Chaos Mesh konnte einen auf 30 Sekunden begrenzten 500-ms-Delay von Blog zu Search vollständig recovern.
+8. Der auf 30 Sekunden begrenzte 500-ms-Delay von Blog zu Search wurde anschließend vollständig zurückgenommen.
 9. Beim NetworkChaos wurden keine fehlgeschlagenen Chaos-Mesh-Events beobachtet.
 
 Das ist deutlich besser als:
