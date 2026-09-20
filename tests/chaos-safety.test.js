@@ -20,6 +20,10 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     path.join(root, 'chaos-monkey', 'index.js'),
     'utf8'
   );
+  const observerWorkflow = fs.readFileSync(
+    path.join(root, '.github', 'workflows', 'observe-chaos-result.yml'),
+    'utf8'
+  );
 
   it('keeps the chaos job suspended and namespace-scoped', () => {
     expect(chaosManifest).toContain('namespace: blog-staging');
@@ -39,6 +43,17 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain("namespace !== 'blog-staging'");
     expect(chaosSource).toContain("const requiredJobPrefix = 'chaos-monkey-manual-'");
     expect(chaosSource).toContain("'app=blog,chaos.obivan.org/enabled=true'");
+    expect(chaosSource).toContain('const maximumIterations = 3');
+    expect(chaosSource).toContain("process.env.CHAOS_ITERATIONS || '1'");
+    expect(chaosSource).toContain('const before = await preflight(namespace)');
+  });
+
+  it('keeps repeated experiments observable without write access', () => {
+    expect(observerWorkflow).toContain("infra/kubernetes/staging/chaos-experiment-*.yaml");
+    expect(observerWorkflow).toContain('repeated-blog-pod-delete');
+    expect(observerWorkflow).toContain('contents: read');
+    expect(observerWorkflow).not.toContain('issues: write');
+    expect(observerWorkflow).not.toContain('contents: write');
   });
 
   it('keeps the public status exporter read-only', () => {
