@@ -135,7 +135,7 @@ class GitHubSourcesPublisher extends GitHubCatalogPublisher {
             '- Freigabe: `status: publish` in `_Quellen`',
             '- Weitere Änderungen an derselben Quelle aktualisieren denselben PR nach dem Debounce-Fenster.',
             '',
-            `Die Quellenänderung wird nach Merge nach \`${this.baseBranch}\` zuerst auf Staging geprüft; Production folgt erst nach verifizierter Promotion nach \`main\`.`
+            `Die Quellenänderung wird erst nach Merge nach \`${this.baseBranch}\` in den konfigurierten Basisbranch übernommen.`
           ].join('\n')
         }
       });
