@@ -331,6 +331,10 @@ function createServer() {
   });
 }
 
+async function flushPersistence() {
+  await persistQueue;
+}
+
 function startServer() {
   return createServer().listen(port, '0.0.0.0', () => {
     console.log(`kernel-notes analytics listening on :${port}`);
@@ -350,6 +354,7 @@ module.exports = {
   boundedNumber,
   articleMetrics,
   summary,
+  flushPersistence,
   createServer,
   startServer
 };
