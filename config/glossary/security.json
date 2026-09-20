@@ -40,6 +40,14 @@
     "description": "Cloudflare Zero Trust kombiniert unter anderem Access-Richtlinien, Tunnel und weitere Kontrollen, um Zugriffe nicht allein anhand des Netzstandorts zu vertrauen.",
     "aliases": []
   },
+  "ClusterRole": {
+    "full": "Kubernetes ClusterRole",
+    "short": "Kubernetes-RBAC-Rolle, deren Regeln nicht auf einen einzelnen Namespace beschränkt sind.",
+    "description": "Eine ClusterRole definiert Berechtigungen auf Cluster-Ebene oder für Ressourcen über mehrere Namespaces hinweg. Für eng begrenzte Workloads ist eine namespaced Role häufig die kleinere Berechtigungsgrenze.",
+    "aliases": [
+      "ClusterRoles"
+    ]
+  },
   "Code Scanning": {
     "full": "Code Scanning",
     "short": "Automatisierte Analyse von Quellcode auf Fehler und Sicherheitsprobleme.",
@@ -157,6 +165,14 @@
     "description": "Service Tokens erlauben Maschinen oder Anwendungen einen authentifizierten Zugriff, ohne einen interaktiven Benutzer-Login zu benötigen.",
     "aliases": [
       "Service Tokens"
+    ]
+  },
+  "ServiceAccount": {
+    "full": "Kubernetes ServiceAccount",
+    "short": "Kubernetes-Identität für Pods und andere automatisierte Workloads.",
+    "description": "Ein ServiceAccount gibt einem Workload eine eigene Identität gegenüber der Kubernetes API. Über RoleBindings oder ClusterRoleBindings lassen sich dieser Identität gezielt RBAC-Berechtigungen zuweisen.",
+    "aliases": [
+      "ServiceAccounts"
     ]
   },
   "Severity": {
