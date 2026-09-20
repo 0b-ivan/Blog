@@ -139,6 +139,10 @@ function sanitizedChaosExperiment(payload) {
   return {
     experiment: payload.experiment,
     target,
+    ...(aborted ? {
+      outcome: 'aborted',
+      failureStage
+    } : {}),
     experimentStartedAt: normalizedTimestamp(payload.experimentStartedAt),
     completedAt: normalizedTimestamp(payload.completedAt),
     iterationCount,
