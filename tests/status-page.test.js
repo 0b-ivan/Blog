@@ -208,6 +208,42 @@ describe('public Kubernetes status contract', () => {
     expect(JSON.stringify(payload)).not.toContain('search-must-not-leak');
   });
 
+  it('sanitizes aborted chaos outcomes without exposing raw errors', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'operational',
+      environment: 'staging',
+      orchestrator: 'K3s',
+      kubernetesApi: 'reachable',
+      workloads: [],
+      lastChaosExperiment: {
+        experiment: 'search-restart-under-load',
+        target: 'search',
+        outcome: 'aborted',
+        failureStage: 'preflight',
+        experimentStartedAt: '2026-09-20T07:10:00.000Z',
+        completedAt: '2026-09-20T07:10:01.000Z',
+        iterationCount: 1,
+        completedIterations: 0,
+        httpChecks: 0,
+        httpFailures: 0,
+        searchChecks: 0,
+        searchFailures: 0,
+        minimumReadyPods: 0,
+        maximumReadyPods: 0,
+        searchReachableBefore: false,
+        searchReachableAfter: false,
+        passed: false,
+        error: 'must-not-leak raw pod or API error'
+      }
+    });
+
+    expect(payload.lastChaosExperiment.outcome).toBe('aborted');
+    expect(payload.lastChaosExperiment.failureStage).toBe('preflight');
+    expect(payload.lastChaosExperiment.passed).toBe(false);
+    expect(JSON.stringify(payload)).not.toContain('must-not-leak');
+    expect(JSON.stringify(payload)).not.toContain('raw pod');
+  });
+
   it('normalizes unexpected values instead of exposing them', () => {
     const payload = sanitizedKubernetesStatus({
       status: 'secret-state',

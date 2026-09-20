@@ -72,7 +72,9 @@ function renderChaosExperiment(experiment) {
   chaosSection.hidden = false;
   const searchRestart = experiment.experiment === 'search-restart-under-load';
   const repeated = experiment.experiment === 'repeated-blog-pod-delete';
-  const result = experiment.passed ? 'Bestanden' : 'Fehlgeschlagen';
+  const result = experiment.outcome === 'aborted'
+    ? `Abgebrochen (${experiment.failureStage || 'runtime'})`
+    : (experiment.passed ? 'Bestanden' : 'Fehlgeschlagen');
   const search = experiment.searchReachableAfter ? 'Erreichbar' : 'Nicht erreichbar';
   const recovery = repeated || searchRestart
     ? experiment.maxRecoveryTimeMs

@@ -53,6 +53,10 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain("search chaos supports exactly one iteration");
     expect(chaosSource).toContain("sawSearchFailure");
     expect(chaosSource).toContain("searchFailures > 0");
+    expect(chaosSource).toContain('function classifyFailureStage(error)');
+    expect(chaosSource).toContain("outcome: 'aborted'");
+    expect(chaosSource).toContain("failureStage");
+    expect(chaosSource).toContain("abort_result_publish_failed");
   });
 
   it('keeps repeated experiments observable without write access', () => {
