@@ -74,7 +74,14 @@ Dieses Feld bleibt vorerst aus Kompatibilitätsgründen erhalten. Die auf der We
 
 ## Deployment
 
-Änderungen ausschließlich an:
+Der Content-Lifecycle folgt demselben Promotion-Pfad wie Anwendungsänderungen:
+
+```text
+Feature-Branch -> PR nach staging -> Staging-Deployment -> Verifikation
+               -> Promotion-PR -> main -> Production
+```
+
+Content-relevant sind insbesondere:
 
 ```text
 posts/**
@@ -83,4 +90,22 @@ snippets/**
 assets/posts/**
 ```
 
-laufen weiterhin über `Content CD`. Dabei wird die Historie neu erzeugt und zusammen mit aktuellem Content in persistente Docker-Volumes auf Hetzner synchronisiert. Das App-Image wird dafür nicht neu gebaut.
+### Staging und K3s Production
+
+Für Staging erzeugt `.github/workflows/cd-staging.yml` bei Content-Änderungen neue immutable Images und pinnt sie auf den Git-Commit-SHA. Nach dem verifizierten Promotion-PR baut der K3s-Production-Pfad den freigegebenen `main`-Stand ebenfalls als immutable SHA-Images.
+
+Damit enthalten K3s-Deployments immer einen reproduzierbaren Content-Stand im Image.
+
+### Hetzner-Standby
+
+Der parallele Hetzner-Pfad in `.github/workflows/cd.yml` optimiert reine Content-Änderungen weiterhin ohne vollständigen Image-Rebuild:
+
+1. Artikelhistorie erzeugen,
+2. Posts, Archiv, Snippets, Artikelbilder und History paketieren,
+3. Inhalt in die persistenten Docker-Volumes synchronisieren,
+4. Kernel Grep live reindizieren,
+5. Health-, API- und Archiv-Smokechecks ausführen.
+
+Bei Anwendungs- oder Runtime-Änderungen führt derselbe Workflow ein vollständiges Image-Deployment auf Hetzner aus.
+
+Hetzner bleibt damit aus `main` synchron und kann als aktueller Standby-/Rollback-Origin verwendet werden.
