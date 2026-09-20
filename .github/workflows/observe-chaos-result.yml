@@ -90,6 +90,8 @@ jobs:
                   result="$(printf '%s' "$candidate" | jq -c '{
 
                   experiment,
+                  outcome,
+                  failureStage,
                   experimentStartedAt,
                   completedAt,
                   iterationCount,
@@ -139,8 +141,13 @@ jobs:
             exit 1
           fi
 
+          outcome="$(jq -r '.outcome // "completed"' /tmp/chaos-result.json)"
+          failure_stage="$(jq -r '.failureStage // ""' /tmp/chaos-result.json)"
           status="$(jq -r 'if .passed then "PASS" else "FAIL" end' /tmp/chaos-result.json)"
           experiment="$(jq -r '.experiment' /tmp/chaos-result.json)"
+          if [ "$outcome" = "aborted" ]; then
+            status="ABORTED"
+          fi
           iterations="$(jq -r '.iterationCount' /tmp/chaos-result.json)"
           completed_iterations="$(jq -r '.completedIterations' /tmp/chaos-result.json)"
           recovery="$(jq -r '.maxRecoveryTimeMs' /tmp/chaos-result.json)"
@@ -164,6 +171,9 @@ jobs:
             echo
             echo "- Result: **${status}**"
             echo "- Experiment: **${experiment}**"
+            if [ "$outcome" = "aborted" ]; then
+              echo "- Failure stage: **${failure_stage}**"
+            fi
             echo "- Iterations: **${completed_iterations} / ${iterations}**"
             echo "- Recovery times: **${recoveries} ms**"
             echo "- Max recovery: **${recovery} ms**"
@@ -201,14 +211,18 @@ jobs:
 
           if [ -f /tmp/chaos-result.json ]; then
             passed="$(jq -r '.passed == true' /tmp/chaos-result.json)"
-            iterations="$(jq -r '.completedIterations // 0' /tmp/chaos-result.json)"
+            outcome="$(jq -r '.outcome // "completed"' /tmp/chaos-result.json)"
+            failure_stage="$(jq -r '.failureStage // ""' /tmp/chaos-result.json)"
+            iterations="$(jq -r '.completedIterations // 0' /tmp/chaos-result.json)
             planned="$(jq -r '.iterationCount // 0' /tmp/chaos-result.json)"
             max_recovery="$(jq -r '.maxRecoveryTimeMs // .recoveryTimeMs // 0' /tmp/chaos-result.json)"
             failures="$(jq -r '.httpFailures // 0' /tmp/chaos-result.json)"
             experiment="$(jq -r '.experiment // ""' /tmp/chaos-result.json)"
             search_failures="$(jq -r '.searchFailures // 0' /tmp/chaos-result.json)"
 
-            if [ "$passed" = "true" ]; then
+            if [ "$outcome" = "aborted" ]; then
+              description="ABORTED ${experiment}; stage ${failure_stage}"
+            elif [ "$passed" = "true" ]; then
               state=success
               if [ "$experiment" = "search-restart-under-load" ]; then
                 description="PASS Search restart; max ${max_recovery}ms; Search failures ${search_failures}; Blog HTTP failures ${failures}"
