@@ -13,6 +13,9 @@ const recoveryTimeoutMs = Number.parseInt(process.env.RECOVERY_TIMEOUT_MS || '12
 const healthIntervalMs = Number.parseInt(process.env.HEALTH_INTERVAL_MS || '500', 10);
 const settleDelayMs = Number.parseInt(process.env.SETTLE_DELAY_MS || '2000', 10);
 const searchProbeTimeoutMs = Number.parseInt(process.env.SEARCH_PROBE_TIMEOUT_MS || '3000', 10);
+const preflightTimeoutMs = Number.parseInt(process.env.PREFLIGHT_TIMEOUT_MS || '120000', 10);
+const preflightIntervalMs = Number.parseInt(process.env.PREFLIGHT_INTERVAL_MS || '2000', 10);
+const preflightStablePasses = 2;
 const iterationCount = Number.parseInt(process.env.CHAOS_ITERATIONS || '1', 10);
 const healthUrl = process.env.HEALTH_URL || 'https://staging-blog.obivan.org/healthz';
 const searchUrl = process.env.SEARCH_URL || 'https://staging-blog.obivan.org/api/search';
@@ -160,7 +163,27 @@ function experimentName() {
   return iterationCount === 1 ? 'single-blog-pod-delete' : 'repeated-blog-pod-delete';
 }
 
+const allowedPreflightFailureReasons = new Set([
+  'target-not-ready',
+  'blog-not-ready',
+  'public-health',
+  'search-api',
+  'target-invalid',
+  'preflight-timeout'
+]);
+
+function preflightError(reason, message) {
+  const error = new Error(`preflight failed: ${message}`);
+  error.failureStage = 'preflight';
+  error.failureReason = allowedPreflightFailureReasons.has(reason)
+    ? reason
+    : 'preflight-timeout';
+  return error;
+}
+
 function classifyFailureStage(error) {
+  if (error?.failureStage === 'preflight') return 'preflight';
+
   const message = String(error?.message || error || '');
   if (message.includes('preflight failed:')) return 'preflight';
   if (
@@ -175,12 +198,25 @@ function classifyFailureStage(error) {
   return 'runtime';
 }
 
-function abortedExperimentResult(experimentStartedAt, failureStage) {
+function classifyFailureReason(error) {
+  if (
+    error?.failureStage === 'preflight'
+    && allowedPreflightFailureReasons.has(error?.failureReason)
+  ) {
+    return error.failureReason;
+  }
+  return '';
+}
+
+function abortedExperimentResult(experimentStartedAt, failureStage, failureReason) {
   return {
     experiment: experimentName(),
     target: chaosTarget,
     outcome: 'aborted',
     failureStage,
+    ...(failureStage === 'preflight' && failureReason
+      ? { failureReason }
+      : {}),
     experimentStartedAt,
     completedAt: new Date().toISOString(),
     iterationCount,
@@ -210,7 +246,8 @@ function sanitizedExperimentResult(result) {
     target: result.target,
     ...(result.outcome === 'aborted' ? {
       outcome: 'aborted',
-      failureStage: result.failureStage
+      failureStage: result.failureStage,
+      ...(result.failureReason ? { failureReason: result.failureReason } : {})
     } : {}),
     experimentStartedAt: result.experimentStartedAt,
     completedAt: result.completedAt,
@@ -248,12 +285,18 @@ async function publishResult(namespace, result) {
 
 async function preflight(namespace, config) {
   const pods = await listEligiblePods(namespace, config);
-  pods.forEach((pod) => validateEligiblePod(pod, config));
+
+  try {
+    pods.forEach((pod) => validateEligiblePod(pod, config));
+  } catch (_error) {
+    throw preflightError('target-invalid', 'eligible target validation failed');
+  }
 
   const ready = pods.filter(podReady).length;
   if (pods.length !== expectedReplicas || ready !== expectedReplicas) {
-    throw new Error(
-      `preflight failed: expected exactly ${expectedReplicas}/${expectedReplicas} eligible ready ${config.app} pods, got ${ready}/${pods.length}`
+    throw preflightError(
+      'target-not-ready',
+      `expected exactly ${expectedReplicas}/${expectedReplicas} eligible ready ${config.app} pods, got ${ready}/${pods.length}`
     );
   }
 
@@ -261,17 +304,65 @@ async function preflight(namespace, config) {
     const blogPods = await listPods(namespace, 'app=blog');
     const readyBlogs = blogPods.filter(podReady).length;
     if (blogPods.length !== expectedBlogReplicas || readyBlogs !== expectedBlogReplicas) {
-      throw new Error(
-        `preflight failed: expected exactly ${expectedBlogReplicas}/${expectedBlogReplicas} ready blog pods before search chaos, got ${readyBlogs}/${blogPods.length}`
+      throw preflightError(
+        'blog-not-ready',
+        `expected exactly ${expectedBlogReplicas}/${expectedBlogReplicas} ready blog pods before search chaos, got ${readyBlogs}/${blogPods.length}`
       );
     }
   }
 
   if (!(await publicHealth())) {
-    throw new Error('preflight failed: public health endpoint is not healthy');
+    throw preflightError('public-health', 'public health endpoint is not healthy');
+  }
+
+  if (chaosTarget === 'search' && !(await searchReachable())) {
+    throw preflightError('search-api', 'search API is not healthy');
   }
 
   return pods;
+}
+
+async function waitForPreflight(namespace, config) {
+  const startedAt = Date.now();
+  let lastError = null;
+  let consecutivePasses = 0;
+  let lastPods = [];
+
+  while (Date.now() - startedAt < preflightTimeoutMs) {
+    try {
+      lastPods = await preflight(namespace, config);
+      consecutivePasses += 1;
+
+      if (consecutivePasses >= preflightStablePasses) {
+        log('preflight_ready', {
+          target: chaosTarget,
+          waitedMs: Date.now() - startedAt,
+          stablePasses: consecutivePasses
+        });
+        return lastPods;
+      }
+    } catch (error) {
+      if (classifyFailureStage(error) !== 'preflight') {
+        throw error;
+      }
+
+      lastError = error;
+      consecutivePasses = 0;
+      log('preflight_wait', {
+        target: chaosTarget,
+        failureReason: classifyFailureReason(error) || 'preflight-timeout',
+        waitedMs: Date.now() - startedAt
+      });
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, preflightIntervalMs));
+  }
+
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw preflightError('preflight-timeout', 'stable preflight baseline was not reached before timeout');
 }
 
 async function deletePod(namespace, podName) {
@@ -282,7 +373,7 @@ async function deletePod(namespace, podName) {
 }
 
 async function runBlogIteration(namespace, config, iteration) {
-  const before = await preflight(namespace, config);
+  const before = await waitForPreflight(namespace, config);
   const victim = before[crypto.randomInt(before.length)];
   const victimName = victim.metadata.name;
   const deletionStartedAt = Date.now();
@@ -349,7 +440,7 @@ async function runBlogIteration(namespace, config, iteration) {
 }
 
 async function runSearchExperiment(namespace, config, experimentStartedAt, searchBefore) {
-  const before = await preflight(namespace, config);
+  const before = await waitForPreflight(namespace, config);
   const victim = before[0];
   const victimName = victim.metadata.name;
   const deletionStartedAt = Date.now();
@@ -553,10 +644,10 @@ async function main() {
       throw new Error('search chaos supports exactly one iteration');
     }
 
-    await preflight(namespace, config);
+    await waitForPreflight(namespace, config);
     const searchBefore = await searchReachable();
     if (!searchBefore) {
-      throw new Error('preflight failed: search API is not healthy');
+      throw preflightError('search-api', 'search API is not healthy after stable preflight');
     }
 
     log('experiment_started', {
@@ -585,9 +676,11 @@ async function main() {
     }
   } catch (error) {
     const failureStage = classifyFailureStage(error);
+    const failureReason = classifyFailureReason(error);
     log('experiment_aborted', {
       error: error.message || String(error),
       failureStage,
+      failureReason,
       passed: false
     });
 
@@ -595,7 +688,7 @@ async function main() {
       try {
         await publishResult(
           namespace,
-          abortedExperimentResult(experimentStartedAt, failureStage)
+          abortedExperimentResult(experimentStartedAt, failureStage, failureReason)
         );
       } catch (publishError) {
         log('abort_result_publish_failed', {
