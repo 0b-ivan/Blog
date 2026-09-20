@@ -1,4 +1,29 @@
 services:
+  analytics:
+    image: ${BLOG_IMAGE:-kernel-notes-blog:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kernel-notes-analytics
+    command: ["analytics-server.js"]
+    volumes:
+      - kernel-analytics-data:/data
+    environment:
+      ANALYTICS_DATA_DIR: /data
+      ANALYTICS_RETENTION_DAYS: 90
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   search:
     image: ${SEARCH_IMAGE:-kernel-notes-search:local}
     build:
@@ -45,6 +70,7 @@ services:
       ARCHIVE_DIR: /content/archive
       POST_HISTORY_DIR: /content/post-history
       SEARCH_SERVICE_URL: http://search:8090/search
+      ANALYTICS_SERVICE_URL: http://analytics:8080
       LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Ivan Babayev}
       LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-Cloud Infrastructure Engineer}
       LEGAL_OPERATOR_LOCATION: ${LEGAL_OPERATOR_LOCATION:-Würzburg, Bayern, Deutschland}
@@ -56,6 +82,8 @@ services:
       LEGAL_CONTENT_RESPONSIBLE: ${LEGAL_CONTENT_RESPONSIBLE:-Ivan Babayev}
       LEGAL_CONTENT_ADDRESS: ${LEGAL_CONTENT_ADDRESS:-[Anschrift wie oben]}
     depends_on:
+      analytics:
+        condition: service_healthy
       search:
         condition: service_healthy
     logging:
@@ -73,5 +101,6 @@ services:
       start_period: 10s
 
 volumes:
+  kernel-analytics-data:
   kernel-search-data:
   kernel-search-models:
