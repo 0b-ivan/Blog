@@ -591,6 +591,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -610,9 +611,17 @@ function renderPostPage(post, relatedPosts = []) {
     </header>
 
     <main>
-      <article class="post-page">
+      <article class="post-page" data-post-slug="${md.utils.escapeHtml(String(post.slug || ''))}">
         <p class="meta">${meta}</p>
         <h1>${post.title}</h1>
+        <div class="article-metrics" aria-label="Artikelmetriken">
+          <span class="article-metric" title="Seitenaufrufe">👁 <strong data-article-metric="views">–</strong></span>
+          <span class="article-metric" title="Durchschnittliche aktive Lesezeit">⏱ <strong data-article-metric="active">–</strong></span>
+          <span class="article-metric" title="Anteil der Aufrufe, die mindestens 90 Prozent des Artikels erreicht haben">✓ <strong data-article-metric="completion">–</strong></span>
+          <button class="article-like" type="button" data-article-like aria-pressed="false" title="Artikel gefällt mir">
+            <strong data-article-metric="likes">–</strong>
+          </button>
+        </div>
         ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
         <section class="terminal-post" aria-label="Terminal article view">
           <div class="terminal-chrome">
@@ -645,6 +654,7 @@ function renderPostPage(post, relatedPosts = []) {
     </script>
     <script src="/script.js?v=20260819-2"></script>
     <script src="/assets/glossary.js" defer></script>
+    <script src="/assets/article-analytics.js" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
