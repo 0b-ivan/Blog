@@ -32,11 +32,14 @@ spec:
         namespace: flux-system
       interval: 1h
   values:
-    clusterScoped: false
+    # Chaos Mesh starts controllers for cluster-scoped CRDs such as
+    # PhysicalMachineChaos and RemoteCluster even though our injected faults
+    # are namespace-filtered. Keep the controller cache cluster-scoped and
+    # restrict actual injection through chaos-mesh.org/inject annotations.
+    clusterScoped: true
     controllerManager:
       replicaCount: 1
       enableFilterNamespace: true
-      targetNamespace: blog-staging
     dashboard:
       create: false
     dnsServer:
