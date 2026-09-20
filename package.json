@@ -1,6 +1,6 @@
 {
   "name": "kernel-notes-blog",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Self-hosted technical publishing and knowledge platform with semantic search, GraphRAG and GitOps deployment",
   "main": "seo-server.js",
