@@ -10,12 +10,14 @@ describe('analytics service', () => {
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-analytics-'));
     process.env.ANALYTICS_DATA_DIR = tmpDir;
+    process.env.ANALYTICS_DASHBOARD_TOKEN = 'test-dashboard-token';
     delete require.cache[require.resolve('../analytics-server')];
     analytics = require('../analytics-server');
   });
 
   afterAll(async () => {
     delete process.env.ANALYTICS_DATA_DIR;
+    delete process.env.ANALYTICS_DASHBOARD_TOKEN;
     if (tmpDir) await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
@@ -82,7 +84,11 @@ describe('analytics service', () => {
       source: 'system'
     }).expect(400);
 
-    const response = await request(server).get('/summary?days=30').expect(200);
+    await request(server).get('/summary?days=30').expect(401);
+    const response = await request(server)
+      .get('/summary?days=30')
+      .set('X-Analytics-Token', 'test-dashboard-token')
+      .expect(200);
     expect(response.body.totals.searches).toBe(1);
     expect(response.body.totals.searchCtr).toBe(100);
     expect(response.body.totals.zeroResultRate).toBe(100);
