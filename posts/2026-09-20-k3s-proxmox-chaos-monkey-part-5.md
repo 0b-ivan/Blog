@@ -1,6 +1,6 @@
 ---
 id: 2026-09-20-k3s-proxmox-chaos-monkey-part-5
-version: 2
+version: 3
 title: "K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog"
 status: publish
 date: 2026-09-20
@@ -99,6 +99,12 @@ Production Pods löschen
 ```
 
 Chaos Engineering ist für mich an dieser Stelle nicht „möglichst viel kaputt machen“.
+
+Die allgemeinen Grundlagen dahinter – Steady State, Hypothese, Blast Radius, Stop Conditions und weitere Fehlerklassen – habe ich inzwischen in einem eigenen Beitrag zusammengefasst:
+
+- [[chaos-engineering-chaos-monkey-kubernetes|Chaos Monkey ist kein Zufall: Chaos Engineering in Kubernetes richtig testen]]
+
+Teil V bleibt dagegen bewusst das praktische Logbuch meiner eigenen Experimente.
 
 Es ist eher:
 
@@ -772,13 +778,11 @@ Der Chaos Monkey hat nur die erste Ebene automatisiert getestet.
 
 ## Die nächsten Eskalationsstufen
 
-Ich will den Blast Radius weiter schrittweise erhöhen.
+Die ersten Pod-Tests waren nur die unterste Ebene.
 
-Nicht alles auf einmal.
+Nach dem Blick auf typische Kubernetes-Chaos-Szenarien will ich die Fehlerklassen jetzt systematischer eskalieren:
 
-Die Reihenfolge, die mich interessiert:
-
-```text
+~~~text
 Experiment 1
 ein Blog-Pod
 ✓ bestanden
@@ -788,22 +792,64 @@ wiederholte Blog-Pod-Ausfälle
 ✓ bestanden
 
 Experiment 3
-Search kontrolliert neu starten
+Search unter echten Anfragen neu starten
+↻ in Arbeit
 
 Experiment 4
-cloudflared kontrolliert ausfallen lassen
+langsamer Search-Start / Readiness-Verhalten
 
 Experiment 5
-gesamte K3s-VM nicht erreichbar
+CPU-Stress auf Search
 
 Experiment 6
-Proxmox aus
+Memory Pressure / kontrollierter OOM
 
 Experiment 7
-automatischer Failover zu Hetzner
-```
+DNS-Störung
 
-Spätestens ab Experiment 5 reicht Kubernetes allein nicht mehr.
+Experiment 8
+Netzwerklatenz / Packet Loss
+
+Experiment 9
+fehlerhafter oder stockender Rollout
+
+Experiment 10
+Node Drain / Eviction / PDB-Verhalten
+
+Experiment 11
+cloudflared oder komplette K3s-VM nicht erreichbar
+
+Experiment 12
+Proxmox beziehungsweise gesamter Standort weg
+→ Failover zu Hetzner
+~~~
+
+Damit teste ich nicht mehr nur:
+
+~~~text
+Kann Kubernetes einen Pod ersetzen?
+~~~
+
+Sondern schrittweise:
+
+~~~text
+Kann die Anwendung degradieren?
+Sind Probes korrekt?
+Bleiben Abhängigkeiten beherrschbar?
+Sind Netzwerk und DNS robust?
+Überlebt die Plattform einen Node-Verlust?
+Funktioniert der Standort-Failover?
+~~~
+
+Wichtig ist dabei auch die Art des Fehlers.
+
+Ein direkter Pod-Delete testet zum Beispiel nicht automatisch ein PodDisruptionBudget. PDBs greifen bei freiwilligen Evictions wie einem Node Drain; ein direkter Delete kann daran vorbeigehen.
+
+Für die allgemeinere Testmatrix und die Unterschiede zwischen Pod-, Dependency-, Ressourcen-, Netzwerk- und Node-Chaos verweise ich auf:
+
+- [[chaos-engineering-chaos-monkey-kubernetes|Chaos Monkey ist kein Zufall: Chaos Engineering in Kubernetes richtig testen]]
+
+Spätestens bei Node-, VM- und Standort-Ausfällen reicht Kubernetes innerhalb meiner einzelnen K3s-VM allein nicht mehr.
 
 Dann muss der zweite Standort aus Teil IV tatsächlich übernehmen.
 
@@ -866,24 +912,40 @@ Sondern um Behauptungen über Zuverlässigkeit in überprüfbare Experimente zu 
 
 ## Als Nächstes
 
-Der Blog selbst hat jetzt sowohl einen einzelnen als auch wiederholte Pod-Ausfälle bestanden.
+Der Blog selbst hat einen einzelnen und mehrere aufeinanderfolgende Pod-Ausfälle bestanden.
 
-Als nächstes will ich eine andere Workload treffen:
+Der nächste Schritt bleibt Search unter realen Anfragen.
 
-> Was passiert, wenn Search kontrolliert neu startet, während gleichzeitig echte Suchanfragen laufen?
+Danach will ich aber nicht einfach immer neue Pods löschen, sondern die Fehlerklasse wechseln:
 
-Danach wird es deutlich unangenehmer.
-
-Dann geht der Fehler **unterhalb** von Kubernetes:
-
-```text
-K3s-VM weg
+~~~text
+Search / Dependency
 ↓
-Proxmox-Host weg
+Startup + Readiness
 ↓
-gesamter Standort weg
-```
+CPU / Memory
+↓
+DNS / Netzwerk
+↓
+Rollout
+↓
+Node
+↓
+VM / Tunnel
+↓
+Standort
+~~~
 
-Ab diesem Punkt helfen mir drei Replicas auf demselben Node nicht mehr.
+Die allgemeine Methodik und die vollständige Testmatrix stehen in:
 
-Genau dort muss der zweite Standort auf Hetzner aus Teil IV anfangen, echten Wert zu liefern.
+- [[chaos-engineering-chaos-monkey-kubernetes|Chaos Monkey ist kein Zufall: Chaos Engineering in Kubernetes richtig testen]]
+
+Teil V bleibt das Praxisprotokoll dazu.
+
+## Quellen
+
+- [Principles of Chaos Engineering](/sources.html#principles-chaos-engineering)
+- [Chaos Engineering in Kubernetes: Why It Matters and How Teams Actually Use It](/sources.html#chaos-engineering-kubernetes-medium)
+- [Kubernetes: Liveness, Readiness, and Startup Probes](/sources.html#kubernetes-probes)
+- [Kubernetes: Disruptions und PodDisruptionBudgets](/sources.html#kubernetes-disruptions)
+- [Kubernetes: Debugging DNS Resolution](/sources.html#kubernetes-dns-debugging)
