@@ -162,3 +162,19 @@ Weitere Guards:
 - RBAC erlaubt ausschließlich `get`, `list` und `delete` auf Pods im Namespace `blog-staging`
 
 Ein versehentliches Entsuspendieren des CronJobs startet daher noch kein wirksames Chaos-Experiment: automatisch erzeugte CronJob-Pods bestehen den manuellen Jobnamen-Guard nicht.
+
+## Chaos-Experiment-Lifecycle
+
+Der `chaos-monkey` CronJob bleibt dauerhaft `suspend: true`. Ein Experiment wird bewusst als
+einmaliger Job gestartet; permanente automatische Pod-Löschungen sind nicht Teil von v1.
+
+Nach einem Experiment:
+
+1. den einmaligen Job wieder aus dem GitOps-Sollzustand entfernen,
+2. `chaos-monkey-result` **nicht** löschen – dort bleibt das letzte sanitisiert veröffentlichte Ergebnis,
+3. den Workflow **Observe staging chaos experiment** bei Bedarf manuell starten,
+4. für ein neues Experiment optional `completed_after` auf einen ISO-8601-Zeitpunkt kurz vor dem Versuch setzen,
+   damit kein älteres Ergebnis als aktuelles Experiment interpretiert wird.
+
+Der öffentliche Status enthält weiterhin keine Pod-Namen, Node-Namen, internen IPs oder Cluster-Credentials.
+

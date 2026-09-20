@@ -1,0 +1,108 @@
+name: Observe staging chaos experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      completed_after:
+        description: 'Optional ISO-8601 lower bound for completedAt, e.g. 2026-09-19T19:57:00Z'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: observe-staging-chaos
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
+      COMPLETED_AFTER: ${{ inputs.completed_after }}
+    steps:
+      - name: Wait for sanitized chaos result
+        id: result
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 72); do
+            payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
+
+            result="$(printf '%s' "$payload" | jq -c --arg lower "${COMPLETED_AFTER}" '
+              .lastChaosExperiment
+              | select(type == "object")
+              | select(.experiment == "single-blog-pod-delete")
+              | select(
+                  ($lower == "")
+                  or ((.completedAt // "") != "" and (.completedAt >= $lower))
+                )
+              | {
+                  experiment,
+                  experimentStartedAt,
+                  completedAt,
+                  recoveryTimeMs,
+                  httpChecks,
+                  httpFailures,
+                  minimumReadyPods,
+                  maximumReadyPods,
+                  searchReachableBefore,
+                  searchReachableAfter,
+                  passed
+                }
+            ' 2>/dev/null || true)"
+
+            if [ -n "$result" ] && [ "$result" != "null" ]; then
+              printf '%s\n' "$result" > /tmp/chaos-result.json
+              echo "found=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/72: no matching sanitized result yet"
+            sleep 5
+          done
+
+          echo "found=false" >> "$GITHUB_OUTPUT"
+
+      - name: Publish chaos result summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ steps.result.outputs.found }}" != "true" ]; then
+            echo "No matching sanitized lastChaosExperiment result became visible before the observer timeout." >&2
+            exit 1
+          fi
+
+          status="$(jq -r 'if .passed then "PASS" else "FAIL" end' /tmp/chaos-result.json)"
+          recovery="$(jq -r '.recoveryTimeMs' /tmp/chaos-result.json)"
+          checks="$(jq -r '.httpChecks' /tmp/chaos-result.json)"
+          failures="$(jq -r '.httpFailures' /tmp/chaos-result.json)"
+          minimum="$(jq -r '.minimumReadyPods' /tmp/chaos-result.json)"
+          maximum="$(jq -r '.maximumReadyPods' /tmp/chaos-result.json)"
+          search_before="$(jq -r 'if .searchReachableBefore then "reachable" else "unreachable" end' /tmp/chaos-result.json)"
+          search_after="$(jq -r 'if .searchReachableAfter then "reachable" else "unreachable" end' /tmp/chaos-result.json)"
+          started="$(jq -r '.experimentStartedAt' /tmp/chaos-result.json)"
+          completed="$(jq -r '.completedAt' /tmp/chaos-result.json)"
+
+          {
+            echo "### Chaos experiment result"
+            echo
+            echo "- Result: **${status}**"
+            echo "- Recovery: **${recovery} ms**"
+            echo "- HTTP checks: **${checks}**"
+            echo "- HTTP failures: **${failures}**"
+            echo "- Ready pods observed: **${minimum} → ${maximum}**"
+            echo "- Search before experiment: **${search_before}**"
+            echo "- Search after experiment: **${search_after}**"
+            echo "- Started: \`${started}\`"
+            echo "- Completed: \`${completed}\`"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" != "PASS" ]; then
+            exit 1
+          fi
