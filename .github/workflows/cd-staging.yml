@@ -335,7 +335,17 @@ jobs:
             exit 1
           fi
 
-          git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
+          git fetch origin "refs/heads/${PROMOTION_BRANCH}:refs/remotes/origin/${PROMOTION_BRANCH}" || true
+          current_promotion_sha="$(git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}" 2>/dev/null || true)"
+
+          if [ -n "$current_promotion_sha" ]; then
+            git push \
+              --force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}" \
+              origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
+          else
+            git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
+          fi
+
           echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
 
       - name: Open or update production promotion PR
