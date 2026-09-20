@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/mobile-topics.css" />
     <link rel="stylesheet" href="/assets/css/typewriter.css" data-kernel-typewriter />
-    <link rel="stylesheet" href="/assets/css/newsletter.css" />
+    <link rel="stylesheet" href="/assets/css/newsletter.css" />\n    <link rel="stylesheet" href="/assets/css/home-status.css" />
   </head>
   <body>
     <div class="bg-grid" aria-hidden="true"></div>
@@ -80,6 +80,20 @@
         <div id="posts-list" aria-live="polite"></div>
       </section>
 
+      <section class="home-status reveal" data-home-status data-delay="120" aria-labelledby="home-status-title">
+        <div class="home-status__layout">
+          <div class="home-status__state">
+            <span class="home-status__dot" data-home-status-dot aria-hidden="true"></span>
+            <div>
+              <p class="eyebrow">Infrastructure</p>
+              <h2 id="home-status-title" data-home-status-label>Status wird geladen …</h2>
+              <p class="home-status__detail" data-home-status-detail>Live-Status wird geprüft.</p>
+            </div>
+          </div>
+          <a class="btn btn-ghost" href="/status">Status ansehen</a>
+        </div>
+      </section>
+
       <section class="newsletter reveal" id="newsletter" data-delay="120" aria-labelledby="newsletter-title">
         <div class="newsletter-layout">
           <div>
@@ -135,7 +149,7 @@
     <script src="assets/newsletter.js"></script>
     <script src="script.js"></script>
     <script src="/assets/tag-navigation.js"></script>
-    <script src="assets/topic-scroll-lock.js"></script>
+    <script src="assets/topic-scroll-lock.js"></script>\n    <script src="/assets/home-status.js" defer></script>
     <script>
       (async () => {
         const target = document.getElementById('build-info');
