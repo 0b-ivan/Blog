@@ -4,7 +4,7 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 
 const port = Number.parseInt(process.env.PORT || '8080', 10);
-const dataDir = process.env.ANALYTICS_DATA_DIR || '/data';
+const dataDir = process.env.ANALYTICS_DATA_DIR || path.join(__dirname, '.data', 'analytics');
 const dataFile = path.join(dataDir, 'analytics.json');
 const retentionDays = Math.max(7, Math.min(365, Number.parseInt(process.env.ANALYTICS_RETENTION_DAYS || '90', 10)));
 
@@ -199,9 +199,9 @@ function summary(daysValue) {
     likes: state.articles[slug]?.likes || 0
   })).sort((a, b) => b.views - a.views || a.slug.localeCompare(b.slug));
 
-  const searchRows = Object.values(searches)
-    .sort((a, b) => b.searches - a.searches || a.query.localeCompare(b.query, 'de'))
-    .slice(0, 20);
+  const allSearchRows = Object.values(searches)
+    .sort((a, b) => b.searches - a.searches || a.query.localeCompare(b.query, 'de'));
+  const searchRows = allSearchRows.slice(0, 20);
 
   const totals = articleRows.reduce((acc, item) => {
     acc.views += item.views;
@@ -210,7 +210,7 @@ function summary(daysValue) {
     return acc;
   }, { views: 0, activeSeconds: 0, completions: 0 });
 
-  const searchTotals = searchRows.reduce((acc, item) => {
+  const searchTotals = allSearchRows.reduce((acc, item) => {
     acc.searches += item.searches;
     acc.zeroResults += item.zeroResults;
     acc.clicks += item.clicks;
@@ -264,7 +264,8 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
-const server = http.createServer(async (req, res) => {
+function createServer() {
+  return http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://analytics.internal');
 
   if (req.method === 'GET' && url.pathname === '/healthz') {
@@ -313,9 +314,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  sendJson(res, 404, { error: 'not_found' });
-});
+    sendJson(res, 404, { error: 'not_found' });
+  });
+}
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`kernel-notes analytics listening on :${port}`);
-});
+function startServer() {
+  return createServer().listen(port, '0.0.0.0', () => {
+    console.log(`kernel-notes analytics listening on :${port}`);
+  });
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = {
+  safeSlug,
+  safeQuery,
+  boundedNumber,
+  articleMetrics,
+  summary,
+  createServer,
+  startServer
+};
