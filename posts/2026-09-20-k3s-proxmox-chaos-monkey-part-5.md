@@ -14,7 +14,7 @@ tags:
   - Kubernetes
   - K3s
   - Proxmox
-  - Chaos Engineering
+  - Chaos-Engineering
   - GitOps
   - Flux
   - Observability
