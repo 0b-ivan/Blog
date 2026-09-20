@@ -63,7 +63,12 @@ describe('public Kubernetes status contract', () => {
         experiment: 'single-blog-pod-delete',
         experimentStartedAt: '2026-09-19T19:00:00.000Z',
         completedAt: '2026-09-19T19:00:02.500Z',
+        iterationCount: 1,
+        completedIterations: 1,
         recoveryTimeMs: 2500,
+        recoveryTimesMs: [2500],
+        totalRecoveryTimeMs: 2500,
+        maxRecoveryTimeMs: 2500,
         httpChecks: 6,
         httpFailures: 0,
         minimumReadyPods: 2,
@@ -77,6 +82,54 @@ describe('public Kubernetes status contract', () => {
     expect(JSON.stringify(payload)).not.toContain('10.0.0.5');
     expect(JSON.stringify(payload)).not.toContain('blog-secret-name');
     expect(JSON.stringify(payload)).not.toContain('must-not-leak-victim');
+  });
+
+  it('sanitizes bounded repeated chaos experiment metrics', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'operational',
+      environment: 'staging',
+      orchestrator: 'K3s',
+      kubernetesApi: 'reachable',
+      workloads: [],
+      lastChaosExperiment: {
+        experiment: 'repeated-blog-pod-delete',
+        experimentStartedAt: '2026-09-20T01:00:00.000Z',
+        completedAt: '2026-09-20T01:00:25.000Z',
+        iterationCount: 3,
+        completedIterations: 3,
+        recoveryTimesMs: [6950, 5800, 7200, 999999],
+        totalRecoveryTimeMs: 19950,
+        maxRecoveryTimeMs: 7200,
+        httpChecks: 31,
+        httpFailures: 0,
+        minimumReadyPods: 2,
+        maximumReadyPods: 3,
+        searchReachableBefore: true,
+        searchReachableAfter: true,
+        passed: true,
+        victims: ['must-not-leak-a', 'must-not-leak-b']
+      }
+    });
+
+    expect(payload.lastChaosExperiment).toEqual({
+      experiment: 'repeated-blog-pod-delete',
+      experimentStartedAt: '2026-09-20T01:00:00.000Z',
+      completedAt: '2026-09-20T01:00:25.000Z',
+      iterationCount: 3,
+      completedIterations: 3,
+      recoveryTimeMs: 7200,
+      recoveryTimesMs: [6950, 5800, 7200],
+      totalRecoveryTimeMs: 19950,
+      maxRecoveryTimeMs: 7200,
+      httpChecks: 31,
+      httpFailures: 0,
+      minimumReadyPods: 2,
+      maximumReadyPods: 3,
+      searchReachableBefore: true,
+      searchReachableAfter: true,
+      passed: true
+    });
+    expect(JSON.stringify(payload)).not.toContain('must-not-leak');
   });
 
   it('normalizes unexpected values instead of exposing them', () => {

@@ -1,10 +1,15 @@
 name: Observe staging chaos experiment
 
 on:
+  push:
+    branches:
+      - staging
+    paths:
+      - 'infra/kubernetes/staging/chaos-experiment-*.yaml'
   workflow_dispatch:
     inputs:
       completed_after:
-        description: 'Optional ISO-8601 lower bound for completedAt, e.g. 2026-09-19T19:57:00Z'
+        description: 'Optional ISO-8601 lower bound for completedAt'
         required: false
         type: string
 
@@ -18,25 +23,41 @@ concurrency:
 jobs:
   observe:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 8
     env:
       STATUS_URL: https://staging-blog.obivan.org/api/kubernetes-status
-      COMPLETED_AFTER: ${{ inputs.completed_after }}
+      COMPLETED_AFTER: ${{ inputs.completed_after || github.event.head_commit.timestamp || '' }}
     steps:
+      - name: Checkout experiment state
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Detect active one-shot experiment
+        id: active
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && ! compgen -G 'infra/kubernetes/staging/chaos-experiment-*.yaml' >/dev/null; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Experiment manifest was removed; nothing to observe."
+            exit 0
+          fi
+          echo "active=true" >> "$GITHUB_OUTPUT"
+
       - name: Wait for sanitized chaos result
+        if: steps.active.outputs.active == 'true'
         id: result
         shell: bash
         run: |
           set -euo pipefail
 
-          for attempt in $(seq 1 72); do
+          for attempt in $(seq 1 84); do
             payload="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
               "${STATUS_URL}?chaos=${GITHUB_RUN_ID}" 2>/dev/null || true)"
 
             result="$(printf '%s' "$payload" | jq -c --arg lower "${COMPLETED_AFTER}" '
               .lastChaosExperiment
               | select(type == "object")
-              | select(.experiment == "single-blog-pod-delete")
+              | select(.experiment == "single-blog-pod-delete" or .experiment == "repeated-blog-pod-delete")
               | select(
                   ($lower == "")
                   or ((.completedAt // "") != "" and (.completedAt >= $lower))
@@ -45,7 +66,12 @@ jobs:
                   experiment,
                   experimentStartedAt,
                   completedAt,
+                  iterationCount,
+                  completedIterations,
                   recoveryTimeMs,
+                  recoveryTimesMs,
+                  totalRecoveryTimeMs,
+                  maxRecoveryTimeMs,
                   httpChecks,
                   httpFailures,
                   minimumReadyPods,
@@ -62,13 +88,14 @@ jobs:
               exit 0
             fi
 
-            echo "Attempt ${attempt}/72: no matching sanitized result yet"
+            echo "Attempt ${attempt}/84: no matching sanitized result yet"
             sleep 5
           done
 
           echo "found=false" >> "$GITHUB_OUTPUT"
 
       - name: Publish chaos result summary
+        if: steps.active.outputs.active == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -79,7 +106,12 @@ jobs:
           fi
 
           status="$(jq -r 'if .passed then "PASS" else "FAIL" end' /tmp/chaos-result.json)"
-          recovery="$(jq -r '.recoveryTimeMs' /tmp/chaos-result.json)"
+          experiment="$(jq -r '.experiment' /tmp/chaos-result.json)"
+          iterations="$(jq -r '.iterationCount' /tmp/chaos-result.json)"
+          completed_iterations="$(jq -r '.completedIterations' /tmp/chaos-result.json)"
+          recovery="$(jq -r '.maxRecoveryTimeMs' /tmp/chaos-result.json)"
+          recoveries="$(jq -r '.recoveryTimesMs | map(tostring) | join(", ")' /tmp/chaos-result.json)"
+          total_recovery="$(jq -r '.totalRecoveryTimeMs' /tmp/chaos-result.json)"
           checks="$(jq -r '.httpChecks' /tmp/chaos-result.json)"
           failures="$(jq -r '.httpFailures' /tmp/chaos-result.json)"
           minimum="$(jq -r '.minimumReadyPods' /tmp/chaos-result.json)"
@@ -93,7 +125,11 @@ jobs:
             echo "### Chaos experiment result"
             echo
             echo "- Result: **${status}**"
-            echo "- Recovery: **${recovery} ms**"
+            echo "- Experiment: **${experiment}**"
+            echo "- Iterations: **${completed_iterations} / ${iterations}**"
+            echo "- Recovery times: **${recoveries} ms**"
+            echo "- Max recovery: **${recovery} ms**"
+            echo "- Total recovery: **${total_recovery} ms**"
             echo "- HTTP checks: **${checks}**"
             echo "- HTTP failures: **${failures}**"
             echo "- Ready pods observed: **${minimum} → ${maximum}**"
