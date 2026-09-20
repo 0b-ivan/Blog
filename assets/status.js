@@ -58,23 +58,37 @@ function formatDuration(value) {
 }
 
 function renderChaosExperiment(experiment) {
-  if (!experiment || experiment.experiment !== 'single-blog-pod-delete') {
+  const allowedExperiments = ['single-blog-pod-delete', 'repeated-blog-pod-delete'];
+  if (!experiment || !allowedExperiments.includes(experiment.experiment)) {
     chaosSection.hidden = true;
     chaosExperiment.innerHTML = '';
     return;
   }
 
   chaosSection.hidden = false;
+  const repeated = experiment.experiment === 'repeated-blog-pod-delete';
   const result = experiment.passed ? 'Bestanden' : 'Fehlgeschlagen';
   const search = experiment.searchReachableAfter ? 'Erreichbar' : 'Nicht erreichbar';
+  const recovery = repeated
+    ? experiment.maxRecoveryTimeMs
+    : experiment.recoveryTimeMs;
+  const recoveryLabel = repeated ? 'Max. Recovery' : 'Recovery';
+  const iterations = repeated
+    ? `${experiment.completedIterations} / ${experiment.iterationCount}`
+    : '1 / 1';
+
   chaosExperiment.innerHTML = `
     <article class="status-card">
       <span class="status-label">Ergebnis</span>
       <strong>${result}</strong>
     </article>
     <article class="status-card">
-      <span class="status-label">Recovery</span>
-      <strong>${formatDuration(experiment.recoveryTimeMs)}</strong>
+      <span class="status-label">${recoveryLabel}</span>
+      <strong>${formatDuration(recovery)}</strong>
+    </article>
+    <article class="status-card">
+      <span class="status-label">Durchläufe</span>
+      <strong>${iterations}</strong>
     </article>
     <article class="status-card">
       <span class="status-label">HTTP-Fehler</span>
