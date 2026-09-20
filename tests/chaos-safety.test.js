@@ -47,7 +47,7 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain('`app=${config.app},chaos.obivan.org/enabled=true`');
     expect(chaosSource).toContain('const maximumIterations = 3');
     expect(chaosSource).toContain("process.env.CHAOS_ITERATIONS || '1'");
-    expect(chaosSource).toContain('const before = await preflight(namespace, config)');
+    expect(chaosSource).toContain('const before = await waitForPreflight(namespace, config)');
     expect(chaosSource).toContain("CHAOS_TARGET");
     expect(chaosSource).toContain("search-restart-under-load");
     expect(chaosSource).toContain("search chaos supports exactly one iteration");
@@ -56,6 +56,12 @@ describe('Chaos Monkey and status RBAC safety contract', () => {
     expect(chaosSource).toContain('function classifyFailureStage(error)');
     expect(chaosSource).toContain("outcome: 'aborted'");
     expect(chaosSource).toContain("failureStage");
+    expect(chaosSource).toContain("failureReason");
+    expect(chaosSource).toContain("PREFLIGHT_TIMEOUT_MS");
+    expect(chaosSource).toContain("target-not-ready");
+    expect(chaosSource).toContain("blog-not-ready");
+    expect(chaosSource).toContain("health-unhealthy");
+    expect(chaosSource).toContain("search-api-unhealthy");
     expect(chaosSource).toContain("abort_result_publish_failed");
   });
 
