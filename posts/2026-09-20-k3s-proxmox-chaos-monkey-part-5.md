@@ -90,11 +90,13 @@ Wenn etwas davon nicht passt, startet kein Experiment.
 
 Auch GitOps bleibt Teil des Sicherheitsmodells: aktive Chaos-Jobs oder NetworkChaos-Manifeste liegen nur für den Versuch im Staging-Sollzustand und werden danach wieder entfernt.
 
-## Experiment #1: einen Blog-Pod löschen
+## Kubernetes Pod Failover mit Chaos Engineering
 
 Die Hypothese:
 
 > Wenn einer von drei Blog-Pods ausfällt, bleibt der öffentliche Blog erreichbar und Kubernetes stellt innerhalb kurzer Zeit wieder drei Ready-Pods her.
+
+### Recovery-Zeit und HTTP-Fehler beim Pod-Ausfall
 
 Der erste echte Lauf am 19. September 2026 ergab:
 
