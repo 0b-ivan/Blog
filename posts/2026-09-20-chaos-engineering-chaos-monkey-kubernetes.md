@@ -61,7 +61,7 @@ Und idealerweise ist bereits vorher klar:
 - wann der Versuch sofort abgebrochen wird,
 - und welches Ergebnis als PASS oder FAIL gilt.
 
-Ich bin über das Thema tiefer gestolpert, nachdem ich für meinen eigenen Blog einen kleinen Chaos Runner gebaut habe.
+Ich bin über das Thema tiefer gestolpert, nachdem ich für meinen eigenen Blog einen kleinen Chaos-Runner gebaut habe.
 
 Dort habe ich zuerst einen einzelnen Blog-Pod gelöscht, später drei Failover-Zyklen hintereinander gemessen.
 
@@ -116,11 +116,11 @@ Es ist aber kein Nachweis dafür, dass das System insgesamt resilient ist.
 
 Kubernetes kann sehr viel automatisch reparieren.
 
-Wenn ein Pod eines Deployments verschwindet, erzeugt der Controller einen neuen.
+Verschwindet ein Pod eines Deployments, erzeugt der Controller einen neuen.
 
-Wenn eine Readiness Probe fehlschlägt, kann der Pod aus dem Service-Traffic genommen werden.
+Schlägt eine Readiness Probe fehl, kann der Pod aus dem Service-Traffic genommen werden.
 
-Wenn eine Liveness Probe dauerhaft fehlschlägt, kann der Container neu gestartet werden.
+Bei einer dauerhaft fehlschlagenden Liveness Probe kann der Container neu gestartet werden.
 
 Das heißt aber nicht:
 
@@ -284,7 +284,7 @@ Wenn die Antwort lautet:
 weiß ich nicht genau
 ~~~
 
-ist das Experiment noch nicht bereit.
+Dann ist das Experiment noch nicht bereit.
 
 ## Preflight vor dem eigentlichen Fehler
 
@@ -533,7 +533,7 @@ Ein Chaos-Test mit:
 kubectl delete pod
 ~~~
 
-prüft deshalb nicht automatisch, ob ein PDB korrekt schützt.
+Ein solcher Test prüft deshalb nicht automatisch, ob ein PDB korrekt schützt.
 
 Für PDB-Verhalten ist ein Drain- beziehungsweise Eviction-Szenario aussagekräftiger.
 
@@ -576,12 +576,12 @@ Aus diesen Fehlerklassen ergibt sich für meinen eigenen Aufbau inzwischen eine 
 | 1 | einzelner Blog-Pod weg | Blog bleibt erreichbar | HTTP-Fehler |
 | 2 | drei Pod-Ausfälle nacheinander | Recovery bleibt stabil | Recovery-Verteilung |
 | 3 | Search unter Anfragen neu starten | Blog bleibt gesund, Search erholt sich | Search-Ausfallzeit |
-| 4 | langsamer Search-Start | Startup/Readiness schützen Traffic | Fehler vor Ready |
+| 4 | langsamer Search-Start | Startup- und Readiness-Verhalten schützt Traffic | Fehler vor Ready |
 | 5 | CPU-Stress auf Search | Blog bleibt isoliert | Latenz + Fehler |
 | 6 | Memory Pressure / OOM | Search startet kontrolliert neu | OOM + Recovery |
 | 7 | DNS-Störung | Fehler bleiben begrenzt | Timeout-/Retry-Verhalten |
-| 8 | Latenz / Packet Loss | kein kaskadierender Ausfall | p95/p99 + Errors |
-| 9 | fehlerhafter Rollout | alte gesunde Pods bleiben verfügbar | Availability |
+| 8 | Latenz / Packet Loss | kein kaskadierender Ausfall | p95/p99 + Fehler |
+| 9 | fehlerhafter Rollout | alte gesunde Pods bleiben verfügbar | Verfügbarkeit |
 | 10 | Node Drain | Replicas bleiben verfügbar | Ready Replicas |
 | 11 | komplette K3s-VM weg | externer Failover übernimmt | Umschaltzeit |
 | 12 | Proxmox/Standort weg | Hetzner hält den Blog online | End-to-End Availability |
@@ -610,14 +610,12 @@ und:
 Experiment wurde gar nicht erst gestartet
 ~~~
 
-Deshalb gibt mein Runner inzwischen sanitisiert Zustände wie:
+Deshalb gibt mein Runner inzwischen sanitisiert beispielsweise diesen Zustand aus:
 
 ~~~text
 ABORTED
 failureStage: preflight
 ~~~
-
-aus.
 
 Der Test des Testsystems gehört also ebenfalls dazu.
 
@@ -660,7 +658,7 @@ Für DNS, Netzwerk, IO oder CPU-Stress braucht man aber andere Mechanismen.
 
 Litmus ist eine umfangreichere Chaos-Engineering-Plattform für Cloud-Native-Umgebungen.
 
-Interessant wird das, wenn Experimente:
+Interessant wird Litmus, wenn Experimente diese Eigenschaften bekommen sollen:
 
 ~~~text
 wiederverwendbar
@@ -668,8 +666,6 @@ orchestriert
 CI/CD-integriert
 als Workflows modelliert
 ~~~
-
-werden sollen.
 
 ### Chaos Mesh
 
