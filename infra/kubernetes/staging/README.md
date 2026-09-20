@@ -168,21 +168,22 @@ Ein versehentliches Entsuspendieren des CronJobs startet daher noch kein wirksam
 Für die späteren Fehlerklassen DNS, Latenz und Packet Loss wird Chaos Mesh separat über Flux installiert. Die Plattform ist absichtlich enger begrenzt als eine Standardinstallation:
 
 - Chart-Version fest auf `2.8.4` gepinnt
-- `clusterScoped: false`
-- Ziel-Namespace ausschließlich `blog-staging`
-- zusätzliche Namespace-Filterung mit `chaos-mesh.org/inject=enabled`
+- Controller-Cache `clusterScoped: true`, damit auch die von Chaos Mesh gestarteten clusterweiten CRD-Controller ihre Informer synchronisieren können
+- eigentliche Fault-Injection weiterhin über `enableFilterNamespace: true` begrenzt
+- nur `blog-staging` trägt `chaos-mesh.org/inject=enabled`
 - K3s-`containerd` über `/run/k3s/containerd/containerd.sock`
 - Dashboard deaktiviert
 - DNS-Server zunächst deaktiviert
 - nur ein Controller-Manager im kleinen Staging-Cluster
 
-Die Namespace-Freigabe steht bewusst direkt am Staging-Namespace. Production besitzt diese Annotation nicht.
+Die Cluster-Sichtbarkeit des Controllers ist damit bewusst von der Injection-Freigabe getrennt. Der Controller darf die benötigten cluster-scoped CRDs beobachten; Chaos wird nur in Namespaces injiziert, die explizit mit `chaos-mesh.org/inject=enabled` freigegeben sind. Im GitOps-Sollzustand besitzt nur `blog-staging` diese Annotation.
 
 Die Installation selbst injiziert **noch keinen Fehler**. Vor dem ersten `NetworkChaos` müssen Control Plane und Kernel-Voraussetzung geprüft werden:
 
 ```bash
 kubectl -n flux-system get helmrelease chaos-mesh
 kubectl -n chaos-mesh get pods -l app.kubernetes.io/instance=chaos-mesh
+kubectl -n chaos-mesh get pods
 kubectl get crd networkchaos.chaos-mesh.org
 lsmod | grep sch_netem || sudo modprobe sch_netem
 ```

@@ -17,11 +17,11 @@ describe('Chaos Mesh staging safety contract', () => {
     'utf8'
   );
 
-  it('pins Chaos Mesh and keeps fault injection staging-only', () => {
+  it('pins Chaos Mesh and keeps fault injection opt-in for staging', () => {
     expect(manifest).toContain('version: "2.8.4"');
-    expect(manifest).toContain('clusterScoped: false');
+    expect(manifest).toContain('clusterScoped: true');
     expect(manifest).toContain('enableFilterNamespace: true');
-    expect(manifest.match(/targetNamespace: blog-staging/g)).toHaveLength(2);
+    expect(namespaceManifest).toContain('name: blog-staging');
     expect(namespaceManifest).toContain('chaos-mesh.org/inject: enabled');
   });
 
