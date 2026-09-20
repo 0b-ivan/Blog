@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: observe-staging-chaos
@@ -165,3 +166,37 @@ jobs:
           if [ "$status" != "PASS" ]; then
             exit 1
           fi
+
+      - name: Publish machine-readable commit status
+        if: always() && steps.active.outputs.active == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          state=failure
+          description="No matching sanitized chaos result"
+
+          if [ -f /tmp/chaos-result.json ]; then
+            passed="$(jq -r '.passed == true' /tmp/chaos-result.json)"
+            iterations="$(jq -r '.completedIterations // 0' /tmp/chaos-result.json)"
+            planned="$(jq -r '.iterationCount // 0' /tmp/chaos-result.json)"
+            max_recovery="$(jq -r '.maxRecoveryTimeMs // .recoveryTimeMs // 0' /tmp/chaos-result.json)"
+            failures="$(jq -r '.httpFailures // 0' /tmp/chaos-result.json)"
+
+            if [ "$passed" = "true" ]; then
+              state=success
+              description="PASS ${iterations}/${planned}; max ${max_recovery}ms; HTTP failures ${failures}"
+            else
+              description="FAIL ${iterations}/${planned}; max ${max_recovery}ms; HTTP failures ${failures}"
+            fi
+          fi
+
+          description="${description:0:140}"
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="$state" \
+            -f context="chaos-observer" \
+            -f description="$description" >/dev/null
