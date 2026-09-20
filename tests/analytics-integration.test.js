@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { renderPostPage } = require('../server');
+const { analyticsServiceTarget } = require('../privacy-server');
 const { sanitizedKubernetesStatus } = require('../lib/kubernetes-status');
 
 describe('analytics integration', () => {
@@ -23,6 +24,12 @@ describe('analytics integration', () => {
     expect(html).toContain('data-article-metric="likes"');
     expect(html).toContain('data-article-like');
     expect(html).toContain('/assets/article-analytics.js');
+  });
+
+  it('preserves analytics summary query parameters through the internal proxy target', () => {
+    const target = analyticsServiceTarget('/summary?days=30');
+    expect(target.pathname).toBe('/summary');
+    expect(target.searchParams.get('days')).toBe('30');
   });
 
   it('exposes Analytics as an allowed public workload name', () => {
