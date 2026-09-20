@@ -89,6 +89,24 @@ strategy:
 
 Damit kann Kubernetes beim Rollout zuerst einen neuen Pod starten, bevor ein alter verschwindet.
 
+## Pod Failover bei K3s hinter einem Cloudflare Tunnel
+
+Der konkrete Pfad, den ich hier teste, ist:
+
+```text
+Cloudflare Tunnel
+↓
+K3s Service
+↓
+3 Blog-Pods
+↓
+1 Pod fällt aus
+↓
+Service routet weiter auf die gesunden Pods
+```
+
+Damit geht es in diesem Teil ausdrücklich um **Pod Failover bei K3s hinter einem Cloudflare Tunnel** – noch nicht um allgemeines Chaos Engineering.
+
 ## Ein echter Failure-Test statt nur grüner YAML
 
 Konfiguration ist schön.
