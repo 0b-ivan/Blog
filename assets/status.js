@@ -58,7 +58,11 @@ function formatDuration(value) {
 }
 
 function renderChaosExperiment(experiment) {
-  const allowedExperiments = ['single-blog-pod-delete', 'repeated-blog-pod-delete'];
+  const allowedExperiments = [
+    'single-blog-pod-delete',
+    'repeated-blog-pod-delete',
+    'search-restart-under-load'
+  ];
   if (!experiment || !allowedExperiments.includes(experiment.experiment)) {
     chaosSection.hidden = true;
     chaosExperiment.innerHTML = '';
@@ -66,16 +70,32 @@ function renderChaosExperiment(experiment) {
   }
 
   chaosSection.hidden = false;
+  const searchRestart = experiment.experiment === 'search-restart-under-load';
   const repeated = experiment.experiment === 'repeated-blog-pod-delete';
-  const result = experiment.passed ? 'Bestanden' : 'Fehlgeschlagen';
+  const result = experiment.outcome === 'aborted'
+    ? `Abgebrochen (${experiment.failureReason || experiment.failureStage || 'runtime'})`
+    : (experiment.passed ? 'Bestanden' : 'Fehlgeschlagen');
   const search = experiment.searchReachableAfter ? 'Erreichbar' : 'Nicht erreichbar';
-  const recovery = repeated
+  const recovery = repeated || searchRestart
     ? experiment.maxRecoveryTimeMs
     : experiment.recoveryTimeMs;
-  const recoveryLabel = repeated ? 'Max. Recovery' : 'Recovery';
+  const recoveryLabel = searchRestart
+    ? 'Search Recovery'
+    : (repeated ? 'Max. Recovery' : 'Recovery');
   const iterations = repeated
     ? `${experiment.completedIterations} / ${experiment.iterationCount}`
     : '1 / 1';
+  const minimumReady = searchRestart
+    ? `${experiment.minimumReadyPods} / 1`
+    : `${experiment.minimumReadyPods} / 3`;
+
+  const searchFailureCard = searchRestart
+    ? `
+    <article class="status-card">
+      <span class="status-label">Search-Fehler</span>
+      <strong>${experiment.searchFailures} / ${experiment.searchChecks}</strong>
+    </article>`
+    : '';
 
   chaosExperiment.innerHTML = `
     <article class="status-card">
@@ -90,13 +110,14 @@ function renderChaosExperiment(experiment) {
       <span class="status-label">Durchläufe</span>
       <strong>${iterations}</strong>
     </article>
+    ${searchFailureCard}
     <article class="status-card">
-      <span class="status-label">HTTP-Fehler</span>
+      <span class="status-label">${searchRestart ? 'Blog HTTP-Fehler' : 'HTTP-Fehler'}</span>
       <strong>${experiment.httpFailures}</strong>
     </article>
     <article class="status-card">
-      <span class="status-label">Minimum Ready</span>
-      <strong>${experiment.minimumReadyPods} / 3</strong>
+      <span class="status-label">${searchRestart ? 'Minimum Search Ready' : 'Minimum Ready'}</span>
+      <strong>${minimumReady}</strong>
     </article>
     <article class="status-card">
       <span class="status-label">Search danach</span>

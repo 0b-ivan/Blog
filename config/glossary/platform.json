@@ -23,11 +23,31 @@
       "Bastion Hosts"
     ]
   },
+  "Blast Radius": {
+    "full": "Blast Radius",
+    "short": "Maximaler Wirkungsbereich eines absichtlich oder unbeabsichtigt ausgelösten Fehlers.",
+    "description": "Im Chaos Engineering beschreibt der Blast Radius, welche Systeme, Nutzer oder Funktionen von einem Experiment betroffen sein dürfen. Ein kleiner, klar definierter Blast Radius begrenzt das Risiko eines Tests.",
+    "aliases": []
+  },
   "Cache": {
     "full": "Cache",
     "short": "Zwischenspeicher für häufig oder teuer erzeugte Daten.",
     "description": "Ein Cache hält Daten vor, damit sie bei späteren Zugriffen schneller verfügbar sind und nicht jedes Mal neu berechnet oder geladen werden müssen.",
     "aliases": []
+  },
+  "Chaos Engineering": {
+    "full": "Chaos Engineering",
+    "short": "Disziplin zum kontrollierten Testen der Widerstandsfähigkeit eines Systems durch absichtlich erzeugte Fehler.",
+    "description": "Chaos Engineering formuliert eine überprüfbare Hypothese über ein System, erzeugt anschließend einen begrenzten Fehler und misst, ob der beobachtbare Steady State innerhalb definierter Grenzen erhalten bleibt oder wiederhergestellt wird.",
+    "aliases": []
+  },
+  "Chaos Monkey": {
+    "full": "Chaos Monkey",
+    "short": "Werkzeug oder Mechanismus, der kontrolliert laufende Komponenten beendet, um Resilience zu testen.",
+    "description": "Der Begriff stammt aus dem Netflix-Umfeld. Ein Chaos Monkey erzeugt absichtlich Ausfälle, beispielsweise durch das Beenden einer Instanz oder eines Pods. Er ist eine konkrete Form von Chaos-Experiment und nicht mit der gesamten Disziplin Chaos Engineering gleichzusetzen.",
+    "aliases": [
+      "Chaos-Monkey"
+    ]
   },
   "Cluster-Orchestrator": {
     "full": "Cluster Orchestrator",
@@ -49,6 +69,14 @@
     "description": "Im Cloud-Kontext bezeichnet Compute typischerweise virtuelle Maschinen, Container oder andere Ressourcen, auf denen Code ausgeführt wird.",
     "aliases": []
   },
+  "ConfigMap": {
+    "full": "Kubernetes ConfigMap",
+    "short": "Kubernetes-Ressource für nicht geheime Konfigurationsdaten.",
+    "description": "Eine ConfigMap speichert Konfiguration als Schlüssel-Wert-Daten und kann von Pods beispielsweise über Umgebungsvariablen oder Dateien eingebunden werden. Geheimnisse gehören stattdessen in Secrets.",
+    "aliases": [
+      "ConfigMaps"
+    ]
+  },
   "Container": {
     "full": "Container",
     "short": "Isolierte Laufzeitumgebung für einen Prozess samt benötigter Dateien und Abhängigkeiten.",
@@ -65,6 +93,14 @@
     "aliases": [
       "Registry",
       "Container-Registry"
+    ]
+  },
+  "CouchDB": {
+    "full": "Apache CouchDB",
+    "short": "Dokumentenorientierte Datenbank mit HTTP-API und Replikationsmechanismen.",
+    "description": "Apache CouchDB speichert JSON-Dokumente und unterstützt Replikation zwischen Datenbanken. In meinem Blog-Setup wird CouchDB unter anderem von Obsidian LiveSync verwendet.",
+    "aliases": [
+      "Apache CouchDB"
     ]
   },
   "Cron": {
@@ -147,6 +183,12 @@
       "Express.js"
     ]
   },
+  "HAProxy": {
+    "full": "HAProxy",
+    "short": "Open-Source-Load-Balancer und Reverse Proxy für TCP- und HTTP-Dienste.",
+    "description": "HAProxy verteilt oder schaltet Netzwerkverkehr zwischen Backends um und kann dabei Healthchecks, Primary/Backup-Verhalten und verschiedene Routing-Regeln verwenden.",
+    "aliases": []
+  },
   "Healthcheck": {
     "full": "Healthcheck",
     "short": "Automatisierte Prüfung, ob ein Dienst funktionsfähig und erreichbar ist.",
@@ -155,11 +197,37 @@
       "Healthchecks"
     ]
   },
+  "High Availability": {
+    "full": "High Availability",
+    "short": "Architekturziel, einen Dienst trotz Ausfällen möglichst verfügbar zu halten.",
+    "description": "High Availability reduziert Single Points of Failure durch Redundanz, Failover und geeignete Betriebsmechanismen. Mehrere Pods auf demselben Host erhöhen dabei noch nicht automatisch die Infrastruktur-Hochverfügbarkeit.",
+    "aliases": [
+      "HA",
+      "Hochverfügbarkeit"
+    ]
+  },
   "Kubernetes": {
     "full": "Kubernetes",
     "short": "Orchestrierungsplattform für Container über einen Cluster aus mehreren Systemen.",
     "description": "Kubernetes verwaltet Deployment, Skalierung, Netzwerk, Konfiguration und Wiederherstellung containerisierter Anwendungen anhand eines gewünschten Zustands.",
     "aliases": []
+  },
+  "LitmusChaos": {
+    "full": "LitmusChaos",
+    "short": "Cloud-Native-Plattform zum Definieren und Orchestrieren von Chaos-Experimenten.",
+    "description": "LitmusChaos stellt wiederverwendbare Chaos-Experimente und Workflows bereit und kann in Kubernetes- und CI/CD-Umgebungen eingesetzt werden, um Resilience kontrolliert zu testen.",
+    "aliases": [
+      "Litmus"
+    ]
+  },
+  "Liveness Probe": {
+    "full": "Kubernetes Liveness Probe",
+    "short": "Kubernetes-Prüfung, ob ein Container noch funktionsfähig ist und gegebenenfalls neu gestartet werden soll.",
+    "description": "Eine Liveness Probe prüft fortlaufend die Funktionsfähigkeit eines Containers. Schlägt sie dauerhaft fehl, kann Kubernetes den Container neu starten. Zu aggressive Liveness-Probes können unter Last selbst Restart-Schleifen verursachen.",
+    "aliases": [
+      "Liveness-Probe",
+      "Liveness Probes"
+    ]
   },
   "Logging": {
     "full": "Logging",
@@ -189,12 +257,50 @@
     "description": "Observability stützt sich typischerweise auf Logs, Metriken und Traces, um Ursachen von Fehlern und ungewöhnlichem Verhalten nachvollziehen zu können.",
     "aliases": []
   },
+  "OOMKilled": {
+    "full": "Out Of Memory Killed",
+    "short": "Status eines Prozesses oder Containers, der wegen Speichermangel vom Kernel beendet wurde.",
+    "description": "OOMKilled zeigt an, dass ein Prozess sein verfügbares Speicherlimit überschritten hat oder der Kernel unter Memory Pressure einen Prozess beendet hat. In Kubernetes erscheint dabei häufig Exit Code 137.",
+    "aliases": [
+      "OOMKill",
+      "OOM-Kill",
+      "OOM"
+    ]
+  },
   "Overengineering": {
     "full": "Overengineering",
     "short": "Unnötig komplexe Lösung für ein vergleichsweise einfaches Problem.",
     "description": "Von Overengineering spricht man, wenn zusätzliche Architektur, Abstraktionen oder Infrastruktur mehr Aufwand verursachen, als der aktuelle Anwendungsfall rechtfertigt.",
     "aliases": [
       "over-engineered"
+    ]
+  },
+  "p95/p99": {
+    "full": "95th / 99th Percentile",
+    "short": "Perzentile, unterhalb derer 95 beziehungsweise 99 Prozent der gemessenen Werte liegen.",
+    "description": "p95 und p99 werden häufig für Latenzen verwendet. Sie zeigen das Verhalten langsamer Requests besser als ein einfacher Durchschnitt und machen Tail Latency sichtbar.",
+    "aliases": [
+      "p95",
+      "p99"
+    ]
+  },
+  "Packet Loss": {
+    "full": "Packet Loss",
+    "short": "Verlust einzelner Netzwerkpakete während der Übertragung.",
+    "description": "Packet Loss kann zu Retransmits, höherer Latenz, Timeouts und instabilen Verbindungen führen. In Chaos-Experimenten lässt sich damit ein degradiertes statt vollständig ausgefallenes Netzwerk simulieren.",
+    "aliases": [
+      "Paketverlust"
+    ]
+  },
+  "PodDisruptionBudget": {
+    "full": "PodDisruptionBudget",
+    "short": "Kubernetes-Regel, die bei freiwilligen Disruptions eine Mindestverfügbarkeit von Pods schützt.",
+    "description": "Ein PodDisruptionBudget begrenzt, wie viele Pods einer Anwendung bei freiwilligen Evictions gleichzeitig nicht verfügbar sein dürfen. Direkte Pod-Deletes und unfreiwillige Ausfälle werden dadurch nicht generell verhindert.",
+    "aliases": [
+      "PDB",
+      "Pod Disruption Budget",
+      "PodDisruptionBudgets",
+      "PDBs"
     ]
   },
   "Port": {
@@ -210,6 +316,23 @@
     "short": "Zuordnung eines Ports auf dem Host zu einem Port innerhalb eines Containers.",
     "description": "Docker Port-Mapping macht einen Containerdienst über einen Port des Hosts erreichbar, beispielsweise 8080:80.",
     "aliases": []
+  },
+  "Readiness Probe": {
+    "full": "Kubernetes Readiness Probe",
+    "short": "Kubernetes-Prüfung, ob ein Pod aktuell Traffic erhalten soll.",
+    "description": "Eine Readiness Probe entscheidet, ob ein Pod als bereit gilt und über einen Service Anfragen erhalten darf. Ein laufender, aber noch nicht bereiter Pod kann so vom Traffic ferngehalten werden.",
+    "aliases": [
+      "Readiness-Probe",
+      "Readiness Probes"
+    ]
+  },
+  "ReplicaSet": {
+    "full": "Kubernetes ReplicaSet",
+    "short": "Kubernetes-Controller, der eine gewünschte Anzahl gleichartiger Pod-Replikas aufrechterhält.",
+    "description": "Ein ReplicaSet vergleicht gewünschten und tatsächlichen Zustand und erzeugt oder entfernt Pods, bis die konfigurierte Anzahl erreicht ist. Deployments verwalten ReplicaSets typischerweise automatisch.",
+    "aliases": [
+      "ReplicaSets"
+    ]
   },
   "Restore": {
     "full": "Restore",
@@ -280,6 +403,21 @@
       "Docker-Stack"
     ]
   },
+  "Startup Probe": {
+    "full": "Kubernetes Startup Probe",
+    "short": "Kubernetes-Prüfung für langsam startende Container, bevor Liveness-Prüfungen greifen.",
+    "description": "Eine Startup Probe gibt einem Container Zeit für seine Initialisierung. Solange sie noch nicht erfolgreich war, werden Liveness- und Readiness-Verhalten entsprechend geschützt, sodass ein langsamer Start nicht vorschnell als Defekt behandelt wird.",
+    "aliases": [
+      "Startup-Probe",
+      "Startup Probes"
+    ]
+  },
+  "Steady State": {
+    "full": "Steady State",
+    "short": "Messbarer Normalzustand eines Systems, gegen den ein Chaos-Experiment bewertet wird.",
+    "description": "Der Steady State beschreibt beobachtbare Eigenschaften wie Fehlerrate, Latenz oder verfügbare Replicas. Ein Chaos-Experiment prüft, ob diese Eigenschaften trotz eines definierten Fehlers innerhalb erwarteter Grenzen bleiben oder wiederhergestellt werden.",
+    "aliases": []
+  },
   "Storage": {
     "full": "Storage",
     "short": "Persistenter Speicher für Dateien, Objekte, Volumes oder Datenbanken.",
@@ -334,7 +472,8 @@
     "description": "Bei Zero-Downtime Deployments bleibt mindestens eine funktionsfähige Instanz erreichbar, während eine neue Version gestartet und geprüft wird.",
     "aliases": [
       "Zero-Downtime",
-      "Zero-Downtime Deployments"
+      "Zero-Downtime Deployments",
+      "Null-Downtime"
     ]
   }
 }

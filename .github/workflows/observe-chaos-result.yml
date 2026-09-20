@@ -74,7 +74,11 @@ jobs:
             candidate="$(printf '%s' "$payload" | jq -c '
               .lastChaosExperiment
               | select(type == "object")
-              | select(.experiment == "single-blog-pod-delete" or .experiment == "repeated-blog-pod-delete")
+              | select(
+                  .experiment == "single-blog-pod-delete"
+                  or .experiment == "repeated-blog-pod-delete"
+                  or .experiment == "search-restart-under-load"
+                )
             ' 2>/dev/null || true)"
 
             result=""
@@ -86,6 +90,9 @@ jobs:
                   result="$(printf '%s' "$candidate" | jq -c '{
 
                   experiment,
+                  outcome,
+                  failureStage,
+                  failureReason,
                   experimentStartedAt,
                   completedAt,
                   iterationCount,
@@ -94,8 +101,14 @@ jobs:
                   recoveryTimesMs,
                   totalRecoveryTimeMs,
                   maxRecoveryTimeMs,
+                  kubernetesRecoveryTimeMs,
                   httpChecks,
                   httpFailures,
+                  searchChecks,
+                  searchFailures,
+                  firstSearchFailureMs,
+                  searchRecoveredAfterFailureMs,
+                  observedSearchOutageMs,
                   minimumReadyPods,
                   maximumReadyPods,
                   searchReachableBefore,
@@ -129,8 +142,14 @@ jobs:
             exit 1
           fi
 
+          outcome="$(jq -r '.outcome // "completed"' /tmp/chaos-result.json)"
+          failure_stage="$(jq -r '.failureStage // ""' /tmp/chaos-result.json)"
+          failure_reason="$(jq -r '.failureReason // ""' /tmp/chaos-result.json)"
           status="$(jq -r 'if .passed then "PASS" else "FAIL" end' /tmp/chaos-result.json)"
           experiment="$(jq -r '.experiment' /tmp/chaos-result.json)"
+          if [ "$outcome" = "aborted" ]; then
+            status="ABORTED"
+          fi
           iterations="$(jq -r '.iterationCount' /tmp/chaos-result.json)"
           completed_iterations="$(jq -r '.completedIterations' /tmp/chaos-result.json)"
           recovery="$(jq -r '.maxRecoveryTimeMs' /tmp/chaos-result.json)"
@@ -138,6 +157,10 @@ jobs:
           total_recovery="$(jq -r '.totalRecoveryTimeMs' /tmp/chaos-result.json)"
           checks="$(jq -r '.httpChecks' /tmp/chaos-result.json)"
           failures="$(jq -r '.httpFailures' /tmp/chaos-result.json)"
+          search_checks="$(jq -r '.searchChecks // 0' /tmp/chaos-result.json)"
+          search_failures="$(jq -r '.searchFailures // 0' /tmp/chaos-result.json)"
+          k8s_recovery="$(jq -r '.kubernetesRecoveryTimeMs // 0' /tmp/chaos-result.json)"
+          observed_search_outage="$(jq -r '.observedSearchOutageMs // 0' /tmp/chaos-result.json)"
           minimum="$(jq -r '.minimumReadyPods' /tmp/chaos-result.json)"
           maximum="$(jq -r '.maximumReadyPods' /tmp/chaos-result.json)"
           search_before="$(jq -r 'if .searchReachableBefore then "reachable" else "unreachable" end' /tmp/chaos-result.json)"
@@ -150,12 +173,24 @@ jobs:
             echo
             echo "- Result: **${status}**"
             echo "- Experiment: **${experiment}**"
+            if [ "$outcome" = "aborted" ]; then
+              echo "- Failure stage: **${failure_stage}**"
+              if [ -n "$failure_reason" ]; then
+                echo "- Failure reason: **${failure_reason}**"
+              fi
+            fi
             echo "- Iterations: **${completed_iterations} / ${iterations}**"
             echo "- Recovery times: **${recoveries} ms**"
             echo "- Max recovery: **${recovery} ms**"
             echo "- Total recovery: **${total_recovery} ms**"
             echo "- HTTP checks: **${checks}**"
             echo "- HTTP failures: **${failures}**"
+            if [ "$experiment" = "search-restart-under-load" ]; then
+              echo "- Search checks: **${search_checks}**"
+              echo "- Search failures: **${search_failures}**"
+              echo "- Kubernetes recovery: **${k8s_recovery} ms**"
+              echo "- Observed Search outage: **${observed_search_outage} ms**"
+            fi
             echo "- Ready pods observed: **${minimum} → ${maximum}**"
             echo "- Search before experiment: **${search_before}**"
             echo "- Search after experiment: **${search_after}**"
@@ -181,16 +216,31 @@ jobs:
 
           if [ -f /tmp/chaos-result.json ]; then
             passed="$(jq -r '.passed == true' /tmp/chaos-result.json)"
+            outcome="$(jq -r '.outcome // "completed"' /tmp/chaos-result.json)"
+            failure_stage="$(jq -r '.failureStage // ""' /tmp/chaos-result.json)"
+            failure_reason="$(jq -r '.failureReason // ""' /tmp/chaos-result.json)"
             iterations="$(jq -r '.completedIterations // 0' /tmp/chaos-result.json)"
             planned="$(jq -r '.iterationCount // 0' /tmp/chaos-result.json)"
             max_recovery="$(jq -r '.maxRecoveryTimeMs // .recoveryTimeMs // 0' /tmp/chaos-result.json)"
             failures="$(jq -r '.httpFailures // 0' /tmp/chaos-result.json)"
+            experiment="$(jq -r '.experiment // ""' /tmp/chaos-result.json)"
+            search_failures="$(jq -r '.searchFailures // 0' /tmp/chaos-result.json)"
 
-            if [ "$passed" = "true" ]; then
+            if [ "$outcome" = "aborted" ]; then
+              description="ABORTED ${experiment}; ${failure_reason:-$failure_stage}"
+            elif [ "$passed" = "true" ]; then
               state=success
-              description="PASS ${iterations}/${planned}; max ${max_recovery}ms; HTTP failures ${failures}"
+              if [ "$experiment" = "search-restart-under-load" ]; then
+                description="PASS Search restart; max ${max_recovery}ms; Search failures ${search_failures}; Blog HTTP failures ${failures}"
+              else
+                description="PASS ${iterations}/${planned}; max ${max_recovery}ms; HTTP failures ${failures}"
+              fi
             else
-              description="FAIL ${iterations}/${planned}; max ${max_recovery}ms; HTTP failures ${failures}"
+              if [ "$experiment" = "search-restart-under-load" ]; then
+                description="FAIL Search restart; max ${max_recovery}ms; Search failures ${search_failures}; Blog HTTP failures ${failures}"
+              else
+                description="FAIL ${iterations}/${planned}; max ${max_recovery}ms; HTTP failures ${failures}"
+              fi
             fi
           fi
 

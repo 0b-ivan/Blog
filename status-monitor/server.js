@@ -105,19 +105,40 @@ function sanitizedRecoveryTimes(value) {
 function sanitizedChaosExperiment(payload) {
   if (!payload || typeof payload !== 'object') return null;
 
-  const allowedExperiments = ['single-blog-pod-delete', 'repeated-blog-pod-delete'];
+  const allowedExperiments = [
+    'single-blog-pod-delete',
+    'repeated-blog-pod-delete',
+    'search-restart-under-load'
+  ];
   if (!allowedExperiments.includes(payload.experiment)) return null;
 
+  const target = payload.target === 'search' || payload.experiment === 'search-restart-under-load'
+    ? 'search'
+    : 'blog';
+  const failureStages = ['guard', 'preflight', 'kubernetes-api', 'runtime'];
+  const failureReasons = [
+    'target-not-ready',
+    'blog-not-ready',
+    'health-unhealthy',
+    'search-api-unhealthy'
+  ];
+  const aborted = payload.outcome === 'aborted';
+  const failureStage = aborted && failureStages.includes(payload.failureStage)
+    ? payload.failureStage
+    : '';
+  const failureReason = aborted && failureReasons.includes(payload.failureReason)
+    ? payload.failureReason
+    : '';
   const suppliedRecoveryTimes = sanitizedRecoveryTimes(payload.recoveryTimesMs);
   const maxRecoveryTimeMs = boundedNumber(
     payload.maxRecoveryTimeMs ?? payload.recoveryTimeMs
   );
   const recoveryTimesMs = suppliedRecoveryTimes.length
     ? suppliedRecoveryTimes
-    : (payload.experiment === 'single-blog-pod-delete' && maxRecoveryTimeMs > 0
-      ? [maxRecoveryTimeMs]
-      : []);
-  const fallbackIterations = payload.experiment === 'single-blog-pod-delete' ? 1 : recoveryTimesMs.length;
+    : (maxRecoveryTimeMs > 0 ? [maxRecoveryTimeMs] : []);
+  const fallbackIterations = payload.experiment === 'repeated-blog-pod-delete'
+    ? recoveryTimesMs.length
+    : 1;
   const iterationCount = boundedNumber(payload.iterationCount || fallbackIterations, 3);
   const completedIterations = Math.min(
     iterationCount,
@@ -126,6 +147,12 @@ function sanitizedChaosExperiment(payload) {
 
   return {
     experiment: payload.experiment,
+    target,
+    ...(aborted ? {
+      outcome: 'aborted',
+      failureStage,
+      ...(failureReason ? { failureReason } : {})
+    } : {}),
     experimentStartedAt: normalizedTimestamp(payload.experimentStartedAt),
     completedAt: normalizedTimestamp(payload.completedAt),
     iterationCount,
@@ -138,8 +165,16 @@ function sanitizedChaosExperiment(payload) {
       900000
     ),
     maxRecoveryTimeMs,
+    kubernetesRecoveryTimeMs: boundedNumber(
+      payload.kubernetesRecoveryTimeMs ?? maxRecoveryTimeMs
+    ),
     httpChecks: boundedNumber(payload.httpChecks, 100000),
     httpFailures: boundedNumber(payload.httpFailures, 100000),
+    searchChecks: boundedNumber(payload.searchChecks, 100000),
+    searchFailures: boundedNumber(payload.searchFailures, 100000),
+    firstSearchFailureMs: boundedNumber(payload.firstSearchFailureMs),
+    searchRecoveredAfterFailureMs: boundedNumber(payload.searchRecoveredAfterFailureMs),
+    observedSearchOutageMs: boundedNumber(payload.observedSearchOutageMs),
     minimumReadyPods: boundedNumber(payload.minimumReadyPods, 10),
     maximumReadyPods: boundedNumber(payload.maximumReadyPods, 10),
     searchReachableBefore: payload.searchReachableBefore === true,

@@ -30,11 +30,7 @@ search_queries:
     maxRank: 1
 ---
 
-Teil I hat den Blog auf K3s gebracht.
-
-Teil II hat daraus GitOps gemacht.
-
-Teil III hat feste Versionen und verschlüsselte Secrets ergänzt.
+Teil I hat den Blog auf K3s gebracht, Teil II daraus GitOps gemacht und Teil III feste Versionen sowie verschlüsselte Secrets ergänzt.
 
 Und inzwischen läuft mein Blog tatsächlich produktiv auf Kubernetes.
 
@@ -88,6 +84,24 @@ strategy:
 ```
 
 Damit kann Kubernetes beim Rollout zuerst einen neuen Pod starten, bevor ein alter verschwindet.
+
+## Pod Failover bei K3s hinter einem Cloudflare Tunnel
+
+Der konkrete Pfad, den ich hier teste, ist:
+
+```text
+Cloudflare Tunnel
+↓
+K3s Service
+↓
+3 Blog-Pods
+↓
+1 Pod fällt aus
+↓
+Service routet weiter auf die gesunden Pods
+```
+
+Damit geht es in diesem Teil ausdrücklich um **Pod Failover bei K3s hinter einem Cloudflare Tunnel** – noch nicht um allgemeines Chaos Engineering.
 
 ## Ein echter Failure-Test statt nur grüner YAML
 
@@ -165,7 +179,7 @@ Kubernetes Service
 Pods
 ```
 
-und nicht zusätzlich noch meinen lokalen Resolver.
+Mein lokaler Resolver ist dadurch bewusst nicht Teil dieses Tests.
 
 Eine kleine Sache, aber ein gutes Beispiel dafür, wie schnell man beim Ausfalltest die falsche Komponente beschuldigt.
 
@@ -192,7 +206,7 @@ Memory Limit: 1 GiB
 
 Das reichte beim Initialisieren des Embedding-Modells und des Suchindex nicht zuverlässig aus.
 
-Für Production habe ich deshalb auf:
+Für Production verwende ich deshalb jetzt:
 
 ```yaml
 resources:
@@ -202,8 +216,6 @@ resources:
   limits:
     memory: 2Gi
 ```
-
-erhöht.
 
 Danach lief der Rollout sauber durch.
 
@@ -276,7 +288,7 @@ K3s verwendet diese Volumes aber nicht.
 
 Dort steckt der Content direkt im Container-Image.
 
-Damit hätte folgendes passieren können:
+Damit hätte Folgendes passieren können:
 
 ```text
 Obsidian
@@ -296,7 +308,7 @@ Technisch wäre der neue Production-Origin gesund gewesen – nur eben mit altem
 
 Das wollte ich unbedingt vermeiden.
 
-## Deshalb jetzt Dual Deployment
+## Deshalb jetzt Dual-Deployment
 
 Ich habe den Production-Flow deshalb bewusst nicht einfach von Hetzner auf K3s umgestellt.
 
@@ -377,7 +389,7 @@ Den alten Hetzner-Server habe ich nicht abgeschaltet.
 
 Noch wichtiger: Er bekommt weiterhin neuen Content.
 
-Damit ist Hetzner nach dem K3s-Cutover nicht einfach ein altes Backup, sondern ein aktueller Standby.
+Damit ist Hetzner nach dem K3s-Cutover nicht einfach ein altes Backup, sondern ein aktuelles Standby-System.
 
 ```text
 main
@@ -387,7 +399,7 @@ main
 
 Das ist für mich während der Migration deutlich angenehmer als ein harter Wechsel mit anschließendem Rückbau der alten Plattform.
 
-Falls ich zurück muss, will ich nicht erst einen alten Server restaurieren.
+Falls ich zurückwechseln muss, will ich nicht erst einen alten Server restaurieren.
 
 Ich will nur den Traffic umschalten.
 
@@ -464,7 +476,7 @@ Wenn der Proxmox-Host stirbt:
 Problem
 ```
 
-Wenn mein Anschluss zuhause weg ist:
+Wenn mein Anschluss zu Hause weg ist:
 
 ```text
 Problem
