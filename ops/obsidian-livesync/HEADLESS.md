@@ -8,10 +8,12 @@ Obsidian
   -> livesync-cli
   -> posts/*.md
   -> publisher
-  -> Artikel-Branch + PR
+  -> Artikel-Branch + PR nach staging
   -> CI
-  -> Merge
-  -> Deployment
+  -> Merge nach staging
+  -> Staging-Deployment + Verifikation
+  -> Promotion-PR nach main
+  -> Production
 ```
 
 Ein normaler Save in Obsidian veroeffentlicht nichts. Der Frontmatter-Status beschreibt den gewuenschten Zustand:
@@ -22,7 +24,7 @@ publish   -> posts/, normale Artikelliste
 archived  -> archive/, nur im oeffentlichen Archiv
 ```
 
-Live aendert sich dieser Zustand erst nach Merge des entsprechenden PR.
+Auf Staging aendert sich dieser Zustand erst nach Merge des entsprechenden PR nach `staging`. Production folgt erst nach dem verifizierten Promotion-PR nach `main`.
 
 ## Voraussetzungen
 
@@ -110,12 +112,12 @@ Danach wartet der Publisher standardmaessig 5 Minuten, in denen der Dateiinhalt 
 status: publish
   -> obsidian/<artikel-slug>
   -> posts/<artikel>.md
-  -> Pull Request gegen main
+  -> Pull Request gegen staging
 ```
 
 Weitere Aenderungen am gleichen Artikel erzeugen keinen zweiten PR. Nach erneut 5 Minuten Ruhe wird derselbe Artikel-Branch aktualisiert und damit derselbe offene PR erweitert.
 
-Nach dem Merge bleibt `status: publish` im Artikel stehen. Solange der lokale Inhalt mit `main` identisch ist, tut der Publisher nichts.
+Nach dem Merge bleibt `status: publish` im Artikel stehen. Solange der lokale Inhalt mit dem konfigurierten Publisher-Basisbranch `staging` identisch ist, tut der Publisher nichts.
 
 ## Einen Artikel auf Draft zuruecksetzen
 
@@ -179,7 +181,7 @@ draft <-> publish <-> archived
 
 Wenn fuer denselben Artikel bereits ein offener Publisher-PR existiert, wird derselbe deterministische Branch auf den neuen gewuenschten Zustand umgestellt. Dadurch entsteht kein Stapel widerspruechlicher Publish-, Unpublish- oder Archive-PRs.
 
-Wichtig: Kein Statuswechsel veraendert die Live-Seite ohne GitHub-Grenze. Oeffentlich wirksam wird der Wechsel erst nach Merge und Deployment.
+Wichtig: Kein Statuswechsel umgeht die GitHub-Grenze. Nach Merge nach `staging` wird die Änderung zuerst auf Staging sichtbar; Production folgt erst nach erfolgreicher Verifikation und Promotion nach `main`.
 
 ## Publisher auf Hetzner deployen
 
@@ -255,5 +257,5 @@ CouchDB bleibt dabei aktiv.
 - `status: draft` bedeutet nicht oeffentlich.
 - `status: publish` bedeutet normale Veroeffentlichung unter `posts/`.
 - `status: archived` bedeutet oeffentliche Archivierung unter `archive/`.
-- Statuswechsel werden erst nach PR-Merge und Deployment live wirksam.
+- Statuswechsel werden nach dem PR-Merge zuerst auf Staging wirksam; Production folgt erst nach Promotion nach `main`.
 - Ein erster bidirektionaler Mirror kann Dateien aus CouchDB nach `posts/` importieren. Deshalb den ersten Sync kontrollieren, bevor Artikel auf `status: publish` oder `status: archived` gesetzt werden.
