@@ -1,7 +1,7 @@
 ---
 id: 2026-09-20-chaos-engineering-chaos-monkey-kubernetes
 version: 1
-title: "Chaos Monkey ist kein Zufall: Chaos Engineering in Kubernetes richtig testen"
+title: "Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen"
 status: publish
 date: 2026-09-20
 created_at: 2026-09-20
@@ -9,7 +9,7 @@ updated_at: 2026-09-20
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Chaos Engineering ist mehr als Pods zu löschen: Steady State, Hypothese, Blast Radius und messbare PASS-Kriterien machen aus absichtlichen Fehlern reproduzierbare Resilience-Tests."
+excerpt: "Chaos Engineering ist mehr als Systeme absichtlich zu stören: Steady State, Hypothese, Stop Conditions und messbare PASS-Kriterien machen daraus reproduzierbare Resilience-Tests."
 tags:
   - Chaos-Engineering
   - Kubernetes
@@ -17,7 +17,6 @@ tags:
   - Resilience
   - Observability
   - DevOps
-  - K3s
   - Testing
   - Reliability
 search_queries:
@@ -25,7 +24,7 @@ search_queries:
     maxRank: 1
   - query: Welche Chaos Tests sollte ich in Kubernetes durchführen?
     maxRank: 1
-  - query: Wie plane ich sichere Chaos Experimente mit Steady State und Blast Radius?
+  - query: Wie plane ich sichere Chaos Experimente mit Steady State und Stop Conditions?
     maxRank: 1
 ---
 
