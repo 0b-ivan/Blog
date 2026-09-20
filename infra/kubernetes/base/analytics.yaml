@@ -25,6 +25,8 @@ spec:
       labels:
         app: analytics
     spec:
+      securityContext:
+        fsGroup: 65532
       imagePullSecrets:
         - name: ghcr-pull
       containers:
