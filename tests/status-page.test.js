@@ -61,6 +61,7 @@ describe('public Kubernetes status contract', () => {
       ],
       lastChaosExperiment: {
         experiment: 'single-blog-pod-delete',
+        target: 'blog',
         experimentStartedAt: '2026-09-19T19:00:00.000Z',
         completedAt: '2026-09-19T19:00:02.500Z',
         iterationCount: 1,
@@ -69,8 +70,14 @@ describe('public Kubernetes status contract', () => {
         recoveryTimesMs: [2500],
         totalRecoveryTimeMs: 2500,
         maxRecoveryTimeMs: 2500,
+        kubernetesRecoveryTimeMs: 2500,
         httpChecks: 6,
         httpFailures: 0,
+        searchChecks: 0,
+        searchFailures: 0,
+        firstSearchFailureMs: 0,
+        searchRecoveredAfterFailureMs: 0,
+        observedSearchOutageMs: 0,
         minimumReadyPods: 2,
         maximumReadyPods: 3,
         searchReachableBefore: true,
@@ -113,6 +120,7 @@ describe('public Kubernetes status contract', () => {
 
     expect(payload.lastChaosExperiment).toEqual({
       experiment: 'repeated-blog-pod-delete',
+      target: 'blog',
       experimentStartedAt: '2026-09-20T01:00:00.000Z',
       completedAt: '2026-09-20T01:00:25.000Z',
       iterationCount: 3,
@@ -121,8 +129,14 @@ describe('public Kubernetes status contract', () => {
       recoveryTimesMs: [6950, 5800, 7200],
       totalRecoveryTimeMs: 19950,
       maxRecoveryTimeMs: 7200,
+      kubernetesRecoveryTimeMs: 7200,
       httpChecks: 31,
       httpFailures: 0,
+      searchChecks: 0,
+      searchFailures: 0,
+      firstSearchFailureMs: 0,
+      searchRecoveredAfterFailureMs: 0,
+      observedSearchOutageMs: 0,
       minimumReadyPods: 2,
       maximumReadyPods: 3,
       searchReachableBefore: true,
@@ -130,6 +144,68 @@ describe('public Kubernetes status contract', () => {
       passed: true
     });
     expect(JSON.stringify(payload)).not.toContain('must-not-leak');
+  });
+
+  it('sanitizes Search restart metrics without leaking pod identity', () => {
+    const payload = sanitizedKubernetesStatus({
+      status: 'operational',
+      environment: 'staging',
+      orchestrator: 'K3s',
+      kubernetesApi: 'reachable',
+      workloads: [],
+      lastChaosExperiment: {
+        experiment: 'search-restart-under-load',
+        target: 'search',
+        experimentStartedAt: '2026-09-20T06:30:00.000Z',
+        completedAt: '2026-09-20T06:30:18.000Z',
+        iterationCount: 1,
+        completedIterations: 1,
+        recoveryTimesMs: [18000],
+        totalRecoveryTimeMs: 18000,
+        maxRecoveryTimeMs: 18000,
+        kubernetesRecoveryTimeMs: 15000,
+        httpChecks: 20,
+        httpFailures: 0,
+        searchChecks: 20,
+        searchFailures: 8,
+        firstSearchFailureMs: 500,
+        searchRecoveredAfterFailureMs: 17500,
+        observedSearchOutageMs: 17000,
+        minimumReadyPods: 0,
+        maximumReadyPods: 1,
+        searchReachableBefore: true,
+        searchReachableAfter: true,
+        passed: true,
+        victim: 'search-must-not-leak'
+      }
+    });
+
+    expect(payload.lastChaosExperiment).toEqual({
+      experiment: 'search-restart-under-load',
+      target: 'search',
+      experimentStartedAt: '2026-09-20T06:30:00.000Z',
+      completedAt: '2026-09-20T06:30:18.000Z',
+      iterationCount: 1,
+      completedIterations: 1,
+      recoveryTimeMs: 18000,
+      recoveryTimesMs: [18000],
+      totalRecoveryTimeMs: 18000,
+      maxRecoveryTimeMs: 18000,
+      kubernetesRecoveryTimeMs: 15000,
+      httpChecks: 20,
+      httpFailures: 0,
+      searchChecks: 20,
+      searchFailures: 8,
+      firstSearchFailureMs: 500,
+      searchRecoveredAfterFailureMs: 17500,
+      observedSearchOutageMs: 17000,
+      minimumReadyPods: 0,
+      maximumReadyPods: 1,
+      searchReachableBefore: true,
+      searchReachableAfter: true,
+      passed: true
+    });
+    expect(JSON.stringify(payload)).not.toContain('search-must-not-leak');
   });
 
   it('normalizes unexpected values instead of exposing them', () => {
