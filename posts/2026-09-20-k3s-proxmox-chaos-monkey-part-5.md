@@ -380,7 +380,7 @@ Damit wird aus:
 „sah eigentlich gut aus“
 ```
 
-ein reproduzierbares Ergebnis.
+Das ergibt ein reproduzierbares Ergebnis.
 
 ## Der erste Lauf
 
@@ -540,7 +540,7 @@ Für eine feinere Messung könnte ich später:
 - die Abtastrate erhöhen,
 - mehrere parallele Clients verwenden,
 - Request-Latenzen erfassen,
-- einen externen unabhängigen Probe-Standort verwenden.
+- einen unabhängigen externen Probe-Standort verwenden.
 
 Für v1 reicht mir die aktuelle Aussage:
 
@@ -611,9 +611,9 @@ Der Status-Service besitzt einen eigenen ServiceAccount mit:
 Pods: get, list
 ```
 
-und darf die Ergebnis-ConfigMap lesen.
+Zusätzlich darf der Status-Service die Ergebnis-ConfigMap lesen.
 
-Der Blog selbst bekommt **keine Kubernetes API Credentials**.
+Der Blog selbst bekommt **keine Kubernetes-API-Credentials**.
 
 Die Trennung bleibt damit klar:
 
@@ -683,13 +683,11 @@ Ein kleiner GitOps-Sonderfall steckt dabei in Flux.
 
 Wenn Flux die ConfigMap bei jedem Reconcile wieder exakt auf den Git-Wert setzen würde, wäre das Ergebnis sofort wieder weg.
 
-Deshalb ist sie mit:
+Deshalb trägt sie diese Annotation:
 
 ```yaml
 kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
 ```
-
-markiert.
 
 Flux legt sie an, überschreibt danach aber nicht permanent den Laufzeitwert.
 
@@ -713,19 +711,19 @@ Damit ein alter PASS nicht versehentlich als neues Experiment gilt, bestimmt der
 
 Dabei bin ich direkt in einen schönen Zeitstempel-Fehler gelaufen.
 
-Der erste Filter verglich beispielsweise:
+Der erste Filter verglich beispielsweise diese beiden Werte:
 
 ```text
 2026-09-20T03:52:48+02:00
 ```
 
-mit:
+und:
 
 ```text
 2026-09-20T01:53:31.828Z
 ```
 
-als einfachen String.
+Der Vergleich erfolgte als einfacher String.
 
 Beide Zeitpunkte benutzen aber unterschiedliche UTC-Offsets.
 
