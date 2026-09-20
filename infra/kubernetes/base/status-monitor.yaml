@@ -16,6 +16,9 @@ rules:
     resources: ["configmaps"]
     resourceNames: ["chaos-monkey-result"]
     verbs: ["get"]
+  - apiGroups: ["chaos-mesh.org"]
+    resources: ["networkchaos"]
+    verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
