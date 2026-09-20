@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { URL } = require('node:url');
+const { analyticsServiceTarget } = require('./lib/analytics-target');
 const enhanced = require('./enhanced-server');
 const legacy = require('./server');
 const { aggregateBlogStatistics } = require('./lib/blog-statistics');
@@ -245,14 +246,6 @@ function searchServiceTarget(pathname) {
   const target = new URL(process.env.SEARCH_SERVICE_URL || 'http://search:8090/search');
   target.pathname = pathname;
   target.search = '';
-  return target;
-}
-
-function analyticsServiceTarget(pathname) {
-  const target = new URL(process.env.ANALYTICS_SERVICE_URL || 'http://analytics:8080');
-  const requested = new URL(String(pathname || '/'), 'http://analytics.internal');
-  target.pathname = requested.pathname;
-  target.search = requested.search;
   return target;
 }
 
