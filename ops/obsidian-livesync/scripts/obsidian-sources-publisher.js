@@ -11,7 +11,7 @@ const {
 
 const DEFAULT_VAULT_PATH = '/vault';
 const DEFAULT_REPOSITORY = '0b-ivan/Blog';
-const DEFAULT_BASE_BRANCH = 'main';
+const DEFAULT_BASE_BRANCH = 'staging';
 const DEFAULT_DEBOUNCE_SECONDS = 300;
 const DEFAULT_POLL_SECONDS = 30;
 const SOURCES_DIR = '_Quellen';
@@ -135,7 +135,7 @@ class GitHubSourcesPublisher extends GitHubCatalogPublisher {
             '- Freigabe: `status: publish` in `_Quellen`',
             '- Weitere Änderungen an derselben Quelle aktualisieren denselben PR nach dem Debounce-Fenster.',
             '',
-            'Die Quellenänderung wird erst nach Merge nach `main` übernommen.'
+            `Die Quellenänderung wird erst nach Merge nach \`${this.baseBranch}\` in den konfigurierten Basisbranch übernommen.`
           ].join('\n')
         }
       });

@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const DEFAULT_VAULT_PATH = '/vault';
 const DEFAULT_REPOSITORY = '0b-ivan/Blog';
-const DEFAULT_BASE_BRANCH = 'main';
+const DEFAULT_BASE_BRANCH = 'staging';
 const DEFAULT_DEBOUNCE_SECONDS = 300;
 const DEFAULT_POLL_SECONDS = 30;
 const GLOSSARY_DIR = '_Glossar';
@@ -361,7 +361,7 @@ class GitHubGlossaryPublisher {
             '- Freigabe: `status: publish` in `_Glossar`',
             '- Weitere Änderungen am Begriff aktualisieren denselben PR nach dem Debounce-Fenster.',
             '',
-            'Die Glossar-Änderung wird erst nach Merge nach `main` übernommen.'
+            `Die Glossar-Änderung wird erst nach Merge nach \`${this.baseBranch}\` in den konfigurierten Basisbranch übernommen.`
           ].join('\n')
         }
       });

@@ -19,22 +19,28 @@ feature/*
    v
 staging
    |
-   | GitHub Actions baut Blog + Kernel Grep
+   | GitHub Actions baut Blog, Search, Status und Chaos
    | Images -> GHCR
    | SHA-Pins -> infra/kubernetes/staging/kustomization.yaml
    v
-Flux -> K3s -> staging-blog.obivan.org
+Flux -> K3s Staging -> staging-blog.obivan.org
    |
-   | PR staging -> main
+   | öffentlicher Staging-Gate
    v
-main -> bestehendes Hetzner-Production-Deployment -> blog.obivan.org
-
-staging -> Flux -> interne K3s-Production-Kopie (zunächst suspendiert, ohne öffentlichen Traffic)
+promotion/staging-verified
+   |
+   | manueller Merge
+   v
+main
+   |
+   +--> K3s Production -> blog.obivan.org
+   |
+   +--> Hetzner Standby / Rollback
 ```
 
-Ein Merge nach `staging` veröffentlicht weiterhin nichts auf der öffentlichen Production. `blog.obivan.org` bleibt am Hetzner-Deploy von `main`. Die zusätzliche Flux-Kustomization `blog-production` startet suspendiert und muss für den internen Paralleltest bewusst freigegeben werden.
+Ein Merge nach `staging` veröffentlicht weiterhin nichts direkt in Production. Nach erfolgreicher öffentlicher Verifikation aktualisiert GitHub Actions den Branch `promotion/staging-verified` und öffnet bzw. aktualisiert den Promotion-PR nach `main`. Erst dessen manueller Merge gibt den Stand für Production frei.
 
-Der Workflow `.github/workflows/cd-staging.yml` akzeptiert automatische Staging-Deployments nur für Commits, die zu einem gemergten Pull Request mit Zielbranch `staging` gehören. Danach werden Blog und Kernel Grep unter dem unveränderlichen Git-Commit-SHA nach GHCR gepusht. Der Workflow aktualisiert anschließend nur die Image-Pins in `kustomization.yaml`.
+Der Workflow `.github/workflows/cd-staging.yml` akzeptiert automatische Staging-Deployments nur für Commits, die zu einem gemergten Pull Request mit Zielbranch `staging` gehören. Bei Anwendungs- oder Content-Änderungen werden Blog, Kernel Grep, Kubernetes-Status und Chaos Runner unter dem unveränderlichen Git-Commit-SHA nach GHCR gepusht. Der Workflow aktualisiert anschließend die Image-Pins in `kustomization.yaml`. Reine GitOps-Änderungen können die bereits gepinnten Images wiederverwenden.
 
 ## Benötigte Secrets
 
@@ -64,7 +70,7 @@ Dafür ist keine Portfreigabe am Router, pfSense oder Proxmox erforderlich.
 
 ## Images und Staging-Runtime
 
-Blog und Kernel Grep verwenden im Cluster keine `latest`-Tags. Die Kustomize-Konfiguration pinnt beide Images auf einen exakten Git-Commit. Der Staging-Workflow aktualisiert diese Pins nach einem erfolgreichen Build automatisch.
+Die Staging-Workloads verwenden im Cluster keine `latest`-Tags. Die Kustomize-Konfiguration pinnt Blog, Kernel Grep, Kubernetes-Status und Chaos Runner auf einen exakten Git-Commit. Der Staging-Workflow aktualisiert diese Pins nach einem erfolgreichen Build automatisch.
 
 Der Blog bekommt in Staging zusätzlich per Kustomize-Patch den Entrypoint:
 
