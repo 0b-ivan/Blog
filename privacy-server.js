@@ -47,6 +47,7 @@ const BLOCKED_PATHS = [
   /^\/server\.js$/,
   /^\/enhanced-server\.js$/,
   /^\/privacy-server\.js$/,
+  /^\/analytics-server\.js$/,
   /^\/Dockerfile(?:\.(?:search|status|chaos))?$/,
   /^\/(?:status-monitor|chaos-monkey)(?:\/|$)/,
   /^\/docker-compose(?:\.[^/]+)?\.ya?ml$/,
@@ -247,7 +248,50 @@ function searchServiceTarget(pathname) {
   return target;
 }
 
-async function proxyKernelGrep(queryValue, limitValue, res) {
+function analyticsServiceTarget(pathname) {
+  const target = new URL(process.env.ANALYTICS_SERVICE_URL || 'http://analytics:8080');
+  target.pathname = pathname;
+  target.search = '';
+  return target;
+}
+
+async function sendAnalyticsEvent(payload) {
+  try {
+    await fetch(analyticsServiceTarget('/event'), {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(2500)
+    });
+  } catch (error) {
+    console.error('Analytics event unavailable:', error.message || error);
+  }
+}
+
+async function proxyAnalytics(method, pathname, res, body) {
+  try {
+    const target = analyticsServiceTarget(pathname);
+    const options = {
+      method,
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(5000)
+    };
+    if (body !== undefined) {
+      options.headers['Content-Type'] = 'application/json';
+      options.body = JSON.stringify(body);
+    }
+    const upstream = await fetch(target, options);
+    const payload = await upstream.text();
+    res.set('Cache-Control', 'no-store');
+    res.status(upstream.status).type('application/json').send(payload);
+  } catch (error) {
+    console.error('Analytics upstream unavailable:', error.message || error);
+    res.set('Cache-Control', 'no-store');
+    res.status(503).json({ error: 'Analytics is temporarily unavailable' });
+  }
+}
+
+async function proxyKernelGrep(queryValue, limitValue, res, sourceValue = 'system') {
   const query = String(queryValue || '').trim();
   if (query.length < 2 || query.length > 300) {
     res.status(400).json({ error: 'q must contain between 2 and 300 characters' });
@@ -263,6 +307,20 @@ async function proxyKernelGrep(queryValue, limitValue, res) {
       signal: AbortSignal.timeout(20_000)
     });
     const payload = await upstream.text();
+    const source = ['grep-page', 'grep-overlay'].includes(sourceValue) ? sourceValue : 'system';
+    if (upstream.ok && source !== 'system') {
+      try {
+        const parsed = JSON.parse(payload);
+        void sendAnalyticsEvent({
+          type: 'search',
+          query,
+          resultCount: Array.isArray(parsed.results) ? parsed.results.length : 0,
+          source
+        });
+      } catch (_error) {
+        // Search response remains authoritative even if analytics cannot parse it.
+      }
+    }
     res.status(upstream.status).type('application/json').send(payload);
   } catch (error) {
     console.error('Kernel Grep upstream unavailable:', error.message || error);
@@ -339,11 +397,28 @@ function createApp() {
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
 
   app.post('/api/search', async (req, res) => {
-    await proxyKernelGrep(req.body?.q, req.body?.limit, res);
+    await proxyKernelGrep(req.body?.q, req.body?.limit, res, req.body?.source);
   });
 
   app.get('/api/search', async (req, res) => {
-    await proxyKernelGrep(req.query.q, req.query.limit, res);
+    await proxyKernelGrep(req.query.q, req.query.limit, res, 'system');
+  });
+
+  app.post('/api/analytics/event', async (req, res) => {
+    await proxyAnalytics('POST', '/event', res, req.body || {});
+  });
+
+  app.get('/api/analytics/article/:slug', async (req, res) => {
+    await proxyAnalytics('GET', `/article/${encodeURIComponent(req.params.slug)}`, res);
+  });
+
+  app.post('/api/analytics/like/:slug', async (req, res) => {
+    await proxyAnalytics('POST', `/like/${encodeURIComponent(req.params.slug)}`, res, {});
+  });
+
+  app.get('/api/analytics/summary', async (req, res) => {
+    const days = Math.max(1, Math.min(90, Number.parseInt(req.query.days || '30', 10) || 30));
+    await proxyAnalytics('GET', `/summary?days=${days}`, res);
   });
 
   app.get('/api/kubernetes-status', async (_req, res) => {
@@ -406,6 +481,15 @@ function createApp() {
     } catch (error) {
       console.error(error);
       res.status(500).type('text').send('Could not load status page');
+    }
+  });
+
+  app.get(['/analytics', '/analytics.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'analytics.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load analytics page');
     }
   });
 
@@ -495,6 +579,9 @@ module.exports = {
   normalizedSearchLimit,
   normalizedGraphLimit,
   searchServiceTarget,
+  analyticsServiceTarget,
+  sendAnalyticsEvent,
+  proxyAnalytics,
   proxyKernelGrep,
   sanitizedKubernetesStatus,
   proxyKubernetesStatus,
