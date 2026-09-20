@@ -38,22 +38,7 @@ describe('Chaos Mesh staging safety contract', () => {
     expect(manifest).not.toContain('kind: NetworkChaos');
   });
 
-  it('guards the active measured one-shot delay experiment', () => {
-    const experiment = fs.readFileSync(
-      path.join(root, 'infra', 'kubernetes', 'staging', 'chaos-experiment-network-delay-measured.yaml'),
-      'utf8'
-    );
-
-    expect(kustomization).toContain('- chaos-experiment-network-delay-measured.yaml');
-    expect(experiment).toContain('kind: NetworkChaos');
-    expect(experiment).toContain('namespace: blog-staging');
-    expect(experiment).toContain('action: delay');
-    expect(experiment).toContain('duration: "30s"');
-    expect(experiment).toContain('latency: "500ms"');
-    expect(experiment).toContain('direction: to');
-    expect(experiment.match(/app: blog/g)).toHaveLength(1);
-    expect(experiment.match(/app: search/g)).toHaveLength(1);
-    expect(experiment.match(/chaos\.obivan\.org\/enabled: "true"/g)).toHaveLength(2);
-    expect(experiment).not.toContain('externalTargets:');
+  it('keeps completed NetworkChaos experiments out of the GitOps desired state', () => {
+    expect(kustomization).not.toMatch(/chaos-experiment-network.*\.yaml/);
   });
 });
