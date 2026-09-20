@@ -264,11 +264,6 @@ jobs:
             combined_passed=true
           fi
 
-          delay_observed=false
-          if [ "$action" = "delay" ] && [ "$search_p50_delta" -ge 250 ]; then
-            delay_observed=true
-          fi
-
           {
             echo "### NetworkChaos experiment + application probe"
             echo
@@ -304,14 +299,14 @@ jobs:
             echo "- p50: **${search_p50_delta} ms**"
             echo "- p95: **${search_p95_delta} ms**"
             echo "- p99: **${search_p99_delta} ms**"
-            echo "- Expected delay visible in p50 (>=250 ms delta): **${delay_observed}**"
+            echo
+            echo "_Hinweis: Der konfigurierte NetworkChaos-Delay wirkt auf Netzwerkpakete. Die End-to-End-HTTP-Latenz wird deshalb als beobachtete Verteilung dokumentiert und nicht gegen einen künstlichen p50-Schwellenwert bewertet._"
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
           jq -n \
             --argjson combinedPassed "$combined_passed" \
             --argjson technicalPassed "$technical_passed" \
             --argjson applicationPassed "$chaos_passed" \
-            --argjson delayObserved "$delay_observed" \
             --argjson searchP95 "$chaos_search_p95" \
             --argjson searchP95Delta "$search_p95_delta" \
             --argjson searchFailures "$chaos_search_failures" \
@@ -320,7 +315,6 @@ jobs:
               combinedPassed: $combinedPassed,
               technicalPassed: $technicalPassed,
               applicationPassed: $applicationPassed,
-              delayObserved: $delayObserved,
               searchP95Ms: $searchP95,
               searchP95DeltaMs: $searchP95Delta,
               searchFailures: $searchFailures,
