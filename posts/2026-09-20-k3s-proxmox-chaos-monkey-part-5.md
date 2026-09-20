@@ -24,7 +24,7 @@ tags:
 search_queries:
   - query: Wie teste ich Kubernetes Pod Failover mit Chaos Engineering?
     maxRank: 1
-  - query: Wie baue ich einen sicheren Chaos Monkey für K3s?
+  - query: Wie begrenze ich den Blast Radius eines Chaos Monkey in K3s?
     maxRank: 1
   - query: Wie messe ich Recovery Zeit und HTTP Fehler bei einem Kubernetes Pod Ausfall?
     maxRank: 1
@@ -455,7 +455,7 @@ Nicht Grafana.
 
 Nicht das Kubernetes Dashboard.
 
-Und definitiv keinen direkten Browser-Zugriff auf die Kubernetes API.
+Der Browser spricht dabei ausschließlich mit meinem Blog-Endpoint; die Kubernetes API bleibt clusterintern.
 
 Der Pfad sieht so aus:
 
@@ -483,12 +483,15 @@ und darf die Ergebnis-ConfigMap lesen.
 
 Der Blog selbst bekommt **keine Kubernetes API Credentials**.
 
-Das ist mir wichtig:
+Die Trennung bleibt damit klar:
 
 ```text
-öffentliche Seite
-≠
-öffentlicher Kubernetes-Zugriff
+Browser
+→ Blog-API
+→ sanitisiertes Aggregat
+
+Kubernetes API
+→ nur intern
 ```
 
 ## Was öffentlich sein darf
@@ -591,7 +594,7 @@ nicht:
 
 GitHub Actions
 ↓
-Admin-Kubeconfig
+privilegierte Kubeconfig
 ↓
 Cluster
 ```
