@@ -268,12 +268,12 @@ async function sendAnalyticsEvent(payload) {
   }
 }
 
-async function proxyAnalytics(method, pathname, res, body) {
+async function proxyAnalytics(method, pathname, res, body, headers = {}) {
   try {
     const target = analyticsServiceTarget(pathname);
     const options = {
       method,
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', ...headers },
       signal: AbortSignal.timeout(5000)
     };
     if (body !== undefined) {
@@ -418,7 +418,10 @@ function createApp() {
 
   app.get('/api/analytics/summary', async (req, res) => {
     const days = Math.max(1, Math.min(90, Number.parseInt(req.query.days || '30', 10) || 30));
-    await proxyAnalytics('GET', `/summary?days=${days}`, res);
+    const token = String(req.get('X-Analytics-Token') || '');
+    await proxyAnalytics('GET', `/summary?days=${days}`, res, undefined, {
+      ...(token ? { 'X-Analytics-Token': token } : {})
+    });
   });
 
   app.get('/api/kubernetes-status', async (_req, res) => {
