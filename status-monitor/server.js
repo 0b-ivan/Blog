@@ -115,6 +115,11 @@ function sanitizedChaosExperiment(payload) {
   const target = payload.target === 'search' || payload.experiment === 'search-restart-under-load'
     ? 'search'
     : 'blog';
+  const failureStages = ['guard', 'preflight', 'kubernetes-api', 'runtime'];
+  const aborted = payload.outcome === 'aborted';
+  const failureStage = aborted && failureStages.includes(payload.failureStage)
+    ? payload.failureStage
+    : '';
   const suppliedRecoveryTimes = sanitizedRecoveryTimes(payload.recoveryTimesMs);
   const maxRecoveryTimeMs = boundedNumber(
     payload.maxRecoveryTimeMs ?? payload.recoveryTimeMs
