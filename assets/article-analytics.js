@@ -235,7 +235,7 @@
   if (tagToggle && extraTags.length) {
     tagToggle.addEventListener('click', () => {
       const expanded = tagToggle.getAttribute('aria-expanded') === 'true';
-      extraTags.forEach((tag) => { tag.hidden = !expanded; });
+      extraTags.forEach((tag) => { tag.hidden = expanded; });
       tagToggle.setAttribute('aria-expanded', String(!expanded));
       tagToggle.textContent = expanded ? `+${tagToggle.dataset.hiddenCount}` : 'Weniger';
       tagToggle.setAttribute(
