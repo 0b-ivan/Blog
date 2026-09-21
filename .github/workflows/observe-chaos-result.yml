@@ -6,6 +6,7 @@ on:
       - staging
     paths:
       - 'infra/kubernetes/staging/chaos-experiment-*.yaml'
+      - '!infra/kubernetes/staging/chaos-experiment-network*.yaml'
       - '.github/workflows/observe-chaos-result.yml'
   workflow_dispatch:
     inputs:
