@@ -329,10 +329,10 @@ jobs:
           search_ready=false
           min_watch_seconds=30
           if [ "$SEARCH_CHANGED" = true ]; then
-            min_watch_seconds=90
+            min_watch_seconds=120
           fi
 
-          for attempt in $(seq 1 240); do
+          for attempt in $(seq 1 360); do
             health="$(curl -fsS --max-time 5 -H 'Cache-Control: no-cache' \
               "${K8S_PRODUCTION_URL}/healthz?deploy=${GITHUB_SHA}&attempt=${attempt}" 2>/dev/null || true)"
 
@@ -397,9 +397,9 @@ jobs:
               exit 0
             fi
 
-            echo "Attempt ${attempt}/240: health=ok version='${version:-unavailable}' stable_version_checks=${stable_version_checks} search_ready=${search_ready}"
+            echo "Attempt ${attempt}/360: health=ok version='${version:-unavailable}' stable_version_checks=${stable_version_checks} search_ready=${search_ready}"
             sleep 1
           done
 
-          echo "::error title=Production rollout timeout::Production did not reach a stable healthy state within 240 seconds."
+          echo "::error title=Production rollout timeout::Production did not reach a stable healthy state within 360 seconds."
           exit 1
