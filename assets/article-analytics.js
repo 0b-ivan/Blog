@@ -20,12 +20,15 @@
   const progressBar = document.querySelector('[data-reading-progress-bar]');
   const progressValue = document.querySelector('[data-reading-progress-value]');
   const compactProgressValue = document.querySelector('[data-reading-progress-value-compact]');
+  const mobileProgressMedia = window.matchMedia('(max-width: 620px)');
+  const reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
   const tagToggle = document.querySelector('[data-tag-toggle]');
   const extraTags = [...document.querySelectorAll('[data-extra-tag]')];
   if (!slug || !content) return;
 
   const likedKey = `kernel-notes:liked:${slug}`;
   const favoritesKey = 'kernel-notes:favorites';
+  const progressPositionKey = 'kernel-notes:reading-progress-position';
 
   function hasLiked() {
     try {
@@ -73,7 +76,13 @@
   let currentProgressPercent = 0;
   let currentArticleEnded = false;
   let progressExpandedByUser = false;
+  let progressCelebrated = false;
+  let progressCelebrationActive = false;
+  let progressDragState = null;
+  let suppressProgressToggleClick = false;
   const progressCollapseScrollY = 140;
+  const progressDragThreshold = 6;
+  const progressEdgeInset = 12;
 
   function render(metrics) {
     metricNodes('views').forEach((node) => { node.textContent = String(metrics.views || 0); });
@@ -113,9 +122,135 @@
     event({ type: 'article_active', seconds });
   }
 
+  function readProgressPosition() {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(progressPositionKey) || 'null');
+      if (!parsed || !['left', 'right'].includes(parsed.side) || !Number.isFinite(parsed.top)) return null;
+      return parsed;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function writeProgressPosition(position) {
+    try {
+      window.localStorage.setItem(progressPositionKey, JSON.stringify(position));
+    } catch (_error) {
+      // Dragging still works for the current page when browser storage is unavailable.
+    }
+  }
+
+  function clearProgressPositionStyles() {
+    if (!progress) return;
+    progress.style.left = '';
+    progress.style.right = '';
+    progress.style.top = '';
+    progress.style.bottom = '';
+  }
+
+  function clampProgressTop(top, height) {
+    const minTop = progressEdgeInset;
+    const maxTop = Math.max(minTop, window.innerHeight - height - progressEdgeInset);
+    return Math.max(minTop, Math.min(maxTop, top));
+  }
+
+  function applyStoredProgressPosition() {
+    if (
+      !progress
+      || !mobileProgressMedia.matches
+      || !progress.classList.contains('is-compact')
+      || progress.classList.contains('is-dragging')
+    ) {
+      return;
+    }
+
+    const stored = readProgressPosition();
+    if (!stored) {
+      clearProgressPositionStyles();
+      return;
+    }
+
+    const rect = progress.getBoundingClientRect();
+    const top = clampProgressTop(stored.top, rect.height || 54);
+    progress.style.top = `${top}px`;
+    progress.style.bottom = 'auto';
+
+    if (stored.side === 'left') {
+      progress.style.left = `${progressEdgeInset}px`;
+      progress.style.right = 'auto';
+    } else {
+      progress.style.left = 'auto';
+      progress.style.right = `${progressEdgeInset}px`;
+    }
+  }
+
+  function spawnProgressCompletionBurst(rect) {
+    if (reducedMotionMedia.matches || !rect) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'reading-progress-burst';
+    layer.setAttribute('aria-hidden', 'true');
+
+    const particles = [
+      { emoji: '👍', size: 30, drift: -76, rise: 188, rotate: -18, delay: 0, duration: 3100 },
+      { emoji: '👍🏻', size: 38, drift: -42, rise: 236, rotate: 14, delay: 70, duration: 3500 },
+      { emoji: '👍🏼', size: 26, drift: -12, rise: 205, rotate: -10, delay: 150, duration: 3250 },
+      { emoji: '👍🏽', size: 46, drift: 20, rise: 258, rotate: 16, delay: 40, duration: 3700 },
+      { emoji: '👍🏾', size: 34, drift: 52, rise: 218, rotate: -14, delay: 190, duration: 3400 },
+      { emoji: '👍🏿', size: 29, drift: 82, rise: 192, rotate: 11, delay: 110, duration: 3200 },
+      { emoji: '👍', size: 42, drift: 8, rise: 282, rotate: -8, delay: 230, duration: 3900 },
+      { emoji: '❓', size: 31, drift: 58, rise: 268, rotate: 9, delay: 280, duration: 3800 }
+    ];
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    particles.forEach((particle, index) => {
+      const element = document.createElement('span');
+      element.className = 'reading-progress-burst__particle';
+      element.textContent = particle.emoji;
+      element.style.left = `${centerX + ((index % 3) - 1) * 5}px`;
+      element.style.top = `${centerY + (index % 2) * 4}px`;
+      element.style.fontSize = `${particle.size}px`;
+      element.style.setProperty('--particle-drift', `${particle.drift}px`);
+      element.style.setProperty('--particle-rise', `${particle.rise}px`);
+      element.style.setProperty('--particle-rotate', `${particle.rotate}deg`);
+      element.style.animationDelay = `${particle.delay}ms`;
+      element.style.animationDuration = `${particle.duration}ms`;
+      layer.appendChild(element);
+    });
+
+    document.body.appendChild(layer);
+    window.setTimeout(() => layer.remove(), 4400);
+  }
+
+  function celebrateProgressCompletion() {
+    if (!progress || progressCelebrated) return;
+
+    progressCelebrated = true;
+    progressCelebrationActive = true;
+    progressExpandedByUser = false;
+    progress.classList.remove('is-complete', 'is-expanded', 'is-dragging');
+    progress.classList.add('is-visible', 'is-compact', 'is-popping');
+    if (progressToggle) progressToggle.setAttribute('aria-expanded', 'false');
+
+    window.requestAnimationFrame(() => {
+      applyStoredProgressPosition();
+      const rect = progress.getBoundingClientRect();
+      spawnProgressCompletionBurst(rect);
+    });
+
+    window.setTimeout(() => {
+      progressCelebrationActive = false;
+      progress.classList.remove('is-visible', 'is-compact', 'is-popping');
+      progress.classList.add('is-complete');
+      clearProgressPositionStyles();
+    }, reducedMotionMedia.matches ? 120 : 520);
+  }
+
   function applyProgressState() {
     const safePercent = Math.max(0, Math.min(100, Number(currentProgressPercent) || 0));
-    const visible = safePercent > 2 && safePercent < 99 && !currentArticleEnded;
+    const visible = safePercent > 2 && safePercent < 100 && !currentArticleEnded;
     const compactEligible = visible && window.scrollY > progressCollapseScrollY;
     const compact = compactEligible && !progressExpandedByUser;
 
@@ -133,10 +268,26 @@
 
     if (progress) {
       progress.style.setProperty('--progress-percent', `${safePercent}%`);
+
+      if (progressCelebrationActive) return;
+
+      if (progressCelebrated) {
+        progress.classList.remove('is-visible', 'is-compact', 'is-expanded', 'is-dragging');
+        progress.classList.add('is-complete');
+        clearProgressPositionStyles();
+        return;
+      }
+
       progress.classList.toggle('is-visible', visible);
       progress.classList.toggle('is-complete', !visible);
       progress.classList.toggle('is-compact', compact);
       progress.classList.toggle('is-expanded', visible && !compact);
+
+      if (compact) {
+        window.requestAnimationFrame(applyStoredProgressPosition);
+      } else {
+        clearProgressPositionStyles();
+      }
     }
 
     if (progressToggle) {
@@ -154,16 +305,21 @@
     currentProgressPercent = Math.max(0, Math.min(100, Number(percent) || 0));
     currentArticleEnded = Boolean(articleEnded);
     applyProgressState();
+
+    if (currentProgressPercent >= 100) {
+      celebrateProgressCompletion();
+    }
   }
 
   function checkScroll() {
     const rect = content.getBoundingClientRect();
     const total = Math.max(1, content.scrollHeight);
     const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
-    const percent = Math.round((seen / total) * 100);
+    const measuredPercent = Math.round((seen / total) * 100);
     const articleEnded = Boolean(
       engagement && engagement.getBoundingClientRect().top <= window.innerHeight * 0.92
     );
+    const percent = articleEnded ? 100 : measuredPercent;
     updateProgress(percent, articleEnded);
 
     [25, 50, 75, 90, 100].forEach((threshold) => {
@@ -199,12 +355,90 @@
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('resize', checkScroll, { passive: true });
 
+  function canDragProgress() {
+    return Boolean(
+      progress
+      && progressToggle
+      && mobileProgressMedia.matches
+      && progress.classList.contains('is-compact')
+      && !progressCelebrationActive
+      && !progressCelebrated
+    );
+  }
+
+  function startProgressDrag(event) {
+    if (!canDragProgress()) return;
+
+    const rect = progress.getBoundingClientRect();
+    progressDragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: rect.left,
+      top: rect.top,
+      moved: false
+    };
+
+    progress.style.left = `${rect.left}px`;
+    progress.style.right = 'auto';
+    progress.style.top = `${rect.top}px`;
+    progress.style.bottom = 'auto';
+    progress.classList.add('is-dragging');
+    progressToggle.setPointerCapture?.(event.pointerId);
+  }
+
+  function moveProgressDrag(event) {
+    if (!progressDragState || event.pointerId !== progressDragState.pointerId) return;
+
+    const dx = event.clientX - progressDragState.startX;
+    const dy = event.clientY - progressDragState.startY;
+    if (!progressDragState.moved && Math.hypot(dx, dy) < progressDragThreshold) return;
+
+    progressDragState.moved = true;
+    event.preventDefault();
+
+    const rect = progress.getBoundingClientRect();
+    const maxLeft = Math.max(progressEdgeInset, window.innerWidth - rect.width - progressEdgeInset);
+    const left = Math.max(progressEdgeInset, Math.min(maxLeft, progressDragState.left + dx));
+    const top = clampProgressTop(progressDragState.top + dy, rect.height);
+    progress.style.left = `${left}px`;
+    progress.style.top = `${top}px`;
+  }
+
+  function finishProgressDrag(event) {
+    if (!progressDragState || event.pointerId !== progressDragState.pointerId) return;
+
+    const moved = progressDragState.moved;
+    progressToggle.releasePointerCapture?.(event.pointerId);
+    progress.classList.remove('is-dragging');
+    progressDragState = null;
+
+    if (!moved) return;
+
+    const rect = progress.getBoundingClientRect();
+    const side = rect.left + rect.width / 2 < window.innerWidth / 2 ? 'left' : 'right';
+    const top = clampProgressTop(rect.top, rect.height);
+    writeProgressPosition({ side, top });
+    suppressProgressToggleClick = true;
+    applyStoredProgressPosition();
+  }
+
   if (progressToggle) {
+    progressToggle.addEventListener('pointerdown', startProgressDrag);
+    progressToggle.addEventListener('pointermove', moveProgressDrag);
+    progressToggle.addEventListener('pointerup', finishProgressDrag);
+    progressToggle.addEventListener('pointercancel', finishProgressDrag);
+
     progressToggle.addEventListener('click', () => {
+      if (suppressProgressToggleClick) {
+        suppressProgressToggleClick = false;
+        return;
+      }
       if (
         currentArticleEnded
         || currentProgressPercent <= 2
         || window.scrollY <= progressCollapseScrollY
+        || progressCelebrated
       ) {
         return;
       }
