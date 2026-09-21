@@ -342,7 +342,7 @@
     opacity: 0.96;
     transform:
       translate(
-        calc(-50% + var(--drop-x) * 0.35),
+        calc(-50% + var(--drop-x-near)),
         calc(-50% + var(--drop-lift))
       )
       scale(1);
@@ -352,7 +352,7 @@
     transform:
       translate(
         calc(-50% + var(--drop-x)),
-        calc(-50% + var(--drop-lift) * 0.35)
+        calc(-50% + var(--drop-lift-soft))
       )
       scale(0.92);
   }
@@ -360,7 +360,7 @@
     opacity: 0;
     transform:
       translate(
-        calc(-50% + var(--drop-x) * 1.12),
+        calc(-50% + var(--drop-x-far)),
         calc(-50% + var(--drop-fall))
       )
       scale(0.58, 1.34);
