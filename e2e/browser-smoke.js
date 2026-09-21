@@ -184,7 +184,7 @@ async function main() {
       const readingProgress = page.locator('[data-reading-progress]');
       await readingProgress.waitFor({ state: 'attached' });
       assert.equal(
-        await readingProgress.evaluate((element) => getComputedStyle(element).position),
+        await readingProgress.evaluate((element) => element.ownerDocument.defaultView.getComputedStyle(element).position),
         'fixed',
         `Reading progress should be a subtle bottom overlay for ${href}`
       );
@@ -205,13 +205,11 @@ async function main() {
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
       assert.equal(
-        await page.evaluate(() => {
-          const engagementElement = document.querySelector('.article-engagement');
-          const graphElement = document.querySelector('.knowledge-graph');
+        await engagement.evaluate((engagementElement) => {
+          const graphElement = engagementElement.parentElement?.querySelector('.knowledge-graph');
           return Boolean(
-            engagementElement
-            && graphElement
-            && (engagementElement.compareDocumentPosition(graphElement) & Node.DOCUMENT_POSITION_FOLLOWING)
+            graphElement
+            && (engagementElement.compareDocumentPosition(graphElement) & 4)
           );
         }),
         true,
