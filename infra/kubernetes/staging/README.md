@@ -81,6 +81,7 @@ staging-server.js
 Damit werden der orange/schwarz gestreifte Rahmen und das `STAGING`-Banner ausschließlich in der Staging-Umgebung aktiviert. Production verwendet weiterhin `seo-server.js`.
 
 `cloudflared` ist separat auf Version `2026.9.1` gepinnt.
+Der Tunnel läuft mit zwei `cloudflared`-Replicas, damit ein einzelner Connector-Neustart nicht gleichzeitig Staging und Production vom öffentlichen Zugriff trennt. Beide Replicas laufen derzeit weiterhin auf demselben K3s-Node und ersetzen deshalb keine Node-Redundanz.
 
 ## Manueller Test
 
