@@ -686,11 +686,11 @@ function renderPostPage(post, relatedPosts = []) {
                 <span>Herunterladen</span>
               </summary>
               <div class="article-download__menu" role="group" aria-label="Artikel herunterladen">
-                <a href="/download/%24%7Bpost.slug%7D.epub" download>
+                <a href="/download/${encodeURIComponent(post.slug)}.epub" download>
                   <strong>EPUB</strong>
                   <span>E-Book mit Cover & Metadaten</span>
                 </a>
-                <a href="/download/%24%7Bpost.slug%7D.pdf" download>
+                <a href="/download/${encodeURIComponent(post.slug)}.pdf" download>
                   <strong>PDF</strong>
                   <span>aus dem EPUB erzeugt</span>
                 </a>
