@@ -8,9 +8,6 @@
   const likeButton = document.querySelector('[data-article-like]');
   const likeIcon = document.querySelector('[data-like-icon]');
   const likeLabel = document.querySelector('[data-like-label]');
-  const favoriteButton = document.querySelector('[data-article-favorite]');
-  const favoriteIcon = document.querySelector('[data-favorite-icon]');
-  const favoriteLabel = document.querySelector('[data-favorite-label]');
   const shareButton = document.querySelector('[data-article-share]');
   const actionStatus = document.querySelector('[data-article-action-status]');
   const engagement = document.querySelector('.article-engagement');
@@ -28,7 +25,6 @@
   if (!slug || !content) return;
 
   const likedKey = `kernel-notes:liked:${slug}`;
-  const favoritesKey = 'kernel-notes:favorites';
   const progressPositionKey = 'kernel-notes:reading-progress-position';
 
   function hasLiked() {
@@ -44,24 +40,6 @@
       window.localStorage.setItem(likedKey, '1');
     } catch (_error) {
       // The like still counts even when browser storage is unavailable.
-    }
-  }
-
-  function readFavorites() {
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(favoritesKey) || '[]');
-      return new Set(Array.isArray(parsed) ? parsed.map((entry) => String(entry)) : []);
-    } catch (_error) {
-      return new Set();
-    }
-  }
-
-  function writeFavorites(favorites) {
-    try {
-      window.localStorage.setItem(favoritesKey, JSON.stringify([...favorites]));
-      return true;
-    } catch (_error) {
-      return false;
     }
   }
 
@@ -536,15 +514,6 @@
     if (likeLabel) likeLabel.textContent = liked ? 'Gefällt dir' : 'Gefällt mir';
   }
 
-  function syncFavoriteState() {
-    if (!favoriteButton) return;
-    const saved = readFavorites().has(slug);
-    favoriteButton.setAttribute('aria-pressed', String(saved));
-    favoriteButton.classList.toggle('is-favorite', saved);
-    if (favoriteIcon) favoriteIcon.textContent = saved ? '★' : '☆';
-    if (favoriteLabel) favoriteLabel.textContent = saved ? 'Gespeichert' : 'Für später speichern';
-  }
-
   ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach((name) => {
     window.addEventListener(name, markActivity, { passive: true });
   });
@@ -673,24 +642,6 @@
       } finally {
         likeButton.disabled = false;
       }
-    });
-  }
-
-  if (favoriteButton) {
-    syncFavoriteState();
-    favoriteButton.addEventListener('click', () => {
-      const favorites = readFavorites();
-      const saved = favorites.has(slug);
-      if (saved) favorites.delete(slug);
-      else favorites.add(slug);
-
-      if (!writeFavorites(favorites)) {
-        setActionStatus('Favorit konnte in diesem Browser nicht gespeichert werden.');
-        return;
-      }
-
-      syncFavoriteState();
-      setActionStatus(saved ? 'Aus den Favoriten entfernt.' : 'Für später in diesem Browser gespeichert.');
     });
   }
 
