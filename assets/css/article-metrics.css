@@ -1,33 +1,63 @@
 .reading-progress {
+  --progress-percent: 0%;
   position: fixed;
-  left: 50%;
+  left: 1rem;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 0.85rem);
   z-index: 18;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.55rem;
   width: min(360px, calc(100vw - 2rem));
-  padding: 0.38rem 0.55rem;
+  min-height: 44px;
   border: 1px solid rgba(42, 48, 54, 0.12);
   border-radius: 999px;
-  background: rgba(251, 250, 247, 0.84);
+  background: rgba(251, 250, 247, 0.86);
   box-shadow: 0 8px 24px rgba(31, 38, 43, 0.08);
   backdrop-filter: blur(12px);
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 8px);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transform: translateY(8px);
+  transform-origin: left bottom;
+  transition:
+    width 220ms ease,
+    min-height 220ms ease,
+    border-radius 220ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .reading-progress.is-visible {
-  opacity: 0.82;
-  transform: translate(-50%, 0);
+  opacity: 0.9;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .reading-progress.is-complete {
   opacity: 0;
-  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transform: translateY(8px);
+}
+
+.reading-progress__toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 42px;
+  padding: 0.38rem 0.55rem;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.reading-progress__toggle:focus-visible {
+  outline: 2px solid #145a78;
+  outline-offset: 3px;
 }
 
 .reading-progress__track {
@@ -55,6 +85,100 @@
   font-size: 0.62rem;
   line-height: 1;
   white-space: nowrap;
+}
+
+.reading-progress__ring {
+  display: none;
+}
+
+.reading-progress.is-compact {
+  width: 56px;
+  min-height: 56px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.reading-progress.is-compact .reading-progress__toggle {
+  display: grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  width: 56px;
+  min-height: 56px;
+  padding: 0;
+}
+
+.reading-progress.is-compact .reading-progress__track,
+.reading-progress.is-compact .reading-progress__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.reading-progress.is-compact .reading-progress__ring {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 1px solid rgba(42, 48, 54, 0.12);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(251, 250, 247, 0.96) 0 61%,
+      transparent 62%
+    ),
+    conic-gradient(
+      from -90deg,
+      color-mix(in srgb, var(--accent) 82%, #6c8f87) 0 var(--progress-percent),
+      rgba(42, 48, 54, 0.13) var(--progress-percent) 100%
+    );
+  box-shadow: 0 8px 22px rgba(31, 38, 43, 0.12);
+}
+
+.reading-progress__compact-value {
+  display: inline-flex;
+  align-items: baseline;
+  color: #293035;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.62rem;
+  line-height: 1;
+}
+
+.reading-progress__compact-value strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+@media (max-width: 620px) {
+  .reading-progress {
+    left: 0.8rem;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 0.7rem);
+    width: min(320px, calc(100vw - 1.6rem));
+  }
+
+  .reading-progress.is-compact,
+  .reading-progress.is-compact .reading-progress__toggle,
+  .reading-progress.is-compact .reading-progress__ring {
+    width: 54px;
+  }
+
+  .reading-progress.is-compact,
+  .reading-progress.is-compact .reading-progress__toggle {
+    min-height: 54px;
+  }
+
+  .reading-progress.is-compact .reading-progress__ring {
+    height: 54px;
+  }
+
+  .reading-progress__label {
+    font-size: 0.58rem;
+  }
 }
 
 .article-metrics {
@@ -243,16 +367,6 @@
 }
 
 @media (max-width: 620px) {
-  .reading-progress {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 0.65rem);
-    width: min(320px, calc(100vw - 2.4rem));
-    padding: 0.34rem 0.5rem;
-  }
-
-  .reading-progress__label {
-    font-size: 0.58rem;
-  }
-
   .article-engagement {
     padding: 0.9rem;
   }
@@ -280,6 +394,7 @@
 @media (prefers-reduced-motion: reduce) {
   .reading-progress,
   .reading-progress__bar,
+  .reading-progress__toggle,
   .article-action,
   .article-metric[data-tooltip]::after {
     transition: none;
