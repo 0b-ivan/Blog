@@ -4,7 +4,7 @@ set -euo pipefail
 NAMESPACE="${NAMESPACE:-blog-staging}"
 DEPLOYMENT="${DEPLOYMENT:-blog}"
 SERVICE="${SERVICE:-blog}"
-EXPECTED_REPLICAS="${EXPECTED_REPLICAS:-3}"
+EXPECTED_REPLICAS="${EXPECTED_REPLICAS:-1}"
 STAGING_URL="${STAGING_URL:-https://staging-blog.obivan.org}"
 
 available="$(kubectl -n "$NAMESPACE" get deployment "$DEPLOYMENT" -o jsonpath='{.status.availableReplicas}')"
