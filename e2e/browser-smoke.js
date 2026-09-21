@@ -320,7 +320,7 @@ async function main() {
     );
 
     await page.evaluate(() => {
-      const contentNode = document.querySelector('.terminal-content');
+      const contentNode = globalThis.document.querySelector('.terminal-content');
       if (!contentNode) return;
       const rect = contentNode.getBoundingClientRect();
       const absoluteTop = globalThis.scrollY + rect.top;
