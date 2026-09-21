@@ -212,7 +212,10 @@
       element.style.width = `${drop.size}px`;
       element.style.height = `${Math.round(drop.size * 1.28)}px`;
       element.style.setProperty('--drop-x', `${drop.dx}px`);
+      element.style.setProperty('--drop-x-near', `${Math.round(drop.dx * 0.35)}px`);
+      element.style.setProperty('--drop-x-far', `${Math.round(drop.dx * 1.12)}px`);
       element.style.setProperty('--drop-lift', `${drop.lift}px`);
+      element.style.setProperty('--drop-lift-soft', `${Math.round(drop.lift * 0.35)}px`);
       element.style.setProperty('--drop-fall', `${drop.fall}px`);
       element.style.animationDelay = `${drop.delay}ms`;
       element.style.animationDuration = `${drop.duration}ms`;
