@@ -329,6 +329,10 @@ async function loadPosts(postsDir) {
         category,
         tags,
         excerpt,
+        coverImage,
+        coverFocus,
+        coverCredit,
+        coverCreditUrl,
         wordCount,
         readingTime,
         html: md.render(markdownContent, { snippets })
