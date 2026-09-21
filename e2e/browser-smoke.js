@@ -112,6 +112,11 @@ async function main() {
     const homeResponse = await page.request.get(baseUrl);
     assert.ok(homeResponse.ok(), `Home request failed: ${homeResponse.status()}`);
     assert.match(homeResponse.headers()['content-security-policy'] || '', /default-src 'self'/);
+    assert.match(
+      homeResponse.headers()['content-security-policy'] || '',
+      /script-src[^;]*'wasm-unsafe-eval'/,
+      'CSP must allow WebAssembly compilation for the self-hosted Rive runtime'
+    );
     assert.equal(homeResponse.headers()['referrer-policy'], 'no-referrer');
     assert.match(homeResponse.headers()['permissions-policy'] || '', /camera=\(\)/);
     assert.equal(homeResponse.headers()['x-content-type-options'], 'nosniff');
@@ -327,7 +332,19 @@ async function main() {
       const target = absoluteTop + contentNode.scrollHeight * 0.8 - globalThis.innerHeight;
       globalThis.scrollTo(0, Math.max(0, target));
     });
-    await page.locator('[data-reading-progress-rive][data-rive-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 });
+    const riveProgressCanvas = page.locator('[data-reading-progress-rive]');
+    let riveState = '';
+    for (let attempt = 0; attempt < 150; attempt += 1) {
+      riveState = (await riveProgressCanvas.getAttribute('data-rive-state')) || '';
+      if (riveState === 'ready' || riveState === 'error') break;
+      await page.waitForTimeout(100);
+    }
+    const riveError = await riveProgressCanvas.getAttribute('data-rive-error');
+    assert.equal(
+      riveState,
+      'ready',
+      `Rive should initialize after late reading progress (state=${riveState || 'unset'}, error=${riveError || 'none'})`
+    );
     assert.equal(
       await page.locator('script[data-rive-runtime]').count(),
       1,
