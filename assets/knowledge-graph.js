@@ -1,6 +1,7 @@
 (() => {
   const FORCE_GRAPH_SRC = 'https://cdn.jsdelivr.net/npm/force-graph@1.51.4/dist/force-graph.min.js';
-  const MAX_RELATED_POSTS = 10;
+  const MAX_RELATED_POSTS = 8;
+  const COMPACT_RELATED_POSTS = 5;
   const COLORS = {
     current: '#f2913d',
     article: '#5b9cf6',
@@ -38,7 +39,7 @@
     const title = document.querySelector('.post-page > h1')?.textContent?.trim() || slug;
     const meta = document.querySelector('.post-page > .meta')?.textContent || '';
     const category = meta.split('·')[0]?.trim() || 'IT';
-    const tags = [...document.querySelectorAll('.post-page > .tag-list .tag-chip')]
+    const tags = [...document.querySelectorAll('.post-page > .tag-list .tag-chip:not([data-tag-toggle])')]
       .map((chip) => chip.textContent?.trim())
       .filter(Boolean);
 
@@ -151,7 +152,7 @@
     return selected;
   }
 
-  function selectPosts(posts, currentPost, semanticPosts) {
+  function selectPosts(posts, currentPost, semanticPosts, maxRelatedPosts = MAX_RELATED_POSTS) {
     const selected = [{ ...currentPost, semanticScore: 1 }];
     const seen = new Set([currentPost.slug]);
 
@@ -161,7 +162,7 @@
       }
       selected.push(post);
       seen.add(post.slug);
-      if (selected.length >= MAX_RELATED_POSTS + 1) {
+      if (selected.length >= maxRelatedPosts + 1) {
         return selected;
       }
     }
@@ -172,7 +173,7 @@
       }
       selected.push(post);
       seen.add(post.slug);
-      if (selected.length >= MAX_RELATED_POSTS + 1) {
+      if (selected.length >= maxRelatedPosts + 1) {
         break;
       }
     }
@@ -214,7 +215,9 @@
         type: isCurrent ? 'current' : 'article',
         href: post.archived ? `/archive/${post.slug}` : `/posts/${post.slug}`,
         color: isCurrent ? COLORS.current : COLORS.article,
-        semanticScore: Number(post.semanticScore) || 0
+        semanticScore: Number(post.semanticScore) || 0,
+        category: post.category || '',
+        tags: normalizeTags(post.tags)
       });
 
       if (!isCurrent && Number(post.semanticScore) > 0) {
@@ -291,6 +294,47 @@
     return { nodes, links };
   }
 
+  function linkEndpointId(endpoint) {
+    return typeof endpoint === 'object' ? endpoint?.id : endpoint;
+  }
+
+  function compactGraphData(graphData, currentPost, maxTopics = 7) {
+    const currentId = `post:${currentPost.slug}`;
+    const articleNodes = graphData.nodes.filter((node) => node.type === 'current' || node.type === 'article');
+    const articleIds = new Set(articleNodes.map((node) => node.id));
+    const topicDegree = new Map();
+    const currentTopics = new Set();
+
+    graphData.links.forEach((link) => {
+      if (link.type === 'semantic') return;
+      const source = linkEndpointId(link.source);
+      const target = linkEndpointId(link.target);
+      const topicId = source.startsWith('post:') ? target : source;
+      topicDegree.set(topicId, (topicDegree.get(topicId) || 0) + 1);
+      if (source === currentId) currentTopics.add(target);
+      if (target === currentId) currentTopics.add(source);
+    });
+
+    const topicNodes = graphData.nodes
+      .filter((node) => node.type === 'tag' || node.type === 'category')
+      .sort((left, right) => {
+        const leftCurrent = currentTopics.has(left.id) ? 1 : 0;
+        const rightCurrent = currentTopics.has(right.id) ? 1 : 0;
+        if (leftCurrent !== rightCurrent) return rightCurrent - leftCurrent;
+        return (topicDegree.get(right.id) || 0) - (topicDegree.get(left.id) || 0);
+      })
+      .slice(0, maxTopics);
+
+    const keepIds = new Set([...articleIds, ...topicNodes.map((node) => node.id)]);
+    return {
+      nodes: [...articleNodes, ...topicNodes],
+      links: graphData.links.filter((link) => (
+        keepIds.has(linkEndpointId(link.source))
+        && keepIds.has(linkEndpointId(link.target))
+      ))
+    };
+  }
+
   function ensureStyles() {
     if (document.querySelector('link[data-knowledge-graph-style]')) {
       return;
@@ -298,7 +342,7 @@
 
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = '/assets/css/knowledge-graph.css';
+    link.href = '/assets/css/knowledge-graph.css?v=20260921-2';
     link.dataset.knowledgeGraphStyle = 'true';
     document.head.append(link);
   }
@@ -309,8 +353,9 @@
       return null;
     }
 
+    const engagement = document.querySelector('.post-page .article-engagement');
     const currentTitle = document.querySelector('.post-page > h1')?.textContent?.trim() || 'article-graph';
-    const chromeTitle = `knowledge-graph://kernel-notes/${shortLabel(currentTitle, 56)}`;
+    const chromeTitle = `knowledge://kernel-notes/${shortLabel(currentTitle, 56)}`;
 
     const section = document.createElement('section');
     section.className = 'knowledge-graph';
@@ -327,9 +372,10 @@
       <div class="knowledge-graph__head">
         <div>
           <p class="eyebrow">Wissensnetz</p>
-          <h2 id="knowledge-graph-title">Semantisch verwandte Artikel & Themen</h2>
-          <p class="knowledge-graph__hint">Vektorähnlichkeit aus Kernel Grep · Tags und Kategorien erklären die Verbindung · Ziehen, zoomen, anklicken</p>
+          <h2 id="knowledge-graph-title">Verwandt im Wissensnetz</h2>
+          <p class="knowledge-graph__hint">Semantische Nähe, gemeinsame Tags und Kategorien verbinden diesen Artikel mit weiteren Notizen.</p>
         </div>
+        <a class="knowledge-graph__network-link" href="/knowledge">Gesamtes Wissensnetz →</a>
         <div class="knowledge-graph__legend" aria-label="Legende">
           <span><i style="--node-color:${COLORS.current}"></i>Dieser Artikel</span>
           <span><i style="--node-color:${COLORS.article}"></i>Artikel</span>
@@ -339,10 +385,21 @@
       </div>
       <div class="knowledge-graph__canvas" role="img" aria-label="Interaktiver semantischer Wissensgraph zu diesem Artikel">
         <p class="knowledge-graph__status">Graph wird geladen…</p>
-      </div>`;
+      </div>
+      <aside class="knowledge-graph__selection" data-knowledge-selection hidden aria-live="polite">
+        <div>
+          <span data-knowledge-selection-type></span>
+          <strong data-knowledge-selection-title></strong>
+          <p data-knowledge-selection-meta></p>
+        </div>
+        <div class="knowledge-graph__selection-actions">
+          <a data-knowledge-selection-open href="/">Öffnen</a>
+          <button type="button" data-knowledge-selection-close>Schließen</button>
+        </div>
+      </aside>`;
 
     section.querySelector('.knowledge-graph__chrome-title').textContent = chromeTitle;
-    terminal.insertAdjacentElement('afterend', section);
+    (engagement || terminal).insertAdjacentElement('afterend', section);
     return section;
   }
 
@@ -410,12 +467,76 @@
     return `${type}: ${node.label}`;
   }
 
-  function renderGraph(canvas, graphData) {
-    const height = window.matchMedia('(max-width: 720px)').matches ? 360 : 440;
+  function renderGraph(section, graphData) {
+    const canvas = section.querySelector('.knowledge-graph__canvas');
+    const selection = section.querySelector('[data-knowledge-selection]');
+    const selectionType = selection?.querySelector('[data-knowledge-selection-type]');
+    const selectionTitle = selection?.querySelector('[data-knowledge-selection-title]');
+    const selectionMeta = selection?.querySelector('[data-knowledge-selection-meta]');
+    const selectionOpen = selection?.querySelector('[data-knowledge-selection-open]');
+    const selectionClose = selection?.querySelector('[data-knowledge-selection-close]');
+    const compact = window.matchMedia('(max-width: 720px)').matches;
+    const height = compact ? 320 : 440;
     let hoveredNode = null;
+    let selectedNode = null;
     let fitted = false;
 
     canvas.innerHTML = '';
+
+    function focusNode() {
+      return hoveredNode || selectedNode;
+    }
+
+    function neighborIds(node) {
+      const ids = new Set(node ? [node.id] : []);
+      if (!node) return ids;
+      graph.graphData().links.forEach((link) => {
+        const source = linkEndpointId(link.source);
+        const target = linkEndpointId(link.target);
+        if (source === node.id) ids.add(target);
+        if (target === node.id) ids.add(source);
+      });
+      return ids;
+    }
+
+    function refreshGraphStyle() {
+      graph.nodeColor(graph.nodeColor());
+      graph.nodeCanvasObject(graph.nodeCanvasObject());
+      graph.linkColor(graph.linkColor());
+      graph.linkWidth(graph.linkWidth());
+    }
+
+    function showSelection(node) {
+      selectedNode = node || null;
+      if (!selection) return;
+      if (!node) {
+        selection.hidden = true;
+        refreshGraphStyle();
+        return;
+      }
+
+      selectionType.textContent = node.type === 'current'
+        ? 'Dieser Artikel'
+        : node.type === 'article'
+          ? 'Artikel'
+          : node.type === 'tag'
+            ? 'Tag'
+            : 'Kategorie';
+      selectionTitle.textContent = node.label;
+      const details = node.type === 'article' || node.type === 'current'
+        ? [
+            Number(node.semanticScore) > 0 && node.type === 'article'
+              ? `Ähnlichkeit ${Number(node.semanticScore).toFixed(3)}`
+              : '',
+            node.category,
+            ...(node.tags || []).slice(0, 3)
+          ].filter(Boolean)
+        : [node.type === 'tag' ? 'Gemeinsames Thema' : 'Gemeinsame Kategorie'];
+      selectionMeta.textContent = details.join(' · ');
+      selectionOpen.href = node.href || '#';
+      selection.hidden = false;
+      refreshGraphStyle();
+    }
 
     const graph = window.ForceGraph()(canvas)
       .graphData(graphData)
@@ -424,63 +545,72 @@
       .backgroundColor('rgba(0,0,0,0)')
       .nodeId('id')
       .nodeVal('val')
-      .nodeRelSize(2.35)
-      .nodeColor((node) => node.color)
+      .nodeRelSize(compact ? 2.55 : 2.3)
+      .nodeColor((node) => {
+        const focus = focusNode();
+        if (focus && !neighborIds(focus).has(node.id)) {
+          return 'rgba(112, 120, 128, 0.16)';
+        }
+        return node.color;
+      })
       .nodeLabel(nodeDescription)
       .nodeCanvasObjectMode(() => 'after')
-      .nodeCanvasObject(drawNodeLabel)
+      .nodeCanvasObject((node, ctx, globalScale) => {
+        const shouldLabel = node.type === 'current'
+          || node === hoveredNode
+          || node === selectedNode
+          || (
+            node.type !== 'article'
+            && globalScale >= (compact ? 1.3 : 0.72)
+          );
+        if (shouldLabel) drawNodeLabel(node, ctx, globalScale);
+      })
       .linkColor((link) => {
-        if (hoveredNode) {
-          return connectedTo(link, hoveredNode) ? 'rgba(0, 71, 62, 0.72)' : 'rgba(42, 48, 54, 0.08)';
+        const focus = focusNode();
+        if (focus) {
+          return connectedTo(link, focus) ? 'rgba(0, 71, 62, 0.62)' : 'rgba(42, 48, 54, 0.025)';
         }
         if (link.type === 'semantic') {
-          return 'rgba(91, 156, 246, 0.42)';
+          return compact ? 'rgba(91, 156, 246, 0.14)' : 'rgba(91, 156, 246, 0.24)';
         }
-        return link.current ? 'rgba(242, 145, 61, 0.5)' : 'rgba(42, 48, 54, 0.16)';
+        return link.current ? 'rgba(242, 145, 61, 0.24)' : 'rgba(42, 48, 54, 0.08)';
       })
       .linkWidth((link) => {
-        if (hoveredNode && connectedTo(link, hoveredNode)) {
-          return 2.4;
-        }
+        const focus = focusNode();
+        if (focus && connectedTo(link, focus)) return 2.2;
         if (link.type === 'semantic') {
-          return Math.min(3, 1 + (Number(link.score) || 0) * 2);
+          return compact ? 0.65 : Math.min(1.6, 0.55 + (Number(link.score) || 0));
         }
-        return link.current ? 1.8 : 0.9;
+        return link.current ? 1 : 0.55;
       })
       .onNodeHover((node) => {
         hoveredNode = node || null;
-        canvas.style.cursor = node?.href ? 'pointer' : 'grab';
-        graph.linkColor(graph.linkColor());
-        graph.linkWidth(graph.linkWidth());
+        canvas.style.cursor = node ? 'pointer' : 'grab';
+        refreshGraphStyle();
       })
       .onNodeClick((node) => {
-        if (node?.href) {
-          window.location.href = node.href;
-        }
+        if (node) showSelection(node);
       })
+      .onBackgroundClick(() => showSelection(null))
       .onEngineStop(() => {
-        if (fitted) {
-          return;
-        }
+        if (fitted) return;
         fitted = true;
-        graph.zoomToFit(450, 55);
+        graph.zoomToFit(500, compact ? 30 : 55);
       });
 
-    const charge = graph.d3Force('charge');
-    charge?.strength?.(-125);
-    const linkForce = graph.d3Force('link');
-    linkForce?.distance?.((link) => {
-      if (link.type === 'semantic') return 108;
-      return link.type === 'category' ? 88 : 72;
+    graph.d3Force('charge')?.strength?.(compact ? -160 : -125);
+    graph.d3Force('link')?.distance?.((link) => {
+      if (link.type === 'semantic') return compact ? 112 : 108;
+      return link.type === 'category' ? (compact ? 82 : 88) : (compact ? 72 : 72);
     });
+
+    selectionClose?.addEventListener('click', () => showSelection(null));
 
     window.addEventListener('resize', () => {
       graph.width(Math.max(280, canvas.clientWidth));
     });
   }
-
   async function initialize(section) {
-    const canvas = section.querySelector('.knowledge-graph__canvas');
     const status = section.querySelector('.knowledge-graph__status');
 
     try {
@@ -506,14 +636,23 @@
         section.dataset.relationshipSource = 'metadata-fallback';
       }
 
-      const selectedPosts = selectPosts(posts, currentPost, semanticPosts);
-      const graphData = buildGraphData(selectedPosts, currentPost);
+      const compact = window.matchMedia('(max-width: 720px)').matches;
+      const selectedPosts = selectPosts(
+        posts,
+        currentPost,
+        semanticPosts,
+        compact ? COMPACT_RELATED_POSTS : MAX_RELATED_POSTS
+      );
+      let graphData = buildGraphData(selectedPosts, currentPost);
+      if (compact) {
+        graphData = compactGraphData(graphData, currentPost);
+      }
 
       if (!graphData.nodes.length) {
         throw new Error('Keine Graphdaten verfügbar.');
       }
 
-      renderGraph(canvas, graphData);
+      renderGraph(section, graphData);
     } catch (error) {
       if (status) {
         status.textContent = `Graph konnte nicht geladen werden: ${error.message}`;

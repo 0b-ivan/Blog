@@ -4,6 +4,13 @@ const { chromium } = require('playwright');
 
 const baseUrl = process.env.BLOG_BASE_URL || 'http://127.0.0.1:8080';
 const baseOrigin = new URL(baseUrl).origin;
+const allowStatusUnavailable = process.env.BROWSER_SMOKE_ALLOW_STATUS_UNAVAILABLE === 'true';
+
+function isAllowedUnavailableStatus(url, status) {
+  if (!allowStatusUnavailable || status !== 503) return false;
+  const parsed = new URL(url);
+  return parsed.origin === baseOrigin && parsed.pathname === '/api/kubernetes-status';
+}
 
 async function clickTopic(page, topic) {
   await page.locator('#topics-list [data-topic]').evaluateAll((buttons, wantedTopic) => {
@@ -92,7 +99,11 @@ async function main() {
 
   page.on('response', (response) => {
     const url = response.url();
-    if (new URL(url).origin === baseOrigin && response.status() >= 500) {
+    if (
+      new URL(url).origin === baseOrigin
+      && response.status() >= 500
+      && !isAllowedUnavailableStatus(url, response.status())
+    ) {
       failures.push(`HTTP ${response.status()}: ${url}`);
     }
   });
@@ -101,6 +112,11 @@ async function main() {
     const homeResponse = await page.request.get(baseUrl);
     assert.ok(homeResponse.ok(), `Home request failed: ${homeResponse.status()}`);
     assert.match(homeResponse.headers()['content-security-policy'] || '', /default-src 'self'/);
+    assert.match(
+      homeResponse.headers()['content-security-policy'] || '',
+      /script-src[^;]*'wasm-unsafe-eval'/,
+      'CSP must allow WebAssembly compilation for the self-hosted Rive runtime'
+    );
     assert.equal(homeResponse.headers()['referrer-policy'], 'no-referrer');
     assert.match(homeResponse.headers()['permissions-policy'] || '', /camera=\(\)/);
     assert.equal(homeResponse.headers()['x-content-type-options'], 'nosniff');
@@ -120,6 +136,24 @@ async function main() {
     assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
     await page.locator('.hero-profile a[href="/about"]').waitFor({ state: 'visible' });
     await assertKernelGrepTrigger(page);
+
+    if (allowStatusUnavailable) {
+      const statusResponse = await page.request.get(`${baseUrl}/api/kubernetes-status`);
+      assert.equal(statusResponse.status(), 503, 'Local Compose smoke test expects no Kubernetes status backend');
+      const homeStatusLabel = page.locator('[data-home-status-label]');
+      await homeStatusLabel.waitFor({ state: 'visible' });
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        if ((await homeStatusLabel.innerText()).trim() === 'Status nicht verfügbar') {
+          break;
+        }
+        await page.waitForTimeout(50);
+      }
+      assert.equal(
+        (await homeStatusLabel.innerText()).trim(),
+        'Status nicht verfügbar',
+        'Homepage must render the unavailable status fallback when no Kubernetes backend exists'
+      );
+    }
 
     const postHrefs = await page.locator('.post-card[data-href]').evaluateAll((cards) =>
       cards.map((card) => card.dataset.href).filter(Boolean)
@@ -150,16 +184,54 @@ async function main() {
       const pageTitle = page.locator('.post-page > h1');
       await pageTitle.waitFor({ state: 'visible' });
       assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
+      const postMeta = await page.locator('.post-page > .meta').innerText();
+      assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
+      const readingProgress = page.locator('[data-reading-progress]');
+      await readingProgress.waitFor({ state: 'attached' });
+      assert.equal(
+        await readingProgress.evaluate((element) => element.ownerDocument.defaultView.getComputedStyle(element).position),
+        'fixed',
+        `Reading progress should be a subtle bottom overlay for ${href}`
+      );
+      assert.equal(
+        await readingProgress.locator('[data-reading-progress-toggle]').count(),
+        1,
+        `Reading progress toggle missing for ${href}`
+      );
+      assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
+      const engagement = page.locator('.article-engagement');
+      await engagement.waitFor({ state: 'attached' });
+      assert.equal(await engagement.locator('[data-article-like]').count(), 1, `Like action missing for ${href}`);
+      assert.equal(await engagement.locator('[data-article-favorite]').count(), 1, `Favorite action missing for ${href}`);
+      assert.equal(await engagement.locator('[data-article-share]').count(), 1, `Share action missing for ${href}`);
+      const favoriteButton = engagement.locator('[data-article-favorite]');
+      await favoriteButton.click();
+      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'true', `Favorite state did not persist for ${href}`);
+      await favoriteButton.click();
+      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'false', `Favorite state did not toggle off for ${href}`);
       await assertMetaLinksInFooter(page);
       await assertKernelGrepTrigger(page);
 
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
+      assert.equal(
+        await engagement.evaluate((engagementElement) => {
+          const graphElement = engagementElement.parentElement?.querySelector('.knowledge-graph');
+          return Boolean(
+            graphElement
+            && (engagementElement.compareDocumentPosition(graphElement) & 4)
+          );
+        }),
+        true,
+        `Engagement must appear before the knowledge graph for ${href}`
+      );
+      assert.equal(await graphSection.locator('a[href="/knowledge"]').count(), 1, `Global knowledge link missing for ${href}`);
+      assert.equal(await graphSection.locator('[data-knowledge-selection]').count(), 1, `Graph selection panel missing for ${href}`);
       await graphSection.scrollIntoViewIfNeeded();
       await graphSection.locator('.knowledge-graph__chrome-title').waitFor({ state: 'visible', timeout: 10_000 });
       assert.match(
         await graphSection.locator('.knowledge-graph__chrome-title').innerText(),
-        /^knowledge-graph:\/\/kernel-notes\//,
+        /^knowledge:\/\/kernel-notes\//,
         `Graph chrome title missing for ${href}`
       );
       assert.equal(await graphSection.locator('.knowledge-graph__chrome-dot').count(), 3, `Graph chrome controls incomplete for ${href}`);
@@ -186,6 +258,179 @@ async function main() {
         assert.ok(response.ok(), `Snippet failed for ${href}: ${downloadHref} (${response.status()})`);
       }
     }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
+    const mobileProgress = page.locator('[data-reading-progress]');
+    await mobileProgress.waitFor({ state: 'attached' });
+    assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
+    assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.wasm`)).ok(), 'Self-hosted Rive WASM should be available');
+    assert.ok((await page.request.get(`${baseUrl}/assets/rive/liquid_download.riv`)).ok(), 'Local Rive liquid asset should be available');
+    assert.equal(
+      await page.locator('script[data-rive-runtime]').count(),
+      0,
+      'Rive runtime should not be loaded eagerly on article entry'
+    );
+    await page.mouse.wheel(0, 650);
+    const compactProgress = page.locator('[data-reading-progress].is-compact');
+    await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
+    let compactProgressBox = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      compactProgressBox = await compactProgress.boundingBox();
+      if (
+        compactProgressBox
+        && compactProgressBox.width <= 60
+        && compactProgressBox.height <= 60
+      ) {
+        break;
+      }
+      await page.waitForTimeout(50);
+    }
+    assert.ok(
+      compactProgressBox
+      && compactProgressBox.width <= 50
+      && compactProgressBox.height <= 50,
+      'Reading progress should collapse into a compact bubble on mobile after its size transition'
+    );
+    assert.ok(
+      compactProgressBox.x + compactProgressBox.width >= 390 - 24,
+      'Compact reading progress should default to the bottom-right edge on mobile'
+    );
+    assert.equal(
+      await compactProgress.locator('.reading-progress__bubble-fill').count(),
+      1,
+      'Compact reading progress should expose an inner bubble fill'
+    );
+    const fillHeightBefore = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+    );
+    const hueBefore = await compactProgress.evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+    );
+    await page.mouse.wheel(0, 700);
+    await page.waitForTimeout(250);
+    const fillHeightAfter = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+    );
+    const hueAfter = await compactProgress.evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+    );
+    assert.ok(
+      fillHeightAfter >= fillHeightBefore,
+      'Reading progress bubble fill should rise as the article is read'
+    );
+    assert.ok(
+      hueAfter >= hueBefore,
+      'Reading progress bubble should shift from red toward green while reading'
+    );
+
+    await page.evaluate(() => {
+      const contentNode = globalThis.document.querySelector('.terminal-content');
+      if (!contentNode) return;
+      const rect = contentNode.getBoundingClientRect();
+      const absoluteTop = globalThis.scrollY + rect.top;
+      const target = absoluteTop + contentNode.scrollHeight * 0.8 - globalThis.innerHeight;
+      globalThis.scrollTo(0, Math.max(0, target));
+    });
+    const riveProgressCanvas = page.locator('[data-reading-progress-rive]');
+    let riveState = '';
+    for (let attempt = 0; attempt < 150; attempt += 1) {
+      riveState = (await riveProgressCanvas.getAttribute('data-rive-state')) || '';
+      if (riveState === 'ready' || riveState === 'error') break;
+      await page.waitForTimeout(100);
+    }
+    const riveError = await riveProgressCanvas.getAttribute('data-rive-error');
+    assert.equal(
+      riveState,
+      'ready',
+      `Rive should initialize after late reading progress (state=${riveState || 'unset'}, error=${riveError || 'none'})`
+    );
+    assert.equal(
+      await page.locator('script[data-rive-runtime]').count(),
+      1,
+      'Rive runtime should lazy-load once late reading progress is reached'
+    );
+
+    const dragStartBox = await compactProgress.boundingBox();
+    assert.ok(dragStartBox, 'Compact reading progress should have a draggable bounding box');
+    const dragStartX = dragStartBox.x + dragStartBox.width / 2;
+    const dragStartY = dragStartBox.y + dragStartBox.height / 2;
+    await page.mouse.move(dragStartX, dragStartY);
+    await page.mouse.down();
+    await page.mouse.move(28, Math.max(80, dragStartY - 90), { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(250);
+
+    const draggedProgressBox = await compactProgress.boundingBox();
+    assert.ok(
+      draggedProgressBox && draggedProgressBox.x <= 20,
+      'Dragging the compact reading progress across the viewport should snap it to the left edge'
+    );
+    const storedProgressPosition = await page.evaluate(() => {
+      const raw = globalThis.localStorage.getItem('kernel-notes:reading-progress-position');
+      return raw ? JSON.parse(raw) : null;
+    });
+    assert.equal(
+      storedProgressPosition?.side,
+      'left',
+      'Dragged reading progress position should persist in localStorage'
+    );
+
+    await compactProgress.locator('[data-reading-progress-toggle]').click();
+    const expandedProgress = page.locator('[data-reading-progress].is-expanded');
+    await expandedProgress.waitFor({ state: 'visible', timeout: 5_000 });
+    let expandedProgressBox = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      expandedProgressBox = await expandedProgress.boundingBox();
+      if (expandedProgressBox && expandedProgressBox.width >= 240) {
+        break;
+      }
+      await page.waitForTimeout(50);
+    }
+    assert.ok(
+      expandedProgressBox && expandedProgressBox.width >= 240,
+      'Tapping the compact reading progress should expand it again after its size transition'
+    );
+
+    const mobileEngagement = page.locator('.article-engagement');
+    await mobileEngagement.waitFor({ state: 'visible' });
+    await mobileEngagement.scrollIntoViewIfNeeded();
+    const completionDroplets = page.locator('.reading-progress-burst__droplet');
+    const completionDrips = page.locator('.reading-progress-burst__drip');
+    const completionParticles = page.locator('.reading-progress-burst__particle');
+    await completionDroplets.first().waitFor({ state: 'attached', timeout: 5_000 });
+    assert.ok(
+      await completionDroplets.count() >= 6,
+      'Reading progress completion should release a local liquid splash'
+    );
+    assert.ok(
+      await completionDrips.count() >= 2,
+      'Reading progress completion should create downward liquid drips over nearby content'
+    );
+    assert.ok(
+      await completionParticles.count() >= 8,
+      'Reading progress completion should restore the multi-emoji burst'
+    );
+    const completionEmoji = await completionParticles.allTextContents();
+    assert.ok(completionEmoji.includes('❓'), 'Completion burst should include a question mark');
+    assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Completion burst should include thumbs');
+    const completionHue = await mobileProgress.evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+    );
+    assert.equal(completionHue, 120, 'Completed reading progress bubble should end green');
+    await page.locator('[data-reading-progress].is-complete').waitFor({ state: 'attached', timeout: 5_000 });
+    const mobileGraph = page.locator('.knowledge-graph');
+    await mobileGraph.waitFor({ state: 'attached', timeout: 10_000 });
+    await mobileGraph.scrollIntoViewIfNeeded();
+    await mobileGraph.locator('.knowledge-graph__canvas canvas').waitFor({ state: 'visible', timeout: 15_000 });
+    assert.equal(
+      await mobileGraph.locator('.knowledge-graph__legend').isVisible(),
+      false,
+      'Compact article graph should hide the legend on mobile'
+    );
+    const mobileCanvasBox = await mobileGraph.locator('.knowledge-graph__canvas').boundingBox();
+    assert.ok(mobileCanvasBox && mobileCanvasBox.height <= 340, 'Compact article graph should stay visually bounded on mobile');
+    await page.setViewportSize({ width: 1280, height: 720 });
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await assertKernelGrepTrigger(page);

@@ -13,8 +13,11 @@ on:
       - ".github/workflows/deploy-obsidian-publisher.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: obsidian-publisher-production
+  group: obsidian-production
   cancel-in-progress: false
 
 jobs:

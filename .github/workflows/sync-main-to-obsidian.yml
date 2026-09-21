@@ -19,8 +19,11 @@ on:
           - seed
           - full
 
+permissions:
+  contents: read
+
 concurrency:
-  group: obsidian-main-sync-production
+  group: obsidian-production
   cancel-in-progress: false
 
 jobs:

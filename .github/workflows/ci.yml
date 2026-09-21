@@ -102,6 +102,9 @@ jobs:
       - name: Validate sources and internal references
         run: npm run references:check
 
+      - name: Validate SEO metadata and sitemap
+        run: npm run seo:check
+
       - name: Validate GitOps secret hygiene
         run: bash scripts/check-gitops-secrets.sh
 
@@ -250,12 +253,14 @@ jobs:
         if: steps.changes.outputs.heavy == 'true'
         env:
           BLOG_BASE_URL: http://127.0.0.1:8080
+          BROWSER_SMOKE_ALLOW_STATUS_UNAVAILABLE: "true"
         run: node e2e/browser-smoke.js
 
       - name: Archive and history smoke test
         if: steps.changes.outputs.heavy == 'true'
         env:
           BLOG_BASE_URL: http://127.0.0.1:8080
+          BROWSER_SMOKE_ALLOW_STATUS_UNAVAILABLE: "true"
         run: node e2e/archive-history-smoke.js
 
       - name: Shutdown stack
@@ -387,3 +392,16 @@ jobs:
               print(f'::error title={vuln_id}::{package} installed={installed} fixed={fixed_display} target={target}')
           sys.exit(1)
           PY
+
+
+  local-assets:
+    name: Local assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check local image and media references
+        run: node scripts/check-local-assets.js

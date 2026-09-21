@@ -52,6 +52,19 @@ function parseDate(value) {
   return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
 }
 
+function formatPostDate(value) {
+  const raw = String(value || '').trim();
+  const timestamp = parseDate(value);
+  if (!timestamp) return raw;
+
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(timestamp));
+}
+
 function normalizeTags(value) {
   if (Array.isArray(value)) {
     return value.map((tag) => String(tag).trim()).filter(Boolean);
@@ -569,11 +582,16 @@ function getLegalInfo() {
 }
 
 function renderPostPage(post, relatedPosts = []) {
-  const meta = `${post.category} · ${post.date} · ca. ${post.readingTime || 1} Min. Lesezeit`;
-  const tagsHtml = normalizeTags(post.tags)
-    .slice(0, MAX_VISIBLE_TAGS)
-    .map((tag) => `<span class="tag-chip">${md.utils.escapeHtml(tag)}</span>`)
-    .join('');
+  const meta = `${md.utils.escapeHtml(String(post.category || 'IT'))} · ${md.utils.escapeHtml(formatPostDate(post.date))} · ${post.readingTime || 1} Min. Lesezeit`;
+  const tags = normalizeTags(post.tags).slice(0, MAX_VISIBLE_TAGS);
+  const visibleTagCount = 4;
+  const hiddenTagCount = Math.max(0, tags.length - visibleTagCount);
+  const tagsHtml = tags
+    .map((tag, index) => `<span class="tag-chip"${index >= visibleTagCount ? ' data-extra-tag hidden' : ''}>${md.utils.escapeHtml(tag)}</span>`)
+    .join('')
+    + (hiddenTagCount
+      ? `<button class="tag-chip tag-toggle" type="button" data-tag-toggle data-hidden-count="${hiddenTagCount}" aria-expanded="false" aria-label="${hiddenTagCount} weitere Tags anzeigen">+${hiddenTagCount}</button>`
+      : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
 
   return `<!doctype html>
@@ -591,6 +609,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-7" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -610,9 +629,33 @@ function renderPostPage(post, relatedPosts = []) {
     </header>
 
     <main>
-      <article class="post-page">
-        <p class="meta">${meta}</p>
+      <article class="post-page" data-post-slug="${md.utils.escapeHtml(String(post.slug || ''))}">
+        <div class="reading-progress" data-reading-progress>
+          <button class="reading-progress__toggle" type="button" data-reading-progress-toggle aria-expanded="true" aria-label="Lesefortschritt: 0 Prozent">
+            <span class="reading-progress__bubble" aria-hidden="true">
+              <span class="reading-progress__bubble-fill"></span>
+              <canvas class="reading-progress__rive" data-reading-progress-rive width="92" height="92" aria-hidden="true"></canvas>
+              <span class="reading-progress__bubble-gloss"></span>
+              <span class="reading-progress__compact-value"><strong data-reading-progress-value-compact>0</strong><span>%</span></span>
+            </span>
+            <span class="reading-progress__track" data-reading-progress-meter role="progressbar" aria-label="Lesefortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span class="reading-progress__bar" data-reading-progress-bar></span>
+            </span>
+            <span class="reading-progress__label"><strong data-reading-progress-value>0</strong><span>% gelesen</span></span>
+          </button>
+        </div>
+        <p class="meta article-meta">${meta}</p>
         <h1>${post.title}</h1>
+        <div class="article-metrics" aria-label="Artikelinformationen">
+          <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
+            <span class="article-metric__icon" aria-hidden="true">👁</span>
+            <strong data-article-metric="views">–</strong>
+          </span>
+          <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
+            <span class="article-metric__icon" aria-hidden="true">♡</span>
+            <strong data-article-metric="likes">–</strong>
+          </span>
+        </div>
         ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
         <section class="terminal-post" aria-label="Terminal article view">
           <div class="terminal-chrome">
@@ -622,6 +665,25 @@ function renderPostPage(post, relatedPosts = []) {
             <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
           </div>
           <div class="post-content terminal-content">${post.html}</div>
+        </section>
+        <section class="article-engagement" aria-labelledby="article-engagement-title">
+          <h2 id="article-engagement-title">Hat dir der Artikel geholfen?</h2>
+          <p>Deine Rückmeldung hilft dabei, die Inhalte gezielt zu verbessern.</p>
+          <div class="article-engagement__actions">
+            <button class="article-action article-action--primary article-like" type="button" data-article-like aria-pressed="false">
+              <span class="article-action__icon" data-like-icon aria-hidden="true">♡</span>
+              <span><span data-like-label>Gefällt mir</span> · <strong data-article-metric="likes">–</strong></span>
+            </button>
+            <button class="article-action article-favorite" type="button" data-article-favorite aria-pressed="false">
+              <span class="article-action__icon" data-favorite-icon aria-hidden="true">☆</span>
+              <span data-favorite-label>Für später speichern</span>
+            </button>
+            <button class="article-action article-action--share" type="button" data-article-share>
+              <span class="article-action__icon" aria-hidden="true">↗</span>
+              <span>Teilen</span>
+            </button>
+          </div>
+          <p class="article-action-status" data-article-action-status aria-live="polite"></p>
         </section>
         ${relatedPostsHtml}
         <p><a class="read-more" href="/">Zurück zur Startseite</a></p>
@@ -645,6 +707,7 @@ function renderPostPage(post, relatedPosts = []) {
     </script>
     <script src="/script.js?v=20260819-2"></script>
     <script src="/assets/glossary.js" defer></script>
+    <script src="/assets/article-analytics.js?v=20260921-7" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 

@@ -8,6 +8,7 @@ Staging und Production werden GitOps-basiert über GitHub Actions, GHCR, Flux un
 
 - Markdown-Artikel mit Syntax Highlighting, Mermaid, Footnotes und Admonitions
 - Tags mit eigenen Tag-Seiten und verwandten Beiträgen
+- Privacy-first Artikelmetriken mit Lesefortschritt, Likes, lokalen Favoriten und nativer Teilen-Funktion
 - RSS-Feed unter `/rss.xml`
 - Snippet Library für größere Codebeispiele
 - Zentrales Glossar mit Tooltips, eigener Glossar-Seite und automatischen Begriffsvorschlägen
@@ -161,6 +162,7 @@ docker-compose.prod.yml  Hetzner-Standby
 - `docs/deployment.md` – Branches, Staging, Promotion und Production
 - `docs/reliability.md` – Status, Chaos Engineering und Guardrails
 - `docs/article-lifecycle.md` – Archiv und Artikel-Versionierung
+- `docs/analytics.md` – Artikelmetriken, Likes, Favoriten und Datenschutzmodell
 - `docs/glossary.md` – Glossar und Tooltips
 - `docs/knowledge-graph.md` – Wissensnetz und GraphRAG
 - `docs/sources.md` – Quellen und Querverweise

@@ -33,7 +33,22 @@
     return span;
   }
 
-  function renderResult(result, index) {
+  function trackSearchClick(query, result, index) {
+    void fetch('/api/analytics/event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        type: 'search_click',
+        query,
+        slug: result.slug || '',
+        rank: index + 1,
+        source: 'grep-page'
+      }),
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  function renderResult(result, index, query) {
     const article = document.createElement('article');
     article.className = 'grep-result';
 
@@ -55,6 +70,7 @@
     const link = document.createElement('a');
     link.href = result.url || `/posts/${result.slug}`;
     link.textContent = result.title || result.slug || 'Artikel';
+    link.addEventListener('click', () => trackSearchClick(query, result, index));
     heading.append(link);
 
     const preview = document.createElement('p');
@@ -75,7 +91,7 @@
     return article;
   }
 
-  function renderResults(results) {
+  function renderResults(results, query) {
     clearResults();
     if (!Array.isArray(results) || results.length === 0) {
       const empty = document.createElement('p');
@@ -85,7 +101,7 @@
       return;
     }
 
-    resultsRoot.append(...results.map(renderResult));
+    resultsRoot.append(...results.map((result, index) => renderResult(result, index, query)));
   }
 
   function stopPendingSearch() {
@@ -122,7 +138,7 @@
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ q: normalized, limit: 8 }),
+        body: JSON.stringify({ q: normalized, limit: 8, source: 'grep-page' }),
         signal: controller.signal
       });
       const payload = await response.json();
@@ -135,7 +151,7 @@
 
       const elapsed = Math.round(window.performance.now() - startedAt);
       const results = Array.isArray(payload.results) ? payload.results : [];
-      renderResults(results);
+      renderResults(results, normalized);
       setStatus(
         results.length === 0
           ? `Keine relevanten Treffer · ${elapsed} ms`

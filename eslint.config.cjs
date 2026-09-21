@@ -61,7 +61,10 @@ module.exports = [
       'assets/kernel-grep-overlay.js',
       'assets/glossary.js',
       'assets/sources.js',
-      'assets/status.js'
+      'assets/status.js',
+      'assets/analytics.js',
+      'assets/article-analytics.js',
+      'assets/home-status.js'
     ],
     languageOptions: {
       globals: {
@@ -73,7 +76,9 @@ module.exports = [
         Element: 'readonly',
         HTMLElement: 'readonly',
         MutationObserver: 'readonly',
-        IntersectionObserver: 'readonly'
+        IntersectionObserver: 'readonly',
+        navigator: 'readonly',
+        Blob: 'readonly'
       }
     }
   },
@@ -95,7 +100,9 @@ module.exports = [
         it: 'readonly',
         expect: 'readonly',
         beforeEach: 'readonly',
-        afterEach: 'readonly'
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly'
       }
     }
   }

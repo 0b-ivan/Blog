@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Analytics | Kernel Notes</title>
+    <meta name="description" content="First-Party-Nutzungsstatistiken von Kernel Notes." />\n    <meta name="robots" content="noindex,nofollow" />
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/analytics.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-1" aria-hidden="true"></div>
+    <div class="bg-radial bg-radial-2" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="logo" href="/" aria-label="Kernel Notes – Startseite">Kernel Notes</a>
+      <nav class="main-nav" aria-label="Hauptnavigation">
+        <a href="/#posts">Artikel</a>
+        <a href="/#topics">Themen</a>
+        <a href="/snippets/">Snippets</a>
+        <a href="/glossary">Glossar</a>
+        <a href="/knowledge">Wissensnetz</a>
+        <a href="/archive">Archiv</a>
+      </nav>
+    </header>
+
+    <main class="analytics-main">
+      <section class="analytics-hero">
+        <p class="eyebrow">First-Party · Staging</p>
+        <h1>Kernel Notes Analytics</h1>
+        <p>Geschützte Detailansicht aggregierter Nutzungssignale ohne IP-Speicherung, Fingerprinting oder Drittanbieter-Tracker.</p>
+        <div class="analytics-range" role="group" aria-label="Zeitraum">
+          <button type="button" data-days="1">24h</button>
+          <button type="button" data-days="7">7 Tage</button>
+          <button type="button" data-days="30" class="is-active">30 Tage</button>
+          <button type="button" data-days="90">90 Tage</button>
+        </div>
+      </section>
+
+      <section class="analytics-kpis" aria-live="polite">
+        <article><span>Aufrufe</span><strong data-kpi="views">–</strong></article>
+        <article><span>Ø aktive Lesezeit</span><strong data-kpi="active">–</strong></article>
+        <article><span>Bis Ende</span><strong data-kpi="completion">–</strong></article>
+        <article><span>Suchen</span><strong data-kpi="searches">–</strong></article>
+        <article><span>Search CTR</span><strong data-kpi="ctr">–</strong></article>
+        <article><span>Ohne Treffer</span><strong data-kpi="zero">–</strong></article>
+      </section>
+
+      <section class="analytics-section">
+        <div><p class="eyebrow">Content</p><h2>Top-Artikel</h2></div>
+        <div class="analytics-table" data-articles></div>
+      </section>
+
+      <section class="analytics-section analytics-split">
+        <div>
+          <p class="eyebrow">Kernel Grep</p>
+          <h2>Beliebte Suchen</h2>
+          <div class="analytics-table" data-searches></div>
+        </div>
+        <div>
+          <p class="eyebrow">Content Gaps</p>
+          <h2>Suchen ohne Treffer</h2>
+          <div class="analytics-table" data-gaps></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>© 2026 Kernel Notes</p>
+      <div class="footer-links"></div>
+    </footer>
+
+    <script src="/script.js" defer></script>
+    <script src="/assets/analytics.js" defer></script>
+  </body>
+</html>

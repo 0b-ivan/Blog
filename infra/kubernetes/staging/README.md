@@ -87,6 +87,7 @@ Damit werden der orange/schwarz gestreifte Rahmen und das `STAGING`-Banner aussc
 ```bash
 kubectl apply -k infra/kubernetes/staging
 kubectl -n blog-staging rollout status deployment/search
+kubectl -n blog-staging rollout status deployment/analytics
 kubectl -n blog-staging rollout status deployment/blog
 kubectl -n cloudflare rollout status deployment/cloudflared
 kubectl -n blog-staging get pods,svc
@@ -133,6 +134,32 @@ Die Browser-Seite fragt ausschließlich `/api/kubernetes-status` am Blog ab. Der
 `kube-status` besitzt nur read-only Rechte im Namespace: Pods werden mit `get/list` gelesen, `chaos-monkey-result` nur per `get` und native `NetworkChaos`-Ressourcen nur per `get/list`. Schreibrechte auf Chaos-Ressourcen besitzt der Status-Service nicht.
 
 Nach außen gehen ausschließlich aggregierte und sanitisiert ausgewählte Zustände. Pod-Namen, Nodes, interne IPs und sonstige Cluster-Details bleiben intern.
+
+## First-Party Analytics in Staging
+
+Staging betreibt einen einzelnen internen `analytics`-Pod mit einem persistenten 1-GiB-PVC.
+Die drei Blog-Replikas schreiben ihre aggregierten Ereignisse ausschließlich über den internen
+ClusterIP-Service dorthin. Besucher-IP, User-Agent und Geolocation werden nicht an den
+Analytics-Dienst weitergegeben.
+
+Öffentlich abrufbar sind nur die kompakten Artikelmetriken (Aufrufe, durchschnittliche aktive
+Lesezeit, Abschlussquote und Likes). Die Detailauswertung unter `/analytics` ist separat
+token-geschützt, weil sie aggregierte Suchphrasen enthalten kann.
+
+Wenn kein `ANALYTICS_DASHBOARD_TOKEN` gesetzt ist, erzeugt der Analytics-Pod beim Start einen
+zufälligen Token. Er kann von einem Cluster-Admin aus den Logs gelesen werden:
+
+```bash
+kubectl -n blog-staging logs deployment/analytics | grep 'analytics dashboard token'
+```
+
+Der Token wird im Analytics-Dashboard nur für die aktuelle Browser-Sitzung in `sessionStorage`
+gehalten und als `X-Analytics-Token` gesendet. Ein Pod-Neustart erzeugt ohne fest konfiguriertes
+Secret einen neuen Token.
+
+Die Suchstatistik wird höchstens 90 Tage tageweise gehalten. Artikel-Summen und Likes können
+darüber hinaus als aggregierte Kennzahlen bestehen bleiben. Der persistente Zustand liegt im PVC
+`analytics-data`.
 
 ## Chaos Monkey v1
 

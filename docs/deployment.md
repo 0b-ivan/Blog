@@ -61,6 +61,8 @@ Bei Anwendungs- oder Content-Änderungen baut er vier SHA-gepinnte Images:
 
 Die Images werden in GHCR veröffentlicht. Anschließend aktualisiert der Workflow die Image-Pins in `infra/kubernetes/staging/kustomization.yaml`.
 
+Beim Schreiben dieses generierten GitOps-Commits kann `staging` zwischen Checkout und Push durch einen weiteren Merge weiterlaufen. Der Workflow holt deshalb unmittelbar vor dem Push den aktuellen Remote-Stand, rebasiert den ausschließlich generierten Desired-State-Commit darauf und versucht den Push begrenzt erneut. Ein echter Rebase-Konflikt wird bewusst nicht automatisch überschrieben, damit ein neuerer GitOps-Zustand nicht stillschweigend verloren geht.
+
 Flux reconciliert diesen Git-Zustand in den Staging-Cluster. GitHub Actions benötigt dafür keinen direkten Zugriff auf die private K3s-API.
 
 Reine GitOps-Änderungen können die bereits gepinnten Images wiederverwenden.
@@ -77,6 +79,8 @@ Der Gate prüft unter anderem:
 - die sichtbare Staging-Kennzeichnung
 
 Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verifizierten Stand gebracht und der Promotion-PR nach `main` geöffnet bzw. aktualisiert.
+
+`promotion/staging-verified` ist dabei bewusst **kein Entwicklungsbranch**, sondern ein beweglicher Zeiger auf den zuletzt öffentlich verifizierten Staging-Commit. Der Workflow aktualisiert diesen Zeiger mit `--force-with-lease`, damit auch eine zuvor divergierte Promotion-Historie sicher ersetzt werden kann, ohne parallele Änderungen unbemerkt zu überschreiben.
 
 Der Merge dieses Promotion-PRs bleibt manuell.
 

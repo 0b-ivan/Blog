@@ -1,0 +1,39 @@
+name: External Link Audit
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-link-audit
+  cancel-in-progress: true
+
+jobs:
+  links:
+    name: External links
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check links and publish report
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2
+        with:
+          args: >-
+            --root-dir "$(pwd)"
+            --verbose
+            --no-progress
+            './posts/**/*.md'
+            './posts/_sources.json'
+            './archive/**/*.md'
+            './*.html'
+            './README.md'
+          fail: false
+          jobSummary: true
+          token: ${{ github.token }}

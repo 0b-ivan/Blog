@@ -64,6 +64,8 @@ spec:
               value: "3"
             - name: EXPECTED_SEARCH_REPLICAS
               value: "1"
+            - name: EXPECTED_ANALYTICS_REPLICAS
+              value: "1"
           readinessProbe:
             httpGet:
               path: /healthz
