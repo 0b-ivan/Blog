@@ -258,6 +258,10 @@ async function main() {
     await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
+    assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
+    assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.wasm`)).ok(), 'Self-hosted Rive WASM should be available');
+    assert.ok((await page.request.get(`${baseUrl}/assets/rive/liquid_download.riv`)).ok(), 'Local Rive liquid asset should be available');
+    await page.locator('[data-reading-progress-rive][data-rive-ready="true"]').waitFor({ state: 'attached', timeout: 10_000 });
     await page.mouse.wheel(0, 650);
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
@@ -357,6 +361,7 @@ async function main() {
     await mobileEngagement.scrollIntoViewIfNeeded();
     const completionDroplets = page.locator('.reading-progress-burst__droplet');
     const completionDrips = page.locator('.reading-progress-burst__drip');
+    const completionParticles = page.locator('.reading-progress-burst__particle');
     await completionDroplets.first().waitFor({ state: 'attached', timeout: 5_000 });
     assert.ok(
       await completionDroplets.count() >= 6,
@@ -366,6 +371,13 @@ async function main() {
       await completionDrips.count() >= 2,
       'Reading progress completion should create downward liquid drips over nearby content'
     );
+    assert.ok(
+      await completionParticles.count() >= 8,
+      'Reading progress completion should restore the multi-emoji burst'
+    );
+    const completionEmoji = await completionParticles.allTextContents();
+    assert.ok(completionEmoji.includes('❓'), 'Completion burst should include a question mark');
+    assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Completion burst should include thumbs');
     const completionHue = await mobileProgress.evaluate(
       (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
