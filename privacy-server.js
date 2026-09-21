@@ -22,7 +22,7 @@ const SECURITY_HEADERS = {
     "frame-ancestors 'none'",
     "img-src 'self' data: blob:",
     "object-src 'none'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "worker-src 'self' blob:"
   ].join('; '),
@@ -387,6 +387,7 @@ function createApp() {
   app.use('/vendor/markdown-it', vendorStatic('markdown-it/dist/browser'));
   app.use('/vendor/force-graph', vendorStatic('force-graph/dist'));
   app.use('/vendor/medium-zoom', vendorStatic('medium-zoom/dist'));
+  app.use('/vendor/rive', vendorStatic('@rive-app/canvas'));
   app.use('/vendor/mermaid', vendorStatic('mermaid/dist'));
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
 

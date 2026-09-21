@@ -112,6 +112,11 @@ async function main() {
     const homeResponse = await page.request.get(baseUrl);
     assert.ok(homeResponse.ok(), `Home request failed: ${homeResponse.status()}`);
     assert.match(homeResponse.headers()['content-security-policy'] || '', /default-src 'self'/);
+    assert.match(
+      homeResponse.headers()['content-security-policy'] || '',
+      /script-src[^;]*'wasm-unsafe-eval'/,
+      'CSP must allow WebAssembly compilation for the self-hosted Rive runtime'
+    );
     assert.equal(homeResponse.headers()['referrer-policy'], 'no-referrer');
     assert.match(homeResponse.headers()['permissions-policy'] || '', /camera=\(\)/);
     assert.equal(homeResponse.headers()['x-content-type-options'], 'nosniff');
@@ -258,6 +263,14 @@ async function main() {
     await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
+    assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
+    assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.wasm`)).ok(), 'Self-hosted Rive WASM should be available');
+    assert.ok((await page.request.get(`${baseUrl}/assets/rive/liquid_download.riv`)).ok(), 'Local Rive liquid asset should be available');
+    assert.equal(
+      await page.locator('script[data-rive-runtime]').count(),
+      0,
+      'Rive runtime should not be loaded eagerly on article entry'
+    );
     await page.mouse.wheel(0, 650);
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
@@ -311,6 +324,33 @@ async function main() {
       'Reading progress bubble should shift from red toward green while reading'
     );
 
+    await page.evaluate(() => {
+      const contentNode = globalThis.document.querySelector('.terminal-content');
+      if (!contentNode) return;
+      const rect = contentNode.getBoundingClientRect();
+      const absoluteTop = globalThis.scrollY + rect.top;
+      const target = absoluteTop + contentNode.scrollHeight * 0.8 - globalThis.innerHeight;
+      globalThis.scrollTo(0, Math.max(0, target));
+    });
+    const riveProgressCanvas = page.locator('[data-reading-progress-rive]');
+    let riveState = '';
+    for (let attempt = 0; attempt < 150; attempt += 1) {
+      riveState = (await riveProgressCanvas.getAttribute('data-rive-state')) || '';
+      if (riveState === 'ready' || riveState === 'error') break;
+      await page.waitForTimeout(100);
+    }
+    const riveError = await riveProgressCanvas.getAttribute('data-rive-error');
+    assert.equal(
+      riveState,
+      'ready',
+      `Rive should initialize after late reading progress (state=${riveState || 'unset'}, error=${riveError || 'none'})`
+    );
+    assert.equal(
+      await page.locator('script[data-rive-runtime]').count(),
+      1,
+      'Rive runtime should lazy-load once late reading progress is reached'
+    );
+
     const dragStartBox = await compactProgress.boundingBox();
     assert.ok(dragStartBox, 'Compact reading progress should have a draggable bounding box');
     const dragStartX = dragStartBox.x + dragStartBox.width / 2;
@@ -357,6 +397,7 @@ async function main() {
     await mobileEngagement.scrollIntoViewIfNeeded();
     const completionDroplets = page.locator('.reading-progress-burst__droplet');
     const completionDrips = page.locator('.reading-progress-burst__drip');
+    const completionParticles = page.locator('.reading-progress-burst__particle');
     await completionDroplets.first().waitFor({ state: 'attached', timeout: 5_000 });
     assert.ok(
       await completionDroplets.count() >= 6,
@@ -366,6 +407,13 @@ async function main() {
       await completionDrips.count() >= 2,
       'Reading progress completion should create downward liquid drips over nearby content'
     );
+    assert.ok(
+      await completionParticles.count() >= 8,
+      'Reading progress completion should restore the multi-emoji burst'
+    );
+    const completionEmoji = await completionParticles.allTextContents();
+    assert.ok(completionEmoji.includes('❓'), 'Completion burst should include a question mark');
+    assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Completion burst should include thumbs');
     const completionHue = await mobileProgress.evaluate(
       (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );

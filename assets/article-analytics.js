@@ -20,6 +20,7 @@
   const progressBar = document.querySelector('[data-reading-progress-bar]');
   const progressValue = document.querySelector('[data-reading-progress-value]');
   const compactProgressValue = document.querySelector('[data-reading-progress-value-compact]');
+  const riveCanvas = document.querySelector('[data-reading-progress-rive]');
   const mobileProgressMedia = window.matchMedia('(max-width: 620px)');
   const reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
   const tagToggle = document.querySelector('[data-tag-toggle]');
@@ -80,6 +81,13 @@
   let progressCelebrationActive = false;
   let progressDragState = null;
   let suppressProgressToggleClick = false;
+  let riveInstance = null;
+  let riveProgressInput = null;
+  let riveStartInput = null;
+  let riveReady = false;
+  let riveLoadPromise = null;
+  let riveInitPromise = null;
+  const rivePreloadPercent = 75;
   const progressCollapseScrollY = 140;
   const progressDragThreshold = 6;
   const progressEdgeInset = 12;
@@ -120,6 +128,146 @@
     const seconds = pendingActiveSeconds;
     pendingActiveSeconds = 0;
     event({ type: 'article_active', seconds });
+  }
+
+  function loadRiveRuntime() {
+    if (window.rive?.Rive) return Promise.resolve(window.rive);
+    if (riveLoadPromise) return riveLoadPromise;
+
+    riveLoadPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-rive-runtime]');
+      const script = existing || document.createElement('script');
+
+      const finish = () => {
+        if (window.rive?.Rive) resolve(window.rive);
+        else reject(new Error('Rive runtime did not expose window.rive.Rive'));
+      };
+
+      if (existing) {
+        if (existing.dataset.loaded === 'true') {
+          finish();
+          return;
+        }
+        existing.addEventListener('load', finish, { once: true });
+        existing.addEventListener('error', () => reject(new Error('Rive runtime failed to load')), { once: true });
+        return;
+      }
+
+      script.src = '/vendor/rive/rive.js';
+      script.async = true;
+      script.dataset.riveRuntime = 'true';
+      script.addEventListener('load', () => {
+        script.dataset.loaded = 'true';
+        finish();
+      }, { once: true });
+      script.addEventListener('error', () => reject(new Error('Rive runtime failed to load')), { once: true });
+      document.head.appendChild(script);
+    }).catch((error) => {
+      riveLoadPromise = null;
+      if (riveCanvas) {
+        riveCanvas.dataset.riveState = 'error';
+        riveCanvas.dataset.riveError = error.message;
+      }
+      return null;
+    });
+
+    return riveLoadPromise;
+  }
+
+  async function initRiveProgress() {
+    if (!riveCanvas || reducedMotionMedia.matches) return false;
+    if (riveReady) return true;
+    if (riveInitPromise) return riveInitPromise;
+
+    riveInitPromise = (async () => {
+      riveCanvas.dataset.riveState = 'loading';
+      const runtime = await loadRiveRuntime();
+      if (!runtime?.Rive) return false;
+
+      runtime.RuntimeLoader?.setWasmUrl?.('/vendor/rive/rive.wasm');
+      const stateMachineName = 'Download';
+
+      return new Promise((resolve) => {
+        try {
+          riveInstance = new runtime.Rive({
+            src: '/assets/rive/liquid_download.riv',
+            canvas: riveCanvas,
+            artboard: 'Artboard',
+            autoplay: true,
+            stateMachines: stateMachineName,
+            enableRiveAssetCDN: false,
+            isTouchScrollEnabled: true,
+            onLoad: () => {
+              try {
+                const inputs = riveInstance.stateMachineInputs(stateMachineName) || [];
+                riveProgressInput = inputs.find((input) => input.name === 'Progress') || null;
+                riveStartInput = inputs.find((input) => input.name === 'Download') || null;
+                if (!riveProgressInput) {
+                  throw new Error('Rive Progress input was not found');
+                }
+                riveProgressInput.value = currentProgressPercent;
+                riveReady = true;
+                riveCanvas.dataset.riveReady = 'true';
+                riveCanvas.dataset.riveState = 'ready';
+                resolve(true);
+              } catch (error) {
+                riveReady = false;
+                riveCanvas.dataset.riveState = 'error';
+                riveCanvas.dataset.riveError = error.message;
+                resolve(false);
+              }
+            },
+            onLoadError: (error) => {
+              riveReady = false;
+              riveInstance = null;
+              riveCanvas.dataset.riveState = 'error';
+              riveCanvas.dataset.riveError = error?.message || 'Rive asset failed to load';
+              resolve(false);
+            }
+          });
+        } catch (error) {
+          riveReady = false;
+          riveInstance = null;
+          riveCanvas.dataset.riveState = 'error';
+          riveCanvas.dataset.riveError = error.message;
+          resolve(false);
+        }
+      });
+    })();
+
+    const ready = await riveInitPromise;
+    if (!ready) riveInitPromise = null;
+    return ready;
+  }
+
+  function syncRiveProgress(percent) {
+    if (percent >= rivePreloadPercent && !riveReady && !riveInstance && !reducedMotionMedia.matches) {
+      void initRiveProgress();
+    }
+    if (!riveReady || !riveProgressInput) return;
+    riveProgressInput.value = percent;
+  }
+
+  function startRiveCompletion() {
+    if (!riveReady || !riveInstance) {
+      void initRiveProgress().then((ready) => {
+        if (ready && progressCelebrationActive) startRiveCompletion();
+      });
+      return false;
+    }
+
+    try {
+      riveInstance.resizeDrawingSurfaceToCanvas();
+      if (riveStartInput?.fire) riveStartInput.fire();
+      if (riveProgressInput) riveProgressInput.value = 100;
+      progress?.classList.add('is-rive-active');
+      return true;
+    } catch (error) {
+      riveCanvas.dataset.riveState = 'error';
+      riveCanvas.dataset.riveError = error.message;
+      progress?.classList.remove('is-rive-active');
+      return false;
+    }
   }
 
   function readProgressPosition() {
@@ -240,8 +388,34 @@
       layer.appendChild(element);
     });
 
+    const particles = [
+      { emoji: '👍', size: 30, drift: -76, rise: 188, rotate: -18, delay: 0, duration: 3100 },
+      { emoji: '👍🏻', size: 38, drift: -42, rise: 236, rotate: 14, delay: 70, duration: 3500 },
+      { emoji: '👍🏼', size: 26, drift: -12, rise: 205, rotate: -10, delay: 150, duration: 3250 },
+      { emoji: '👍🏽', size: 46, drift: 20, rise: 258, rotate: 16, delay: 40, duration: 3700 },
+      { emoji: '👍🏾', size: 34, drift: 52, rise: 218, rotate: -14, delay: 190, duration: 3400 },
+      { emoji: '👍🏿', size: 29, drift: 82, rise: 192, rotate: 11, delay: 110, duration: 3200 },
+      { emoji: '👍', size: 42, drift: 8, rise: 282, rotate: -8, delay: 230, duration: 3900 },
+      { emoji: '❓', size: 31, drift: 58, rise: 268, rotate: 9, delay: 280, duration: 3800 }
+    ];
+
+    particles.forEach((particle, index) => {
+      const element = document.createElement('span');
+      element.className = 'reading-progress-burst__particle';
+      element.textContent = particle.emoji;
+      element.style.left = `${centerX + ((index % 3) - 1) * 5}px`;
+      element.style.top = `${centerY + (index % 2) * 4}px`;
+      element.style.fontSize = `${particle.size}px`;
+      element.style.setProperty('--particle-drift', `${particle.drift}px`);
+      element.style.setProperty('--particle-rise', `${particle.rise}px`);
+      element.style.setProperty('--particle-rotate', `${particle.rotate}deg`);
+      element.style.animationDelay = `${particle.delay}ms`;
+      element.style.animationDuration = `${particle.duration}ms`;
+      layer.appendChild(element);
+    });
+
     document.body.appendChild(layer);
-    window.setTimeout(() => layer.remove(), 1900);
+    window.setTimeout(() => layer.remove(), 4400);
   }
   function celebrateProgressCompletion() {
     if (!progress || progressCelebrated) return;
@@ -255,16 +429,17 @@
 
     window.requestAnimationFrame(() => {
       applyStoredProgressPosition();
+      startRiveCompletion();
       const rect = progress.getBoundingClientRect();
       spawnProgressCompletionLiquid(rect);
     });
 
     window.setTimeout(() => {
       progressCelebrationActive = false;
-      progress.classList.remove('is-visible', 'is-compact', 'is-popping');
+      progress.classList.remove('is-visible', 'is-compact', 'is-popping', 'is-rive-active');
       progress.classList.add('is-complete');
       clearProgressPositionStyles();
-    }, reducedMotionMedia.matches ? 120 : 680);
+    }, reducedMotionMedia.matches ? 120 : 1250);
   }
 
   function applyProgressState() {
@@ -278,6 +453,7 @@
     }
 
     if (progressBar) progressBar.style.transform = `scaleX(${safePercent / 100})`;
+    syncRiveProgress(safePercent);
     if (progressValue) progressValue.textContent = String(safePercent);
     if (compactProgressValue) compactProgressValue.textContent = String(safePercent);
 
