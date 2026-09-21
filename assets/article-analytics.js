@@ -86,6 +86,7 @@
   let riveStartInput = null;
   let riveReady = false;
   let riveLoadPromise = null;
+  let riveInitPromise = null;
   const rivePreloadPercent = 75;
   const progressCollapseScrollY = 140;
   const progressDragThreshold = 6;
@@ -174,56 +175,69 @@
   }
 
   async function initRiveProgress() {
-    if (!riveCanvas || reducedMotionMedia.matches || riveReady || riveInstance) return riveReady;
+    if (!riveCanvas || reducedMotionMedia.matches) return false;
+    if (riveReady) return true;
+    if (riveInitPromise) return riveInitPromise;
 
-    riveCanvas.dataset.riveState = 'loading';
-    const runtime = await loadRiveRuntime();
-    if (!runtime?.Rive) return false;
+    riveInitPromise = (async () => {
+      riveCanvas.dataset.riveState = 'loading';
+      const runtime = await loadRiveRuntime();
+      if (!runtime?.Rive) return false;
 
-    try {
       runtime.RuntimeLoader?.setWasmUrl?.('/vendor/rive/rive.wasm');
       const stateMachineName = 'Download';
 
-      riveInstance = new runtime.Rive({
-        src: '/assets/rive/liquid_download.riv',
-        canvas: riveCanvas,
-        artboard: 'Artboard',
-        autoplay: true,
-        stateMachines: stateMachineName,
-        enableRiveAssetCDN: false,
-        isTouchScrollEnabled: true,
-        onLoad: () => {
-          try {
-            const inputs = riveInstance.stateMachineInputs(stateMachineName) || [];
-            riveProgressInput = inputs.find((input) => input.name === 'Progress') || null;
-            riveStartInput = inputs.find((input) => input.name === 'Download') || null;
-            if (!riveProgressInput) {
-              throw new Error('Rive Progress input was not found');
+      return new Promise((resolve) => {
+        try {
+          riveInstance = new runtime.Rive({
+            src: '/assets/rive/liquid_download.riv',
+            canvas: riveCanvas,
+            artboard: 'Artboard',
+            autoplay: true,
+            stateMachines: stateMachineName,
+            enableRiveAssetCDN: false,
+            isTouchScrollEnabled: true,
+            onLoad: () => {
+              try {
+                const inputs = riveInstance.stateMachineInputs(stateMachineName) || [];
+                riveProgressInput = inputs.find((input) => input.name === 'Progress') || null;
+                riveStartInput = inputs.find((input) => input.name === 'Download') || null;
+                if (!riveProgressInput) {
+                  throw new Error('Rive Progress input was not found');
+                }
+                riveProgressInput.value = currentProgressPercent;
+                riveReady = true;
+                riveCanvas.dataset.riveReady = 'true';
+                riveCanvas.dataset.riveState = 'ready';
+                resolve(true);
+              } catch (error) {
+                riveReady = false;
+                riveCanvas.dataset.riveState = 'error';
+                riveCanvas.dataset.riveError = error.message;
+                resolve(false);
+              }
+            },
+            onLoadError: (error) => {
+              riveReady = false;
+              riveInstance = null;
+              riveCanvas.dataset.riveState = 'error';
+              riveCanvas.dataset.riveError = error?.message || 'Rive asset failed to load';
+              resolve(false);
             }
-            riveProgressInput.value = currentProgressPercent;
-            riveReady = true;
-            riveCanvas.dataset.riveReady = 'true';
-            riveCanvas.dataset.riveState = 'ready';
-          } catch (error) {
-            riveReady = false;
-            riveCanvas.dataset.riveState = 'error';
-            riveCanvas.dataset.riveError = error.message;
-          }
-        },
-        onLoadError: (error) => {
+          });
+        } catch (error) {
           riveReady = false;
+          riveInstance = null;
           riveCanvas.dataset.riveState = 'error';
-          riveCanvas.dataset.riveError = error?.message || 'Rive asset failed to load';
+          riveCanvas.dataset.riveError = error.message;
+          resolve(false);
         }
       });
-    } catch (error) {
-      riveReady = false;
-      riveInstance = null;
-      riveCanvas.dataset.riveState = 'error';
-      riveCanvas.dataset.riveError = error.message;
-    }
+    })();
 
-    return riveReady;
+    const ready = await riveInitPromise;
+    if (!ready) riveInitPromise = null;
+    return ready;
   }
 
   function syncRiveProgress(percent) {
