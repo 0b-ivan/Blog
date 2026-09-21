@@ -659,7 +659,7 @@ function renderPostPage(post, relatedPosts = []) {
           </button>
         </div>
         <p class="meta article-meta">${meta}</p>
-        <h1>${post.title}</h1>
+        <h1 class="article-title">${post.title}</h1>
         <div class="article-metrics" aria-label="Artikelinformationen">
           <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
             <span class="article-metric__icon" aria-hidden="true">👁</span>
