@@ -224,6 +224,11 @@ describe('blog server', () => {
     expect(html).toContain('Node · 03.03.2026 · 3 Min. Lesezeit');
     expect(html).not.toContain('GMT');
     expect(html).toContain('data-reading-progress');
+    expect(html).toContain('data-reading-progress-toggle');
+    expect(html).toContain('data-reading-progress-meter');
+    expect(html).toContain('data-reading-progress-value-compact');
+    expect(html).toContain('reading-progress__bubble-fill');
+    expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');
     expect(html).toContain('Für später speichern');
     expect(html).toContain('data-article-share');
