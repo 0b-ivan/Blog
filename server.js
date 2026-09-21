@@ -302,6 +302,9 @@ async function loadPosts(postsDir) {
       const inferredDate = inferDateFromSlug(slug);
       const date = recovered.data.date || recovered.data.created_at || inferredDate || '1970-01-01';
       const publishedAt = recovered.data.published_at || recovered.data.created_at || date;
+      const updatedAt = recovered.data.updated_at || publishedAt || date;
+      const author = recovered.data.author || 'obivan';
+      const version = recovered.data.version || 1;
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
@@ -316,6 +319,9 @@ async function loadPosts(postsDir) {
         title,
         date,
         publishedAt,
+        updatedAt,
+        author,
+        version,
         category,
         tags,
         excerpt,
@@ -609,7 +615,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-7" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-8" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -674,10 +680,22 @@ function renderPostPage(post, relatedPosts = []) {
               <span class="article-action__icon" data-like-icon aria-hidden="true">♡</span>
               <span><span data-like-label>Gefällt mir</span> · <strong data-article-metric="likes">–</strong></span>
             </button>
-            <button class="article-action article-favorite" type="button" data-article-favorite aria-pressed="false">
-              <span class="article-action__icon" data-favorite-icon aria-hidden="true">☆</span>
-              <span data-favorite-label>Für später speichern</span>
-            </button>
+            <details class="article-download">
+              <summary class="article-action article-download__summary">
+                <span class="article-action__icon" aria-hidden="true">↓</span>
+                <span>Herunterladen</span>
+              </summary>
+              <div class="article-download__menu" role="group" aria-label="Artikel herunterladen">
+                <a href="/download/%24%7Bpost.slug%7D.epub" download>
+                  <strong>EPUB</strong>
+                  <span>E-Book mit Cover & Metadaten</span>
+                </a>
+                <a href="/download/%24%7Bpost.slug%7D.pdf" download>
+                  <strong>PDF</strong>
+                  <span>aus dem EPUB erzeugt</span>
+                </a>
+              </div>
+            </details>
             <button class="article-action article-action--share" type="button" data-article-share>
               <span class="article-action__icon" aria-hidden="true">↗</span>
               <span>Teilen</span>
@@ -707,7 +725,7 @@ function renderPostPage(post, relatedPosts = []) {
     </script>
     <script src="/script.js?v=20260819-2"></script>
     <script src="/assets/glossary.js" defer></script>
-    <script src="/assets/article-analytics.js?v=20260921-7" defer></script>
+    <script src="/assets/article-analytics.js?v=20260921-8" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
@@ -729,6 +747,7 @@ function createApp(options = {}) {
   const app = express();
   const postsDir = options.postsDir;
   const siteUrl = options.siteUrl;
+  const ebookExporterLoader = options.ebookExporterLoader || (() => require('./lib/ebook-export'));
 
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.get('/snippets/manifest.json', async (_req, res) => {
@@ -779,6 +798,44 @@ function createApp(options = {}) {
 
   app.get('/glossary', (_req, res) => {
     res.type('html').send(renderGlossaryPage());
+  });
+
+  app.get('/download/:file', async (req, res) => {
+    const match = String(req.params.file || '').match(/^(.+)\.(epub|pdf)$/i);
+    if (!match) {
+      res.status(404).send('Download not found');
+      return;
+    }
+
+    const [, requestedSlug, rawFormat] = match;
+    const format = rawFormat.toLowerCase();
+
+    try {
+      const posts = await readPosts(postsDir);
+      const post = resolvePostBySlug(posts, requestedSlug);
+
+      if (!post) {
+        res.status(404).send('Post not found');
+        return;
+      }
+
+      const exporter = await Promise.resolve(ebookExporterLoader());
+      const exportOptions = {
+        siteUrl: getSiteUrl(siteUrl),
+        assetRoot: root
+      };
+      const content = format === 'epub'
+        ? await exporter.buildArticleEpub(post, exportOptions)
+        : await exporter.buildArticlePdf(post, exportOptions);
+
+      res.set('Content-Type', format === 'epub' ? 'application/epub+zip' : 'application/pdf');
+      res.set('Content-Disposition', `attachment; filename="${post.slug}.${format}"`);
+      res.set('Cache-Control', 'public, max-age=3600');
+      res.status(200).send(content);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Could not generate article download');
+    }
   });
 
   app.get('/posts/:slug', async (req, res) => {
