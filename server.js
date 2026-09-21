@@ -609,7 +609,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-3" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-4" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -632,7 +632,9 @@ function renderPostPage(post, relatedPosts = []) {
       <article class="post-page" data-post-slug="${md.utils.escapeHtml(String(post.slug || ''))}">
         <div class="reading-progress" data-reading-progress>
           <button class="reading-progress__toggle" type="button" data-reading-progress-toggle aria-expanded="true" aria-label="Lesefortschritt: 0 Prozent">
-            <span class="reading-progress__ring" aria-hidden="true">
+            <span class="reading-progress__bubble" aria-hidden="true">
+              <span class="reading-progress__bubble-fill"></span>
+              <span class="reading-progress__bubble-gloss"></span>
               <span class="reading-progress__compact-value"><strong data-reading-progress-value-compact>0</strong><span>%</span></span>
             </span>
             <span class="reading-progress__track" data-reading-progress-meter role="progressbar" aria-label="Lesefortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
