@@ -15,8 +15,11 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: read
+
 concurrency:
-  group: obsidian-livesync-production
+  group: obsidian-production
   cancel-in-progress: false
 
 jobs:
