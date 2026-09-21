@@ -13,7 +13,12 @@
   }
 
   function upgradeTagChip(chip) {
-    if (!chip || chip.tagName === 'A' || chip.dataset.tagLinkUpgraded === 'true') {
+    if (
+      !chip
+      || chip.tagName === 'A'
+      || chip.dataset.tagLinkUpgraded === 'true'
+      || chip.hasAttribute('data-tag-toggle')
+    ) {
       return;
     }
 
@@ -27,6 +32,10 @@
     link.href = tagHref(label);
     link.textContent = label;
     link.dataset.tagLinkUpgraded = 'true';
+    if (chip.hasAttribute('data-extra-tag')) {
+      link.dataset.extraTag = '';
+      link.hidden = chip.hidden;
+    }
     link.setAttribute('aria-label', `Artikel mit Tag ${label} anzeigen`);
 
     link.addEventListener('click', (event) => {
@@ -100,7 +109,7 @@
     }
 
     const script = document.createElement('script');
-    script.src = '/assets/knowledge-graph.js';
+    script.src = '/assets/knowledge-graph.js?v=20260921-2';
     script.defer = true;
     script.dataset.knowledgeGraph = 'true';
     document.body.append(script);
