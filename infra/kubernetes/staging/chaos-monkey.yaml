@@ -76,7 +76,7 @@ spec:
               imagePullPolicy: IfNotPresent
               env:
                 - name: EXPECTED_REPLICAS
-                  value: "3"
+                  value: "1"
                 - name: RECOVERY_TIMEOUT_MS
                   value: "120000"
                 - name: HEALTH_INTERVAL_MS
