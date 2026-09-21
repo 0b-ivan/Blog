@@ -78,6 +78,72 @@ jobs:
           echo 'Refusing K3s production deployment: commit is not associated with a merged PR into main.' >&2
           exit 1
 
+      - name: Classify K3s production changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "blog=true" >> "$GITHUB_OUTPUT"
+            echo "search=true" >> "$GITHUB_OUTPUT"
+            echo "status=true" >> "$GITHUB_OUTPUT"
+            echo "infra=true" >> "$GITHUB_OUTPUT"
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" > /tmp/k3s-production-files.txt
+          echo 'K3s production-relevant changes:'
+          cat /tmp/k3s-production-files.txt
+
+          blog=false
+          search=false
+          status=false
+          infra=false
+
+          while IFS= read -r file; do
+            case "$file" in
+              posts/*|archive/*|snippets/*|assets/*|config/*|lib/*|Dockerfile|package.json|package-lock.json|VERSION|.dockerignore)
+                blog=true
+                ;;
+            esac
+
+            if [[ "$file" != */* && ( "$file" == *.html || "$file" == *.js ) ]]; then
+              blog=true
+            fi
+
+            case "$file" in
+              posts/*|rag/*|Dockerfile.search|.dockerignore)
+                search=true
+                ;;
+            esac
+
+            case "$file" in
+              status-monitor/*|Dockerfile.status|.dockerignore)
+                status=true
+                ;;
+            esac
+
+            case "$file" in
+              infra/kubernetes/base/*|infra/kubernetes/production/*)
+                infra=true
+                ;;
+            esac
+          done < /tmp/k3s-production-files.txt
+
+          deploy=false
+          if [ "$blog" = true ] || [ "$search" = true ] || [ "$status" = true ] || [ "$infra" = true ]; then
+            deploy=true
+          fi
+
+          echo "blog=$blog" >> "$GITHUB_OUTPUT"
+          echo "search=$search" >> "$GITHUB_OUTPUT"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "infra=$infra" >> "$GITHUB_OUTPUT"
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "Classification: blog=$blog search=$search status=$status infra=$infra deploy=$deploy"
+
       - name: Build article version history
         run: node scripts/build-post-history.js
 
@@ -103,9 +169,11 @@ jobs:
           echo "status_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.STATUS_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
+        if: steps.changes.outputs.blog == 'true' || steps.changes.outputs.search == 'true' || steps.changes.outputs.status == 'true'
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
       - name: Login to GHCR
+        if: steps.changes.outputs.blog == 'true' || steps.changes.outputs.search == 'true' || steps.changes.outputs.status == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ${{ env.REGISTRY }}
@@ -113,6 +181,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push K3s blog image
+        if: steps.changes.outputs.blog == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -127,6 +196,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=k3s-production-blog
 
       - name: Build and push K3s Kernel Grep image
+        if: steps.changes.outputs.search == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -139,6 +209,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=k3s-production-search
 
       - name: Build and push K3s Kubernetes status image
+        if: steps.changes.outputs.status == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -151,16 +222,23 @@ jobs:
           cache-to: type=gha,mode=max,scope=k3s-production-status
 
       - name: Publish K3s production desired state
+        if: steps.changes.outputs.deploy == 'true'
         env:
           DEPLOY_SHA: ${{ github.sha }}
+          BLOG_CHANGED: ${{ steps.changes.outputs.blog }}
+          SEARCH_CHANGED: ${{ steps.changes.outputs.search }}
+          STATUS_CHANGED: ${{ steps.changes.outputs.status }}
         run: |
           set -euo pipefail
 
           WORKTREE=/tmp/kernel-notes-production-gitops
+          PREVIOUS_GITOPS_FILE=/tmp/kernel-notes-production-kustomization.previous.yaml
           rm -rf "$WORKTREE"
+          rm -f "$PREVIOUS_GITOPS_FILE"
 
           git fetch origin "${GITOPS_BRANCH}"
           git worktree add --detach "$WORKTREE" "origin/${GITOPS_BRANCH}"
+          cp "$WORKTREE/infra/kubernetes/production/kustomization.yaml" "$PREVIOUS_GITOPS_FILE"
 
           rm -rf \
             "$WORKTREE/infra/kubernetes/base" \
@@ -172,25 +250,51 @@ jobs:
 
           GITOPS_FILE="$WORKTREE/infra/kubernetes/production/kustomization.yaml"
 
-          DEPLOY_SHA="$DEPLOY_SHA" GITOPS_FILE="$GITOPS_FILE" python3 - <<'PY'
+          DEPLOY_SHA="$DEPLOY_SHA" \
+          BLOG_CHANGED="$BLOG_CHANGED" \
+          SEARCH_CHANGED="$SEARCH_CHANGED" \
+          STATUS_CHANGED="$STATUS_CHANGED" \
+          PREVIOUS_GITOPS_FILE="$PREVIOUS_GITOPS_FILE" \
+          GITOPS_FILE="$GITOPS_FILE" \
+          python3 - <<'PY'
           import os
           import re
           from pathlib import Path
 
           path = Path(os.environ["GITOPS_FILE"])
+          previous_path = Path(os.environ["PREVIOUS_GITOPS_FILE"])
           text = path.read_text(encoding="utf-8")
+          previous = previous_path.read_text(encoding="utf-8")
           sha = os.environ["DEPLOY_SHA"]
 
-          for image in ("kernel-notes-blog", "kernel-notes-search", "kernel-notes-status"):
+          changes = {
+              "kernel-notes-blog": os.environ["BLOG_CHANGED"] == "true",
+              "kernel-notes-search": os.environ["SEARCH_CHANGED"] == "true",
+              "kernel-notes-status": os.environ["STATUS_CHANGED"] == "true",
+          }
+
+          def image_tag(source, image):
+              pattern = (
+                  rf"  - name: ghcr\.io/0b-ivan/{re.escape(image)}\n"
+                  rf"    newTag: ([A-Za-z0-9._-]+)"
+              )
+              match = re.search(pattern, source)
+              if not match:
+                  raise SystemExit(f"Missing production image pin for {image}")
+              return match.group(1)
+
+          for image, changed in changes.items():
+              tag = sha if changed else image_tag(previous, image)
               pattern = (
                   rf"(  - name: ghcr\.io/0b-ivan/{re.escape(image)}\n"
                   rf"    newTag: )[A-Za-z0-9._-]+"
               )
-              text, count = re.subn(pattern, rf"\g<1>{sha}", text)
+              text, count = re.subn(pattern, rf"\g<1>{tag}", text)
               if count != 1:
                   raise SystemExit(
                       f"Expected exactly one production image pin for {image}, found {count}"
                   )
+              print(f"{image}: {'deploy ' + sha if changed else 'keep ' + tag}")
 
           path.write_text(text, encoding="utf-8")
           PY
@@ -202,48 +306,100 @@ jobs:
           git -C "$WORKTREE" diff --cached --check
 
           if git -C "$WORKTREE" diff --cached --quiet; then
-            echo "K3s production is already pinned to ${DEPLOY_SHA}."
+            echo 'K3s production desired state is already current.'
           else
             git -C "$WORKTREE" commit -m "chore(production): deploy ${DEPLOY_SHA} [skip ci]"
             git -C "$WORKTREE" push origin "HEAD:${GITOPS_BRANCH}"
           fi
 
-      - name: Wait for K3s production canary
+      - name: Monitor K3s production rollout
+        if: steps.changes.outputs.deploy == 'true'
         env:
           EXPECTED_VERSION: ${{ steps.meta.outputs.build_version }}
+          BLOG_CHANGED: ${{ steps.changes.outputs.blog }}
+          SEARCH_CHANGED: ${{ steps.changes.outputs.search }}
         run: |
           set -euo pipefail
-          echo "Waiting for ${EXPECTED_VERSION} on ${K8S_PRODUCTION_URL}."
 
-          for attempt in $(seq 1 90); do
-            health="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
-              "${K8S_PRODUCTION_URL}/healthz?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
-            build_info="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
-              "${K8S_PRODUCTION_URL}/build-info.json?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+          echo "Monitoring ${K8S_PRODUCTION_URL} during the complete rollout."
+          echo "blog_changed=${BLOG_CHANGED} search_changed=${SEARCH_CHANGED}"
+
+          stable_version_checks=0
+          healthy_checks=0
+          search_ready=false
+          min_watch_seconds=30
+          if [ "$SEARCH_CHANGED" = true ]; then
+            min_watch_seconds=90
+          fi
+
+          for attempt in $(seq 1 240); do
+            health="$(curl -fsS --max-time 5 -H 'Cache-Control: no-cache' \
+              "${K8S_PRODUCTION_URL}/healthz?deploy=${GITHUB_SHA}&attempt=${attempt}" 2>/dev/null || true)"
+
+            if [ "$health" != ok ]; then
+              echo "::error title=Production downtime detected::/healthz failed during rollout at second ${attempt}."
+              exit 1
+            fi
+            healthy_checks=$((healthy_checks + 1))
+
+            build_info="$(curl -fsS --max-time 5 -H 'Cache-Control: no-cache' \
+              "${K8S_PRODUCTION_URL}/build-info.json?deploy=${GITHUB_SHA}&attempt=${attempt}" 2>/dev/null || true)"
             version="$(printf '%s' "$build_info" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version", ""))' 2>/dev/null || true)"
 
-            if [ "$health" = ok ] && [ "$version" = "$EXPECTED_VERSION" ]; then
-              response="$(curl -fsS --max-time 30 \
+            if [ "$BLOG_CHANGED" = true ]; then
+              if [ "$version" = "$EXPECTED_VERSION" ]; then
+                stable_version_checks=$((stable_version_checks + 1))
+              else
+                stable_version_checks=0
+              fi
+            else
+              stable_version_checks=$healthy_checks
+            fi
+
+            if [ $((attempt % 5)) -eq 0 ] || [ "$attempt" -eq 1 ]; then
+              search_response="$(curl -fsS --max-time 10 \
                 -X POST \
                 -H 'Content-Type: application/json' \
                 --data '{"q":"Docker","limit":1}' \
-                "${K8S_PRODUCTION_URL}/api/search")"
+                "${K8S_PRODUCTION_URL}/api/search" 2>/dev/null || true)"
 
-              printf '%s' "$response" | python3 -c '
+              if printf '%s' "$search_response" | python3 -c '
           import json, sys
-          data = json.load(sys.stdin)
+          try:
+              data = json.load(sys.stdin)
+          except Exception:
+              raise SystemExit(1)
           results = data.get("results")
-          if not isinstance(results, list) or not results:
-              raise SystemExit("Kernel Grep returned no result for Docker")
-          '
+          raise SystemExit(0 if isinstance(results, list) and results else 1)
+          '; then
+                search_ready=true
+              else
+                search_ready=false
+              fi
+            fi
 
-              echo "K3s production is serving ${EXPECTED_VERSION}."
+            version_ready=false
+            if [ "$BLOG_CHANGED" = true ]; then
+              if [ "$stable_version_checks" -ge 15 ]; then
+                version_ready=true
+              fi
+            elif [ "$healthy_checks" -ge "$min_watch_seconds" ]; then
+              version_ready=true
+            fi
+
+            if [ "$attempt" -ge "$min_watch_seconds" ] \
+              && [ "$version_ready" = true ] \
+              && [ "$search_ready" = true ]; then
+              echo "K3s production stayed healthy for the rollout."
+              if [ "$BLOG_CHANGED" = true ]; then
+                echo "Build ${EXPECTED_VERSION} was observed for 15 consecutive checks."
+              fi
               exit 0
             fi
 
-            echo "Attempt ${attempt}/90: health='${health:-unavailable}', version='${version:-unavailable}'"
-            sleep 10
+            echo "Attempt ${attempt}/240: health=ok version='${version:-unavailable}' stable_version_checks=${stable_version_checks} search_ready=${search_ready}"
+            sleep 1
           done
 
-          echo "Timed out waiting for K3s production build ${EXPECTED_VERSION}." >&2
+          echo "::error title=Production rollout timeout::Production did not reach a stable healthy state within 240 seconds."
           exit 1
