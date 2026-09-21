@@ -609,7 +609,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-2" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-3" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -630,9 +630,16 @@ function renderPostPage(post, relatedPosts = []) {
 
     <main>
       <article class="post-page" data-post-slug="${md.utils.escapeHtml(String(post.slug || ''))}">
-        <div class="reading-progress" data-reading-progress role="progressbar" aria-label="Lesefortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-          <span class="reading-progress__track" aria-hidden="true"><span class="reading-progress__bar" data-reading-progress-bar></span></span>
-          <span class="reading-progress__label"><strong data-reading-progress-value>0</strong>% gelesen</span>
+        <div class="reading-progress" data-reading-progress>
+          <button class="reading-progress__toggle" type="button" data-reading-progress-toggle aria-expanded="true" aria-label="Lesefortschritt: 0 Prozent">
+            <span class="reading-progress__ring" aria-hidden="true">
+              <span class="reading-progress__compact-value"><strong data-reading-progress-value-compact>0</strong><span>%</span></span>
+            </span>
+            <span class="reading-progress__track" data-reading-progress-meter role="progressbar" aria-label="Lesefortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span class="reading-progress__bar" data-reading-progress-bar></span>
+            </span>
+            <span class="reading-progress__label"><strong data-reading-progress-value>0</strong><span>% gelesen</span></span>
+          </button>
         </div>
         <p class="meta article-meta">${meta}</p>
         <h1>${post.title}</h1>
@@ -697,7 +704,7 @@ function renderPostPage(post, relatedPosts = []) {
     </script>
     <script src="/script.js?v=20260819-2"></script>
     <script src="/assets/glossary.js" defer></script>
-    <script src="/assets/article-analytics.js?v=20260921-2" defer></script>
+    <script src="/assets/article-analytics.js?v=20260921-3" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
