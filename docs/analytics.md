@@ -15,7 +15,7 @@ Tooltips erklären die sichtbaren Kennzahlen bei Hover, Tastaturfokus oder Tap.
 
 ## Lesefortschritt
 
-Der sichtbare Lesefortschritt wird ausschließlich im Browser aus der Position des Artikelinhalts berechnet. Die Fortschrittsanzeige selbst benötigt keinen persistenten Benutzerzustand.
+Der sichtbare Lesefortschritt wird ausschließlich im Browser aus der Position des Artikelinhalts berechnet. Er erscheint während des Lesens als dezente, schmale Anzeige am unteren Viewport-Rand und blendet aus, sobald das Artikelende beziehungsweise der Feedback-Bereich erreicht ist. Dadurch konkurriert die Anzeige weder mit der Navigation noch mit dem Artikelkopf. Die Fortschrittsanzeige selbst benötigt keinen persistenten Benutzerzustand.
 
 Für die aggregierte Qualitätsanalyse meldet der Browser weiterhin die erreichten Scrollstufen 25, 50, 75, 90 und 100 Prozent an den eigenen Analytics-Dienst.
 
