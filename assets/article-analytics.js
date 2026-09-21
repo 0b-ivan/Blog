@@ -20,6 +20,7 @@
   const progressBar = document.querySelector('[data-reading-progress-bar]');
   const progressValue = document.querySelector('[data-reading-progress-value]');
   const compactProgressValue = document.querySelector('[data-reading-progress-value-compact]');
+  const riveCanvas = document.querySelector('[data-reading-progress-rive]');
   const mobileProgressMedia = window.matchMedia('(max-width: 620px)');
   const reducedMotionMedia = window.matchMedia('(prefers-reduced-motion: reduce)');
   const tagToggle = document.querySelector('[data-tag-toggle]');
@@ -80,6 +81,10 @@
   let progressCelebrationActive = false;
   let progressDragState = null;
   let suppressProgressToggleClick = false;
+  let riveInstance = null;
+  let riveProgressInput = null;
+  let riveStartInput = null;
+  let riveReady = false;
   const progressCollapseScrollY = 140;
   const progressDragThreshold = 6;
   const progressEdgeInset = 12;
@@ -120,6 +125,52 @@
     const seconds = pendingActiveSeconds;
     pendingActiveSeconds = 0;
     event({ type: 'article_active', seconds });
+  }
+
+  function initRiveProgress() {
+    if (!riveCanvas || !window.rive?.Rive || reducedMotionMedia.matches) return;
+
+    try {
+      window.rive.RuntimeLoader?.setWasmUrl?.('/vendor/rive/rive.wasm');
+      const stateMachineName = 'Download';
+
+      riveInstance = new window.rive.Rive({
+        src: '/assets/rive/liquid_download.riv',
+        canvas: riveCanvas,
+        autoplay: true,
+        stateMachines: stateMachineName,
+        onLoad: () => {
+          riveInstance.resizeDrawingSurfaceToCanvas();
+          const inputs = riveInstance.stateMachineInputs(stateMachineName) || [];
+          riveProgressInput = inputs.find((input) => input.name === 'Progress') || null;
+          riveStartInput = inputs.find((input) => input.name === 'Download') || null;
+          if (riveProgressInput) riveProgressInput.value = currentProgressPercent;
+          riveReady = true;
+          riveCanvas.dataset.riveReady = 'true';
+        }
+      });
+    } catch (_error) {
+      riveReady = false;
+    }
+  }
+
+  function syncRiveProgress(percent) {
+    if (!riveReady || !riveProgressInput) return;
+    riveProgressInput.value = percent;
+  }
+
+  function startRiveCompletion() {
+    if (!riveReady || !riveInstance) return false;
+
+    try {
+      if (riveStartInput?.fire) riveStartInput.fire();
+      if (riveProgressInput) riveProgressInput.value = 100;
+      progress?.classList.add('is-rive-active');
+      return true;
+    } catch (_error) {
+      progress?.classList.remove('is-rive-active');
+      return false;
+    }
   }
 
   function readProgressPosition() {
@@ -240,8 +291,34 @@
       layer.appendChild(element);
     });
 
+    const particles = [
+      { emoji: '👍', size: 30, drift: -76, rise: 188, rotate: -18, delay: 0, duration: 3100 },
+      { emoji: '👍🏻', size: 38, drift: -42, rise: 236, rotate: 14, delay: 70, duration: 3500 },
+      { emoji: '👍🏼', size: 26, drift: -12, rise: 205, rotate: -10, delay: 150, duration: 3250 },
+      { emoji: '👍🏽', size: 46, drift: 20, rise: 258, rotate: 16, delay: 40, duration: 3700 },
+      { emoji: '👍🏾', size: 34, drift: 52, rise: 218, rotate: -14, delay: 190, duration: 3400 },
+      { emoji: '👍🏿', size: 29, drift: 82, rise: 192, rotate: 11, delay: 110, duration: 3200 },
+      { emoji: '👍', size: 42, drift: 8, rise: 282, rotate: -8, delay: 230, duration: 3900 },
+      { emoji: '❓', size: 31, drift: 58, rise: 268, rotate: 9, delay: 280, duration: 3800 }
+    ];
+
+    particles.forEach((particle, index) => {
+      const element = document.createElement('span');
+      element.className = 'reading-progress-burst__particle';
+      element.textContent = particle.emoji;
+      element.style.left = `${centerX + ((index % 3) - 1) * 5}px`;
+      element.style.top = `${centerY + (index % 2) * 4}px`;
+      element.style.fontSize = `${particle.size}px`;
+      element.style.setProperty('--particle-drift', `${particle.drift}px`);
+      element.style.setProperty('--particle-rise', `${particle.rise}px`);
+      element.style.setProperty('--particle-rotate', `${particle.rotate}deg`);
+      element.style.animationDelay = `${particle.delay}ms`;
+      element.style.animationDuration = `${particle.duration}ms`;
+      layer.appendChild(element);
+    });
+
     document.body.appendChild(layer);
-    window.setTimeout(() => layer.remove(), 1900);
+    window.setTimeout(() => layer.remove(), 4400);
   }
   function celebrateProgressCompletion() {
     if (!progress || progressCelebrated) return;
@@ -255,16 +332,17 @@
 
     window.requestAnimationFrame(() => {
       applyStoredProgressPosition();
+      startRiveCompletion();
       const rect = progress.getBoundingClientRect();
       spawnProgressCompletionLiquid(rect);
     });
 
     window.setTimeout(() => {
       progressCelebrationActive = false;
-      progress.classList.remove('is-visible', 'is-compact', 'is-popping');
+      progress.classList.remove('is-visible', 'is-compact', 'is-popping', 'is-rive-active');
       progress.classList.add('is-complete');
       clearProgressPositionStyles();
-    }, reducedMotionMedia.matches ? 120 : 680);
+    }, reducedMotionMedia.matches ? 120 : 1250);
   }
 
   function applyProgressState() {
@@ -278,6 +356,7 @@
     }
 
     if (progressBar) progressBar.style.transform = `scaleX(${safePercent / 100})`;
+    syncRiveProgress(safePercent);
     if (progressValue) progressValue.textContent = String(safePercent);
     if (compactProgressValue) compactProgressValue.textContent = String(safePercent);
 
@@ -563,6 +642,8 @@
   document.querySelectorAll('.article-metric[data-tooltip]').forEach((metric) => {
     metric.addEventListener('click', () => metric.focus());
   });
+
+  initRiveProgress();
 
   event({ type: 'article_view' });
   window.setTimeout(() => {
