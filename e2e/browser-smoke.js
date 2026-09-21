@@ -261,7 +261,11 @@ async function main() {
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.wasm`)).ok(), 'Self-hosted Rive WASM should be available');
     assert.ok((await page.request.get(`${baseUrl}/assets/rive/liquid_download.riv`)).ok(), 'Local Rive liquid asset should be available');
-    await page.locator('[data-reading-progress-rive][data-rive-ready="true"]').waitFor({ state: 'attached', timeout: 10_000 });
+    assert.equal(
+      await page.locator('script[data-rive-runtime]').count(),
+      0,
+      'Rive runtime should not be loaded eagerly on article entry'
+    );
     await page.mouse.wheel(0, 650);
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
@@ -313,6 +317,21 @@ async function main() {
     assert.ok(
       hueAfter >= hueBefore,
       'Reading progress bubble should shift from red toward green while reading'
+    );
+
+    await page.evaluate(() => {
+      const contentNode = document.querySelector('.terminal-content');
+      if (!contentNode) return;
+      const rect = contentNode.getBoundingClientRect();
+      const absoluteTop = globalThis.scrollY + rect.top;
+      const target = absoluteTop + contentNode.scrollHeight * 0.8 - globalThis.innerHeight;
+      globalThis.scrollTo(0, Math.max(0, target));
+    });
+    await page.locator('[data-reading-progress-rive][data-rive-ready="true"]').waitFor({ state: 'attached', timeout: 15_000 });
+    assert.equal(
+      await page.locator('script[data-rive-runtime]').count(),
+      1,
+      'Rive runtime should lazy-load once late reading progress is reached'
     );
 
     const dragStartBox = await compactProgress.boundingBox();
