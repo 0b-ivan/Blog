@@ -188,6 +188,11 @@ async function main() {
         'fixed',
         `Reading progress should be a subtle bottom overlay for ${href}`
       );
+      assert.equal(
+        await readingProgress.locator('[data-reading-progress-toggle]').count(),
+        1,
+        `Reading progress toggle missing for ${href}`
+      );
       assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
       const engagement = page.locator('.article-engagement');
       await engagement.waitFor({ state: 'attached' });
@@ -251,9 +256,31 @@ async function main() {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
+    const mobileProgress = page.locator('[data-reading-progress]');
+    await mobileProgress.waitFor({ state: 'attached' });
+    await page.mouse.wheel(0, 650);
+    const compactProgress = page.locator('[data-reading-progress].is-compact');
+    await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
+    const compactProgressBox = await compactProgress.boundingBox();
+    assert.ok(
+      compactProgressBox
+      && compactProgressBox.width <= 60
+      && compactProgressBox.height <= 60,
+      'Reading progress should collapse into a compact circle on mobile'
+    );
+    await compactProgress.locator('[data-reading-progress-toggle]').click();
+    const expandedProgress = page.locator('[data-reading-progress].is-expanded');
+    await expandedProgress.waitFor({ state: 'visible', timeout: 5_000 });
+    const expandedProgressBox = await expandedProgress.boundingBox();
+    assert.ok(
+      expandedProgressBox && expandedProgressBox.width >= 240,
+      'Tapping the compact reading progress should expand it again'
+    );
+
     const mobileEngagement = page.locator('.article-engagement');
     await mobileEngagement.waitFor({ state: 'visible' });
     await mobileEngagement.scrollIntoViewIfNeeded();
+    await page.locator('[data-reading-progress].is-complete').waitFor({ state: 'attached', timeout: 5_000 });
     const mobileGraph = page.locator('.knowledge-graph');
     await mobileGraph.waitFor({ state: 'attached', timeout: 10_000 });
     await mobileGraph.scrollIntoViewIfNeeded();
