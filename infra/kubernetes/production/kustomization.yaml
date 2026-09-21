@@ -6,7 +6,7 @@ resources:
   - ../base
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
+    newTag: 1e8ae19e09882979ec6f9922b16c066e8b542b13
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
   - name: ghcr.io/0b-ivan/kernel-notes-status
@@ -22,6 +22,13 @@ patches:
       kind: Deployment
       name: search
     patch: |-
+      - op: add
+        path: /spec/strategy
+        value:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 1
+            maxSurge: 0
       - op: replace
         path: /spec/template/spec/containers/0/resources/requests/memory
         value: 512Mi
