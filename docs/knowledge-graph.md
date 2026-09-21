@@ -4,9 +4,11 @@ Kernel Notes has two graph views and now a GraphRAG retrieval layer that use the
 
 ## Article graph
 
-Every current or archived article renders a local interactive knowledge graph below the article body.
+Every current or archived article renders a local interactive knowledge graph after the article body and its reader-feedback actions.
 
-For active articles, neighboring article nodes are selected semantically through Kernel Grep instead of only by shared tags and categories.
+For active articles, neighboring article nodes are selected semantically through Kernel Grep instead of only by shared tags and categories. The article graph follows the interaction language of the global Wissensnetz: nodes are explored through a selection panel instead of navigating immediately, labels are shown selectively, and the frame/chrome use the same quiet visual treatment.
+
+On narrow screens the local graph deliberately reduces the neighborhood to at most five related articles plus a bounded set of the most relevant topic nodes. Its legend is visually de-emphasized, link density is reduced and the canvas is fitted to the compact viewport. The full graph remains available through the link to `/knowledge`.
 
 The data flow is:
 
