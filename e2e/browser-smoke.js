@@ -317,7 +317,7 @@ async function main() {
       'Dragging the compact reading progress across the viewport should snap it to the left edge'
     );
     const storedProgressPosition = await page.evaluate(() => {
-      const raw = window.localStorage.getItem('kernel-notes:reading-progress-position');
+      const raw = globalThis.localStorage.getItem('kernel-notes:reading-progress-position');
       return raw ? JSON.parse(raw) : null;
     });
     assert.equal(
