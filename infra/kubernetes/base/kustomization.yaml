@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - workloads.yaml
   - status-monitor.yaml
+  - analytics.yaml

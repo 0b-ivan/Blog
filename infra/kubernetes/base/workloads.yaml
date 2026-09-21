@@ -124,6 +124,8 @@ spec:
               value: http://search:8090/search
             - name: STATUS_SERVICE_URL
               value: http://kube-status:8080/status
+            - name: ANALYTICS_SERVICE_URL
+              value: http://analytics:8080
           readinessProbe:
             httpGet:
               path: /healthz
