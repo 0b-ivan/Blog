@@ -95,6 +95,17 @@
   display: none;
 }
 
+.reading-progress__rive {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
 .reading-progress.is-compact {
   width: 46px;
   min-height: 46px;
@@ -264,6 +275,16 @@
   );
 }
 
+.reading-progress.is-rive-active .reading-progress__rive {
+  opacity: 1;
+}
+
+.reading-progress.is-rive-active .reading-progress__bubble-fill,
+.reading-progress.is-rive-active .reading-progress__bubble-gloss,
+.reading-progress.is-rive-active .reading-progress__compact-value {
+  opacity: 0;
+}
+
 .reading-progress-burst {
   --progress-hue: 120;
   --progress-color: hsl(var(--progress-hue), 78%, 42%);
@@ -302,6 +323,19 @@
   transform: translate(-50%, 0) scaleY(0.04);
   transform-origin: top center;
   animation: reading-progress-liquid-drip 1.3s cubic-bezier(0.18, 0.62, 0.28, 1) forwards;
+}
+
+.reading-progress-burst__particle {
+  position: fixed;
+  z-index: 2;
+  display: block;
+  opacity: 0;
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.24));
+  line-height: 1;
+  will-change: transform, opacity;
+  animation-name: reading-progress-particle-float;
+  animation-timing-function: cubic-bezier(0.18, 0.72, 0.22, 1);
+  animation-fill-mode: forwards;
 }
 
 @keyframes reading-progress-bubble-pop {
@@ -382,6 +416,29 @@
   100% {
     opacity: 0;
     transform: translate(-50%, 42px) scaleY(1.18);
+  }
+}
+
+@keyframes reading-progress-particle-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.62) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0;
+    transform:
+      translate(
+        calc(-50% + var(--particle-drift)),
+        calc(-50% - var(--particle-rise))
+      )
+      scale(1.08)
+      rotate(var(--particle-rotate));
   }
 }
 
@@ -602,6 +659,7 @@
   .reading-progress.is-popping .reading-progress__bubble,
   .reading-progress-burst__droplet,
   .reading-progress-burst__drip,
+  .reading-progress-burst__particle,
   .article-action,
   .article-metric[data-tooltip]::after {
     transition: none;
@@ -609,7 +667,8 @@
 
   .reading-progress.is-popping .reading-progress__bubble,
   .reading-progress-burst__droplet,
-  .reading-progress-burst__drip {
+  .reading-progress-burst__drip,
+  .reading-progress-burst__particle {
     animation: none;
   }
 }
