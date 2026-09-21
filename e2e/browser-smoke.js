@@ -181,7 +181,13 @@ async function main() {
       assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
       const postMeta = await page.locator('.post-page > .meta').innerText();
       assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
-      await page.locator('[data-reading-progress]').waitFor({ state: 'visible' });
+      const readingProgress = page.locator('[data-reading-progress]');
+      await readingProgress.waitFor({ state: 'attached' });
+      assert.equal(
+        await readingProgress.evaluate((element) => getComputedStyle(element).position),
+        'fixed',
+        `Reading progress should be a subtle bottom overlay for ${href}`
+      );
       assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
       const engagement = page.locator('.article-engagement');
       await engagement.waitFor({ state: 'attached' });
@@ -198,6 +204,15 @@ async function main() {
 
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
+      assert.equal(
+        await engagement.evaluate((engagementElement, graphElement) => (
+          Boolean(engagementElement.compareDocumentPosition(graphElement) & Node.DOCUMENT_POSITION_FOLLOWING)
+        ), await graphSection.elementHandle()),
+        true,
+        `Engagement must appear before the knowledge graph for ${href}`
+      );
+      assert.equal(await graphSection.locator('a[href="/knowledge"]').count(), 1, `Global knowledge link missing for ${href}`);
+      assert.equal(await graphSection.locator('[data-knowledge-selection]').count(), 1, `Graph selection panel missing for ${href}`);
       await graphSection.scrollIntoViewIfNeeded();
       await graphSection.locator('.knowledge-graph__chrome-title').waitFor({ state: 'visible', timeout: 10_000 });
       assert.match(
