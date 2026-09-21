@@ -261,12 +261,23 @@ async function main() {
     await page.mouse.wheel(0, 650);
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
-    const compactProgressBox = await compactProgress.boundingBox();
+    let compactProgressBox = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      compactProgressBox = await compactProgress.boundingBox();
+      if (
+        compactProgressBox
+        && compactProgressBox.width <= 60
+        && compactProgressBox.height <= 60
+      ) {
+        break;
+      }
+      await page.waitForTimeout(50);
+    }
     assert.ok(
       compactProgressBox
       && compactProgressBox.width <= 60
       && compactProgressBox.height <= 60,
-      'Reading progress should collapse into a compact bubble on mobile'
+      'Reading progress should collapse into a compact bubble on mobile after its size transition'
     );
     assert.equal(
       await compactProgress.locator('.reading-progress__bubble-fill').count(),
@@ -288,10 +299,17 @@ async function main() {
     await compactProgress.locator('[data-reading-progress-toggle]').click();
     const expandedProgress = page.locator('[data-reading-progress].is-expanded');
     await expandedProgress.waitFor({ state: 'visible', timeout: 5_000 });
-    const expandedProgressBox = await expandedProgress.boundingBox();
+    let expandedProgressBox = null;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      expandedProgressBox = await expandedProgress.boundingBox();
+      if (expandedProgressBox && expandedProgressBox.width >= 240) {
+        break;
+      }
+      await page.waitForTimeout(50);
+    }
     assert.ok(
       expandedProgressBox && expandedProgressBox.width >= 240,
-      'Tapping the compact reading progress should expand it again'
+      'Tapping the compact reading progress should expand it again after its size transition'
     );
 
     const mobileEngagement = page.locator('.article-engagement');
