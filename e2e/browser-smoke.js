@@ -266,7 +266,24 @@ async function main() {
       compactProgressBox
       && compactProgressBox.width <= 60
       && compactProgressBox.height <= 60,
-      'Reading progress should collapse into a compact circle on mobile'
+      'Reading progress should collapse into a compact bubble on mobile'
+    );
+    assert.equal(
+      await compactProgress.locator('.reading-progress__bubble-fill').count(),
+      1,
+      'Compact reading progress should expose an inner bubble fill'
+    );
+    const fillHeightBefore = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+    );
+    await page.mouse.wheel(0, 700);
+    await page.waitForTimeout(250);
+    const fillHeightAfter = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+    );
+    assert.ok(
+      fillHeightAfter >= fillHeightBefore,
+      'Reading progress bubble fill should rise as the article is read'
     );
     await compactProgress.locator('[data-reading-progress-toggle]').click();
     const expandedProgress = page.locator('[data-reading-progress].is-expanded');
