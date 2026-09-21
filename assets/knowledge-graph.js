@@ -611,7 +611,6 @@
     });
   }
   async function initialize(section) {
-    const canvas = section.querySelector('.knowledge-graph__canvas');
     const status = section.querySelector('.knowledge-graph__status');
 
     try {
