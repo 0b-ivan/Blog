@@ -15,8 +15,11 @@
   const actionStatus = document.querySelector('[data-article-action-status]');
   const engagement = document.querySelector('.article-engagement');
   const progress = document.querySelector('[data-reading-progress]');
+  const progressToggle = document.querySelector('[data-reading-progress-toggle]');
+  const progressMeter = document.querySelector('[data-reading-progress-meter]');
   const progressBar = document.querySelector('[data-reading-progress-bar]');
   const progressValue = document.querySelector('[data-reading-progress-value]');
+  const compactProgressValue = document.querySelector('[data-reading-progress-value-compact]');
   const tagToggle = document.querySelector('[data-tag-toggle]');
   const extraTags = [...document.querySelectorAll('[data-extra-tag]')];
   if (!slug || !content) return;
@@ -67,6 +70,10 @@
   let lastActivity = Date.now();
   let pendingActiveSeconds = 0;
   let completed = false;
+  let currentProgressPercent = 0;
+  let currentArticleEnded = false;
+  let progressExpandedByUser = false;
+  const progressCollapseScrollY = 140;
 
   function render(metrics) {
     metricNodes('views').forEach((node) => { node.textContent = String(metrics.views || 0); });
@@ -106,15 +113,47 @@
     event({ type: 'article_active', seconds });
   }
 
-  function updateProgress(percent, articleEnded = false) {
-    const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  function applyProgressState() {
+    const safePercent = Math.max(0, Math.min(100, Number(currentProgressPercent) || 0));
+    const visible = safePercent > 2 && safePercent < 99 && !currentArticleEnded;
+    const compactEligible = visible && window.scrollY > progressCollapseScrollY;
+    const compact = compactEligible && !progressExpandedByUser;
+
+    if (window.scrollY <= progressCollapseScrollY) {
+      progressExpandedByUser = false;
+    }
+
     if (progressBar) progressBar.style.transform = `scaleX(${safePercent / 100})`;
     if (progressValue) progressValue.textContent = String(safePercent);
-    if (progress) {
-      progress.setAttribute('aria-valuenow', String(safePercent));
-      progress.classList.toggle('is-visible', safePercent > 2 && safePercent < 99 && !articleEnded);
-      progress.classList.toggle('is-complete', safePercent >= 99 || articleEnded);
+    if (compactProgressValue) compactProgressValue.textContent = String(safePercent);
+
+    if (progressMeter) {
+      progressMeter.setAttribute('aria-valuenow', String(safePercent));
     }
+
+    if (progress) {
+      progress.style.setProperty('--progress-percent', `${safePercent}%`);
+      progress.classList.toggle('is-visible', visible);
+      progress.classList.toggle('is-complete', !visible);
+      progress.classList.toggle('is-compact', compact);
+      progress.classList.toggle('is-expanded', visible && !compact);
+    }
+
+    if (progressToggle) {
+      progressToggle.setAttribute('aria-expanded', String(visible && !compact));
+      progressToggle.setAttribute(
+        'aria-label',
+        compact
+          ? `Lesefortschritt: ${safePercent} Prozent. Anzeige aufklappen.`
+          : `Lesefortschritt: ${safePercent} Prozent. Anzeige einklappen.`
+      );
+    }
+  }
+
+  function updateProgress(percent, articleEnded = false) {
+    currentProgressPercent = Math.max(0, Math.min(100, Number(percent) || 0));
+    currentArticleEnded = Boolean(articleEnded);
+    applyProgressState();
   }
 
   function checkScroll() {
@@ -159,6 +198,20 @@
   });
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('resize', checkScroll, { passive: true });
+
+  if (progressToggle) {
+    progressToggle.addEventListener('click', () => {
+      if (
+        currentArticleEnded
+        || currentProgressPercent <= 2
+        || window.scrollY <= progressCollapseScrollY
+      ) {
+        return;
+      }
+      progressExpandedByUser = !progressExpandedByUser;
+      applyProgressState();
+    });
+  }
 
   window.setInterval(() => {
     if (activeNow()) pendingActiveSeconds += 5;
