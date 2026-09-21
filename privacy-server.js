@@ -387,6 +387,7 @@ function createApp() {
   app.use('/vendor/markdown-it', vendorStatic('markdown-it/dist/browser'));
   app.use('/vendor/force-graph', vendorStatic('force-graph/dist'));
   app.use('/vendor/medium-zoom', vendorStatic('medium-zoom/dist'));
+  app.use('/vendor/rive', vendorStatic('@rive-app/canvas'));
   app.use('/vendor/mermaid', vendorStatic('mermaid/dist'));
   app.use('/vendor/highlight', vendorStatic('@highlightjs/cdn-assets'));
 
