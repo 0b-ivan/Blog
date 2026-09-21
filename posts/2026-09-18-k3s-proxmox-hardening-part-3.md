@@ -75,7 +75,7 @@ Bevor ich mit Secrets anfange, die Begriffe, die dafür wichtig sind:
 | **GitOps** | Der gewünschte technische Zustand liegt in Git. Flux liest diesen Zustand und setzt ihn im Cluster um. |
 | **Reconcile** | Der Abgleich zwischen Git und Cluster: Flux prüft, ob beides zusammenpasst, und wendet nötige Änderungen an. |
 | **Flux Decryption** | Flux entschlüsselt eine SOPS-Datei erst beim Anwenden im Cluster und übergibt danach das normale Kubernetes-Secret an die API. |
-| **Kustomization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-YAML-Dateien angewendet werden und welche Zusatzfunktionen – hier die SOPS-Entschlüsselung – dabei gelten. |
+| **Customization** | Eine Flux-Ressource, die festlegt, welche Kubernetes-YAML-Dateien angewendet werden und welche Zusatzfunktionen – hier die SOPS-Entschlüsselung – dabei gelten. |
 | **Bootstrap** | Die einmalige Startkonfiguration, die nötig ist, bevor der automatische Ablauf alleine funktioniert. Beim SOPS-Setup ist das das erstmalige Hinterlegen des age-Schlüssels und Aktivieren der Entschlüsselung. |
 | **Pin / pinnen** | Eine Version oder Datei bewusst auf einen bestimmten Stand festschreiben, statt automatisch einer neuen Version zu folgen. |
 | **RBAC** | Das Kubernetes-Berechtigungsmodell nach Rollen. Ich führe in diesem Schritt noch keine eigene RBAC-Härtung ein; das bleibt ein separater Hardening-Punkt. |
@@ -311,7 +311,7 @@ Name und Namespace dürfen lesbar bleiben. Die eigentlichen Werte unter `data` b
 
 Hier bin ich beim ersten Rollout tatsächlich in ein Henne-Ei-Problem gelaufen.
 
-Flux soll die verschlüsselten Secrets aus Git lesen. Dafür muss die laufende Kustomization aber bereits wissen, **wie** sie SOPS entschlüsseln soll.
+Flux soll die verschlüsselten Secrets aus Git lesen. Dafür muss die laufende Customization aber bereits wissen, **wie** sie SOPS entschlüsseln soll.
 
 Wenn ich zuerst nur die verschlüsselten Dateien in Git aktiviere, sagt Flux sinngemäß:
 
@@ -346,7 +346,7 @@ Das Skript committed absichtlich nichts. Ich will danach immer noch ganz normal 
 
 Der interessante Haken kam genau an dieser Stelle.
 
-Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende Flux-Kustomization** – also die Flux-Ressource, die festlegt, welche Manifeste angewendet werden und wie – hatte aber noch keine SOPS-Entschlüsselung aktiviert. Dadurch konnte Flux genau den Commit nicht anwenden, der diese Entschlüsselung erst einschalten sollte.
+Der gewünschte SOPS-Zustand lag bereits in `staging`. Die **laufende Flux-Customization** – also die Flux-Ressource, die festlegt, welche Manifeste angewendet werden und wie – hatte aber noch keine SOPS-Entschlüsselung aktiviert. Dadurch konnte Flux genau den Commit nicht anwenden, der diese Entschlüsselung erst einschalten sollte.
 
 Bei mir sah das so aus:
 
@@ -360,7 +360,7 @@ Klassisches Henne-Ei-Problem.
 
 Dafür gibt es jetzt einen einmaligen Bootstrap:
 
-[Live-Flux einmalig für SOPS bootstrappen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/05-bootstrap-live-flux-sops.sh "snippet:bash")
+[Live-Blogs einmalig für SOPS bootstrappen](/snippets/2026-09-18-k3s-proxmox-hardening-part-3/05-bootstrap-live-flux-sops.sh "snippet:bash")
 
 Das Skript verändert die laufende Flux-Ressource einmalig direkt **erst dann**, wenn es vorher geprüft hat, dass in `origin/staging` bereits alles sauber vorbereitet ist:
 
@@ -368,7 +368,7 @@ Das Skript verändert die laufende Flux-Ressource einmalig direkt **erst dann**,
 - beide Secret-Ressourcen
 - tatsächlich verschlüsselte SOPS-Werte
 
-Danach patcht es die laufende Kustomization, startet den Reconcile und wartet auf `Ready=True`.
+Danach patcht es die laufende Customization, startet den Reconcile und wartet auf `Ready=True`.
 
 Bei meinem Rollout kam anschließend:
 
@@ -379,11 +379,11 @@ Applied revision: staging@sha1:4d7e5ab8b99421496349b4833e1355efcf4e60bb
 
 Und der öffentliche Staging-Check war danach ebenfalls grün.
 
-Genau so wollte ich es: einmaliger Bootstrap, danach wieder normaler GitOps-Betrieb.
+Genau so wollte ich es: einmaliger Bootstrap, danach wieder normaler Gips-Betrieb.
 
 ## 6.5 CI soll mich vor einem dummen Secret-Commit schützen
 
-Nur in die README zu schreiben „bitte keine Secrets committen“ reicht mir nicht.
+Nur in die Readme zu schreiben „bitte keine Secrets committen“ reicht mir nicht.
 
 Deshalb läuft bei jedem PR zusätzlich eine **CI-Prüfung**, also ein automatischer GitHub-Actions-Check:
 

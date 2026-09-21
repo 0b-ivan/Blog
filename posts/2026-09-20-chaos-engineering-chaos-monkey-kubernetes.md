@@ -79,7 +79,7 @@ Ein Kubernetes-System kann trotz gesunder Pods Probleme haben durch:
 - Node-Ausfälle,
 - oder den kompletten Verlust eines Standorts.
 
-Kubernetes kann Pods neu starten und Traffic anhand von Probes steuern. Es weiß aber nicht automatisch, ob Benutzer gerade Timeouts, Retry-Stürme oder hohe Tail-Latency sehen.
+Kubernetes kann Pods neu starten und Traffic anhand von Probes steuern. Es weiß aber nicht automatisch, ob Benutzer gerade Timeouts, Rede-Stürme oder hohe Tail-Latency sehen.
 
 Deshalb reicht die Aussage `Kubernetes ist grün` nicht als Resilience-Nachweis.
 

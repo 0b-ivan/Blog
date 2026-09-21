@@ -88,7 +88,7 @@ richtige Zielmenge?
 
 Wenn etwas davon nicht passt, startet kein Experiment.
 
-Auch GitOps bleibt Teil des Sicherheitsmodells: aktive Chaos-Jobs oder NetworkChaos-Manifeste liegen nur für den Versuch im Staging-Sollzustand und werden danach wieder entfernt.
+Auch GitOps bleibt Teil des Sicherheitsmodells: aktive Chaos-Jobs oder Network Chaos-Manifeste liegen nur für den Versuch im Staging-Sollzustand und werden danach wieder entfernt.
 
 ## Kubernetes Pod Failover mit Chaos Engineering
 
@@ -173,7 +173,7 @@ blog-staging:
   chaos-mesh.org/inject = enabled
 ```
 
-Auf K3s nutzt der Daemon den vorhandenen containerd-Socket:
+Auf K3s nutzt der Daemon den vorhandenen Container-d-Socket:
 
 ```text
 /run/k3s/containerd/containerd.sock
@@ -267,7 +267,7 @@ NetworkChaos
 
 Der Status-Service hat dafür nur read-only `get/list` auf `NetworkChaos`.
 
-## Zweiter NetworkChaos-Lauf: diesmal gemessen
+## Zweiter Network Chaos-Lauf: diesmal gemessen
 
 Der technische PASS beantwortete noch nicht die wichtigere Frage:
 
@@ -328,7 +328,7 @@ Gleichzeitig:
 vollständige Recovery nach 30 s
 ```
 
-Die achtsekündige Baseline ist dabei nur ein kurzer Vergleichspunkt, kein langfristiger Performance-Benchmark.
+Die achtstündige Baseline ist dabei nur ein kurzer Vergleichspunkt, kein langfristiger Performance-Benchmark.
 
 ## Was diese Tests belegen – und was nicht
 
@@ -337,7 +337,7 @@ Belegt ist:
 - Kubernetes stellte vier absichtlich gelöschte Blog-Pods zuverlässig wieder her.
 - Die Pod-Recovery lag in allen Läufen ungefähr bei 6,8 bis 7,0 Sekunden.
 - In 42 Pod-Chaos-Healthchecks trat kein beobachteter HTTP-Fehler auf.
-- Der 30-Sekunden-NetworkChaos wurde vollständig zurückgenommen.
+- Der 30-Sekunden-Network Chaos wurde vollständig zurückgenommen.
 - Im gemessenen NetworkChaos beantworteten Blog und Search jeweils 56 öffentliche Requests ohne Fehler.
 - Search zeigte gleichzeitig deutlich erhöhte Tail-Latency.
 

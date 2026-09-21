@@ -338,7 +338,7 @@ Damit ist ein veröffentlichter Artikel Bestandteil genau des Images, das Produc
 
 ## Production folgt nicht mehr direkt `staging`
 
-Während der Migration hatte die Production-Kustomization ihren Zustand zunächst ebenfalls aus dem `staging`-Branch gelesen.
+Während der Migration hatte die Production-Customization ihren Zustand zunächst ebenfalls aus dem `staging`-Branch gelesen.
 
 Für Tests war das praktisch.
 

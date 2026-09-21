@@ -64,8 +64,8 @@ Genutzt wird:
 
 Warum:
 
-- Schreiben bleibt schnell und editor-freundlich
-- Content ist git-versioniert und reviewbar
+- Schreiben bleibt schnell und Editor-freundlich
+- Content ist git-versioniert und regierbar
 - kein Lock-in in ein proprietäres CMS
 
 ### 3) Docker + Docker Compose
@@ -78,7 +78,7 @@ Warum:
 - einfache Deployments auch ohne Kubernetes
 - klare Trennung von Build und Runtime
 
-Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche klein zu halten.
+Die Runtime ist gehärtet (distroless), um die Angriffsoberfläche kleinzuhalten.
 
 ### 4) CI/CD mit GitHub Actions
 

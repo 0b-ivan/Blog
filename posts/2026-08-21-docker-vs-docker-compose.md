@@ -167,7 +167,7 @@ Es eignet sich sehr gut für:
 
 Compose ist dagegen kein Cluster-Orchestrator. Wenn Container über mehrere Hosts verteilt, automatisch skaliert oder mit komplexem Scheduling betrieben werden sollen, kommen andere Werkzeuge ins Spiel.
 
-Für viele Self-Hosting- und kleinere Produktions-Setups ist Compose aber gerade deshalb angenehm: Es löst das Problem, ohne direkt eine größere Orchestrierungsplattform einzuführen.
+Für viele Self-Hosting-Self-Hosting und kleinere Produktions-Setups ist Compose aber gerade deshalb angenehm: Es löst das Problem, ohne direkt eine größere Orchestrierungsplattform einzuführen.
 
 ## Dockerfile und Docker Compose sind ebenfalls nicht dasselbe
 

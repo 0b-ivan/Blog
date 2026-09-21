@@ -67,7 +67,7 @@ Bevor ich loslege, vier Begriffe, die ich im Rest des Artikels benutze:
 
 | Begriff | Was ich damit meine |
 | --- | --- |
-| **K3s** | Eine schlanke Kubernetes-Distribution. Sie bringt die wichtigsten Kubernetes-Komponenten in einem Paket mit und eignet sich gut für kleine Cluster und Homelabs. |
+| **K3s** | Eine schlanke Kubernetes-Distribution. Sie bringt die wichtigsten Kubernetes-Komponenten in einem Paket mit und eignet sich gut für kleine Cluster und Homeland. |
 | **ClusterIP** | Ein Kubernetes-Service, der nur **innerhalb** des Clusters erreichbar ist. Genau das nutze ich für Blog und Suche. |
 | **Kernel Grep / Search** | Mein eigener Suchdienst für den Blog. Blog und Suche laufen als getrennte Container. |
 | **Bootstrap** | Die einmalige Ersteinrichtung eines Systems. In meinem Fall: VM vorbereiten, K3s installieren und die Grundkonfiguration setzen. |
@@ -311,7 +311,7 @@ ssh obivan@<VM-IP> 'sudo cat /etc/rancher/k3s/k3s.yaml' \
 chmod 600 ~/.kube/k3s-blog-01.yaml
 ```
 
-In der Datei zeigt der API-Server zunächst auf `127.0.0.1`. Das muss durch die interne Adresse des K3s-Nodes ersetzt werden:
+In der Datei zeigt der API-Server zunächst auf `127.0.0.1`. Das muss durch die interne Adresse des K3sprödes ersetzt werden:
 
 ```yaml
 server: https://<VM-IP>:6443
@@ -541,7 +541,7 @@ unset CLOUDFLARE_TUNNEL_TOKEN
 
 Das Deployment liest nur die Secret-Referenz:
 
-[cloudflared als Deployment im Cluster](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/05-cloudflared-deployment.yml "snippet:yaml")
+[Cloudflare als Deployment im Cluster](/snippets/2026-09-15-k3s-proxmox-cloudflare-part-1/05-cloudflared-deployment.yml "snippet:yaml")
 
 Danach:
 

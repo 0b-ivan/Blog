@@ -238,11 +238,11 @@ Kustomize
 Deployment
 ```
 
-### SHA-Tag, „immutable“ und Digest – was ist der Unterschied?
+### SHA-Tag, „mutable“ und Digest – was ist der Unterschied?
 
 Ein **SHA-Tag** ist bei mir ein Container-Tag, dessen Name aus dem Git-SHA kommt. Beispiel: `blog:a9bc2d…`. Damit sehe ich sofort, zu welchem Commit das Image gehört.
 
-„Immutable“ bedeutet **unveränderlich**. Genau das ist ein normaler Registry-Tag aber nicht zwingend: Ein Tag kann technisch später auf ein anderes Image zeigen.
+„Mutable“ bedeutet **unveränderlich**. Genau das ist ein normaler Registry-Tag aber nicht zwingend: Ein Tag kann technisch später auf ein anderes Image zeigen.
 
 Ein **Digest** ist dagegen der kryptografische Fingerabdruck des tatsächlichen Image-Inhalts:
 
@@ -275,7 +275,7 @@ Das passende Beispiel:
 
 Nach dem Build ersetzt der Workflow dort die Tags durch den gerade gebauten Commit-SHA.
 
-Das ist für mich der eigentliche GitOps-Punkt: Nicht der Actions-Run ist die Wahrheit, sondern der Stand im Repository.
+Das ist für mich der eigentliche Gips-Punkt: Nicht der Actions-Run ist die Wahrheit, sondern der Stand im Repository.
 
 ## 4. GitHub Actions baut – Flux deployed
 
@@ -393,7 +393,7 @@ Ohne `--read-write-key` ist der Deploy Key read-only. Das passt zu meinem Aufbau
 
 Nur „Flux ist installiert“ reicht mir nicht.
 
-Ich prüfe danach drei Dinge: die **Git-Quelle** (welches Repository und welcher Branch gelesen werden), die **Kustomization** (welche Manifeste Flux anwenden soll) und die laufenden Flux-Dienste:
+Ich prüfe danach drei Dinge: die **Git-Quelle** (welches Repository und welcher Branch gelesen werden), die **Customization** (welche Manifeste Flux anwenden soll) und die laufenden Flux-Dienste:
 
 [Flux-Zustand und laufende Dienste prüfen](/snippets/2026-09-16-k3s-proxmox-flux-gitops-part-2/05-flux-reconcile-check.sh "snippet:bash")
 

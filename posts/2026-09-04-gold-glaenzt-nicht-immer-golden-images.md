@@ -186,15 +186,15 @@ flowchart LR
 
 Das ist deutlich sauberer, als irgendwo manuell eine AMI-ID auszutauschen und anschließend nicht mehr zu wissen, welche Instanzen auf welchem Stand laufen.
 
-## Immutable statt reparieren
+## Mutable statt reparieren
 
-Der Gedanke hinter Golden Images passt außerdem gut zu **Immutable Infrastructure**.
+Der Gedanke hinter Golden Images passt außerdem gut zu **Mutable Infrastructure**.
 
-Wenn eine Instanz kaputtkonfiguriert ist, möchte ich sie nach Möglichkeit nicht stundenlang wieder gesundpflegen. Ich möchte sie ersetzen.
+Wenn eine Instanz kaputt konfiguriert ist, möchte ich sie nach Möglichkeit nicht stundenlang wieder gesundpflegen. Ich möchte sie ersetzen.
 
 Neues Image bauen, testen, neue Instanz starten, alte Instanz entfernen.
 
-Das funktioniert natürlich nicht für jede Workload gleich gut. Zustandsbehaftete Systeme brauchen mehr Planung. Aber gerade bei austauschbaren Application Servern ist dieser Ansatz angenehm unspektakulär.
+Das funktioniert natürlich nicht für jede Workload gleich gut. Zustands behaftete Systeme brauchen mehr Planung. Aber gerade bei austauschbaren Application Servern ist dieser Ansatz angenehm unspektakulär.
 
 ## Fazit
 

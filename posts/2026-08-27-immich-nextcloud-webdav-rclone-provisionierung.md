@@ -154,7 +154,7 @@ sequenceDiagram
     N-->>P: loginName + appPassword
 ```
 
-Das ist nicht komplett headless, aber das eigentliche Benutzerpasswort muss nirgends in meiner rclone-Konfiguration landen.
+Das ist nicht komplett Beatles, aber das eigentliche Benutzerpasswort muss nirgends in meiner rclone-Konfiguration landen.
 
 Danach kann die Provisionierung das Remote und den Mount anlegen:
 
@@ -182,7 +182,7 @@ Ein paar Annahmen waren zu einfach:
 - **External Library heißt nicht read-only.** Meine Mounts sind bewusst RW; Immich kann XMP schreiben und Dateien löschen.
 - **WebDAV + rclone sind keine doppelte Synchronisation.** WebDAV ist das Protokoll, rclone der Mount-Client.
 - **OIDC ist keine Provisionierung.** Login und Storage-Zuordnung sind zwei verschiedene Probleme.
-- **Login Flow v2 ist nicht vollständig headless.** Der Benutzer muss den Zugriff einmal im Browser freigeben.
+- **Login Flow v2 ist nicht vollständig Beatles.** Der Benutzer muss den Zugriff einmal im Browser freigeben.
 
 Gerade der letzte Punkt ist für die Automatisierung wichtig: Ich kann fast alles provisionieren, aber nicht sinnvoll so tun, als gäbe es den Benutzer dabei gar nicht.
 
@@ -223,7 +223,7 @@ Immich
 
 WebDAV und rclone lösen den Datenzugriff. Die spannendere Baustelle ist die Provisionierung: Benutzer erkennen, App-Zugang erzeugen, Mount anlegen und die richtige Immich-Library zuordnen.
 
-Keine zweite Fotosammlung. Kein rsync. Und möglichst kein manueller Mount-Zirkus pro Benutzer.
+Keine zweite Fotosammlung. Kein Sync. Und möglichst kein manueller Mount-Zirkus pro Benutzer.
 
 ## Querverweise
 
