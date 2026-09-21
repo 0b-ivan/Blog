@@ -13,6 +13,7 @@
   const favoriteLabel = document.querySelector('[data-favorite-label]');
   const shareButton = document.querySelector('[data-article-share]');
   const actionStatus = document.querySelector('[data-article-action-status]');
+  const engagement = document.querySelector('.article-engagement');
   const progress = document.querySelector('[data-reading-progress]');
   const progressBar = document.querySelector('[data-reading-progress-bar]');
   const progressValue = document.querySelector('[data-reading-progress-value]');
@@ -105,11 +106,15 @@
     event({ type: 'article_active', seconds });
   }
 
-  function updateProgress(percent) {
+  function updateProgress(percent, articleEnded = false) {
     const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
     if (progressBar) progressBar.style.transform = `scaleX(${safePercent / 100})`;
     if (progressValue) progressValue.textContent = String(safePercent);
-    if (progress) progress.setAttribute('aria-valuenow', String(safePercent));
+    if (progress) {
+      progress.setAttribute('aria-valuenow', String(safePercent));
+      progress.classList.toggle('is-visible', safePercent > 2 && safePercent < 99 && !articleEnded);
+      progress.classList.toggle('is-complete', safePercent >= 99 || articleEnded);
+    }
   }
 
   function checkScroll() {
@@ -117,7 +122,10 @@
     const total = Math.max(1, content.scrollHeight);
     const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
     const percent = Math.round((seen / total) * 100);
-    updateProgress(percent);
+    const articleEnded = Boolean(
+      engagement && engagement.getBoundingClientRect().top <= window.innerHeight * 0.92
+    );
+    updateProgress(percent, articleEnded);
 
     [25, 50, 75, 90, 100].forEach((threshold) => {
       if (percent < threshold || thresholds.has(threshold)) return;

@@ -135,7 +135,7 @@ function addTagNavigationAssets(html) {
     output = output.replace('</head>', '    <link rel="stylesheet" href="/assets/css/tag-links.css" />\n  </head>');
   }
   if (!output.includes('/assets/tag-navigation.js')) {
-    output = output.replace('</body>', '    <script src="/assets/tag-navigation.js"></script>\n  </body>');
+    output = output.replace('</body>', '    <script src="/assets/tag-navigation.js?v=20260921-2"></script>\n  </body>');
   }
   return output;
 }
