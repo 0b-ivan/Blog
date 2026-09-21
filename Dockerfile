@@ -15,6 +15,7 @@ RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		force-graph@1.51.4 \
 		mermaid@11.17.0 \
 		medium-zoom@1.1.0 \
+		@rive-app/canvas@2.42.2 \
 		@highlightjs/cdn-assets@11.11.1 \
 	&& npm cache clean --force
 
