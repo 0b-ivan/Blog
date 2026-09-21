@@ -210,6 +210,7 @@ describe('blog server', () => {
 
   it('renderPostPage embeds metadata and html', () => {
     const html = renderPostPage({
+      slug: 'meta-test',
       title: 'Meta Test',
       date: '2026-03-03',
       category: 'Node',
@@ -220,8 +221,12 @@ describe('blog server', () => {
     });
 
     expect(html).toContain('Meta Test | Kernel Notes');
-    expect(html).toContain('Node · 2026-03-03');
-    expect(html).toContain('ca. 3 Min. Lesezeit');
+    expect(html).toContain('Node · 03.03.2026 · 3 Min. Lesezeit');
+    expect(html).not.toContain('GMT');
+    expect(html).toContain('data-reading-progress');
+    expect(html).toContain('data-tooltip="Aufrufe');
+    expect(html).toContain('Für später speichern');
+    expect(html).toContain('data-article-share');
     expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');
   });

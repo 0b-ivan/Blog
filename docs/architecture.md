@@ -36,6 +36,12 @@ Die gleiche semantische Grundlage wird für mehrere Funktionen verwendet:
 
 Raw Embeddings werden nicht an Browser-Clients ausgegeben. Details stehen in [knowledge-graph.md](knowledge-graph.md).
 
+### Analytics und Leserinteraktion
+
+Ein eigener Analytics-Dienst sammelt ausschließlich aggregierte Nutzungssignale. Der Blog proxyt die öffentlichen Endpunkte unter `/api/analytics/*`; Browser sprechen den internen Dienst nicht direkt an. Artikel zeigen bewusst nur Aufrufe und Likes prominent an. Aktive Lesezeit und Abschlussquote bleiben Qualitätsmetriken für das interne Analytics-Dashboard.
+
+Lesefortschritt wird im Browser aus der sichtbaren Artikelposition berechnet. Favoriten werden ausschließlich lokal im Browser unter `kernel-notes:favorites` gespeichert und nicht an den Server übertragen. Der Like-Zustand wird ebenfalls lokal gemerkt, während nur der aggregierte Like-Zähler an den Analytics-Dienst geht. Details stehen in [analytics.md](analytics.md).
+
 ### Kubernetes-Status
 
 K3s enthält einen separaten Status-Service aus `status-monitor/`.

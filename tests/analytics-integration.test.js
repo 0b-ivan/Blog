@@ -5,7 +5,7 @@ const { analyticsServiceTarget } = require('../lib/analytics-target');
 const { sanitizedKubernetesStatus } = require('../lib/kubernetes-status');
 
 describe('analytics integration', () => {
-  it('renders compact public metrics and the like control in article headers', () => {
+  it('renders compact public metrics and reader actions without exposing internal quality metrics', () => {
     const html = renderPostPage({
       slug: '2026-09-20-metrics-test',
       title: 'Metrics Test',
@@ -19,10 +19,13 @@ describe('analytics integration', () => {
 
     expect(html).toContain('data-post-slug="2026-09-20-metrics-test"');
     expect(html).toContain('data-article-metric="views"');
-    expect(html).toContain('data-article-metric="active"');
-    expect(html).toContain('data-article-metric="completion"');
     expect(html).toContain('data-article-metric="likes"');
+    expect(html).not.toContain('data-article-metric="active"');
+    expect(html).not.toContain('data-article-metric="completion"');
+    expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-article-like');
+    expect(html).toContain('data-article-favorite');
+    expect(html).toContain('data-article-share');
     expect(html).toContain('/assets/article-analytics.js');
   });
 
