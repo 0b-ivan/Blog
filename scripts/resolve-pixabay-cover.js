@@ -90,6 +90,38 @@ async function downloadPhoto(hit, fetchImpl = fetch) {
   };
 }
 
+async function updateCoverStylesheet(slug, coverImage, focus = 'center') {
+  const stylesheetPath = path.join(root, 'assets', 'css', 'article-covers.css');
+  let css = '';
+  try {
+    css = await fs.readFile(stylesheetPath, 'utf8');
+  } catch (error) {
+    if (!error || error.code !== 'ENOENT') throw error;
+  }
+
+  const safeSlug = String(slug).replace(/[^a-zA-Z0-9._-]/g, '');
+  const safeFocus = ['center', 'top', 'bottom', 'left', 'right'].includes(focus) ? focus : 'center';
+  const start = `/* cover:${safeSlug}:start */`;
+  const end = `/* cover:${safeSlug}:end */`;
+  const rule = `${start}
+.post-page[data-post-slug="${safeSlug}"] .article-hero {
+  --article-cover-image: url("${coverImage}");
+  --article-cover-focus: ${safeFocus};
+}
+${end}`;
+
+  const blockPattern = new RegExp(
+    `/\\* cover:${safeSlug}:start \\*/[\\s\\S]*?/\\* cover:${safeSlug}:end \\*/`,
+    'm'
+  );
+  css = blockPattern.test(css)
+    ? css.replace(blockPattern, rule)
+    : `${css.trimEnd()}\n\n${rule}\n`;
+
+  await fs.mkdir(path.dirname(stylesheetPath), { recursive: true });
+  await fs.writeFile(stylesheetPath, css, 'utf8');
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1]');
@@ -131,8 +163,10 @@ async function main() {
     cover_source_url: hit.pageURL
   });
   await fs.writeFile(target, updated, 'utf8');
+  await updateCoverStylesheet(slug, coverImage, 'center');
 
   console.log(`Saved ${path.relative(root, coverPath)} from Pixabay image ${hit.id}`);
+  console.log('Updated assets/css/article-covers.css');
 }
 
 if (require.main === module) {
@@ -142,4 +176,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { defaultQuery, downloadPhoto, fileExtension, parseArgs, searchPixabay };
+module.exports = { defaultQuery, downloadPhoto, fileExtension, parseArgs, searchPixabay, updateCoverStylesheet };
