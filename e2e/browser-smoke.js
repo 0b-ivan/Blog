@@ -205,9 +205,15 @@ async function main() {
       const graphSection = page.locator('.knowledge-graph');
       await graphSection.waitFor({ state: 'attached', timeout: 10_000 });
       assert.equal(
-        await engagement.evaluate((engagementElement, graphElement) => (
-          Boolean(engagementElement.compareDocumentPosition(graphElement) & Node.DOCUMENT_POSITION_FOLLOWING)
-        ), await graphSection.elementHandle()),
+        await page.evaluate(() => {
+          const engagementElement = document.querySelector('.article-engagement');
+          const graphElement = document.querySelector('.knowledge-graph');
+          return Boolean(
+            engagementElement
+            && graphElement
+            && (engagementElement.compareDocumentPosition(graphElement) & Node.DOCUMENT_POSITION_FOLLOWING)
+          );
+        }),
         true,
         `Engagement must appear before the knowledge graph for ${href}`
       );
@@ -217,7 +223,7 @@ async function main() {
       await graphSection.locator('.knowledge-graph__chrome-title').waitFor({ state: 'visible', timeout: 10_000 });
       assert.match(
         await graphSection.locator('.knowledge-graph__chrome-title').innerText(),
-        /^knowledge-graph:\/\/kernel-notes\//,
+        /^knowledge:\/\/kernel-notes\//,
         `Graph chrome title missing for ${href}`
       );
       assert.equal(await graphSection.locator('.knowledge-graph__chrome-dot').count(), 3, `Graph chrome controls incomplete for ${href}`);
@@ -244,6 +250,24 @@ async function main() {
         assert.ok(response.ok(), `Snippet failed for ${href}: ${downloadHref} (${response.status()})`);
       }
     }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
+    const mobileEngagement = page.locator('.article-engagement');
+    await mobileEngagement.waitFor({ state: 'visible' });
+    await mobileEngagement.scrollIntoViewIfNeeded();
+    const mobileGraph = page.locator('.knowledge-graph');
+    await mobileGraph.waitFor({ state: 'attached', timeout: 10_000 });
+    await mobileGraph.scrollIntoViewIfNeeded();
+    await mobileGraph.locator('.knowledge-graph__canvas canvas').waitFor({ state: 'visible', timeout: 15_000 });
+    assert.equal(
+      await mobileGraph.locator('.knowledge-graph__legend').isVisible(),
+      false,
+      'Compact article graph should hide the legend on mobile'
+    );
+    const mobileCanvasBox = await mobileGraph.locator('.knowledge-graph__canvas').boundingBox();
+    assert.ok(mobileCanvasBox && mobileCanvasBox.height <= 340, 'Compact article graph should stay visually bounded on mobile');
+    await page.setViewportSize({ width: 1280, height: 720 });
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await assertKernelGrepTrigger(page);
