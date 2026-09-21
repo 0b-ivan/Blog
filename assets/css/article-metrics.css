@@ -1,3 +1,5 @@
+@import url('/assets/css/article-covers.css');
+
 .reading-progress {
   --progress-percent: 0%;
   --progress-hue: 0;
