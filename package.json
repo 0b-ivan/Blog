@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "seo:check": "node scripts/check-seo.js",
     "deploy:check-image-tags": "node scripts/check-production-image-tags.js",
+    "deploy:check-rollout-policy": "node scripts/check-production-rollout-policy.js",
     "post:new": "node scripts/new-post.js",
     "post:archive": "node scripts/archive-post.js archive",
     "post:restore": "node scripts/archive-post.js restore",
