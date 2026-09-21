@@ -279,6 +279,10 @@ async function main() {
       && compactProgressBox.height <= 60,
       'Reading progress should collapse into a compact bubble on mobile after its size transition'
     );
+    assert.ok(
+      compactProgressBox.x + compactProgressBox.width >= 390 - 24,
+      'Compact reading progress should default to the bottom-right edge on mobile'
+    );
     assert.equal(
       await compactProgress.locator('.reading-progress__bubble-fill').count(),
       1,
@@ -296,6 +300,32 @@ async function main() {
       fillHeightAfter >= fillHeightBefore,
       'Reading progress bubble fill should rise as the article is read'
     );
+
+    const dragStartBox = await compactProgress.boundingBox();
+    assert.ok(dragStartBox, 'Compact reading progress should have a draggable bounding box');
+    const dragStartX = dragStartBox.x + dragStartBox.width / 2;
+    const dragStartY = dragStartBox.y + dragStartBox.height / 2;
+    await page.mouse.move(dragStartX, dragStartY);
+    await page.mouse.down();
+    await page.mouse.move(28, Math.max(80, dragStartY - 90), { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(250);
+
+    const draggedProgressBox = await compactProgress.boundingBox();
+    assert.ok(
+      draggedProgressBox && draggedProgressBox.x <= 20,
+      'Dragging the compact reading progress across the viewport should snap it to the left edge'
+    );
+    const storedProgressPosition = await page.evaluate(() => {
+      const raw = window.localStorage.getItem('kernel-notes:reading-progress-position');
+      return raw ? JSON.parse(raw) : null;
+    });
+    assert.equal(
+      storedProgressPosition?.side,
+      'left',
+      'Dragged reading progress position should persist in localStorage'
+    );
+
     await compactProgress.locator('[data-reading-progress-toggle]').click();
     const expandedProgress = page.locator('[data-reading-progress].is-expanded');
     await expandedProgress.waitFor({ state: 'visible', timeout: 5_000 });
@@ -315,6 +345,15 @@ async function main() {
     const mobileEngagement = page.locator('.article-engagement');
     await mobileEngagement.waitFor({ state: 'visible' });
     await mobileEngagement.scrollIntoViewIfNeeded();
+    const completionParticles = page.locator('.reading-progress-burst__particle');
+    await completionParticles.first().waitFor({ state: 'attached', timeout: 5_000 });
+    assert.ok(
+      await completionParticles.count() >= 8,
+      'Reading progress completion should release a multi-particle emoji burst'
+    );
+    const completionEmoji = await completionParticles.allTextContents();
+    assert.ok(completionEmoji.includes('❓'), 'Reading progress completion burst should include a question mark');
+    assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Reading progress completion burst should include thumbs');
     await page.locator('[data-reading-progress].is-complete').waitFor({ state: 'attached', timeout: 5_000 });
     const mobileGraph = page.locator('.knowledge-graph');
     await mobileGraph.waitFor({ state: 'attached', timeout: 10_000 });
