@@ -250,7 +250,7 @@
 
   function applyProgressState() {
     const safePercent = Math.max(0, Math.min(100, Number(currentProgressPercent) || 0));
-    const visible = safePercent > 2 && safePercent < 99 && !currentArticleEnded;
+    const visible = safePercent > 2 && safePercent < 100 && !currentArticleEnded;
     const compactEligible = visible && window.scrollY > progressCollapseScrollY;
     const compact = compactEligible && !progressExpandedByUser;
 
