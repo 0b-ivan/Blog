@@ -171,7 +171,7 @@
     }
 
     const rect = progress.getBoundingClientRect();
-    const top = clampProgressTop(stored.top, rect.height || 54);
+    const top = clampProgressTop(stored.top, rect.height || 44);
     progress.style.top = `${top}px`;
     progress.style.bottom = 'auto';
 
@@ -184,46 +184,65 @@
     }
   }
 
-  function spawnProgressCompletionBurst(rect) {
+  function spawnProgressCompletionLiquid(rect) {
     if (reducedMotionMedia.matches || !rect) return;
 
     const layer = document.createElement('div');
     layer.className = 'reading-progress-burst';
     layer.setAttribute('aria-hidden', 'true');
-
-    const particles = [
-      { emoji: '👍', size: 30, drift: -76, rise: 188, rotate: -18, delay: 0, duration: 3100 },
-      { emoji: '👍🏻', size: 38, drift: -42, rise: 236, rotate: 14, delay: 70, duration: 3500 },
-      { emoji: '👍🏼', size: 26, drift: -12, rise: 205, rotate: -10, delay: 150, duration: 3250 },
-      { emoji: '👍🏽', size: 46, drift: 20, rise: 258, rotate: 16, delay: 40, duration: 3700 },
-      { emoji: '👍🏾', size: 34, drift: 52, rise: 218, rotate: -14, delay: 190, duration: 3400 },
-      { emoji: '👍🏿', size: 29, drift: 82, rise: 192, rotate: 11, delay: 110, duration: 3200 },
-      { emoji: '👍', size: 42, drift: 8, rise: 282, rotate: -8, delay: 230, duration: 3900 },
-      { emoji: '❓', size: 31, drift: 58, rise: 268, rotate: 9, delay: 280, duration: 3800 }
-    ];
+    layer.style.setProperty('--progress-hue', '120');
 
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
-    particles.forEach((particle, index) => {
+    const droplets = [
+      { dx: -42, lift: -18, fall: 84, size: 8, delay: 0, duration: 900 },
+      { dx: -25, lift: -30, fall: 112, size: 6, delay: 25, duration: 1050 },
+      { dx: -10, lift: -24, fall: 96, size: 10, delay: 55, duration: 980 },
+      { dx: 14, lift: -34, fall: 124, size: 7, delay: 10, duration: 1120 },
+      { dx: 30, lift: -22, fall: 92, size: 9, delay: 45, duration: 1020 },
+      { dx: 44, lift: -14, fall: 76, size: 6, delay: 80, duration: 920 }
+    ];
+
+    droplets.forEach((drop, index) => {
       const element = document.createElement('span');
-      element.className = 'reading-progress-burst__particle';
-      element.textContent = particle.emoji;
-      element.style.left = `${centerX + ((index % 3) - 1) * 5}px`;
-      element.style.top = `${centerY + (index % 2) * 4}px`;
-      element.style.fontSize = `${particle.size}px`;
-      element.style.setProperty('--particle-drift', `${particle.drift}px`);
-      element.style.setProperty('--particle-rise', `${particle.rise}px`);
-      element.style.setProperty('--particle-rotate', `${particle.rotate}deg`);
-      element.style.animationDelay = `${particle.delay}ms`;
-      element.style.animationDuration = `${particle.duration}ms`;
+      element.className = 'reading-progress-burst__droplet';
+      element.style.left = `${centerX + ((index % 2) ? 3 : -3)}px`;
+      element.style.top = `${centerY}px`;
+      element.style.width = `${drop.size}px`;
+      element.style.height = `${Math.round(drop.size * 1.28)}px`;
+      element.style.setProperty('--drop-x', `${drop.dx}px`);
+      element.style.setProperty('--drop-x-near', `${Math.round(drop.dx * 0.35)}px`);
+      element.style.setProperty('--drop-x-far', `${Math.round(drop.dx * 1.12)}px`);
+      element.style.setProperty('--drop-lift', `${drop.lift}px`);
+      element.style.setProperty('--drop-lift-soft', `${Math.round(drop.lift * 0.35)}px`);
+      element.style.setProperty('--drop-fall', `${drop.fall}px`);
+      element.style.animationDelay = `${drop.delay}ms`;
+      element.style.animationDuration = `${drop.duration}ms`;
+      layer.appendChild(element);
+    });
+
+    const drips = [
+      { offset: -11, length: 96, delay: 80, duration: 1250, width: 5 },
+      { offset: 7, length: 132, delay: 140, duration: 1500, width: 4 },
+      { offset: 18, length: 72, delay: 210, duration: 1050, width: 3 }
+    ];
+
+    drips.forEach((drip) => {
+      const element = document.createElement('span');
+      element.className = 'reading-progress-burst__drip';
+      element.style.left = `${centerX + drip.offset}px`;
+      element.style.top = `${centerY + rect.height * 0.25}px`;
+      element.style.width = `${drip.width}px`;
+      element.style.setProperty('--drip-length', `${drip.length}px`);
+      element.style.animationDelay = `${drip.delay}ms`;
+      element.style.animationDuration = `${drip.duration}ms`;
       layer.appendChild(element);
     });
 
     document.body.appendChild(layer);
-    window.setTimeout(() => layer.remove(), 4400);
+    window.setTimeout(() => layer.remove(), 1900);
   }
-
   function celebrateProgressCompletion() {
     if (!progress || progressCelebrated) return;
 
@@ -237,7 +256,7 @@
     window.requestAnimationFrame(() => {
       applyStoredProgressPosition();
       const rect = progress.getBoundingClientRect();
-      spawnProgressCompletionBurst(rect);
+      spawnProgressCompletionLiquid(rect);
     });
 
     window.setTimeout(() => {
@@ -245,7 +264,7 @@
       progress.classList.remove('is-visible', 'is-compact', 'is-popping');
       progress.classList.add('is-complete');
       clearProgressPositionStyles();
-    }, reducedMotionMedia.matches ? 120 : 520);
+    }, reducedMotionMedia.matches ? 120 : 680);
   }
 
   function applyProgressState() {
@@ -268,6 +287,7 @@
 
     if (progress) {
       progress.style.setProperty('--progress-percent', `${safePercent}%`);
+      progress.style.setProperty('--progress-hue', String(Math.round(safePercent * 1.2)));
 
       if (progressCelebrationActive) return;
 

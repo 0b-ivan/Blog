@@ -275,8 +275,8 @@ async function main() {
     }
     assert.ok(
       compactProgressBox
-      && compactProgressBox.width <= 60
-      && compactProgressBox.height <= 60,
+      && compactProgressBox.width <= 50
+      && compactProgressBox.height <= 50,
       'Reading progress should collapse into a compact bubble on mobile after its size transition'
     );
     assert.ok(
@@ -291,14 +291,24 @@ async function main() {
     const fillHeightBefore = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
       (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
     );
+    const hueBefore = await compactProgress.evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+    );
     await page.mouse.wheel(0, 700);
     await page.waitForTimeout(250);
     const fillHeightAfter = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
       (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
     );
+    const hueAfter = await compactProgress.evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+    );
     assert.ok(
       fillHeightAfter >= fillHeightBefore,
       'Reading progress bubble fill should rise as the article is read'
+    );
+    assert.ok(
+      hueAfter >= hueBefore,
+      'Reading progress bubble should shift from red toward green while reading'
     );
 
     const dragStartBox = await compactProgress.boundingBox();
@@ -345,15 +355,21 @@ async function main() {
     const mobileEngagement = page.locator('.article-engagement');
     await mobileEngagement.waitFor({ state: 'visible' });
     await mobileEngagement.scrollIntoViewIfNeeded();
-    const completionParticles = page.locator('.reading-progress-burst__particle');
-    await completionParticles.first().waitFor({ state: 'attached', timeout: 5_000 });
+    const completionDroplets = page.locator('.reading-progress-burst__droplet');
+    const completionDrips = page.locator('.reading-progress-burst__drip');
+    await completionDroplets.first().waitFor({ state: 'attached', timeout: 5_000 });
     assert.ok(
-      await completionParticles.count() >= 8,
-      'Reading progress completion should release a multi-particle emoji burst'
+      await completionDroplets.count() >= 6,
+      'Reading progress completion should release a local liquid splash'
     );
-    const completionEmoji = await completionParticles.allTextContents();
-    assert.ok(completionEmoji.includes('❓'), 'Reading progress completion burst should include a question mark');
-    assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Reading progress completion burst should include thumbs');
+    assert.ok(
+      await completionDrips.count() >= 2,
+      'Reading progress completion should create downward liquid drips over nearby content'
+    );
+    const completionHue = await mobileProgress.evaluate(
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+    );
+    assert.equal(completionHue, 120, 'Completed reading progress bubble should end green');
     await page.locator('[data-reading-progress].is-complete').waitFor({ state: 'attached', timeout: 5_000 });
     const mobileGraph = page.locator('.knowledge-graph');
     await mobileGraph.waitFor({ state: 'attached', timeout: 10_000 });
