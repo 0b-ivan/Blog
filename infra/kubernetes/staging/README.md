@@ -1,6 +1,6 @@
 # Staging-Cluster
 
-Die Staging-Manifeste veröffentlichen selbst keine NodePorts oder LoadBalancer. Der Zugriff erfolgt ausschließlich über einen Cloudflare Tunnel. Blog und Search kommen aus der gemeinsamen Basis unter `infra/kubernetes/base`; das Staging-Overlay setzt Namespace, drei Blog-Replicas und den Staging-Entrypoint.
+Die Staging-Manifeste veröffentlichen selbst keine NodePorts oder LoadBalancer. Der Zugriff erfolgt ausschließlich über einen Cloudflare Tunnel. Blog und Search kommen aus der gemeinsamen Basis unter `infra/kubernetes/base`; das Staging-Overlay setzt Namespace, eine Blog-Replica und den Staging-Entrypoint.
 
 Der öffentliche Staging-Hostname ist:
 
@@ -138,7 +138,7 @@ Nach außen gehen ausschließlich aggregierte und sanitisiert ausgewählte Zust�
 ## First-Party Analytics in Staging
 
 Staging betreibt einen einzelnen internen `analytics`-Pod mit einem persistenten 1-GiB-PVC.
-Die drei Blog-Replikas schreiben ihre aggregierten Ereignisse ausschließlich über den internen
+Die einzelne Blog-Replica schreibt ihre aggregierten Ereignisse ausschließlich über den internen
 ClusterIP-Service dorthin. Besucher-IP, User-Agent und Geolocation werden nicht an den
 Analytics-Dienst weitergegeben.
 
@@ -182,13 +182,15 @@ Der Runner verweigert die Ausführung, wenn der Namespace nicht exakt `blog-stag
 Weitere Guards:
 
 - ausschließlich Pods mit `app=blog` und `chaos.obivan.org/enabled=true`
-- exakt `3/3` erwartete Blog-Pods müssen vor dem Experiment Ready sein
+- exakt `1/1` erwarteter Blog-Pod muss vor dem Experiment Ready sein
 - jeder Kandidat muss von einem ReplicaSet kontrolliert werden
 - der öffentliche `/healthz` muss vor dem Kill grün sein
 - pro Ausführung wird exakt ein Pod gelöscht
 - danach wird bis zur vollständigen Recovery gewartet
 - HTTP-Ausfälle, Recovery-Zeit, Ready-Minimum/-Maximum und Search-Erreichbarkeit werden als JSON-Logs ausgegeben
 - RBAC erlaubt ausschließlich `get`, `list` und `delete` auf Pods im Namespace `blog-staging`
+
+Mit nur einer Blog-Replica erzeugt ein manueller Pod-Kill in Staging bewusst einen vollständigen kurzen Ausfall, bis Kubernetes die Replica wiederhergestellt hat.
 
 Ein versehentliches Entsuspendieren des CronJobs startet daher noch kein wirksames Chaos-Experiment: automatisch erzeugte CronJob-Pods bestehen den manuellen Jobnamen-Guard nicht.
 
