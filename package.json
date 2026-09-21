@@ -10,6 +10,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "seo:check": "node scripts/check-seo.js",
+    "deploy:check-image-tags": "node scripts/check-production-image-tags.js",
     "post:new": "node scripts/new-post.js",
     "post:archive": "node scripts/archive-post.js archive",
     "post:restore": "node scripts/archive-post.js restore",

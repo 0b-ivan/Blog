@@ -108,6 +108,9 @@ jobs:
       - name: Validate GitOps secret hygiene
         run: bash scripts/check-gitops-secrets.sh
 
+      - name: Validate production image tag isolation
+        run: npm run deploy:check-image-tags
+
       - name: Validate shell syntax
         shell: bash
         run: |

@@ -122,6 +122,8 @@ Bei reinen Content-Änderungen vermeidet dieser Pfad einen vollständigen Image-
 
 Bei Runtime- oder Anwendungsänderungen werden Blog und Search als neue Images gebaut und per Docker Compose ausgerollt.
 
+Damit der parallele K3s-Build denselben Commit gefahrlos veröffentlichen kann, verwendet Hetzner für commit-spezifische Images den Tag `<git-sha>-hetzner`. K3s behält den rohen `<git-sha>`-Tag. Die beiden Workflows können dadurch nicht mehr denselben GHCR-Tag gegenseitig überschreiben.
+
 ## Content-Änderungen
 
 Die beiden Production-Pfade behandeln Content bewusst unterschiedlich.
