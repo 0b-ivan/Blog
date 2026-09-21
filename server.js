@@ -609,7 +609,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-6" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-7" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -634,6 +634,7 @@ function renderPostPage(post, relatedPosts = []) {
           <button class="reading-progress__toggle" type="button" data-reading-progress-toggle aria-expanded="true" aria-label="Lesefortschritt: 0 Prozent">
             <span class="reading-progress__bubble" aria-hidden="true">
               <span class="reading-progress__bubble-fill"></span>
+              <canvas class="reading-progress__rive" data-reading-progress-rive width="92" height="92" aria-hidden="true"></canvas>
               <span class="reading-progress__bubble-gloss"></span>
               <span class="reading-progress__compact-value"><strong data-reading-progress-value-compact>0</strong><span>%</span></span>
             </span>
@@ -706,7 +707,8 @@ function renderPostPage(post, relatedPosts = []) {
     </script>
     <script src="/script.js?v=20260819-2"></script>
     <script src="/assets/glossary.js" defer></script>
-    <script src="/assets/article-analytics.js?v=20260921-5" defer></script>
+    <script src="/vendor/rive/rive.js" defer></script>
+    <script src="/assets/article-analytics.js?v=20260921-6" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
