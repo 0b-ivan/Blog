@@ -228,6 +228,8 @@ describe('blog server', () => {
     expect(html).toContain('data-reading-progress-meter');
     expect(html).toContain('data-reading-progress-value-compact');
     expect(html).toContain('reading-progress__bubble-fill');
+    expect(html).toContain('data-reading-progress-rive');
+    expect(html).toContain('/vendor/rive/rive.js');
     expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');
     expect(html).toContain('Für später speichern');
