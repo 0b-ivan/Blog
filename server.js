@@ -658,7 +658,8 @@ function renderPostPage(post, relatedPosts = []) {
             <span class="reading-progress__label"><strong data-reading-progress-value>0</strong><span>% gelesen</span></span>
           </button>
         </div>
-        <p class="meta article-meta">${meta}</p>
+        <div class="article-hero" data-article-hero>
+          <p class="meta article-meta">${meta}</p>
         <h1 class="article-title">${post.title}</h1>
         <div class="article-metrics" aria-label="Artikelinformationen">
           <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
