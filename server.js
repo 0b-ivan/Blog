@@ -308,6 +308,10 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const coverImage = String(recovered.data.cover_image || '').trim();
+      const coverFocus = String(recovered.data.cover_focus || 'center').trim();
+      const coverCredit = String(recovered.data.cover_credit || '').trim();
+      const coverCreditUrl = String(recovered.data.cover_credit_url || '').trim();
       const wordCount = countWords(recovered.content);
       const readingTime = calculateReadingTime(recovered.content);
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
