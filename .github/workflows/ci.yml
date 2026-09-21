@@ -111,6 +111,9 @@ jobs:
       - name: Validate production image tag isolation
         run: npm run deploy:check-image-tags
 
+      - name: Validate production rollout policy
+        run: npm run deploy:check-rollout-policy
+
       - name: Validate shell syntax
         shell: bash
         run: |
