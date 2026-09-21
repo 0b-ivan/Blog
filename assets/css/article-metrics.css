@@ -534,4 +534,9 @@
   .article-metric[data-tooltip]::after {
     transition: none;
   }
+
+  .reading-progress.is-popping .reading-progress__bubble,
+  .reading-progress-burst__particle {
+    animation: none;
+  }
 }
