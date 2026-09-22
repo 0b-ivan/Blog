@@ -161,6 +161,7 @@ async function main() {
     assert.ok(postHrefs.length > 0, 'No post cards found on the start page');
     let downloadExportVerified = false;
     let terminalControlsVerified = false;
+    let terminalProgressVerified = false;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -206,7 +207,7 @@ async function main() {
         const controlGeometry = await terminal.locator('[data-terminal-action]').evaluateAll((buttons) =>
           buttons.map((button) => {
             const rect = button.getBoundingClientRect();
-            const dot = button.ownerDocument.defaultView.getComputedStyle(button, '::before');
+            const dot = button.ownerDocument.defaultView.globalThis.getComputedStyle(button, '::before');
             return {
               width: rect.width,
               height: rect.height,
@@ -233,7 +234,7 @@ async function main() {
       const readingProgress = page.locator('[data-reading-progress]');
       await readingProgress.waitFor({ state: 'attached' });
       assert.equal(
-        await readingProgress.evaluate((element) => element.ownerDocument.defaultView.getComputedStyle(element).position),
+        await readingProgress.evaluate((element) => element.ownerDocument.defaultView.globalThis.getComputedStyle(element).position),
         'fixed',
         `Reading progress should be a subtle bottom overlay for ${href}`
       );
@@ -242,6 +243,73 @@ async function main() {
         1,
         `Reading progress toggle missing for ${href}`
       );
+
+      if (!terminalProgressVerified) {
+        await page.evaluate(() => {
+          const contentElement = globalThis.document.querySelector('.terminal-content');
+          if (!contentElement) return;
+          const target = globalThis.window.scrollY + contentElement.getBoundingClientRect().top - globalThis.window.innerHeight * 0.55;
+          globalThis.window.scrollTo(0, Math.max(160, target));
+        });
+
+        await page.waitForFunction(() => {
+          const progressElement = globalThis.document.querySelector('[data-reading-progress]');
+          const meter = globalThis.document.querySelector('[data-reading-progress-meter]');
+          return Boolean(
+            progressElement?.classList.contains('is-visible')
+            && Number(meter?.getAttribute('aria-valuenow') || 0) > 2
+          );
+        });
+
+        await terminal.locator('[data-terminal-action="maximize"]').click();
+        await page.locator('.terminal-post--article.is-maximized').waitFor({ state: 'attached' });
+
+        await page.waitForFunction(() => {
+          const progressElement = globalThis.document.querySelector('[data-reading-progress]');
+          const terminalElement = globalThis.document.querySelector('.terminal-post--article.is-maximized');
+          if (!progressElement || !terminalElement) return false;
+          const progressStyle = globalThis.getComputedStyle(progressElement);
+          const terminalStyle = globalThis.getComputedStyle(terminalElement);
+          return (
+            progressStyle.display !== 'none'
+            && progressStyle.visibility !== 'hidden'
+            && Number.parseInt(progressStyle.zIndex || '0', 10) > Number.parseInt(terminalStyle.zIndex || '0', 10)
+          );
+        });
+
+        await terminal.evaluate((element) => {
+          const contentElement = element.querySelector('.terminal-content');
+          if (!contentElement) return;
+          const maximum = Math.max(0, element.scrollHeight - element.clientHeight);
+          element.scrollTop = Math.min(maximum, contentElement.offsetTop + 220);
+          element.dispatchEvent(new globalThis.Event('scroll'));
+        });
+
+        await page.waitForFunction(() => {
+          const meter = globalThis.document.querySelector('[data-reading-progress-meter]');
+          const value = Number(meter?.getAttribute('aria-valuenow') || 0);
+          return value > 2 && value < 100;
+        });
+
+        await terminal.locator('[data-terminal-action="restore"]').click();
+        await page.waitForFunction(() => {
+          const terminalElement = globalThis.document.querySelector('.terminal-post--article');
+          const progressElement = globalThis.document.querySelector('[data-reading-progress]');
+          return Boolean(
+            terminalElement
+            && !terminalElement.classList.contains('is-maximized')
+            && progressElement?.classList.contains('is-visible')
+            && globalThis.getComputedStyle(progressElement).display !== 'none'
+          );
+        });
+
+        assert.ok(
+          await page.evaluate(() => globalThis.window.scrollY > 0),
+          'Restoring the terminal should preserve the reader position'
+        );
+
+        terminalProgressVerified = true;
+      }
       assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
       assert.equal(
         await terminal.locator('.article-post-meta').count(),
@@ -403,18 +471,18 @@ async function main() {
       'Compact reading progress should expose an inner bubble fill'
     );
     const fillHeightBefore = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).height)
     );
     const hueBefore = await compactProgress.evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
     await page.mouse.wheel(0, 700);
     await page.waitForTimeout(250);
     const fillHeightAfter = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).height)
     );
     const hueAfter = await compactProgress.evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
     assert.ok(
       fillHeightAfter >= fillHeightBefore,
@@ -426,7 +494,7 @@ async function main() {
     );
 
     await page.evaluate(() => {
-      const contentNode = globalThis.document.querySelector('.terminal-content');
+      const contentNode = globalThis.globalThis.document.querySelector('.terminal-content');
       if (!contentNode) return;
       const rect = contentNode.getBoundingClientRect();
       const absoluteTop = globalThis.scrollY + rect.top;
@@ -516,7 +584,7 @@ async function main() {
     assert.ok(completionEmoji.includes('❓'), 'Completion burst should include a question mark');
     assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Completion burst should include thumbs');
     const completionHue = await mobileProgress.evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
     assert.equal(completionHue, 120, 'Completed reading progress bubble should end green');
     await page.locator('[data-reading-progress].is-complete').waitFor({ state: 'attached', timeout: 5_000 });

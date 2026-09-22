@@ -986,7 +986,11 @@
 }
 
 .terminal-focus .reading-progress {
-  display: none;
+  z-index: 80;
+}
+
+.terminal-focus .reading-progress-burst {
+  z-index: 82;
 }
 
 @media (max-width: 620px) {

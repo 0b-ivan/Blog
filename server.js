@@ -782,9 +782,9 @@ function renderPostPage(post, relatedPosts = []) {
         });
       }
     </script>
-    <script src="/script.js?v=20260819-2"></script>
+    <script src="/script.js?v=20260922-1"></script>
     <script src="/assets/glossary.js" defer></script>
-    <script src="/assets/article-analytics.js?v=20260921-8" defer></script>
+    <script src="/assets/article-analytics.js?v=20260922-1" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
