@@ -11,6 +11,10 @@ describe('public Kubernetes status contract', () => {
     expect(res.status).toBe(200);
     expect(res.text.match(/href="\/status">Status<\/a>/g)).toHaveLength(1);
     expect(res.text).toContain('/assets/nav-scroll-cue.js');
+
+    const sources = await request(createApp()).get('/sources.html');
+    expect(sources.status).toBe(200);
+    expect(sources.text.match(/href="\/status">Status<\/a>/g)).toHaveLength(1);
   });
 
   it('does not render the removed security disclosure', () => {
