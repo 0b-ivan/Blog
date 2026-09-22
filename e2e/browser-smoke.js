@@ -451,22 +451,13 @@ async function main() {
     const mobileHeaderRadius = await mobileHomeHeader.evaluate((element) =>
       Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).borderTopLeftRadius)
     );
-    const mobileHeaderTransition = await mobileHomeHeader.evaluate((element) => {
-      const style = element.ownerDocument.defaultView.getComputedStyle(element, '::before');
-      return {
-        content: style.content,
-        height: Number.parseFloat(style.height),
-        zIndex: style.zIndex,
-        backgroundImage: style.backgroundImage
-      };
-    });
+    const mobileHeaderBefore = await mobileHomeHeader.evaluate((element) =>
+      element.ownerDocument.defaultView.getComputedStyle(element, '::before').content
+    );
     assert.ok(mobileHeaderRadius >= 16, 'Mobile header should keep a rounded card shape');
     assert.ok(
-      mobileHeaderTransition.content !== 'none'
-      && mobileHeaderTransition.height >= 36
-      && mobileHeaderTransition.zIndex !== '-1'
-      && mobileHeaderTransition.backgroundImage !== 'none',
-      'Mobile header transition must remain visibly layered over the following content'
+      mobileHeaderBefore === 'none' || mobileHeaderBefore === 'normal',
+      'Mobile header must not paint a decorative veil over the article or home content'
     );
     assert.ok(
       mobileHomeHeaderBox
@@ -488,6 +479,48 @@ async function main() {
       && mobileTerminalBox.y - (mobilePostHeaderBox.y + mobilePostHeaderBox.height) <= 48,
       'Mobile article terminal should connect closely to the header'
     );
+
+    const articleHero = page.locator('.article-hero');
+    const heroTransition = page.locator('.article-hero-transition');
+    const terminalContent = page.locator('.terminal-content');
+    await heroTransition.waitFor({ state: 'visible' });
+    const heroBox = await articleHero.boundingBox();
+    const transitionBox = await heroTransition.boundingBox();
+    const contentBox = await terminalContent.boundingBox();
+    const transitionBackground = await heroTransition.evaluate((element) =>
+      element.ownerDocument.defaultView.getComputedStyle(element).backgroundImage
+    );
+    assert.ok(
+      transitionBox && transitionBox.height >= 88,
+      'Article hero must have a real overlap layer for the transition into the terminal body'
+    );
+    assert.ok(
+      heroBox
+      && transitionBox
+      && contentBox
+      && Math.abs((transitionBox.y + transitionBox.height) - contentBox.y) <= 2
+      && transitionBox.y < heroBox.y + heroBox.height,
+      'Hero transition must overlap the bottom of the hero and end exactly where article content begins'
+    );
+    assert.match(
+      transitionBackground,
+      /linear-gradient/i,
+      'Article hero transition must blend into the terminal background instead of using a hard cut'
+    );
+
+    const terminalChromeMetrics = await page.locator('.terminal-chrome').evaluate((element) => {
+      const view = element.ownerDocument.defaultView;
+      const rootStyle = view.getComputedStyle(element.ownerDocument.documentElement);
+      const dotStyle = view.getComputedStyle(element.querySelector('.terminal-dot'), '::before');
+      return {
+        height: Number.parseFloat(view.getComputedStyle(element).minHeight),
+        expectedHeight: Number.parseFloat(rootStyle.getPropertyValue('--window-chrome-height-mobile')),
+        dot: Number.parseFloat(dotStyle.width),
+        expectedDot: Number.parseFloat(rootStyle.getPropertyValue('--window-chrome-dot-size'))
+      };
+    });
+    assert.equal(terminalChromeMetrics.height, terminalChromeMetrics.expectedHeight);
+    assert.equal(terminalChromeMetrics.dot, terminalChromeMetrics.expectedDot);
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
