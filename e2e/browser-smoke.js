@@ -160,6 +160,7 @@ async function main() {
     );
     assert.ok(postHrefs.length > 0, 'No post cards found on the start page');
     let downloadExportVerified = false;
+    let terminalControlsVerified = false;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -195,6 +196,38 @@ async function main() {
         1,
         `Terminal hero prompt missing for ${href}`
       );
+      const terminal = page.locator('.terminal-post--article');
+      assert.equal(await terminal.count(), 1, `Integrated article terminal missing for ${href}`);
+      assert.equal(await terminal.locator('.article-hero').count(), 1, `Hero must live inside article terminal for ${href}`);
+      assert.equal(await terminal.locator('.article-hero__lights').count(), 0, `Decorative hero lights must be removed for ${href}`);
+      assert.equal(await terminal.locator('[data-terminal-action]').count(), 3, `Functional terminal controls incomplete for ${href}`);
+
+      if (!terminalControlsVerified) {
+        const controlGeometry = await terminal.locator('[data-terminal-action]').evaluateAll((buttons) =>
+          buttons.map((button) => {
+            const rect = button.getBoundingClientRect();
+            const dot = button.ownerDocument.defaultView.getComputedStyle(button, '::before');
+            return {
+              width: rect.width,
+              height: rect.height,
+              dotWidth: Number.parseFloat(dot.width),
+              dotHeight: Number.parseFloat(dot.height)
+            };
+          })
+        );
+        for (const geometry of controlGeometry) {
+          assert.ok(Math.abs(geometry.width - geometry.height) < 0.5, 'Terminal control touch target must stay round');
+          assert.ok(Math.abs(geometry.dotWidth - geometry.dotHeight) < 0.5, 'Visible terminal dot must stay round');
+        }
+
+        await terminal.locator('[data-terminal-action="maximize"]').click();
+        await page.locator('.terminal-post--article.is-maximized').waitFor({ state: 'attached' });
+        await terminal.locator('[data-terminal-action="restore"]').click();
+        assert.equal(await terminal.evaluate((element) => element.classList.contains('is-maximized')), false, 'Restore control must leave maximized mode');
+
+        terminalControlsVerified = true;
+      }
+
       const postMeta = await page.locator('.article-hero .article-meta').innerText();
       assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
       const readingProgress = page.locator('[data-reading-progress]');
