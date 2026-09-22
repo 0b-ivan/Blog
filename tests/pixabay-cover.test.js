@@ -1,5 +1,4 @@
 const { URL } = require('node:url');
-const { vi } = require('vitest');
 const {
   defaultQuery,
   downloadPhoto,
@@ -33,7 +32,7 @@ describe('Pixabay cover resolver', () => {
   });
 
   it('calls Pixabay search with safe landscape photo filters', async () => {
-    const fetchImpl = vi.fn(async (url) => {
+    const fetchImpl = globalThis.vi.fn(async (url) => {
       const parsed = new URL(url);
       expect(parsed.origin).toBe('https://pixabay.com');
       expect(parsed.searchParams.get('q')).toBe('kubernetes datacenter');
@@ -57,7 +56,7 @@ describe('Pixabay cover resolver', () => {
 
   it('downloads the selected image without exposing the API key', async () => {
     const bytes = Buffer.from('image-bytes');
-    const fetchImpl = vi.fn(async (url) => {
+    const fetchImpl = globalThis.vi.fn(async (url) => {
       expect(url).toBe('https://cdn.example.test/large.jpg');
       return {
         ok: true,
