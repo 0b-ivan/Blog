@@ -11,6 +11,13 @@
   --radius-card: 14px;
   --shadow-soft: 0 8px 20px rgba(25, 30, 36, 0.06);
   --shadow-raised: 0 12px 24px rgba(25, 30, 36, 0.1);
+  --window-chrome-height: 42px;
+  --window-chrome-height-mobile: 38px;
+  --window-chrome-padding: 14px;
+  --window-chrome-padding-mobile: 12px;
+  --window-chrome-dot-size: 11px;
+  --window-chrome-dot-gap: 8px;
+  --window-chrome-title-gap: 0.75rem;
 }
 
 * {
@@ -549,11 +556,10 @@ h1 {
 }
 
 .terminal-chrome {
-  min-height: 48px;
+  min-height: var(--window-chrome-height);
   display: flex;
   align-items: center;
-  gap: 0.05rem;
-  padding: 0.28rem 0.62rem;
+  padding: 0 var(--window-chrome-padding);
   background: linear-gradient(180deg, #26323e, #1d2833);
   border-bottom: 1px solid #425569;
 }
@@ -561,16 +567,16 @@ h1 {
 .terminal-dot {
   -webkit-appearance: none;
   appearance: none;
-  flex: 0 0 28px;
+  flex: 0 0 calc(var(--window-chrome-dot-size) + var(--window-chrome-dot-gap));
   display: grid;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
-  place-items: center;
+  width: calc(var(--window-chrome-dot-size) + var(--window-chrome-dot-gap));
+  height: var(--window-chrome-height);
+  min-width: 0;
+  min-height: 0;
+  place-items: center start;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: 0;
   background: transparent;
   cursor: pointer;
   touch-action: manipulation;
@@ -578,15 +584,15 @@ h1 {
 
 .terminal-dot::before {
   display: block;
-  width: 10px;
-  height: 10px;
+  width: var(--window-chrome-dot-size);
+  height: var(--window-chrome-dot-size);
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18) inset;
   content: "";
 }
 
-.terminal-dot:hover {
-  background: rgba(255, 255, 255, 0.06);
+.terminal-dot:hover::before {
+  filter: brightness(1.08);
 }
 
 .terminal-dot:focus-visible {
@@ -595,29 +601,35 @@ h1 {
 }
 
 .terminal-dot[aria-pressed="true"] {
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
+}
+
+.terminal-dot[aria-pressed="true"]::before {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.18) inset,
+    0 0 0 2px rgba(255, 255, 255, 0.16);
 }
 
 .terminal-dot-red::before {
-  background: #ff5f56;
+  background: #ef6a6a;
 }
 
 .terminal-dot-yellow::before {
-  background: #ffbd2e;
+  background: #eab84b;
 }
 
 .terminal-dot-green::before {
-  background: #27c93f;
+  background: #65ae77;
 }
 
 .terminal-title {
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0 0 0 0.18rem;
+  margin: 0 0 0 calc(var(--window-chrome-title-gap) - var(--window-chrome-dot-gap));
   overflow: hidden;
   color: #d8e1ea;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.77rem;
+  font-size: 0.72rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -891,26 +903,16 @@ h1 {
   }
 
   .terminal-chrome {
-    min-height: 50px;
-    padding-inline: 0.45rem 0.6rem;
+    min-height: var(--window-chrome-height-mobile);
+    padding-inline: var(--window-chrome-padding-mobile);
   }
 
   .terminal-dot {
-    flex-basis: 32px;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-  }
-
-  .terminal-dot::before {
-    width: 11px;
-    height: 11px;
+    height: var(--window-chrome-height-mobile);
   }
 
   .terminal-title {
-    margin-left: 0.08rem;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
   }
 
   .site-header {
@@ -930,44 +932,6 @@ h1 {
       0 12px 30px rgba(31, 38, 43, 0.1),
       0 1px 0 rgba(255, 255, 255, 0.72) inset;
     backdrop-filter: blur(18px) saturate(1.08);
-  }
-
-  .site-header::before {
-    position: absolute;
-    right: 0.55rem;
-    bottom: -2.3rem;
-    left: 0.55rem;
-    z-index: 0;
-    height: 2.65rem;
-    border-radius: 0 0 20px 20px;
-    background: linear-gradient(
-      180deg,
-      rgba(249, 250, 246, 0.9) 0%,
-      rgba(224, 239, 231, 0.66) 34%,
-      rgba(169, 213, 197, 0.34) 62%,
-      rgba(52, 111, 101, 0.1) 82%,
-      transparent 100%
-    );
-    -webkit-backdrop-filter: blur(7px) saturate(1.04);
-    backdrop-filter: blur(7px) saturate(1.04);
-    content: "";
-    pointer-events: none;
-  }
-
-  .site-header > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .post-detail .site-header::before {
-    background: linear-gradient(
-      180deg,
-      rgba(249, 250, 246, 0.92) 0%,
-      rgba(215, 236, 226, 0.7) 32%,
-      rgba(112, 174, 157, 0.38) 60%,
-      rgba(10, 62, 59, 0.18) 80%,
-      transparent 100%
-    );
   }
 
   .logo {
