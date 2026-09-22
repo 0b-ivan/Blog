@@ -584,6 +584,7 @@ module.exports = {
   addStatusNavigation,
   addGrepNavigation,
   addKernelGrepAssets,
+  addNavigationCueAssets,
   moveMetaNavigationToFooter,
   addPrivacyNavigation,
   hardenHtml,
