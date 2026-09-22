@@ -161,6 +161,7 @@ async function main() {
     assert.ok(postHrefs.length > 0, 'No post cards found on the start page');
     let downloadExportVerified = false;
     let terminalControlsVerified = false;
+    let terminalProgressVerified = false;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -242,6 +243,73 @@ async function main() {
         1,
         `Reading progress toggle missing for ${href}`
       );
+
+      if (!terminalProgressVerified) {
+        await page.evaluate(() => {
+          const contentElement = document.querySelector('.terminal-content');
+          if (!contentElement) return;
+          const target = window.scrollY + contentElement.getBoundingClientRect().top - window.innerHeight * 0.55;
+          window.scrollTo(0, Math.max(160, target));
+        });
+
+        await page.waitForFunction(() => {
+          const progressElement = document.querySelector('[data-reading-progress]');
+          const meter = document.querySelector('[data-reading-progress-meter]');
+          return Boolean(
+            progressElement?.classList.contains('is-visible')
+            && Number(meter?.getAttribute('aria-valuenow') || 0) > 2
+          );
+        });
+
+        await terminal.locator('[data-terminal-action="maximize"]').click();
+        await page.locator('.terminal-post--article.is-maximized').waitFor({ state: 'attached' });
+
+        await page.waitForFunction(() => {
+          const progressElement = document.querySelector('[data-reading-progress]');
+          const terminalElement = document.querySelector('.terminal-post--article.is-maximized');
+          if (!progressElement || !terminalElement) return false;
+          const progressStyle = getComputedStyle(progressElement);
+          const terminalStyle = getComputedStyle(terminalElement);
+          return (
+            progressStyle.display !== 'none'
+            && progressStyle.visibility !== 'hidden'
+            && Number.parseInt(progressStyle.zIndex || '0', 10) > Number.parseInt(terminalStyle.zIndex || '0', 10)
+          );
+        });
+
+        await terminal.evaluate((element) => {
+          const contentElement = element.querySelector('.terminal-content');
+          if (!contentElement) return;
+          const maximum = Math.max(0, element.scrollHeight - element.clientHeight);
+          element.scrollTop = Math.min(maximum, contentElement.offsetTop + 220);
+          element.dispatchEvent(new Event('scroll'));
+        });
+
+        await page.waitForFunction(() => {
+          const meter = document.querySelector('[data-reading-progress-meter]');
+          const value = Number(meter?.getAttribute('aria-valuenow') || 0);
+          return value > 2 && value < 100;
+        });
+
+        await terminal.locator('[data-terminal-action="restore"]').click();
+        await page.waitForFunction(() => {
+          const terminalElement = document.querySelector('.terminal-post--article');
+          const progressElement = document.querySelector('[data-reading-progress]');
+          return Boolean(
+            terminalElement
+            && !terminalElement.classList.contains('is-maximized')
+            && progressElement?.classList.contains('is-visible')
+            && getComputedStyle(progressElement).display !== 'none'
+          );
+        });
+
+        assert.ok(
+          await page.evaluate(() => window.scrollY > 0),
+          'Restoring the terminal should preserve the reader position'
+        );
+
+        terminalProgressVerified = true;
+      }
       assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
       assert.equal(
         await terminal.locator('.article-post-meta').count(),
