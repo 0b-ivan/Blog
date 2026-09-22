@@ -27,7 +27,13 @@ describe('Pixabay cover resolver', () => {
     ])).toEqual({
       target: 'posts/test.md',
       query: 'kubernetes datacenter',
-      select: 2
+      select: 2,
+      preview: false
+    });
+
+    expect(parseArgs(['posts/test.md', '--preview'])).toMatchObject({
+      target: 'posts/test.md',
+      preview: true
     });
   });
 
