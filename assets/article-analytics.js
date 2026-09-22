@@ -4,6 +4,7 @@
 
   const slug = article.dataset.postSlug;
   const content = article.querySelector('.terminal-content');
+  const terminal = content?.closest('.terminal-post');
   const metricNodes = (name) => [...document.querySelectorAll(`[data-article-metric="${name}"]`)];
   const likeButton = document.querySelector('[data-article-like]');
   const likeIcon = document.querySelector('[data-like-icon]');
@@ -420,13 +421,22 @@
     }, reducedMotionMedia.matches ? 120 : 1250);
   }
 
+  function terminalIsMaximized() {
+    return Boolean(terminal?.classList.contains('is-maximized'));
+  }
+
+  function progressScrollOffset() {
+    return terminalIsMaximized() ? terminal.scrollTop : window.scrollY;
+  }
+
   function applyProgressState() {
     const safePercent = Math.max(0, Math.min(100, Number(currentProgressPercent) || 0));
     const visible = safePercent > 2 && safePercent < 100 && !currentArticleEnded;
-    const compactEligible = visible && window.scrollY > progressCollapseScrollY;
+    const scrollOffset = progressScrollOffset();
+    const compactEligible = visible && scrollOffset > progressCollapseScrollY;
     const compact = compactEligible && !progressExpandedByUser;
 
-    if (window.scrollY <= progressCollapseScrollY) {
+    if (scrollOffset <= progressCollapseScrollY) {
       progressExpandedByUser = false;
     }
 
@@ -486,13 +496,26 @@
   }
 
   function checkScroll() {
-    const rect = content.getBoundingClientRect();
     const total = Math.max(1, content.scrollHeight);
-    const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
+    let seen = 0;
+    let articleEnded = false;
+
+    if (terminalIsMaximized()) {
+      const terminalRect = terminal.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const contentStart = terminal.scrollTop + (contentRect.top - terminalRect.top);
+      const viewportBottom = terminal.scrollTop + terminal.clientHeight;
+      seen = Math.min(total, Math.max(0, viewportBottom - contentStart));
+      articleEnded = seen >= total - 2;
+    } else {
+      const rect = content.getBoundingClientRect();
+      seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
+      articleEnded = Boolean(
+        engagement && engagement.getBoundingClientRect().top <= window.innerHeight * 0.92
+      );
+    }
+
     const measuredPercent = Math.round((seen / total) * 100);
-    const articleEnded = Boolean(
-      engagement && engagement.getBoundingClientRect().top <= window.innerHeight * 0.92
-    );
     const percent = articleEnded ? 100 : measuredPercent;
     updateProgress(percent, articleEnded);
 
@@ -519,6 +542,18 @@
   });
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('resize', checkScroll, { passive: true });
+
+  if (terminal) {
+    terminal.addEventListener('scroll', () => {
+      markActivity();
+      if (terminalIsMaximized()) checkScroll();
+    }, { passive: true });
+  }
+
+  window.addEventListener('kernel-notes:terminal-mode', () => {
+    progressExpandedByUser = false;
+    window.requestAnimationFrame(checkScroll);
+  });
 
   function canDragProgress() {
     return Boolean(
@@ -602,7 +637,7 @@
       if (
         currentArticleEnded
         || currentProgressPercent <= 2
-        || window.scrollY <= progressCollapseScrollY
+        || progressScrollOffset() <= progressCollapseScrollY
         || progressCelebrated
       ) {
         return;
