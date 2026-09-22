@@ -163,6 +163,17 @@ function addKernelGrepAssets(html) {
   return output;
 }
 
+function addNavigationCueAssets(html) {
+  if (/src="\/assets\/nav-scroll-cue\.js"/i.test(html)) {
+    return html;
+  }
+
+  return html.replace(
+    '</body>',
+    '    <script src="/assets/nav-scroll-cue.js" defer></script>\n  </body>'
+  );
+}
+
 function moveMetaNavigationToFooter(html) {
   let output = html.replace(
     /(<nav\b[^>]*class="[^"]*\bmain-nav\b[^"]*"[^>]*>)([\s\S]*?)(<\/nav>)/gi,
@@ -208,9 +219,11 @@ function addPrivacyNavigation(html) {
 }
 
 function hardenHtml(html) {
-  return addKernelGrepAssets(
-    moveMetaNavigationToFooter(
-      addGrepNavigation(addStatusNavigation(localizeBrowserDependencies(html)))
+  return addNavigationCueAssets(
+    addKernelGrepAssets(
+      moveMetaNavigationToFooter(
+        addGrepNavigation(addStatusNavigation(localizeBrowserDependencies(html)))
+      )
     )
   );
 }
@@ -455,7 +468,7 @@ function createApp() {
     }
   });
 
-  app.get(['/index.html'], async (_req, res) => {
+  app.get(['/', '/index.html'], async (_req, res) => {
     try {
       await sendHardenedHtml(res, 'index.html');
     } catch (error) {
