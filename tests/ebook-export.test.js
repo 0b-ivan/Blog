@@ -3,11 +3,18 @@ const {
   buildCoverSvg,
   buildPhotoCoverSvg,
   displayAuthor,
+  normalizeEpubDate,
   prepareChapterHtml,
   wrapCoverTitle
 } = require('../lib/ebook-export');
 
 describe('article ebook export helpers', () => {
+  it('normalizes YAML Date objects for EPUB metadata validation', () => {
+    expect(normalizeEpubDate(new Date('2026-09-20T00:00:00.000Z'))).toBe('2026-09-20');
+    expect(normalizeEpubDate('2026-09-21')).toBe('2026-09-21');
+    expect(normalizeEpubDate(undefined)).toBeUndefined();
+  });
+
   it('maps the blog handle to the public author name', () => {
     expect(displayAuthor('obivan')).toBe('Ivan Babayev');
     expect(displayAuthor('0b-ivan')).toBe('Ivan Babayev');
