@@ -497,8 +497,8 @@
 
   function checkScroll() {
     const total = Math.max(1, content.scrollHeight);
-    let seen = 0;
-    let articleEnded = false;
+    let seen;
+    let articleEnded;
 
     if (terminalIsMaximized()) {
       const terminalRect = terminal.getBoundingClientRect();
