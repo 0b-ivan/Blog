@@ -256,6 +256,37 @@ async function main() {
       }
     }
 
+    const downloadSlug = postHrefs[0].split('/').filter(Boolean).pop();
+    for (const format of ['epub', 'pdf']) {
+      const response = await page.request.get(`${baseUrl}/download/${encodeURIComponent(downloadSlug)}.${format}`);
+      assert.equal(
+        response.status(),
+        200,
+        `${format.toUpperCase()} article download failed with HTTP ${response.status()}`
+      );
+
+      const contentType = response.headers()['content-type'] || '';
+      assert.match(
+        contentType,
+        format === 'epub' ? /application\/epub\+zip/i : /application\/pdf/i,
+        `Unexpected ${format.toUpperCase()} content type: ${contentType}`
+      );
+
+      const disposition = response.headers()['content-disposition'] || '';
+      assert.match(
+        disposition,
+        new RegExp(`filename="[^"]+\\.${format}"`, 'i'),
+        `Unexpected ${format.toUpperCase()} filename: ${disposition}`
+      );
+
+      const body = await response.body();
+      if (format === 'epub') {
+        assert.equal(body.subarray(0, 2).toString('ascii'), 'PK', 'EPUB download must be a ZIP archive');
+      } else {
+        assert.equal(body.subarray(0, 5).toString('ascii'), '%PDF-', 'PDF download must start with the PDF signature');
+      }
+    }
+
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
     const mobileProgress = page.locator('[data-reading-progress]');
