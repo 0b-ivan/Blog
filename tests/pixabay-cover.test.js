@@ -1,3 +1,5 @@
+const { URL } = require('node:url');
+const { vi } = require('vitest');
 const {
   defaultQuery,
   downloadPhoto,
