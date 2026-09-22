@@ -156,13 +156,23 @@ jobs:
           git commit -m "feat: add Pixabay cover for ${slug}"
           git push origin "HEAD:refs/heads/${branch}"
 
-          pr_url="$(gh pr create             --repo "$GITHUB_REPOSITORY"             --base staging             --head "$branch"             --title "feat: add cover for ${slug}"             --body "Generated from Pixabay using the repository cover workflow.
+          body_file="$(mktemp)"
+          cat > "$body_file" <<EOF
+          Generated from Pixabay using the repository cover workflow.
 
-- Post: \`$POST_PATH\`
-- Candidate: \`$SELECTION\`
-- Query: \`${QUERY:-derived from article metadata}\`
+          Post: $POST_PATH
+          Candidate: $SELECTION
+          Query: ${QUERY:-derived from article metadata}
 
-The image is stored locally under \`assets/covers/\`; the Pixabay API key is never committed.")"
+          The image is stored locally under assets/covers/. The Pixabay API key is never committed.
+          EOF
+
+          pr_url="$(gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base staging \
+            --head "$branch" \
+            --title "feat: add cover for ${slug}" \
+            --body-file "$body_file")"
 
           {
             echo '# Cover pull request created'
