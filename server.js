@@ -634,7 +634,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260922-2" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260922-3" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -715,22 +715,22 @@ function renderPostPage(post, relatedPosts = []) {
             ${coverCreditHtml}
           </header>
 
-          <div class="article-terminal__meta-strip">
-            <div class="article-metrics" aria-label="Artikelinformationen">
-              <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
-                <span class="article-metric__icon" aria-hidden="true">👁</span>
-                <strong data-article-metric="views">–</strong>
-              </span>
-              <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
-                <span class="article-metric__icon" aria-hidden="true">♡</span>
-                <strong data-article-metric="likes">–</strong>
-              </span>
-            </div>
-            ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
-          </div>
-
           <div class="post-content terminal-content">${post.html}</div>
         </section>
+
+        <aside class="article-post-meta" aria-label="Artikelinformationen und Tags">
+          <div class="article-metrics" aria-label="Artikelinformationen">
+            <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
+              <span class="article-metric__icon" aria-hidden="true">👁</span>
+              <strong data-article-metric="views">–</strong>
+            </span>
+            <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
+              <span class="article-metric__icon" aria-hidden="true">♡</span>
+              <strong data-article-metric="likes">–</strong>
+            </span>
+          </div>
+          ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
+        </aside>
         <section class="article-engagement" aria-labelledby="article-engagement-title">
           <h2 id="article-engagement-title">Hat dir der Artikel geholfen?</h2>
           <p>Deine Rückmeldung hilft dabei, die Inhalte gezielt zu verbessern.</p>

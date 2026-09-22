@@ -243,6 +243,16 @@ async function main() {
         `Reading progress toggle missing for ${href}`
       );
       assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
+      assert.equal(
+        await terminal.locator('.article-post-meta').count(),
+        0,
+        `Metrics and tags must not interrupt the terminal article surface for ${href}`
+      );
+      assert.equal(
+        await page.locator('.terminal-post--article + .article-post-meta').count(),
+        1,
+        `Article metadata should sit below the terminal for ${href}`
+      );
       const engagement = page.locator('.article-engagement');
       await engagement.waitFor({ state: 'attached' });
       assert.equal(await engagement.locator('[data-article-like]').count(), 1, `Like action missing for ${href}`);
