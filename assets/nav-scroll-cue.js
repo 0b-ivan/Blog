@@ -1,7 +1,7 @@
 (() => {
-  const mobile = window.matchMedia('(max-width: 620px)');
+  const mobile = globalThis.matchMedia('(max-width: 620px)');
 
-  document.querySelectorAll('.site-header').forEach((header) => {
+  globalThis.document.querySelectorAll('.site-header').forEach((header) => {
     const nav = header.querySelector('.main-nav');
     if (!nav) return;
 
@@ -21,7 +21,7 @@
     }, { passive: true });
 
     mobile.addEventListener?.('change', update);
-    window.addEventListener('resize', update, { passive: true });
-    requestAnimationFrame(update);
+    globalThis.addEventListener('resize', update, { passive: true });
+    globalThis.requestAnimationFrame(update);
   });
 })();
