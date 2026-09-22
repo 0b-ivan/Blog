@@ -21,6 +21,11 @@ describe('article ebook export helpers', () => {
     expect(displayAuthor('Guest Author')).toBe('Guest Author');
   });
 
+  it('normalizes YAML Date objects to the string format expected by epub-gen-memory', () => {
+    expect(normalizeEpubDate(new Date('2026-09-20T00:00:00.000Z'))).toBe('2026-09-20');
+    expect(normalizeEpubDate('2026-09-20')).toBe('2026-09-20');
+  });
+
   it('wraps long titles for a book cover', () => {
     const lines = wrapCoverTitle(
       'Chaos Monkey gegen meinen eigenen Blog mit Kubernetes und GitOps',
