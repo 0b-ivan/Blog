@@ -630,11 +630,11 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260819-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260922-1" />
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260922-1" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260922-2" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -669,61 +669,66 @@ function renderPostPage(post, relatedPosts = []) {
             <span class="reading-progress__label"><strong data-reading-progress-value>0</strong><span>% gelesen</span></span>
           </button>
         </div>
-        <header class="article-hero" data-article-hero>
-          <div class="article-hero__chrome" aria-hidden="true">
-            <span class="article-hero__lights">
-              <span class="article-hero__light article-hero__light--red"></span>
-              <span class="article-hero__light article-hero__light--yellow"></span>
-              <span class="article-hero__light article-hero__light--green"></span>
-            </span>
-            <span class="article-hero__path">${md.utils.escapeHtml(heroPath)}</span>
-            <span class="article-hero__topic"># ${md.utils.escapeHtml(String(heroTopic).toLowerCase())}</span>
-          </div>
-
-          <p class="meta article-meta">
-            <span class="article-meta__item">
-              <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 6.75h6l1.5 2.25h9v8.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z"/><path d="M3.75 9h16.5"/></svg>
-              <span>${md.utils.escapeHtml(category)}</span>
-            </span>
-            <span class="article-meta__separator" aria-hidden="true">·</span>
-            <span class="article-meta__item">
-              <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.75 3v3M17.25 3v3M4.5 8.25h15M5.25 5.25h13.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>
-              <span>${md.utils.escapeHtml(formattedDate)}</span>
-            </span>
-            <span class="article-meta__separator" aria-hidden="true">·</span>
-            <span class="article-meta__item">
-              <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M12 7.5v5.25l3.5 2"/></svg>
-              <span>${readingTime} Min. Lesezeit</span>
-            </span>
-            <span class="sr-only">${meta}</span>
-          </p>
-
-          <div class="article-hero__body">
-            <h1 class="article-title">${md.utils.escapeHtml(String(post.title || ''))}</h1>
-            <span class="article-hero__prompt" aria-hidden="true">&gt;_</span>
-          </div>
-
-          ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
-          ${coverCreditHtml}
-        </header>
-        <div class="article-metrics" aria-label="Artikelinformationen">
-          <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
-            <span class="article-metric__icon" aria-hidden="true">👁</span>
-            <strong data-article-metric="views">–</strong>
-          </span>
-          <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
-            <span class="article-metric__icon" aria-hidden="true">♡</span>
-            <strong data-article-metric="likes">–</strong>
-          </span>
-        </div>
-        ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
-        <section class="terminal-post" aria-label="Terminal article view">
+        <section class="terminal-post terminal-post--article" aria-label="Artikel im Terminal">
           <div class="terminal-chrome">
             <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="overview" aria-label="Zurück zur Übersicht"></button>
             <button class="terminal-dot terminal-dot-yellow" type="button" data-terminal-action="restore" aria-label="Terminal wiederherstellen"></button>
             <button class="terminal-dot terminal-dot-green" type="button" data-terminal-action="maximize" aria-label="Terminal maximieren"></button>
-            <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
+            <p class="terminal-title">live-terminal://kernel-notes/${md.utils.escapeHtml(String(post.title || ''))}</p>
           </div>
+
+          <header class="article-hero" data-article-hero>
+            <div class="article-hero__chrome" aria-hidden="true">
+              <span class="article-hero__path">${md.utils.escapeHtml(heroPath)}</span>
+              <span class="article-hero__topic"># ${md.utils.escapeHtml(String(heroTopic).toLowerCase())}</span>
+            </div>
+
+            <p class="meta article-meta">
+              <span class="article-meta__item">
+                <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 6.75h6l1.5 2.25h9v8.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z"/><path d="M3.75 9h16.5"/></svg>
+                <span>${md.utils.escapeHtml(category)}</span>
+              </span>
+              <span class="article-meta__separator" aria-hidden="true">·</span>
+              <span class="article-meta__item">
+                <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.75 3v3M17.25 3v3M4.5 8.25h15M5.25 5.25h13.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>
+                <span>${md.utils.escapeHtml(formattedDate)}</span>
+              </span>
+              <span class="article-meta__separator" aria-hidden="true">·</span>
+              <span class="article-meta__item">
+                <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M12 7.5v5.25l3.5 2"/></svg>
+                <span>${readingTime} Min. Lesezeit</span>
+              </span>
+              <span class="sr-only">${meta}</span>
+            </p>
+
+            <div class="article-hero__body">
+              <h1 class="article-title">${md.utils.escapeHtml(String(post.title || ''))}</h1>
+              <span class="article-hero__prompt" aria-hidden="true">
+                <svg viewBox="0 0 64 48" focusable="false">
+                  <path d="M15 12 31 24 15 36"></path>
+                  <path d="M36 36h14"></path>
+                </svg>
+              </span>
+            </div>
+
+            ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
+            ${coverCreditHtml}
+          </header>
+
+          <div class="article-terminal__meta-strip">
+            <div class="article-metrics" aria-label="Artikelinformationen">
+              <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
+                <span class="article-metric__icon" aria-hidden="true">👁</span>
+                <strong data-article-metric="views">–</strong>
+              </span>
+              <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
+                <span class="article-metric__icon" aria-hidden="true">♡</span>
+                <strong data-article-metric="likes">–</strong>
+              </span>
+            </div>
+            ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
+          </div>
+
           <div class="post-content terminal-content">${post.html}</div>
         </section>
         <section class="article-engagement" aria-labelledby="article-engagement-title">
