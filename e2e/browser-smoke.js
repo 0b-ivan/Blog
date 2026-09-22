@@ -185,6 +185,16 @@ async function main() {
       const pageTitle = page.locator('.article-hero .article-title');
       await pageTitle.waitFor({ state: 'visible' });
       assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
+      assert.equal(
+        await page.locator('.article-hero .article-hero__chrome').count(),
+        1,
+        `Terminal hero chrome missing for ${href}`
+      );
+      assert.equal(
+        await page.locator('.article-hero .article-hero__prompt').count(),
+        1,
+        `Terminal hero prompt missing for ${href}`
+      );
       const postMeta = await page.locator('.article-hero .article-meta').innerText();
       assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
       const readingProgress = page.locator('[data-reading-progress]');
