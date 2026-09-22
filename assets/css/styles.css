@@ -934,21 +934,40 @@ h1 {
 
   .site-header::before {
     position: absolute;
-    right: 0.9rem;
-    bottom: -1.55rem;
-    left: 0.9rem;
-    z-index: -1;
-    height: 1.8rem;
-    border-radius: 0 0 18px 18px;
+    right: 0.55rem;
+    bottom: -2.3rem;
+    left: 0.55rem;
+    z-index: 0;
+    height: 2.65rem;
+    border-radius: 0 0 20px 20px;
     background: linear-gradient(
       180deg,
-      rgba(246, 249, 244, 0.28),
-      rgba(240, 246, 239, 0.08) 52%,
-      transparent
+      rgba(249, 250, 246, 0.9) 0%,
+      rgba(224, 239, 231, 0.66) 34%,
+      rgba(169, 213, 197, 0.34) 62%,
+      rgba(52, 111, 101, 0.1) 82%,
+      transparent 100%
     );
-    filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px) saturate(1.04);
+    backdrop-filter: blur(7px) saturate(1.04);
     content: "";
     pointer-events: none;
+  }
+
+  .site-header > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .post-detail .site-header::before {
+    background: linear-gradient(
+      180deg,
+      rgba(249, 250, 246, 0.92) 0%,
+      rgba(215, 236, 226, 0.7) 32%,
+      rgba(112, 174, 157, 0.38) 60%,
+      rgba(10, 62, 59, 0.18) 80%,
+      transparent 100%
+    );
   }
 
   .logo {
