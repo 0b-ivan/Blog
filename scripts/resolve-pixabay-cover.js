@@ -8,13 +8,14 @@ const matter = require('gray-matter');
 const root = path.join(__dirname, '..');
 
 function parseArgs(args) {
-  const options = { target: '', query: '', select: 0 };
+  const options = { target: '', query: '', select: 0, preview: false };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     const next = args[i + 1];
     if (!arg.startsWith('--') && !options.target) options.target = arg;
     else if (arg === '--query' && next) { options.query = next.trim(); i += 1; }
     else if (arg === '--select' && next) { options.select = Number.parseInt(next, 10); i += 1; }
+    else if (arg === '--preview') options.preview = true;
     else throw new Error(`Unknown or incomplete option: ${arg}`);
   }
   return options;
@@ -47,6 +48,21 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
   if (!response.ok) throw new Error(`Pixabay search failed with HTTP ${response.status}`);
   const payload = await response.json();
   return Array.isArray(payload.hits) ? payload.hits : [];
+}
+
+function renderCandidates(hits) {
+  return hits.map((hit, index) => {
+    const author = hit.user || 'unknown';
+    const tags = hit.tags || 'untitled';
+    const page = hit.pageURL || '';
+    const preview = hit.previewURL || hit.webformatURL || '';
+    return [
+      `### ${index + 1}. ${tags}`,
+      `- Fotograf: ${author}`,
+      `- Pixabay: ${page}`,
+      `- Vorschau: ${preview}`
+    ].join('\n');
+  }).join('\n\n');
 }
 
 async function choosePhoto(hits, selectedIndex) {
@@ -140,7 +156,14 @@ async function main() {
   if (!query) throw new Error('Could not derive a Pixabay cover query');
 
   console.log(`Searching Pixabay for: ${query}`);
-  const hit = await choosePhoto(await searchPixabay(query, apiKey), options.select);
+  const hits = await searchPixabay(query, apiKey);
+
+  if (options.preview) {
+    console.log(renderCandidates(hits));
+    return;
+  }
+
+  const hit = await choosePhoto(hits, options.select);
   const downloaded = await downloadPhoto(hit);
 
   const slug = path.basename(target, '.md');
@@ -177,4 +200,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { defaultQuery, downloadPhoto, fileExtension, parseArgs, searchPixabay, updateCoverStylesheet };
+module.exports = { defaultQuery, downloadPhoto, fileExtension, parseArgs, renderCandidates, searchPixabay, updateCoverStylesheet };
