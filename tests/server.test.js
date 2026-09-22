@@ -262,13 +262,21 @@ describe('blog server', () => {
 
     expect(html).toContain('Meta Test | Kernel Notes');
     expect(html).toContain('Node · 03.03.2026 · 3 Min. Lesezeit');
+    expect(html).toContain('terminal-post terminal-post--article');
     expect(html).toContain('article-hero__chrome');
     expect(html).toContain('/blog/node');
     expect(html).toContain('# linux');
+    expect(html).not.toContain('article-hero__lights');
+    expect(html).toContain('data-terminal-action="overview"');
+    expect(html).toContain('data-terminal-action="restore"');
+    expect(html).toContain('data-terminal-action="maximize"');
     expect(html).toContain('article-hero__prompt');
+    expect(html).toContain('<svg viewBox="0 0 64 48" focusable="false">');
     expect(html).toContain('article-hero__excerpt');
     expect(html).toContain('>Excerpt<');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260922-1');
+    expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*article-terminal__meta-strip[\s\S]*terminal-content/);
+    expect(html).toContain('/assets/css/article-metrics.css?v=20260922-2');
+    expect(html).toContain('/styles.css?v=20260922-1');
     expect(html).not.toContain('GMT');
     expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-reading-progress-toggle');
