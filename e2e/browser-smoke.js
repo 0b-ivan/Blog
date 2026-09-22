@@ -450,7 +450,23 @@ async function main() {
     const mobileHeaderRadius = await mobileHomeHeader.evaluate((element) =>
       Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).borderTopLeftRadius)
     );
+    const mobileHeaderTransition = await mobileHomeHeader.evaluate((element) => {
+      const style = element.ownerDocument.defaultView.getComputedStyle(element, '::before');
+      return {
+        content: style.content,
+        height: Number.parseFloat(style.height),
+        zIndex: style.zIndex,
+        backgroundImage: style.backgroundImage
+      };
+    });
     assert.ok(mobileHeaderRadius >= 16, 'Mobile header should keep a rounded card shape');
+    assert.ok(
+      mobileHeaderTransition.content !== 'none'
+      && mobileHeaderTransition.height >= 36
+      && mobileHeaderTransition.zIndex !== '-1'
+      && mobileHeaderTransition.backgroundImage !== 'none',
+      'Mobile header transition must remain visibly layered over the following content'
+    );
     assert.ok(
       mobileHomeHeaderBox
       && mobileHomeHeroBox
