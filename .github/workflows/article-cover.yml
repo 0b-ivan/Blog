@@ -1,0 +1,171 @@
+name: Generate Article Cover
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview candidates or apply one selection
+        required: true
+        type: choice
+        default: preview
+        options:
+          - preview
+          - apply
+      post_path:
+        description: Post path, e.g. posts/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.md
+        required: true
+        type: string
+      query:
+        description: Optional Pixabay search query; empty uses cover_query/title/category/tags
+        required: false
+        type: string
+      selection:
+        description: Candidate number 1-6, used only in apply mode
+        required: false
+        default: "1"
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: article-cover-${{ inputs.post_path }}
+  cancel-in-progress: false
+
+jobs:
+  cover:
+    name: Pixabay cover
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      POST_PATH: ${{ inputs.post_path }}
+      QUERY: ${{ inputs.query }}
+      SELECTION: ${{ inputs.selection }}
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate request
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PIXABAY_API_KEY" || {
+            echo 'PIXABAY_API_KEY is not configured as an Actions repository secret.' >&2
+            exit 1
+          }
+
+          case "$POST_PATH" in
+            posts/*.md) ;;
+            *)
+              echo 'post_path must point to a Markdown file directly below posts/.' >&2
+              exit 1
+              ;;
+          esac
+
+          test -f "$POST_PATH" || {
+            echo "Post not found: $POST_PATH" >&2
+            exit 1
+          }
+
+          if [ "${{ inputs.mode }}" = "apply" ]; then
+            case "$SELECTION" in
+              1|2|3|4|5|6) ;;
+              *)
+                echo 'selection must be a number from 1 to 6.' >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+      - name: Preview Pixabay candidates
+        if: inputs.mode == 'preview'
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo '# Pixabay cover candidates'
+            echo
+            echo "Post: `$POST_PATH`"
+            echo
+            if [ -n "$QUERY" ]; then
+              npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --preview
+            else
+              npm run covers:resolve -- "$POST_PATH" --preview
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply selected cover
+        if: inputs.mode == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$QUERY" ]; then
+            npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --select "$SELECTION"
+          else
+            npm run covers:resolve -- "$POST_PATH" --select "$SELECTION"
+          fi
+
+      - name: Validate generated changes
+        if: inputs.mode == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          npm run posts:validate-meta
+          npm run lint
+          npm test -- --run tests/pixabay-cover.test.js tests/ebook-export.test.js
+
+      - name: Create cover pull request
+        if: inputs.mode == 'apply'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          slug="$(basename "$POST_PATH" .md)"
+          branch="cover/${slug}-${GITHUB_RUN_ID}"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+
+          git add "$POST_PATH" assets/covers assets/css/article-covers.css
+
+          if git diff --cached --quiet; then
+            echo 'No cover changes were generated.' >&2
+            exit 1
+          fi
+
+          git commit -m "feat: add Pixabay cover for ${slug}"
+          git push origin "HEAD:refs/heads/${branch}"
+
+          pr_url="$(gh pr create             --repo "$GITHUB_REPOSITORY"             --base staging             --head "$branch"             --title "feat: add cover for ${slug}"             --body "Generated from Pixabay using the repository cover workflow.
+
+- Post: \`$POST_PATH\`
+- Candidate: \`$SELECTION\`
+- Query: \`${QUERY:-derived from article metadata}\`
+
+The image is stored locally under \`assets/covers/\`; the Pixabay API key is never committed.")"
+
+          {
+            echo '# Cover pull request created'
+            echo
+            echo "$pr_url"
+          } >> "$GITHUB_STEP_SUMMARY"
