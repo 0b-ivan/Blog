@@ -477,6 +477,15 @@ function createApp() {
     }
   });
 
+  app.get(['/sources', '/sources.html'], async (_req, res) => {
+    try {
+      await sendHardenedHtml(res, 'sources.html');
+    } catch (error) {
+      console.error(error);
+      res.status(500).type('text').send('Could not load sources page');
+    }
+  });
+
   app.get(['/about', '/about.html'], async (_req, res) => {
     try {
       await sendHardenedHtml(res, 'about.html');
