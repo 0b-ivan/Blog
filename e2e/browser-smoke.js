@@ -181,10 +181,10 @@ async function main() {
         card.click()
       ]);
 
-      const pageTitle = page.locator('.post-page > h1');
+      const pageTitle = page.locator('.article-hero .article-title');
       await pageTitle.waitFor({ state: 'visible' });
       assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
-      const postMeta = await page.locator('.post-page > .meta').innerText();
+      const postMeta = await page.locator('.article-hero .article-meta').innerText();
       assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
       const readingProgress = page.locator('[data-reading-progress]');
       await readingProgress.waitFor({ state: 'attached' });
