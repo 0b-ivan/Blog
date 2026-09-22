@@ -368,6 +368,10 @@ function setupTerminalFocusMode() {
           (action === 'restore' && !isMaximized && !isMinimized)
       ));
     });
+
+    window.dispatchEvent(new window.CustomEvent('kernel-notes:terminal-mode', {
+      detail: { mode }
+    }));
   };
 
   actionButtons.forEach((button) => {
