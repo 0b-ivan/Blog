@@ -159,6 +159,7 @@ async function main() {
       cards.map((card) => card.dataset.href).filter(Boolean)
     );
     assert.ok(postHrefs.length > 0, 'No post cards found on the start page');
+    let downloadExportVerified = false;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -206,6 +207,25 @@ async function main() {
       assert.equal(await engagement.locator('.article-download a[href$=".epub"]').count(), 1, `EPUB download missing for ${href}`);
       assert.equal(await engagement.locator('.article-download a[href$=".pdf"]').count(), 1, `PDF download missing for ${href}`);
       assert.equal(await engagement.locator('[data-article-share]').count(), 1, `Share action missing for ${href}`);
+
+      if (!downloadExportVerified) {
+        const epubHref = await engagement.locator('.article-download a[href$=".epub"]').getAttribute('href');
+        const epubResponse = await page.request.get(new URL(epubHref, baseUrl).toString());
+        assert.equal(epubResponse.status(), 200, `EPUB generation failed for ${href}: HTTP ${epubResponse.status()} ${await epubResponse.text()}`);
+        assert.match(epubResponse.headers()['content-type'] || '', /application\/epub\+zip/i);
+        const epubBody = await epubResponse.body();
+        assert.equal(epubBody.subarray(0, 2).toString('ascii'), 'PK', 'EPUB must be a ZIP package');
+
+        const pdfHref = await engagement.locator('.article-download a[href$=".pdf"]').getAttribute('href');
+        const pdfResponse = await page.request.get(new URL(pdfHref, baseUrl).toString());
+        assert.equal(pdfResponse.status(), 200, `PDF generation failed for ${href}: HTTP ${pdfResponse.status()} ${await pdfResponse.text()}`);
+        assert.match(pdfResponse.headers()['content-type'] || '', /application\/pdf/i);
+        const pdfBody = await pdfResponse.body();
+        assert.equal(pdfBody.subarray(0, 5).toString('ascii'), '%PDF-', 'PDF must have a valid PDF signature');
+
+        downloadExportVerified = true;
+      }
+
       await assertMetaLinksInFooter(page);
       await assertKernelGrepTrigger(page);
 
