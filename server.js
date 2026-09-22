@@ -607,6 +607,11 @@ function renderPostPage(post, relatedPosts = []) {
       ? `<button class="tag-chip tag-toggle" type="button" data-tag-toggle data-hidden-count="${hiddenTagCount}" aria-expanded="false" aria-label="${hiddenTagCount} weitere Tags anzeigen">+${hiddenTagCount}</button>`
       : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
+  const coverCreditHtml = post.coverCredit
+    ? `<p class="article-hero__credit">${post.coverCreditUrl
+      ? `<a href="${md.utils.escapeHtml(String(post.coverCreditUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverCredit))}</a>`
+      : md.utils.escapeHtml(String(post.coverCredit))}</p>`
+    : '';
 
   return `<!doctype html>
 <html lang="de">
@@ -661,6 +666,7 @@ function renderPostPage(post, relatedPosts = []) {
         <div class="article-hero" data-article-hero>
           <p class="meta article-meta">${meta}</p>
         <h1 class="article-title">${post.title}</h1>
+          ${coverCreditHtml}
         </div>
         <div class="article-metrics" aria-label="Artikelinformationen">
           <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
