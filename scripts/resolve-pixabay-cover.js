@@ -2,6 +2,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const readline = require('node:readline/promises');
 const { stdin: input, stdout: output } = require('node:process');
+const { URL } = require('node:url');
 const matter = require('gray-matter');
 
 const root = path.join(__dirname, '..');
@@ -30,7 +31,7 @@ function defaultQuery(data) {
     .slice(0, 100);
 }
 
-async function searchPixabay(query, apiKey, fetchImpl = fetch) {
+async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
   const url = new URL('https://pixabay.com/api/');
   url.searchParams.set('key', apiKey);
   url.searchParams.set('q', query);
@@ -78,7 +79,7 @@ function fileExtension(url, contentType) {
   return 'jpg';
 }
 
-async function downloadPhoto(hit, fetchImpl = fetch) {
+async function downloadPhoto(hit, fetchImpl = globalThis.fetch) {
   const sourceUrl = hit.largeImageURL || hit.webformatURL;
   if (!sourceUrl) throw new Error('Pixabay result has no downloadable image URL');
   const response = await fetchImpl(sourceUrl);
