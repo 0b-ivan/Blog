@@ -101,7 +101,7 @@ jobs:
           {
             echo '# Pixabay cover candidates'
             echo
-            echo "Post: `$POST_PATH`"
+            printf 'Post: `%s`\n\n' "$POST_PATH"
             echo
             if [ -n "$QUERY" ]; then
               npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --preview
@@ -129,7 +129,7 @@ jobs:
           git diff --check
           npm run posts:validate-meta
           npm run lint
-          npm test -- --run tests/pixabay-cover.test.js tests/ebook-export.test.js
+          npx vitest run tests/pixabay-cover.test.js tests/ebook-export.test.js
 
       - name: Create cover pull request
         if: inputs.mode == 'apply'
