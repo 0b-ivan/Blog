@@ -311,6 +311,7 @@ async function main() {
             && !terminalElement.classList.contains('is-maximized')
             && progressElement?.classList.contains('is-visible')
             && globalThis.getComputedStyle(progressElement).display !== 'none'
+            && globalThis.window.scrollY > 0
           );
         });
 
