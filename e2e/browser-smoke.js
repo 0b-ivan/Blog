@@ -272,12 +272,12 @@ async function main() {
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
     let compactProgressBox = null;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
       compactProgressBox = await compactProgress.boundingBox();
       if (
         compactProgressBox
-        && compactProgressBox.width <= 60
-        && compactProgressBox.height <= 60
+        && compactProgressBox.width <= 50
+        && compactProgressBox.height <= 50
       ) {
         break;
       }
@@ -287,7 +287,7 @@ async function main() {
       compactProgressBox
       && compactProgressBox.width <= 50
       && compactProgressBox.height <= 50,
-      'Reading progress should collapse into a compact bubble on mobile after its size transition'
+      `Reading progress should collapse into a compact bubble on mobile after its size transition (actual=${compactProgressBox ? `${compactProgressBox.width}x${compactProgressBox.height}` : 'missing'})`
     );
     assert.ok(
       compactProgressBox.x + compactProgressBox.width >= 390 - 24,
