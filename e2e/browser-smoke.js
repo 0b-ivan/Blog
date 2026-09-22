@@ -202,13 +202,10 @@ async function main() {
       const engagement = page.locator('.article-engagement');
       await engagement.waitFor({ state: 'attached' });
       assert.equal(await engagement.locator('[data-article-like]').count(), 1, `Like action missing for ${href}`);
-      assert.equal(await engagement.locator('[data-article-favorite]').count(), 1, `Favorite action missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download').count(), 1, `Download action missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download a[href$=".epub"]').count(), 1, `EPUB download missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download a[href$=".pdf"]').count(), 1, `PDF download missing for ${href}`);
       assert.equal(await engagement.locator('[data-article-share]').count(), 1, `Share action missing for ${href}`);
-      const favoriteButton = engagement.locator('[data-article-favorite]');
-      await favoriteButton.click();
-      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'true', `Favorite state did not persist for ${href}`);
-      await favoriteButton.click();
-      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'false', `Favorite state did not toggle off for ${href}`);
       await assertMetaLinksInFooter(page);
       await assertKernelGrepTrigger(page);
 
