@@ -181,10 +181,10 @@ async function main() {
         card.click()
       ]);
 
-      const pageTitle = page.locator('.post-page > h1');
+      const pageTitle = page.locator('.article-hero .article-title');
       await pageTitle.waitFor({ state: 'visible' });
       assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
-      const postMeta = await page.locator('.post-page > .meta').innerText();
+      const postMeta = await page.locator('.article-hero .article-meta').innerText();
       assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
       const readingProgress = page.locator('[data-reading-progress]');
       await readingProgress.waitFor({ state: 'attached' });
@@ -202,13 +202,10 @@ async function main() {
       const engagement = page.locator('.article-engagement');
       await engagement.waitFor({ state: 'attached' });
       assert.equal(await engagement.locator('[data-article-like]').count(), 1, `Like action missing for ${href}`);
-      assert.equal(await engagement.locator('[data-article-favorite]').count(), 1, `Favorite action missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download').count(), 1, `Download action missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download a[href$=".epub"]').count(), 1, `EPUB download missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download a[href$=".pdf"]').count(), 1, `PDF download missing for ${href}`);
       assert.equal(await engagement.locator('[data-article-share]').count(), 1, `Share action missing for ${href}`);
-      const favoriteButton = engagement.locator('[data-article-favorite]');
-      await favoriteButton.click();
-      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'true', `Favorite state did not persist for ${href}`);
-      await favoriteButton.click();
-      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'false', `Favorite state did not toggle off for ${href}`);
       await assertMetaLinksInFooter(page);
       await assertKernelGrepTrigger(page);
 
@@ -275,12 +272,12 @@ async function main() {
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
     let compactProgressBox = null;
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
       compactProgressBox = await compactProgress.boundingBox();
       if (
         compactProgressBox
-        && compactProgressBox.width <= 60
-        && compactProgressBox.height <= 60
+        && compactProgressBox.width <= 50
+        && compactProgressBox.height <= 50
       ) {
         break;
       }
@@ -290,7 +287,7 @@ async function main() {
       compactProgressBox
       && compactProgressBox.width <= 50
       && compactProgressBox.height <= 50,
-      'Reading progress should collapse into a compact bubble on mobile after its size transition'
+      `Reading progress should collapse into a compact bubble on mobile after its size transition (actual=${compactProgressBox ? `${compactProgressBox.width}x${compactProgressBox.height}` : 'missing'})`
     );
     assert.ok(
       compactProgressBox.x + compactProgressBox.width >= 390 - 24,

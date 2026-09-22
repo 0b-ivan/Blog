@@ -10,13 +10,20 @@ RUN if [ -f package-lock.json ]; then \
 		fi
 
 # Browser-only dependencies are pinned and installed into the image so visitors
-# load them from blog.obivan.org instead of third-party CDNs.
+# load them from blog.obivan.org instead of third-party CDNs. EPUB/PDF export
+# dependencies are pinned here as runtime-only packages because the server loads
+# them lazily only when a download is requested.
 RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		force-graph@1.51.4 \
 		mermaid@11.17.0 \
 		medium-zoom@1.1.0 \
 		@rive-app/canvas@2.42.2 \
 		@highlightjs/cdn-assets@11.11.1 \
+		epub-gen-memory@1.1.2 \
+		jszip@3.10.2 \
+		pdfkit@0.20.2 \
+		htmlparser2@12.0.0 \
+		svg-to-pdfkit@0.1.8 \
 	&& npm cache clean --force
 
 ARG BUILD_VERSION

@@ -1,3 +1,92 @@
+@import url('/assets/css/article-covers.css');
+
+.article-hero {
+  --article-cover-focus: center;
+  --article-cover-image:
+    radial-gradient(circle at 18% 20%, rgba(55, 211, 178, 0.42), transparent 34%),
+    radial-gradient(circle at 84% 72%, rgba(28, 105, 135, 0.46), transparent 38%),
+    linear-gradient(135deg, #0a1716 0%, #102a29 52%, #121a24 100%);
+  position: relative;
+  min-height: clamp(210px, 34vw, 360px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  margin: 0 0 0.85rem;
+  padding: clamp(1.2rem, 4vw, 2.2rem);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background-image:
+    linear-gradient(180deg, rgba(5, 13, 14, 0.14) 0%, rgba(5, 13, 14, 0.72) 72%, rgba(5, 13, 14, 0.92) 100%),
+    var(--article-cover-image);
+  background-position: center, var(--article-cover-focus);
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 0 18px 55px rgba(31, 38, 43, 0.13);
+  isolation: isolate;
+}
+
+.article-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(0, 71, 62, 0.2), transparent 36%),
+    linear-gradient(180deg, transparent 56%, rgba(0, 0, 0, 0.2));
+  pointer-events: none;
+}
+
+.article-hero .article-meta {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.article-hero .article-title {
+  position: relative;
+  z-index: 1;
+  max-width: 19ch;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.75rem, 5vw, 3.15rem);
+  line-height: 1.04;
+  text-wrap: balance;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.62);
+}
+
+.article-hero__credit {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.55rem;
+  z-index: 2;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font: 500 0.56rem/1.25 "IBM Plex Mono", monospace;
+}
+
+.article-hero__credit a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.article-hero__credit a:hover,
+.article-hero__credit a:focus-visible {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+  .article-hero {
+    min-height: 230px;
+    margin-inline: -0.15rem;
+    border-radius: 15px;
+  }
+}
+
 .reading-progress {
   --progress-percent: 0%;
   --progress-hue: 0;
@@ -590,9 +679,65 @@
   background: #005e51;
 }
 
-.article-favorite.is-favorite {
-  border-color: rgba(0, 71, 62, 0.48);
+.article-download {
+  position: relative;
+  min-width: 0;
+}
+
+.article-download > summary {
+  width: 100%;
+  box-sizing: border-box;
+  list-style: none;
+}
+
+.article-download > summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-download[open] > summary {
+  border-color: rgba(0, 71, 62, 0.52);
   background: rgba(0, 71, 62, 0.08);
+}
+
+.article-download__menu {
+  position: absolute;
+  top: calc(100% + 0.42rem);
+  right: 0;
+  left: 0;
+  z-index: 12;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 220px;
+  padding: 0.38rem;
+  border: 1px solid rgba(0, 71, 62, 0.2);
+  border-radius: 12px;
+  background: rgba(250, 249, 245, 0.98);
+  box-shadow: 0 18px 45px rgba(31, 38, 43, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.article-download__menu a {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.62rem 0.66rem;
+  border-radius: 8px;
+  color: #163b35;
+  text-decoration: none;
+}
+
+.article-download__menu a:hover,
+.article-download__menu a:focus-visible {
+  background: rgba(0, 71, 62, 0.08);
+  outline: none;
+}
+
+.article-download__menu strong {
+  font: 700 0.8rem/1.2 "IBM Plex Mono", monospace;
+}
+
+.article-download__menu span {
+  color: #697177;
+  font: 500 0.67rem/1.35 "IBM Plex Mono", monospace;
 }
 
 .article-action--share {
@@ -640,6 +785,12 @@
     padding-inline: 0.5rem;
     font-size: 0.75rem;
   }
+
+  .article-download__menu {
+    right: 0;
+    left: auto;
+    width: min(260px, calc(100vw - 2.4rem));
+  }
 }
 
 @media (max-width: 360px) {
@@ -649,6 +800,12 @@
 
   .article-action--share {
     grid-column: auto;
+  }
+
+  .article-download__menu {
+    right: auto;
+    left: 0;
+    width: min(280px, calc(100vw - 2rem));
   }
 }
 
@@ -661,6 +818,7 @@
   .reading-progress-burst__drip,
   .reading-progress-burst__particle,
   .article-action,
+  .article-download__menu,
   .article-metric[data-tooltip]::after {
     transition: none;
   }

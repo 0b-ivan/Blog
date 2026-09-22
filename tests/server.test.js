@@ -141,6 +141,46 @@ describe('blog server', () => {
     expect(notFound.status).toBe(404);
   });
 
+  it('download routes return EPUB and EPUB-derived PDF with attachment headers', async () => {
+    await writePost(
+      tmpDir,
+      'download-me.md',
+      '---\ntitle: Download Me\ndate: 2026-05-02\ncategory: Docs\n---\nBody'
+    );
+
+    const buildArticleEpub = globalThis.vi.fn(async () => Buffer.from('epub-bytes'));
+    const buildArticlePdf = globalThis.vi.fn(async () => Buffer.from('%PDF-fake'));
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({ buildArticleEpub, buildArticlePdf })
+    });
+
+    const epub = await request(app).get('/download/download-me.epub');
+    expect(epub.status).toBe(200);
+    expect(epub.headers['content-type']).toMatch(/application\/epub\+zip/);
+    expect(epub.headers['content-disposition']).toContain('download-me.epub');
+    expect(buildArticleEpub).toHaveBeenCalledOnce();
+
+    const pdf = await request(app).get('/download/download-me.pdf');
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers['content-type']).toMatch(/application\/pdf/);
+    expect(pdf.headers['content-disposition']).toContain('download-me.pdf');
+    expect(buildArticlePdf).toHaveBeenCalledOnce();
+  });
+
+  it('download route returns 404 for unknown articles and formats', async () => {
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub: globalThis.vi.fn(),
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    expect((await request(app).get('/download/missing.epub')).status).toBe(404);
+    expect((await request(app).get('/download/missing.txt')).status).toBe(404);
+  });
+
   it('post detail route resolves slug without date prefix', async () => {
     await writePost(
       tmpDir,
@@ -230,10 +270,12 @@ describe('blog server', () => {
     expect(html).toContain('reading-progress__bubble-fill');
     expect(html).toContain('data-reading-progress-rive');
     expect(html).not.toContain('<script src="/vendor/rive/rive.js"');
-    expect(html).toContain('/assets/article-analytics.js?v=20260921-7');
+    expect(html).toContain('/assets/article-analytics.js?v=20260921-8');
     expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');
-    expect(html).toContain('Für später speichern');
+    expect(html).toContain('Herunterladen');
+    expect(html).toContain('/download/meta-test.epub');
+    expect(html).toContain('/download/meta-test.pdf');
     expect(html).toContain('data-article-share');
     expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');

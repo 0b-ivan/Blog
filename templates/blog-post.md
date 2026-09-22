@@ -11,6 +11,13 @@ reviewed_by: pending
 category: IT
 excerpt:
 tags: []
+cover_query:
+cover_image:
+cover_alt:
+cover_focus: center
+cover_credit:
+cover_credit_url:
+cover_source_url:
 ---
 
 # Titel
