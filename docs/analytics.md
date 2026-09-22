@@ -29,15 +29,13 @@ kernel-notes:liked:<slug>
 
 im Local Storage, damit derselbe Browser nicht versehentlich mehrfach liked. Das ist bewusst keine starke Identitätssperre: Website-Daten können gelöscht werden und es gibt keine geräteübergreifende Besucher-ID.
 
-## Favoriten
+## Artikel herunterladen
 
-Favoriten sind eine reine Browser-Funktion. Die Slugs gespeicherter Artikel liegen als JSON-Liste unter
+Die frühere lokale Favoritenfunktion wurde durch einen Download-Dialog ersetzt. Leser können den aktuellen Artikel als EPUB oder PDF herunterladen.
 
-```text
-kernel-notes:favorites
-```
+Das EPUB wird direkt aus dem veröffentlichten Artikel erzeugt und enthält Buchmetadaten, Autor, Herausgeber, Titelseite, Inhaltsverzeichnis, Artikelinhalt, Quellenlink und ein Cover. Ist für den Artikel ein lokales Cover gesetzt, wird dieses Bild als Grundlage für das Buchcover verwendet; andernfalls erzeugt Kernel Notes ein deterministisches Fallback-Cover. Der PDF-Download wird aus demselben EPUB erzeugt, damit Inhalt und Cover in beiden Formaten übereinstimmen.
 
-im Local Storage. Diese Liste wird nicht an den Blog- oder Analytics-Dienst übertragen. Ohne Browser-Synchronisierung beziehungsweise Benutzerkonto sind Favoriten deshalb geräte- und browserbezogen.
+Coverbilder können redaktionell über die Pixabay-Suche ausgewählt werden. Die Suche läuft nur beim Bearbeiten eines Artikels über `PIXABAY_API_KEY`; ausgewählte Bilder werden anschließend unter `assets/covers/` lokal gespeichert. Besucher laden daher weder das Cover noch API-Ressourcen direkt von Pixabay.
 
 ## Teilen
 
