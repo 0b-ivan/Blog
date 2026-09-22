@@ -131,6 +131,17 @@ async function main() {
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#posts-list .post-card').first().waitFor({ state: 'visible' });
+    const strayHomeBodyText = await page.locator('body').evaluate((body) =>
+      [...body.childNodes]
+        .filter((node) => node.nodeType === globalThis.Node.TEXT_NODE)
+        .map((node) => node.textContent?.trim() || '')
+        .filter(Boolean)
+    );
+    assert.deepEqual(
+      strayHomeBodyText,
+      [],
+      `Home page must not leak literal text nodes around the shell: ${strayHomeBodyText.join(', ')}`
+    );
     await assertMetaLinksInFooter(page);
     assert.equal(await page.locator('.main-nav a[href="#newsletter"]').count(), 0, 'Abo must not appear in the main navigation');
     assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
@@ -429,7 +440,37 @@ async function main() {
     }
 
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    const mobileHomeHeader = page.locator('.site-header');
+    const mobileHomeHero = page.locator('.hero');
+    await mobileHomeHeader.waitFor({ state: 'visible' });
+    await mobileHomeHero.waitFor({ state: 'visible' });
+    const mobileHomeHeaderBox = await mobileHomeHeader.boundingBox();
+    const mobileHomeHeroBox = await mobileHomeHero.boundingBox();
+    const mobileHeaderRadius = await mobileHomeHeader.evaluate((element) =>
+      Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).borderTopLeftRadius)
+    );
+    assert.ok(mobileHeaderRadius >= 16, 'Mobile header should keep a rounded card shape');
+    assert.ok(
+      mobileHomeHeaderBox
+      && mobileHomeHeroBox
+      && mobileHomeHeroBox.y - (mobileHomeHeaderBox.y + mobileHomeHeaderBox.height) <= 48,
+      'Mobile home content should visually continue from the header without a large dead gap'
+    );
+
     await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
+    const mobilePostHeader = page.locator('.site-header');
+    const mobileTerminal = page.locator('.terminal-post--article');
+    await mobilePostHeader.waitFor({ state: 'visible' });
+    await mobileTerminal.waitFor({ state: 'visible' });
+    const mobilePostHeaderBox = await mobilePostHeader.boundingBox();
+    const mobileTerminalBox = await mobileTerminal.boundingBox();
+    assert.ok(
+      mobilePostHeaderBox
+      && mobileTerminalBox
+      && mobileTerminalBox.y - (mobilePostHeaderBox.y + mobilePostHeaderBox.height) <= 48,
+      'Mobile article terminal should connect closely to the header'
+    );
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
