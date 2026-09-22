@@ -2,7 +2,6 @@ const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
 const request = require('supertest');
-const { vi } = require('vitest');
 
 const {
   createApp,
@@ -149,8 +148,8 @@ describe('blog server', () => {
       '---\ntitle: Download Me\ndate: 2026-05-02\ncategory: Docs\n---\nBody'
     );
 
-    const buildArticleEpub = vi.fn(async () => Buffer.from('epub-bytes'));
-    const buildArticlePdf = vi.fn(async () => Buffer.from('%PDF-fake'));
+    const buildArticleEpub = globalThis.vi.fn(async () => Buffer.from('epub-bytes'));
+    const buildArticlePdf = globalThis.vi.fn(async () => Buffer.from('%PDF-fake'));
     const app = createApp({
       postsDir: tmpDir,
       ebookExporterLoader: () => ({ buildArticleEpub, buildArticlePdf })
@@ -173,8 +172,8 @@ describe('blog server', () => {
     const app = createApp({
       postsDir: tmpDir,
       ebookExporterLoader: () => ({
-        buildArticleEpub: vi.fn(),
-        buildArticlePdf: vi.fn()
+        buildArticleEpub: globalThis.vi.fn(),
+        buildArticlePdf: globalThis.vi.fn()
       })
     });
 
