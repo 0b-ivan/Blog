@@ -9,7 +9,9 @@ describe('staging promotion workflow', () => {
     );
 
     expect(workflow).toContain('git merge-base --is-ancestor "$VERIFIED_SHA" origin/staging');
+    expect(workflow).toContain('git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}"');
     expect(workflow).toContain('--force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}"');
-    expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"\n          echo');
+    expect(workflow).not.toContain('git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}"');
+    expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
   });
 });
