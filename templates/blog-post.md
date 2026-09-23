@@ -12,12 +12,16 @@ category: IT
 excerpt:
 tags: []
 cover_query:
+cover_provider:
+cover_provider_id:
 cover_image:
 cover_alt:
 cover_focus: center
 cover_credit:
 cover_credit_url:
 cover_source_url:
+cover_license:
+cover_license_url:
 ---
 
 # Titel
