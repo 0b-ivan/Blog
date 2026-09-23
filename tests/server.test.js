@@ -326,7 +326,7 @@ describe('blog server', () => {
     expect(html).toContain('data-article-hero style="--article-cover-image: url(/assets/covers/covered-post.jpg)');
     expect(html).toContain('--article-cover-focus: top');
     expect(html).toContain('--article-cover-overlay: linear-gradient(180deg');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-3');
+    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-4');
   });
 
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {

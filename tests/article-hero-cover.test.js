@@ -9,8 +9,11 @@ describe('article hero cover readability', () => {
     );
 
     expect(css).toContain('.article-hero--has-cover .article-title::before');
+    expect(css).toContain('rgba(4, 13, 20, 0.42)');
+    expect(css).toContain('rgba(4, 13, 20, 0.48)');
+    expect(css).toContain('.article-hero--has-cover .article-hero__chrome');
+    expect(css).toContain('.article-hero--has-cover .article-meta::before');
     expect(css).toContain('rgba(4, 13, 20, 0.76)');
-    expect(css).toContain('rgba(4, 13, 20, 0.82)');
     expect(css).not.toContain('.article-hero .article-title::before');
   });
 });
