@@ -136,13 +136,42 @@ jobs:
           git push origin "HEAD:refs/heads/${branch}"
 
           body_file="$(mktemp)"
+          preview_sha="$(git rev-parse HEAD)"
           {
-            echo 'Backfills local Pixabay covers for existing published articles without `cover_image`.'
+            echo 'Backfills locally stored Pixabay covers for existing published articles.'
             echo
-            echo 'Articles:'
-            sed 's/^/- `/; s/$/`/' /tmp/pixabay-cover-posts.txt
+            echo '## Selected covers'
             echo
-            echo 'Each image is stored locally under `assets/covers/` and keeps provider, source, credit and license metadata in the article frontmatter.'
+            while IFS= read -r post; do
+              title="$(node - "$post" <<'NODE'
+              const fs = require('node:fs');
+              const matter = require('gray-matter');
+              const post = process.argv[2];
+              const data = matter(fs.readFileSync(post, 'utf8')).data;
+              process.stdout.write(String(data.title || post));
+              NODE
+              )"
+              cover_path="$(node - "$post" <<'NODE'
+              const fs = require('node:fs');
+              const matter = require('gray-matter');
+              const post = process.argv[2];
+              const data = matter(fs.readFileSync(post, 'utf8')).data;
+              process.stdout.write(String(data.cover_image || ''));
+              NODE
+              )"
+              cover_score="$(node - "$post" <<'NODE'
+              const fs = require('node:fs');
+              const matter = require('gray-matter');
+              const post = process.argv[2];
+              const data = matter(fs.readFileSync(post, 'utf8')).data;
+              process.stdout.write(String(data.cover_score || 'n/a'));
+              NODE
+              )"
+              printf '### %s\n\n' "$title"
+              printf 'Topic score: **%s/100** · `%s`\n\n' "$cover_score" "$post"
+              printf '![%s](https://raw.githubusercontent.com/%s/%s%s)\n\n' "$title" "$GITHUB_REPOSITORY" "$preview_sha" "$cover_path"
+            done < /tmp/pixabay-cover-posts.txt
+            echo 'Each image is stored locally under `assets/covers/` and keeps provider, source, credit, license and ranking metadata in the article frontmatter.'
           } > "$body_file"
 
           gh pr create \
