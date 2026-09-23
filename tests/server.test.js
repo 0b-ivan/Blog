@@ -308,7 +308,7 @@ describe('blog server', () => {
     expect(html).toContain('<p>Rendered</p>');
   });
 
-  it('renders a local article cover directly on the hero with a photo overlay', () => {
+  it('renders a local article cover on the shared terminal surface', () => {
     const html = renderPostPage({
       slug: 'covered-post',
       title: 'Covered Post',
@@ -322,11 +322,14 @@ describe('blog server', () => {
       html: '<p>Rendered</p>'
     });
 
-    expect(html).toContain('class="article-hero article-hero--has-cover"');
-    expect(html).toContain('data-article-hero style="--article-cover-image: url(/assets/covers/covered-post.jpg)');
+    expect(html).toContain('class="terminal-post terminal-post--article terminal-post--has-cover"');
+    expect(html).toContain('aria-label="Artikel im Terminal" style="--article-cover-image: url(/assets/covers/covered-post.jpg)');
+    expect(html).toContain('class="article-hero article-hero--has-cover" data-article-hero>');
+    expect(html).not.toContain('data-article-hero style=');
     expect(html).toContain('--article-cover-focus: top');
     expect(html).toContain('--article-cover-overlay: linear-gradient(180deg');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-4');
+    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-5');
+    expect(html).toContain('/styles.css?v=20260923-2');
   });
 
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {
