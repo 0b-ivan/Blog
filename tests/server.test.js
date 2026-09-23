@@ -113,7 +113,7 @@ Body
 
     const posts = await readPosts(tmpDir);
     expect(posts[0].html).toContain('/sources.html#cover-cover-source');
-    expect(posts[0].html).toContain('Coverbild: by Example via Pixabay');
+    expect(posts[0].html).toContain('Coverbild: Example via Pixabay');
     expect(posts[0].html).not.toContain('https://pixabay.com/photos/example-42/');
   });
 
