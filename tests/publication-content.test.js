@@ -4,10 +4,14 @@ const path = require('node:path');
 const {
   buildAuthorHtml,
   buildPublicationContent,
+  buildSourcesHtml,
   expandSnippetLinks,
+  removeSourcesSection,
   rewriteGlossaryLinks,
+  rewriteSourceLinks,
   splitArticleSections,
-  usedGlossaryEntries
+  usedGlossaryEntries,
+  usedSourceIds
 } = require('../lib/publication-content');
 
 describe('offline publication content', () => {
@@ -42,6 +46,7 @@ describe('offline publication content', () => {
     const expanded = await expandSnippetLinks(html, assetRoot);
 
     expect(expanded).toContain('class="ebook-snippet"');
+    expect(expanded).toContain('Listing 1: Beispiel');
     expect(expanded).toContain('echo two');
     expect(expanded).toContain('echo three');
     expect(expanded).not.toContain('echo one');
@@ -57,6 +62,31 @@ describe('offline publication content', () => {
     expect(entries.map((entry) => entry.key)).toEqual(['VPC']);
     expect(rewritten).toContain('href="glossary.xhtml#glossary-vpc"');
     expect(rewritten).not.toContain('<abbr');
+  });
+
+  it('moves article sources into an offline bibliography chapter', () => {
+    const html = '<p>Text.</p><h2>Quellen</h2><ul><li><a href="/sources.html#docker-compose">Docker Docs</a></li></ul>';
+    const ids = usedSourceIds(html);
+    const stripped = removeSourcesSection(html);
+    const sources = [{
+      id: 'docker-compose',
+      title: 'Compose file reference',
+      publisher: 'Docker Docs',
+      url: 'https://docs.docker.com/reference/compose-file/',
+      accessed_at: '2026-08-24'
+    }];
+    const bibliography = buildSourcesHtml(sources);
+    const linked = rewriteSourceLinks(
+      '<p><a href="/sources.html#docker-compose">Docker Docs</a></p>',
+      sources
+    );
+
+    expect(ids).toEqual(['docker-compose']);
+    expect(stripped).not.toContain('<h2>Quellen</h2>');
+    expect(bibliography).toContain('Literatur- und Quellenverzeichnis');
+    expect(bibliography).toContain('https://docs.docker.com/reference/compose-file/');
+    expect(linked).toContain('sources.xhtml#source-docker-compose');
+    expect(linked).toContain('[1]');
   });
 
   it('creates a useful TOC structure from article h2 sections', () => {
@@ -75,8 +105,10 @@ describe('offline publication content', () => {
   it('builds one normalized publication with offline snippets, glossary and author data', async () => {
     const snippets = path.join(assetRoot, 'snippets', 'demo');
     const config = path.join(assetRoot, 'config');
+    const posts = path.join(assetRoot, 'posts');
     await fs.mkdir(snippets, { recursive: true });
     await fs.mkdir(config, { recursive: true });
+    await fs.mkdir(posts, { recursive: true });
     await fs.writeFile(path.join(snippets, 'demo.sh'), 'kubectl get pods\n', 'utf8');
     await fs.writeFile(
       path.join(config, 'author.json'),
@@ -86,6 +118,18 @@ describe('offline publication content', () => {
         bio: ['Technische Praxisnotizen.'],
         focus: ['AWS'],
         photo: '/assets/profile-obivan.PNG'
+      }),
+      'utf8'
+    );
+    await fs.writeFile(
+      path.join(posts, '_sources.json'),
+      JSON.stringify({
+        'docker-compose': {
+          title: 'Compose file reference',
+          publisher: 'Docker Docs',
+          url: 'https://docs.docker.com/reference/compose-file/',
+          accessed_at: '2026-08-24'
+        }
       }),
       'utf8'
     );
@@ -100,13 +144,17 @@ describe('offline publication content', () => {
       title: 'Test',
       html: `<p><abbr data-glossary-key="VPC">VPC</abbr></p>
 <p><a href="/snippets/demo/demo.sh" title="snippet:bash" data-snippet="${metadata}">kubectl</a></p>
-<h2>Praxis</h2><p>Text</p>`
+<h2>Praxis</h2><p>Text</p>
+<h2>Quellen</h2><ul><li><a href="/sources.html#docker-compose">Docker Docs</a></li></ul>`
     }, { assetRoot });
 
     expect(publication.sections.map((entry) => entry.title)).toEqual(['Einleitung', 'Praxis']);
     expect(publication.articleHtml).toContain('kubectl get pods');
     expect(publication.articleHtml).toContain('glossary.xhtml#glossary-vpc');
     expect(publication.glossaryHtml).toContain('Virtual Private Cloud');
+    expect(publication.sources).toHaveLength(1);
+    expect(publication.sourcesHtml).toContain('Compose file reference');
+    expect(publication.articleHtml).not.toContain('<h2>Quellen</h2>');
     expect(publication.authorProfile.name).toBe('Ivan Babayev');
     expect(buildAuthorHtml(publication.authorProfile)).toContain('Über den Autor');
   });
