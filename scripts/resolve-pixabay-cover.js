@@ -43,9 +43,12 @@ const VISUAL_INTENTS = [
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
-    query: 'rss feed reader dashboard news aggregator browser website',
-    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'website', 'subscription', 'syndication'],
-    avoid: ['icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    query: 'rss feed reader dashboard aggregator browser subscription',
+    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'subscription', 'syndication'],
+    requiredGroups: [
+      ['rss', 'feed', 'reader', 'aggregator', 'syndication']
+    ],
+    avoid: ['speed', 'speedometer', 'download', 'upload', 'mbps', 'broadband', 'performance', 'icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',
@@ -70,10 +73,14 @@ const VISUAL_INTENTS = [
   {
     key: 'docker-compose',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['docker compose', 'docker', 'compose'],
-    query: 'devops software code terminal deployment programming',
-    positive: ['software', 'code', 'deployment', 'devops', 'development', 'programming', 'terminal'],
-    avoid: ['container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+    query: 'devops deployment orchestration services architecture workflow',
+    positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation'],
+    requiredGroups: [
+      ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation']
+    ],
+    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
   },
   {
     key: 'semantic-search',
@@ -796,6 +803,7 @@ function reportCandidate(entry, index) {
     user: hit.user || '',
     pageURL: hit.pageURL || '',
     previewURL: hit.previewURL || hit.webformatURL || '',
+    imageType: hit.type || '',
     searchQuery: hit.__coverQuery || '',
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
