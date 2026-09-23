@@ -232,6 +232,111 @@ describe('Pixabay cover resolver', () => {
     );
   });
 
+  it('chooses the most specific visual intent instead of the first matching implementation tag', () => {
+    const kernelGrep = {
+      title: 'Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe',
+      category: 'Engineering',
+      tags: ['Semantic-Search', 'DuckDB', 'Embeddings', 'Docker', 'Self-Hosting', 'Kernel-Grep']
+    };
+
+    const intent = visualIntent(kernelGrep);
+    expect(intent.key).toBe('semantic-search');
+    expect(intent.matchedMarkers.length).toBeGreaterThan(1);
+  });
+
+  it('rejects literal keyword collisions for systemd, Docker, VPC, RSS and Chaos Engineering', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      category: 'Linux',
+      tags: ['Linux', 'systemd', 'Operations', 'Reliability']
+    };
+    expect(
+      scoreHit({
+        tags: 'linux, shell, console, service, logs, command',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, systemd).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'train, subway, train station, terminal, airport, transport',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, systemd).score
+    );
+
+    const docker = {
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      category: 'DevOps',
+      tags: ['Docker', 'DevOps', 'Operations', 'Architecture']
+    };
+    expect(
+      scoreHit({
+        tags: 'devops, software, development, code, deployment, programming',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, docker).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'can, metal box, storage, container, jar, vessel',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, docker).score
+    );
+
+    const vpc = {
+      title: 'Eine VPC ist keine schwarze Magie',
+      category: 'AWS',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet', 'Route-Table', 'Internet-Gateway']
+    };
+    const networkDiagram = scoreHit({
+      tags: 'network topology, router, routing, subnet, infrastructure, ethernet',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, vpc);
+    const socialNetwork = scoreHit({
+      tags: 'social media, connection, icons, internet, online, communication, network',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, vpc);
+    expect(networkDiagram.score).toBeGreaterThan(socialNetwork.score);
+    expect(socialNetwork.semanticMismatch).toBe(true);
+
+    const rss = {
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      tags: ['RSS', 'FreshRSS', 'Miniflux', 'Self-Hosting']
+    };
+    expect(
+      scoreHit({
+        tags: 'rss, feed, news, article, newspaper, subscription',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'books, bookstore, reading, reader, library, novels',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    );
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'SRE', 'Resilience', 'Observability']
+    };
+    const resilience = scoreHit({
+      tags: 'resilience, reliability, monitoring, outage, failure, infrastructure, incident',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    const laboratory = scoreHit({
+      tags: 'testing, experiment, chemistry, laboratory, school, examination, medical',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    expect(resilience.score).toBeGreaterThan(laboratory.score);
+    expect(laboratory.semanticMismatch).toBe(true);
+  });
+
   it('uses focused fallback queries when an article query returns no result', () => {
     expect(queryCandidates({
       title: 'Ein deutscher Titel',
@@ -310,7 +415,7 @@ describe('Pixabay cover resolver', () => {
       imageHeight: 1080
     };
     const software = {
-      tags: 'server, software, terminal, cloud, technology',
+      tags: 'devops, software, code, deployment, technology',
       imageWidth: 1920,
       imageHeight: 1080
     };
