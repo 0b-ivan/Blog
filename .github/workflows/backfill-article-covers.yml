@@ -3,6 +3,14 @@ name: Backfill Article Covers
 on:
   workflow_dispatch:
     inputs:
+      scope:
+        description: Process only missing covers or re-rank existing covers too
+        required: true
+        type: choice
+        default: missing
+        options:
+          - missing
+          - all
       batch_size:
         description: Number of existing published articles to process
         required: true
@@ -29,6 +37,7 @@ jobs:
     timeout-minutes: 20
     env:
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      COVER_SCOPE: ${{ inputs.scope }}
       BATCH_SIZE: ${{ inputs.batch_size }}
 
     steps:
@@ -75,18 +84,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run covers:missing -- --limit "$BATCH_SIZE" > /tmp/pixabay-cover-posts.txt
+          args=(--limit "$BATCH_SIZE")
+          if [ "$COVER_SCOPE" = "all" ]; then
+            args+=(--include-covered)
+          fi
+          npm run covers:missing -- "${args[@]}" > /tmp/pixabay-cover-posts.txt
 
           if [ -s /tmp/pixabay-cover-posts.txt ]; then
             echo "needed=true" >> "$GITHUB_OUTPUT"
             {
-              echo '# Existing articles selected for cover backfill'
+              if [ "$COVER_SCOPE" = "all" ]; then
+                echo '# Existing articles selected for smart cover refresh'
+              else
+                echo '# Existing articles selected for cover backfill'
+              fi
               echo
               sed 's/^/- `/; s/$/`/' /tmp/pixabay-cover-posts.txt
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "needed=false" >> "$GITHUB_OUTPUT"
-            echo 'All published articles already have a cover.' >> "$GITHUB_STEP_SUMMARY"
+            echo 'No published articles matched the selected cover scope.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Resolve Pixabay covers
@@ -150,9 +167,15 @@ jobs:
           Each selected image is stored locally under `assets/covers/` and keeps provider, source, credit, score and license metadata in the article frontmatter.
           EOF
 
+          if [ "$COVER_SCOPE" = "all" ]; then
+            pr_title='feat: review existing article covers'
+          else
+            pr_title='feat: backfill existing article covers'
+          fi
+
           gh pr create \
             --repo "$GITHUB_REPOSITORY" \
             --base staging \
             --head "$branch" \
-            --title 'feat: backfill existing article covers' \
+            --title "$pr_title" \
             --body-file "$body_file"
