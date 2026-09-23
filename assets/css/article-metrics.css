@@ -3,13 +3,15 @@
 .article-hero {
   --article-cover-focus: center;
   --article-cover-image: linear-gradient(135deg, #0a3935 0%, #082a2b 48%, #081b25 100%);
+  --article-cover-overlay:
+    linear-gradient(115deg, rgba(4, 44, 42, 0.88) 0%, rgba(3, 30, 34, 0.93) 58%, rgba(6, 23, 32, 0.97) 100%);
   position: relative;
   overflow: hidden;
   margin: 0;
   border: 0;
   border-radius: 0;
   background:
-    linear-gradient(115deg, rgba(4, 44, 42, 0.88) 0%, rgba(3, 30, 34, 0.93) 58%, rgba(6, 23, 32, 0.97) 100%),
+    var(--article-cover-overlay),
     var(--article-cover-image);
   background-position: center, var(--article-cover-focus);
   background-size: cover;
