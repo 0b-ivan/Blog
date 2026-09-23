@@ -290,7 +290,9 @@ function queryCandidates(data, explicitQuery = '') {
   const title = String(data.title || '').trim().slice(0, 100);
 
   const candidates = explicitQuery
-    ? [primary, intent?.query, visual || fallback]
+    ? (intent
+      ? [primary, intent.query, visual || fallback]
+      : [primary, visual, fallback])
     : (intent
       ? [intent.query, primary, visual || fallback]
       : [primary, visual, fallback]);
