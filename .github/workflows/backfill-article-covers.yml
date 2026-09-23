@@ -1,6 +1,11 @@
 name: Backfill Article Covers
 
 on:
+  push:
+    branches:
+      - staging
+    paths:
+      - '.github/cover-backfill-request.txt'
   workflow_dispatch:
     inputs:
       scope:
@@ -37,8 +42,8 @@ jobs:
     timeout-minutes: 20
     env:
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
-      COVER_SCOPE: ${{ inputs.scope }}
-      BATCH_SIZE: ${{ inputs.batch_size }}
+      COVER_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'all' }}
+      BATCH_SIZE: ${{ github.event_name == 'workflow_dispatch' && inputs.batch_size || '20' }}
 
     steps:
       - name: Checkout staging
