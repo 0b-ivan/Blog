@@ -350,6 +350,18 @@ async function downloadPhoto(hit, fetchImpl = globalThis.fetch) {
   };
 }
 
+async function removeStaleCoverVariants(slug, keepExtension) {
+  const coverDir = path.join(root, 'assets', 'covers');
+  for (const extension of ['jpg', 'png', 'webp']) {
+    if (extension === keepExtension) continue;
+    try {
+      await fs.unlink(path.join(coverDir, `${slug}.${extension}`));
+    } catch (error) {
+      if (!error || error.code !== 'ENOENT') throw error;
+    }
+  }
+}
+
 async function updateCoverStylesheet(slug, coverImage, focus = 'center') {
   const stylesheetPath = path.join(root, 'assets', 'css', 'article-covers.css');
   let css = '';
@@ -458,6 +470,7 @@ async function main() {
   const coverPath = path.join(root, coverImage.replace(/^\//, ''));
 
   await fs.mkdir(path.dirname(coverPath), { recursive: true });
+  await removeStaleCoverVariants(slug, ext);
   await fs.writeFile(coverPath, downloaded.buffer);
 
   const updated = matter.stringify(parsed.content, {
