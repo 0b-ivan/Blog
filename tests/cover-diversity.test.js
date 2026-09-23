@@ -87,8 +87,8 @@ describe('series-aware cover diversity', () => {
         title: 'Another server article',
         series: '',
         candidates: [
-          candidate(1, 3, 88, 'server, rack, infrastructure'),
-          candidate(2, 4, 82, 'security, firewall, padlock')
+          candidate(1, 3, 88, 'server, rack, infrastructure', 'server-author'),
+          candidate(2, 4, 82, 'security, firewall, padlock', 'security-author')
         ]
       }
     ];
