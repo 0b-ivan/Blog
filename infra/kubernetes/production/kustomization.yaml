@@ -6,9 +6,9 @@ resources:
   - ../base
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 1e8ae19e09882979ec6f9922b16c066e8b542b13
+    newTag: a0ba014de0335a87722eed5d09af826f4dcb7d41
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
+    newTag: a0ba014de0335a87722eed5d09af826f4dcb7d41
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
 replicas:
