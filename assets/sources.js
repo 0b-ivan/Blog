@@ -23,6 +23,7 @@
       source.title,
       source.publisher,
       source.url,
+      source.author,
       source.credit,
       source.license
     ].some((value) => normalized(value).includes(query));
@@ -48,7 +49,7 @@
     const details = document.createElement('p');
     details.className = 'source-details';
     const detailParts = [];
-    if (source.credit) detailParts.push(`Urheber: ${source.credit}`);
+    if (source.author || source.credit) detailParts.push(`Urheber: ${source.author || source.credit}`);
     if (source.accessed_at) detailParts.push(`Abgerufen am ${source.accessed_at}`);
     details.textContent = detailParts.length
       ? detailParts.join(' · ')
