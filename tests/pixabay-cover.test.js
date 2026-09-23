@@ -10,6 +10,7 @@ const {
   detectSeries,
   downloadPhoto,
   fileExtension,
+  findPhotoById,
   parseArgs,
   queryCandidates,
   visualQuery,
@@ -55,6 +56,7 @@ describe('Pixabay cover resolver', () => {
       target: 'posts/test.md',
       query: 'kubernetes datacenter',
       select: 2,
+      selectId: '',
       preview: false,
       report: ''
     });
@@ -64,6 +66,23 @@ describe('Pixabay cover resolver', () => {
       preview: true,
       report: '/tmp/report.json'
     });
+
+    expect(parseArgs(['posts/test.md', '--select-id', '2402637'])).toMatchObject({
+      target: 'posts/test.md',
+      selectId: '2402637'
+    });
+  });
+
+  it('selects the exact Pixabay image by stable provider id', () => {
+    const hits = [
+      { id: 10, tags: 'server' },
+      { id: 20, tags: 'network' }
+    ];
+
+    expect(findPhotoById(hits, '20').id).toBe(20);
+    expect(() => findPhotoById(hits, '99')).toThrow(
+      'Selected Pixabay image id 99 is unavailable'
+    );
   });
 
   it('calls Pixabay search with safe landscape photo filters', async () => {
