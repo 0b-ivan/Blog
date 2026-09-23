@@ -125,10 +125,18 @@ Renderer ohne diese Erweiterung koennen den verwalteten Definitionsblock weiterh
 
 Neue oder geaenderte Artikel werden in Pull Requests zusaetzlich auf moegliche noch unbekannte Fachbegriffe geprueft. Die Pruefung ist absichtlich heuristisch und nicht blockierend: Sie erstellt nur Vorschlaege und veraendert weder den Artikel noch die Glossar-Dateien.
 
-Die Erkennung entfernt zuerst bereits bekannte Glossar-Schluessel und Aliase. Frontmatter, Code-Bloecke, Inline-Code, URLs und der verwaltete Glossar-Block werden ebenfalls ignoriert. Danach werden vor allem zwei Klassen gesucht:
+Die Erkennung entfernt zuerst bereits bekannte Glossar-Schluessel und Aliase. Frontmatter, Code-Bloecke, Inline-Code, URLs und der verwaltete Glossar-Block werden ebenfalls ignoriert.
 
-- hohe Konfidenz: Akronyme, technische Grossschreibung und Mixed-Case-/Produktnamen wie `RRF` oder `OpenTelemetry`
-- mittlere Konfidenz: noch unbekannte Begriffe in einem technischen Verwendungskontext, beispielsweise `mit Kubernetes`
+Vor dem Ranking werden offensichtliche Varianten normalisiert. Dadurch werden zum Beispiel `APIs` zu `API`, `IPs` zu `IP` und `AMI-ID` zu `AMI`. Generische Komposit-Suffixe wie `-Konfiguration`, `-Seite`, `-Pruefung` oder `-Manifeste` werden entfernt, wenn der eigentliche Fachbegriff davor steht.
+
+Die Bewertung kombiniert vier Signale:
+
+- Terminologie: Akronym, technische Schreibweise, Mixed Case oder technischer Verwendungskontext
+- Wiederverwendbarkeit: der Kandidat sieht wie ein eigenstaendiger Begriff und nicht wie ein Satzfragment aus
+- Erklaerungsbedarf: die Schreibweise oder der technische Kontext deutet darauf hin, dass eine Definition Mehrwert bietet
+- Normalisierbarkeit: Flexions-, Plural- oder Kompositformen lassen sich auf einen stabilen Glossarbegriff zurueckfuehren
+
+Hohe Konfidenz entsteht damit aus mehreren starken Signalen, nicht aus der Vorkommenszahl allein. Ein einmaliges `PVC` bleibt beispielsweise ein starker Kandidat, waehrend ein haeufiges normales Wort wie `werden` vor dem Ranking verworfen wird. Die Vorkommenszahl dient danach nur noch zur Sortierung gleichwertiger Vorschlaege.
 
 Lokal kann die gleiche Pruefung ausgefuehrt werden:
 
