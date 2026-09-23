@@ -278,7 +278,7 @@ describe('blog server', () => {
     expect(html).not.toContain('article-terminal__meta-strip');
     expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
     expect(html).toMatch(/\/styles\.css\?v=[^"]+/);
-    expect(html).toContain('class="article-hero-transition"');
+    expect(html).toContain('data-article-seam');
     expect(html).not.toContain('GMT');
     expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-reading-progress-toggle');
