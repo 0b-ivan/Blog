@@ -7,7 +7,8 @@ function parseArgs(args) {
     reportsDir: '',
     repository: '',
     commit: '',
-    selectionManifest: ''
+    selectionManifest: '',
+    compact: false
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -29,6 +30,8 @@ function parseArgs(args) {
     } else if (arg === '--selection-manifest' && next) {
       options.selectionManifest = next;
       index += 1;
+    } else if (arg === '--compact') {
+      options.compact = true;
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
     }
@@ -125,15 +128,22 @@ function renderReport(report, options = {}) {
     );
   }
 
-  lines.push(
-    '<details>',
-    '<summary><strong>Top-3-Kandidaten und Bewertung</strong></summary>',
-    '',
-    candidateTable(report.candidates || []),
-    '',
-    '</details>',
-    ''
-  );
+  if (!options.compact) {
+    lines.push(
+      '<details>',
+      '<summary><strong>Top-3-Kandidaten und Bewertung</strong></summary>',
+      '',
+      candidateTable(report.candidates || []),
+      '',
+      '</details>',
+      ''
+    );
+  } else {
+    lines.push(
+      '_Top-3-Details sind im Batch-Review aus Platzgründen ausgeblendet; die ausgewählte lokale Cover-Datei ist oben sichtbar._',
+      ''
+    );
+  }
 
   return lines.filter((line) => line !== undefined).join('\n');
 }
