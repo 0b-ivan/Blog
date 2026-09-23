@@ -38,7 +38,7 @@ cover_credit_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-27
 cover_source_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 70
+cover_score: 84
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.

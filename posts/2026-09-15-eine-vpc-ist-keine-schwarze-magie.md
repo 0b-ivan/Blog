@@ -31,21 +31,22 @@ search_queries:
     maxRank: 1
 cover_query: cloud server network datacenter infrastructure
 cover_provider: pixabay
-cover_provider_id: '2791434'
+cover_provider_id: '1235959'
 cover_image: /assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg
 cover_alt: >-
-  cloud, finger, touch, cloud computing, data store, capacity, network,
-  services, data, disk space, technical, concept, technology, information,
-  system, networking, data processing, internet, server, interface, service,
-  cloud computing, cloud computing, cloud computing, cloud computing, cloud
-  computing
+  server, cloud, development, business, network, connection, technology,
+  internet, web, database, analysis, application, colors, design, management,
+  designer, developer, gray business, gray technology, gray clouds, gray
+  network, gray internet, gray design, gray company, gray web, gray color, gray
+  server, gray management, server, server, server, server, server, database,
+  database
 cover_focus: center
-cover_credit: by geralt via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-finger-touch-cloud-computing-2791434/'
-cover_source_url: 'https://pixabay.com/photos/cloud-finger-touch-cloud-computing-2791434/'
+cover_credit: by ColossusCloud via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_source_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 74
+cover_score: 84
 ---
 
 VPC, Subnet, Route Table, Internet Gateway, NAT Gateway, Security Group, NACL …

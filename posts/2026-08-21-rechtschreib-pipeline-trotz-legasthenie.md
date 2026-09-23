@@ -23,16 +23,15 @@ search_queries:
     maxRank: 1
 cover_query: GitHub-Actions Automation CSpell Automation
 cover_provider: pixabay
-cover_provider_id: '2791671'
+cover_provider_id: '544180'
 cover_image: /assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg
 cover_alt: >-
-  robot, arm, technology, robot arm, robotics, kawasaki, science, orange,
-  technique, electronics, automation, robot, robot, robot arm, robotics,
-  automation, automation, automation, automation, automation
+  secretary, desk, sales, office automation, telephony, call, screen, telephone,
+  secretary, secretary, secretary, secretary, secretary, call
 cover_focus: center
-cover_credit: by jarmoluk via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/robot-arm-technology-robot-arm-2791671/'
-cover_source_url: 'https://pixabay.com/photos/robot-arm-technology-robot-arm-2791671/'
+cover_credit: by Patrice_Audet via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
+cover_source_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
 cover_score: 60

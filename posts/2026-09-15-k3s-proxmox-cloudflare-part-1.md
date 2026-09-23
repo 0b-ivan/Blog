@@ -76,19 +76,21 @@ snippets:
     language: bash
 cover_query: server datacenter infrastructure network cloud container cluster kubernetes
 cover_provider: pixabay
-cover_provider_id: '2402637'
+cover_provider_id: '8598424'
 cover_image: /assets/covers/2026-09-15-k3s-proxmox-cloudflare-part-1.jpg
 cover_alt: >-
-  network, server, system, infrastructure, managed services, connection,
-  computer, cloud, gray computer, gray laptop, network, network, server, server,
-  server, server, server
+  cloud, server, cloud computing, secure, digital, network, business,
+  application, connect, modernization, global, privacy, hardware,
+  infrastructure, database, security, cloudscape, smart, computer, design,
+  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
+  cloud computing, cloud computing, cloud computing, cloud computing
 cover_focus: center
-cover_credit: by bsdrouin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
-cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_credit: by kumar111aakashin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 68
+cover_score: 93
 ---
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.

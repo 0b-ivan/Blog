@@ -87,7 +87,7 @@ cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secur
 cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 79
+cover_score: 93
 ---
 Teil I: Der Blog läuft auf K3s.
 

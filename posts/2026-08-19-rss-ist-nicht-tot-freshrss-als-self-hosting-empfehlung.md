@@ -45,7 +45,7 @@ cover_credit_url: 'https://pixabay.com/photos/server-drive-bay-hard-drives-43933
 cover_source_url: 'https://pixabay.com/photos/server-drive-bay-hard-drives-4393370/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 67
+cover_score: 83
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.
