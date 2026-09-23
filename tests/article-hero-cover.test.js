@@ -49,8 +49,8 @@ describe('article hero cover readability', () => {
     expect(motionSource).toContain("'--article-cover-motion-y'");
     expect(motionSource).toContain("'--article-cover-motion-blur'");
     expect(motionSource).toContain("'--article-cover-motion-brightness'");
-    expect(motionSource).toContain('const y = 10 * progress');
-    expect(motionSource).toContain('const blur = 0.2 + (0.9 * progress)');
+    expect(motionSource).toContain('const y = 18 * progress');
+    expect(motionSource).toContain('const blur = 0.25 + (1.1 * progress)');
   });
 
   it('keeps the mobile cover inside the hero and gives credits their own line', () => {
@@ -72,7 +72,7 @@ describe('article hero cover readability', () => {
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?opacity:\s*1;/);
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?-webkit-line-clamp:\s*unset;/);
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?mask-image:\s*none;/);
-    expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover::after\s*\{[\s\S]*?backdrop-filter:\s*blur\(2\.4px\)/);
+    expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover::after\s*\{[\s\S]*?backdrop-filter:\s*blur\(3\.2px\)/);
     expect(articleCss).toContain('rgba(236, 248, 245, 0.96)');
   });
 });
