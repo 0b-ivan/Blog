@@ -470,7 +470,7 @@ describe('Pixabay cover resolver', () => {
     expect(gameConsole.semanticMismatch).toBe(true);
 
     const chaos = {
-      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      title: 'Chaos Engineering systematisch testen',
       tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability']
     };
     const monitoring = scoreHit({
