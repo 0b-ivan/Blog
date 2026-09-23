@@ -30,6 +30,86 @@ const TOPIC_AVOID = {
   gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan']
 };
 
+const VISUAL_INTENTS = [
+  {
+    key: 'writing-proofreading',
+    markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
+    query: 'writing proofreading text document keyboard spelling grammar',
+    positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter'],
+    avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business']
+  },
+  {
+    key: 'rss-reader',
+    markers: ['freshrss', 'miniflux', 'rss', 'feed'],
+    query: 'rss feed news reader articles reading newspaper',
+    positive: ['rss', 'feed', 'news', 'reader', 'reading', 'article', 'newspaper', 'subscription'],
+    avoid: ['server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+  },
+  {
+    key: 'dependency-updates',
+    markers: ['dependabot', 'dependency', 'dependencies', 'supply-chain', 'supply chain'],
+    query: 'software dependency package update code github vulnerability',
+    positive: ['dependency', 'dependencies', 'package', 'update', 'software', 'code', 'github', 'vulnerability'],
+    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance']
+  },
+  {
+    key: 'systemd-service',
+    markers: ['systemd', 'journalctl'],
+    query: 'linux terminal service logs system administration',
+    positive: ['linux', 'terminal', 'service', 'logs', 'console', 'system', 'administration', 'shell'],
+    avoid: ['html', 'css', 'website', 'web design']
+  },
+  {
+    key: 'docker-compose',
+    markers: ['docker compose', 'docker', 'compose'],
+    query: 'software containers container terminal code deployment',
+    positive: ['container', 'containers', 'software', 'terminal', 'code', 'deployment', 'devops'],
+    avoid: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+  },
+  {
+    key: 'semantic-search',
+    markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
+    query: 'search data artificial intelligence code magnifying glass',
+    positive: ['search', 'data', 'artificial', 'intelligence', 'code', 'magnifying', 'analytics', 'ai'],
+    avoid: ['google', 'smartphone', 'mobile phone', 'telephone']
+  },
+  {
+    key: 'vpc-networking',
+    markers: ['vpc', 'subnet', 'route-table', 'route table', 'nat-gateway', 'internet-gateway'],
+    query: 'network topology router routing cloud subnet',
+    positive: ['network', 'topology', 'router', 'routing', 'cloud', 'subnet', 'connection'],
+    avoid: ['database', 'storage', 'rack', 'datacenter']
+  },
+  {
+    key: 'chaos-engineering',
+    markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
+    query: 'resilience testing failure monitoring reliability experiment',
+    positive: ['resilience', 'testing', 'failure', 'monitoring', 'reliability', 'experiment', 'observability', 'chaos'],
+    avoid: ['business', 'management', 'database', 'sales', 'marketing']
+  },
+  {
+    key: 'regression-testing',
+    markers: ['regressionstest', 'regression test', 'regression'],
+    query: 'software testing quality assurance bug code',
+    positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
+    avoid: ['business', 'meeting', 'office']
+  },
+  {
+    key: 'logging-observability',
+    markers: ['logger.info', 'logging', 'logger', 'observability'],
+    query: 'terminal logs monitoring observability software',
+    positive: ['terminal', 'logs', 'logging', 'monitoring', 'observability', 'software', 'code'],
+    avoid: ['business', 'meeting', 'office']
+  },
+  {
+    key: 'photo-storage-sync',
+    markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
+    query: 'photo library cloud storage files sync gallery',
+    positive: ['photo', 'library', 'storage', 'files', 'sync', 'gallery', 'cloud', 'image'],
+    avoid: ['business', 'meeting', 'office']
+  }
+];
+
 const TOPIC_EXPANSIONS = {
   kubernetes: ['server', 'datacenter', 'infrastructure', 'network', 'cloud', 'container', 'cluster'],
   k3s: ['kubernetes', 'server', 'cluster', 'infrastructure', 'datacenter'],
@@ -113,6 +193,40 @@ function listFrom(value) {
   return String(value || '').split(/[,;]+/).flatMap((item) => tokensFrom(item));
 }
 
+function searchQueryText(data = {}) {
+  const queries = Array.isArray(data.search_queries)
+    ? data.search_queries.map((entry) => typeof entry === 'string' ? entry : entry?.query)
+    : [];
+
+  return [
+    data.title,
+    data.category,
+    data.excerpt,
+    data.cover_subject,
+    ...normalizedTags(data),
+    ...queries
+  ].filter(Boolean).join(' ');
+}
+
+function visualIntent(data = {}) {
+  const haystack = normalizeText(searchQueryText(data));
+
+  for (const intent of VISUAL_INTENTS) {
+    const matchedMarkers = intent.markers.filter((marker) =>
+      haystack.includes(normalizeText(marker))
+    );
+    if (!matchedMarkers.length) continue;
+
+    return {
+      ...intent,
+      matchedMarkers
+    };
+  }
+
+  return null;
+}
+
+
 function seriesSlug(value) {
   return normalizeText(value)
     .replace(/[^a-z0-9]+/g, '-')
@@ -165,6 +279,7 @@ function visualQuery(data) {
 
 function queryCandidates(data, explicitQuery = '') {
   const tags = normalizedTags(data);
+  const intent = visualIntent(data);
   const primary = String(explicitQuery || defaultQuery(data)).trim().slice(0, 100);
   const visual = visualQuery(data);
   const fallback = [data.cover_subject, data.category, ...tags.slice(0, 2)]
@@ -174,13 +289,19 @@ function queryCandidates(data, explicitQuery = '') {
     .slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
-  const candidates = [primary, visual, fallback].filter(Boolean);
-  if (!visual && title) candidates.push(title);
+  const candidates = explicitQuery
+    ? [primary, intent?.query, visual || fallback]
+    : (intent
+      ? [intent.query, primary, visual || fallback]
+      : [primary, visual, fallback]);
 
-  return [...new Set(candidates)].slice(0, 3);
+  if (!intent && !visual && title) candidates.push(title);
+
+  return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, 3);
 }
 
 function articleProfile(data, query = '') {
+  const intent = visualIntent(data);
   const primary = new Set([
     ...tokensFrom(data.cover_subject),
     ...tokensFrom(data.cover_query),
@@ -203,10 +324,14 @@ function articleProfile(data, query = '') {
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
     ...contextualAvoid,
+    ...(intent?.avoid || []),
     ...listFrom(data.cover_avoid)
-  ].map((value) => normalizeText(value)));
+  ].flatMap((value) => tokensFrom(value)));
 
-  return { primary, expanded, avoid };
+  const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
+  const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
+
+  return { primary, expanded, avoid, intent, intentPositive, intentAvoid };
 }
 
 function scoreHit(hit, data = {}, query = '') {
@@ -220,6 +345,25 @@ function scoreHit(hit, data = {}, query = '') {
   );
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
+  const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
+  const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
+
+  if (profile.intent) {
+    if (intentMatches.length) {
+      const points = Math.min(42, intentMatches.length * 14);
+      score += points;
+      reasons.push(`+${points} visual intent (${profile.intent.key}): ${intentMatches.slice(0, 4).join(', ')}`);
+    } else {
+      score -= 35;
+      reasons.push(`-35 visual intent mismatch: ${profile.intent.key}`);
+    }
+
+    if (intentAvoidMatches.length) {
+      const points = Math.min(54, intentAvoidMatches.length * 18);
+      score -= points;
+      reasons.push(`-${points} intent avoid: ${intentAvoidMatches.slice(0, 3).join(', ')}`);
+    }
+  }
 
   if (directMatches.length) {
     const points = Math.min(36, directMatches.length * 12);
@@ -279,7 +423,11 @@ function scoreHit(hit, data = {}, query = '') {
     reasons,
     directMatches,
     expandedMatches,
-    avoidMatches
+    avoidMatches,
+    intentKey: profile.intent?.key || '',
+    intentMatches,
+    intentAvoidMatches,
+    semanticMismatch: Boolean(profile.intent && intentMatches.length === 0)
   };
 }
 
@@ -516,6 +664,9 @@ function reportCandidate(entry, index) {
     previewURL: hit.previewURL || hit.webformatURL || '',
     searchQuery: hit.__coverQuery || '',
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
+    intentKey: entry.intentKey || '',
+    intentMatches: entry.intentMatches || [],
+    semanticMismatch: Boolean(entry.semanticMismatch),
     reasons: entry.reasons
   };
 }
@@ -552,6 +703,7 @@ async function main() {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
     series: detectSeries(parsed.data),
+    visualIntent: visualIntent(parsed.data)?.key || '',
     query: rankingQuery,
     queries,
     candidates: ranked.slice(0, 5).map(reportCandidate)
@@ -627,6 +779,7 @@ module.exports = {
   PIXABAY_LICENSE,
   PIXABAY_LICENSE_URL,
   TOPIC_EXPANSIONS,
+  VISUAL_INTENTS,
   articleProfile,
   cacheFileForQuery,
   choosePhoto,
@@ -638,6 +791,7 @@ module.exports = {
   findPhotoById,
   parseArgs,
   queryCandidates,
+  visualIntent,
   visualQuery,
   rankCandidates,
   renderCandidates,
