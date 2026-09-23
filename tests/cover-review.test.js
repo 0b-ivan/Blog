@@ -9,6 +9,7 @@ describe('cover review markdown', () => {
     postPath: 'posts/example.md',
     title: 'Example Article',
     query: 'server storage cloud',
+    queries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV', 'Example Article'],
     selected: {
       rank: 1,
       score: 88,
@@ -25,6 +26,7 @@ describe('cover review markdown', () => {
         user: 'Example',
         pageURL: 'https://pixabay.com/photos/example-42/',
         previewURL: 'https://cdn.example.test/preview-1.jpg',
+        searchQueries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV'],
         reasons: ['+24 direct: server, storage', '+10 hero aspect']
       },
       {
@@ -58,6 +60,9 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('![Cover-Vorschau: Example Article]');
     expect(markdown).toContain('raw.githubusercontent.com/0b-ivan/Blog/abc123/assets/covers/example.jpg');
     expect(markdown).toContain('88/100');
+    expect(markdown).toContain('Pixabay-Suchpfade');
+    expect(markdown).toContain('Self-Hosting Nextcloud WebDAV');
+    expect(markdown).toContain('Suchpfad: server storage cloud · Self-Hosting Nextcloud WebDAV');
     expect(markdown).toContain('Top-3-Kandidaten');
     expect(markdown).toContain('https://cdn.example.test/preview-1.jpg');
     expect(markdown).toContain('https://pixabay.com/photos/example-42/');
