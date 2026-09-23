@@ -11,6 +11,8 @@ describe('cover review markdown', () => {
     series: 'example-series',
     visualIntent: 'writing-proofreading',
     visualIntentEvidence: 22,
+    semanticModel: 'Xenova/multilingual-e5-small',
+    semanticWeight: 0.82,
     query: 'server storage cloud',
     queries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV', 'Example Article'],
     selected: {
@@ -25,6 +27,8 @@ describe('cover review markdown', () => {
       {
         rank: 1,
         score: 88,
+        heuristicScore: 61,
+        semanticSimilarity: 0.87321,
         tags: 'server, storage, cloud',
         user: 'Example',
         pageURL: 'https://pixabay.com/photos/example-42/',
@@ -79,6 +83,9 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('**Serie:** `example-series`');
     expect(markdown).toContain('**Bildidee:** `writing-proofreading`');
     expect(markdown).toContain('**Intent-Evidenz:** 22');
+    expect(markdown).toContain('**Semantisches Ranking:** `Xenova/multilingual-e5-small` · E5 82%');
+    expect(markdown).toContain('E5: 0.8732');
+    expect(markdown).toContain('Heuristik: 61/100');
     expect(markdown).toContain('**Vielfalt:** Motiv `storage` · Score 88 → 76');
     expect(markdown).toContain('außerhalb von Serien eindeutig');
     expect(markdown).toContain('motif diversity');
