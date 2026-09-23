@@ -2,7 +2,9 @@ const path = require('node:path');
 const {
   buildPdfDocumentPreview,
   pdfMetadata,
-  rewriteGlossaryLinksForPdf
+  promoteArticleHeadings,
+  rewriteGlossaryLinksForPdf,
+  rewriteSourceLinksForPdf
 } = require('../lib/latex-export');
 
 describe('LaTeX publication export', () => {
@@ -38,6 +40,16 @@ describe('LaTeX publication export', () => {
     expect(
       rewriteGlossaryLinksForPdf('<a href="glossary.xhtml#glossary-vpc">VPC</a>')
     ).toBe('<a href="#glossary-vpc">VPC</a>');
+  });
+
+  it('normalizes article headings and source anchors for the paper renderer', () => {
+    expect(
+      promoteArticleHeadings('<h2>Hypothese</h2><h3>Messung</h3>')
+    ).toBe('<h1>Hypothese</h1><h2>Messung</h2>');
+
+    expect(
+      rewriteSourceLinksForPdf('<a href="sources.xhtml#source-docker-compose">[1]</a>')
+    ).toBe('<a href="#source-docker-compose">[1]</a>');
   });
 
   it('keeps preview metadata independent from the EPUB renderer', () => {
