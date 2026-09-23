@@ -4,6 +4,7 @@ const path = require('node:path');
 const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
+  VISUAL_INTENTS,
   choosePhoto,
   collectCandidates,
   defaultQuery,
@@ -13,6 +14,8 @@ const {
   findPhotoById,
   parseArgs,
   queryCandidates,
+  visualIntent,
+  visualIntentEvidence,
   visualQuery,
   rankCandidates,
   renderCandidates,
@@ -57,6 +60,7 @@ describe('Pixabay cover resolver', () => {
       query: 'kubernetes datacenter',
       select: 2,
       selectId: '',
+      scoreOverride: null,
       preview: false,
       report: ''
     });
@@ -70,6 +74,12 @@ describe('Pixabay cover resolver', () => {
     expect(parseArgs(['posts/test.md', '--select-id', '2402637'])).toMatchObject({
       target: 'posts/test.md',
       selectId: '2402637'
+    });
+
+    expect(parseArgs(['posts/test.md', '--select-id', '2402637', '--score', '91.4'])).toMatchObject({
+      target: 'posts/test.md',
+      selectId: '2402637',
+      scoreOverride: 91
     });
   });
 
@@ -107,6 +117,445 @@ describe('Pixabay cover resolver', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0].id).toBe(42);
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('scopes technical visual intents to the Pixabay computer category', async () => {
+    const systemdIntent = visualIntent({
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations']
+    });
+    expect(systemdIntent.pixabayCategory).toBe('computer');
+
+    const fetchImpl = globalThis.vi.fn(async (url) => {
+      const parsed = new URL(url);
+      expect(parsed.searchParams.get('category')).toBe('computer');
+      return {
+        ok: true,
+        json: async () => ({ hits: [] })
+      };
+    });
+
+    await searchPixabay('linux shell service logs', 'test-key', fetchImpl, {
+      category: 'computer'
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('derives a visual intent before generic technical metadata', () => {
+    const writing = {
+      title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
+      category: 'Automation',
+      tags: ['GitHub-Actions', 'Automation', 'CSpell', 'LanguageTool'],
+      excerpt: 'CSpell und LanguageTool prüfen meine Texte automatisch.'
+    };
+
+    expect(visualIntent(writing).key).toBe('writing-proofreading');
+    expect(queryCandidates(writing)[0]).toBe(
+      'writing proofreading text document keyboard spelling grammar'
+    );
+
+    expect(visualIntent({
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      tags: ['RSS', 'FreshRSS', 'Miniflux']
+    }).key).toBe('rss-reader');
+
+    expect(visualIntent({
+      title: 'Eine VPC ist keine schwarze Magie',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet']
+    }).key).toBe('vpc-networking');
+  });
+
+  it('ranks the article image idea above generic metadata matches', () => {
+    const writing = {
+      title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
+      category: 'Automation',
+      tags: ['GitHub-Actions', 'Automation', 'CSpell', 'LanguageTool']
+    };
+    const relevantWriting = scoreHit({
+      tags: 'writing, keyboard, document, spelling, text, editing',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, writing);
+    const genericWriting = scoreHit({
+      tags: 'secretary, desk, office automation, telephone, sales, screen',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, writing);
+
+    expect(relevantWriting.score).toBeGreaterThan(genericWriting.score);
+    expect(relevantWriting.semanticMismatch).toBe(false);
+    expect(genericWriting.semanticMismatch).toBe(true);
+
+    const rss = {
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      category: 'Self-Hosting',
+      tags: ['RSS', 'FreshRSS', 'Miniflux']
+    };
+    expect(
+      scoreHit({
+        tags: 'rss, feed, news, reader, article, reading',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'server, drive bay, hard drives, storage, network, database',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    );
+
+    const dependabot = {
+      title: 'Dependabot im Einsatz',
+      category: 'Security',
+      tags: ['GitHub', 'Dependabot', 'Security', 'Supply-Chain']
+    };
+    expect(
+      scoreHit({
+        tags: 'software, dependency, package, update, code, vulnerability',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, dependabot).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'wall safe, secure, lock, key, insurance, security',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, dependabot).score
+    );
+
+    const vpc = {
+      title: 'Eine VPC ist keine schwarze Magie',
+      category: 'AWS',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet', 'Route-Table']
+    };
+    expect(
+      scoreHit({
+        tags: 'network, topology, router, routing, cloud, connection',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, vpc).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'server, datacenter, database, cloud, business',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, vpc).score
+    );
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      category: 'DevOps',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability', 'Testing']
+    };
+    expect(
+      scoreHit({
+        tags: 'testing, failure, monitoring, reliability, experiment, observability',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, chaos).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'server, cloud, development, business, database, management',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, chaos).score
+    );
+  });
+
+  it('chooses the most specific visual intent instead of the first matching implementation tag', () => {
+    const kernelGrep = {
+      title: 'Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe',
+      category: 'Engineering',
+      tags: ['Semantic-Search', 'DuckDB', 'Embeddings', 'Docker', 'Self-Hosting', 'Kernel-Grep']
+    };
+
+    const intent = visualIntent(kernelGrep);
+    expect(intent.key).toBe('semantic-search');
+    expect(intent.matchedMarkers.length).toBeGreaterThan(1);
+  });
+
+  it('rejects literal keyword collisions for systemd, Docker, VPC, RSS and Chaos Engineering', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      category: 'Linux',
+      tags: ['Linux', 'systemd', 'Operations', 'Reliability']
+    };
+    expect(
+      scoreHit({
+        tags: 'linux, shell, console, service, logs, command',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, systemd).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'train, subway, train station, terminal, airport, transport',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, systemd).score
+    );
+
+    const docker = {
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      category: 'DevOps',
+      tags: ['Docker', 'DevOps', 'Operations', 'Architecture']
+    };
+    expect(
+      scoreHit({
+        tags: 'devops, software, development, code, deployment, programming',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, docker).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'can, metal box, storage, container, jar, vessel',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, docker).score
+    );
+
+    const vpc = {
+      title: 'Eine VPC ist keine schwarze Magie',
+      category: 'AWS',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet', 'Route-Table', 'Internet-Gateway']
+    };
+    const networkDiagram = scoreHit({
+      tags: 'network topology, router, routing, subnet, infrastructure, ethernet',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, vpc);
+    const socialNetwork = scoreHit({
+      tags: 'social media, connection, icons, internet, online, communication, network',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, vpc);
+    expect(networkDiagram.score).toBeGreaterThan(socialNetwork.score);
+    expect(socialNetwork.semanticMismatch).toBe(true);
+
+    const rss = {
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      tags: ['RSS', 'FreshRSS', 'Miniflux', 'Self-Hosting']
+    };
+    expect(
+      scoreHit({
+        tags: 'rss, feed, news, article, newspaper, subscription',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'books, bookstore, reading, reader, library, novels',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    );
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'SRE', 'Resilience', 'Observability']
+    };
+    const resilience = scoreHit({
+      tags: 'resilience, reliability, monitoring, outage, failure, infrastructure, incident',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    const laboratory = scoreHit({
+      tags: 'testing, experiment, chemistry, laboratory, school, examination, medical',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    expect(resilience.score).toBeGreaterThan(laboratory.score);
+    expect(laboratory.semanticMismatch).toBe(true);
+  });
+
+  it('weights the article main topic above incidental examples', () => {
+    const regression = {
+      title: 'Regressionstests – was sie sind und wie ich sie nutze',
+      category: 'Development',
+      excerpt: 'Regressionstests prüfe ich unter anderem an meiner semantischen Suche Kernel Grep.',
+      tags: ['Testing', 'Regressionstest', 'CI', 'Semantic-Search', 'Kernel-Grep'],
+      search_queries: [
+        { query: 'Wie teste ich eine semantische Suche automatisch?' }
+      ]
+    };
+
+    expect(visualIntent(regression).key).toBe('regression-testing');
+
+    const semanticEvidence = visualIntentEvidence(
+      regression,
+      VISUAL_INTENTS.find((intent) => intent.key === 'semantic-search')
+    );
+    const regressionEvidence = visualIntentEvidence(
+      regression,
+      VISUAL_INTENTS.find((intent) => intent.key === 'regression-testing')
+    );
+    expect(regressionEvidence.evidenceScore).toBeGreaterThan(semanticEvidence.evidenceScore);
+
+    const k3sHardening = {
+      title: 'K3s auf Proxmox – Teil III: Feste Versionen und verschlüsselte Secrets',
+      category: 'DevOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox', 'Hardening', 'Observability'],
+      excerpt: 'Feste Versionen, verschlüsselte Secrets und Backups.'
+    };
+    expect(visualIntent(k3sHardening)).toBeNull();
+
+    const logger = {
+      title: 'logger.info() – wird schon nichts kosten',
+      category: 'AWS',
+      tags: ['CloudWatch', 'Observability', 'Logging']
+    };
+    expect(visualIntent(logger).key).toBe('logging-observability');
+  });
+
+  it('rejects remaining console, monitoring and physical-storage stock collisions', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations']
+    };
+    const linuxShell = scoreHit({
+      tags: 'linux, shell, command, daemon, service, code, logs',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    const gameConsole = scoreHit({
+      tags: 'playstation, computer, console, controller, game, gamer, gaming, sony',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    expect(linuxShell.score).toBeGreaterThan(gameConsole.score);
+    expect(gameConsole.semanticMismatch).toBe(true);
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability']
+    };
+    const monitoring = scoreHit({
+      tags: 'server, monitoring, dashboard, alert, outage, infrastructure, reliability',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    const cloudTouch = scoreHit({
+      tags: 'cloud, finger, touch, cloud computing, data store, network, server',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    expect(monitoring.score).toBeGreaterThan(cloudTouch.score);
+    expect(cloudTouch.semanticMismatch).toBe(true);
+
+    const photos = {
+      title: 'Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone', 'Self-Hosting']
+    };
+    const photoSync = scoreHit({
+      tags: 'photo, gallery, digital, images, files, cloud, sync',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    const miniStorage = scoreHit({
+      tags: 'mini storage, music library, mini warehouse, self storage',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    expect(photoSync.score).toBeGreaterThan(miniStorage.score);
+    expect(miniStorage.semanticMismatch).toBe(true);
+
+    const logging = {
+      title: 'logger.info() – wird schon nichts kosten',
+      tags: ['AWS', 'CloudWatch', 'Observability', 'Logging']
+    };
+    expect(
+      scoreHit({
+        tags: 'logs, monitoring, dashboard, metrics, observability, alerts',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, logging).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'binary, smartphone, photography, software, code',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, logging).score
+    );
+  });
+
+  it('requires unambiguous intent groups for the remaining stock-photo collisions', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations']
+    };
+    const systemdGood = scoreHit({
+      tags: 'linux, shell, command, daemon, service, logs',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    const systemdBinary = scoreHit({
+      tags: 'binary, smartphone, photography, programming, computer, server, code',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    expect(systemdGood.semanticMismatch).toBe(false);
+    expect(systemdBinary.semanticMismatch).toBe(true);
+    expect(systemdGood.score).toBeGreaterThan(systemdBinary.score);
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability']
+    };
+    const chaosGood = scoreHit({
+      tags: 'server, monitoring, alert, outage, infrastructure, reliability',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    const genericServer = scoreHit({
+      tags: 'network, server, system, infrastructure, managed services, cloud',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    expect(chaosGood.semanticMismatch).toBe(false);
+    expect(genericServer.semanticMismatch).toBe(true);
+    expect(chaosGood.score).toBeGreaterThan(genericServer.score);
+
+    const logging = {
+      title: 'logger.info() – wird schon nichts kosten',
+      tags: ['AWS', 'CloudWatch', 'Observability', 'Logging']
+    };
+    const loggingGood = scoreHit({
+      tags: 'server, logs, monitoring, metrics, observability, alerts',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, logging);
+    const carDashboard = scoreHit({
+      tags: 'speedometer, dashboard, car, speed, vehicle, automobile',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, logging);
+    expect(loggingGood.semanticMismatch).toBe(false);
+    expect(carDashboard.semanticMismatch).toBe(true);
+    expect(loggingGood.score).toBeGreaterThan(carDashboard.score);
+
+    const photos = {
+      title: 'Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone', 'Self-Hosting']
+    };
+    const photoCloud = scoreHit({
+      tags: 'photo, gallery, cloud, files, sync, backup, image',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    const airplanePhotoArt = scoreHit({
+      tags: 'airplane, jet, fighter, aircraft, military, digital manipulation, photo art',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    const cameraOnly = scoreHit({
+      tags: 'camera, digital, photo, image, photography',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    expect(photoCloud.semanticMismatch).toBe(false);
+    expect(airplanePhotoArt.semanticMismatch).toBe(true);
+    expect(cameraOnly.semanticMismatch).toBe(true);
+    expect(photoCloud.score).toBeGreaterThan(airplanePhotoArt.score);
   });
 
   it('uses focused fallback queries when an article query returns no result', () => {
@@ -187,7 +636,7 @@ describe('Pixabay cover resolver', () => {
       imageHeight: 1080
     };
     const software = {
-      tags: 'server, software, terminal, cloud, technology',
+      tags: 'devops, software, code, deployment, technology',
       imageWidth: 1920,
       imageHeight: 1080
     };
@@ -302,6 +751,41 @@ describe('Pixabay cover resolver', () => {
       const files = await fs.readdir(cacheDir);
       const cached = await fs.readFile(path.join(cacheDir, files[0]), 'utf8');
       expect(cached).not.toContain('super-secret');
+    } finally {
+      await fs.rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps Pixabay cache entries separate by category', async () => {
+    const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pixabay-category-cache-'));
+    const fetchImpl = globalThis.vi.fn(async (url) => {
+      const parsed = new URL(url);
+      return {
+        ok: true,
+        json: async () => ({
+          hits: [{ id: parsed.searchParams.get('category') === 'computer' ? 1 : 2 }]
+        })
+      };
+    });
+
+    try {
+      const computer = await searchPixabayCached('monitoring', 'secret', {
+        cacheDir,
+        fetchImpl,
+        category: 'computer',
+        now: 1000
+      });
+      const unrestricted = await searchPixabayCached('monitoring', 'secret', {
+        cacheDir,
+        fetchImpl,
+        category: '',
+        now: 1000
+      });
+
+      expect(computer[0].id).toBe(1);
+      expect(unrestricted[0].id).toBe(2);
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      expect((await fs.readdir(cacheDir))).toHaveLength(2);
     } finally {
       await fs.rm(cacheDir, { recursive: true, force: true });
     }

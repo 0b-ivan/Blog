@@ -30,6 +30,112 @@ const TOPIC_AVOID = {
   gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan']
 };
 
+const VISUAL_INTENTS = [
+  {
+    key: 'writing-proofreading',
+    markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
+    query: 'writing proofreading text document keyboard spelling grammar',
+    positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter'],
+    avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business']
+  },
+  {
+    key: 'rss-reader',
+    markers: ['freshrss', 'miniflux', 'rss', 'feed'],
+    query: 'rss feed news articles newspaper website subscription',
+    positive: ['rss', 'feed', 'news', 'article', 'newspaper', 'subscription', 'website'],
+    avoid: ['book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+  },
+  {
+    key: 'dependency-updates',
+    pixabayCategory: 'computer',
+    markers: ['dependabot', 'dependency', 'dependencies', 'supply-chain', 'supply chain'],
+    query: 'software dependency package update code github vulnerability',
+    positive: ['dependency', 'dependencies', 'package', 'update', 'software', 'code', 'github', 'vulnerability'],
+    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance']
+  },
+  {
+    key: 'systemd-service',
+    pixabayCategory: 'computer',
+    markers: ['systemd', 'journalctl'],
+    query: 'linux command prompt shell daemon service logs',
+    positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'prompt'],
+    requiredGroups: [
+      ['linux', 'service', 'logs', 'shell', 'command', 'daemon', 'prompt']
+    ],
+    avoid: ['smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
+  },
+  {
+    key: 'docker-compose',
+    pixabayCategory: 'computer',
+    markers: ['docker compose', 'docker', 'compose'],
+    query: 'devops software code terminal deployment programming',
+    positive: ['software', 'code', 'deployment', 'devops', 'development', 'programming', 'terminal'],
+    avoid: ['container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+  },
+  {
+    key: 'semantic-search',
+    pixabayCategory: 'computer',
+    markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
+    query: 'search data code analytics magnifying glass',
+    positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
+    minMatches: 2,
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar']
+  },
+  {
+    key: 'vpc-networking',
+    pixabayCategory: 'computer',
+    markers: ['vpc', 'subnet', 'route-table', 'route table', 'nat-gateway', 'internet-gateway'],
+    query: 'computer network topology router routing subnet infrastructure',
+    positive: ['topology', 'router', 'routing', 'subnet', 'infrastructure', 'ethernet'],
+    minMatches: 2,
+    avoid: ['social media', 'icons', 'online', 'smartphone', 'database', 'storage', 'rack', 'datacenter']
+  },
+  {
+    key: 'chaos-engineering',
+    pixabayCategory: 'computer',
+    markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
+    query: 'server monitoring alert outage incident failure reliability',
+    positive: ['server', 'monitoring', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'observability'],
+    minMatches: 2,
+    requiredGroups: [
+      ['monitoring', 'alert', 'outage', 'incident', 'failure', 'reliability', 'observability']
+    ],
+    avoid: ['touch', 'finger', 'school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
+  },
+  {
+    key: 'regression-testing',
+    pixabayCategory: 'computer',
+    markers: ['regressionstest', 'regression test', 'regression'],
+    query: 'software testing quality assurance bug code',
+    positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
+    avoid: ['business', 'meeting', 'office']
+  },
+  {
+    key: 'logging-observability',
+    pixabayCategory: 'computer',
+    markers: ['logger.info', 'logging', 'logger', 'observability'],
+    query: 'server logs monitoring metrics observability cloudwatch alerts',
+    positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts'],
+    requiredGroups: [
+      ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts']
+    ],
+    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office']
+  },
+  {
+    key: 'photo-storage-sync',
+    pixabayCategory: 'computer',
+    markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
+    query: 'cloud photo backup files gallery sync',
+    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup'],
+    minMatches: 2,
+    requiredGroups: [
+      ['photo', 'gallery', 'image'],
+      ['files', 'sync', 'cloud', 'backup']
+    ],
+    avoid: ['airplane', 'jet', 'fighter', 'aircraft', 'military', 'war', 'aviation', 'pilot', 'owl', 'photographer', 'tourist', 'warehouse', 'mini storage', 'self storage', 'music', 'business', 'meeting', 'office']
+  }
+];
+
 const TOPIC_EXPANSIONS = {
   kubernetes: ['server', 'datacenter', 'infrastructure', 'network', 'cloud', 'container', 'cluster'],
   k3s: ['kubernetes', 'server', 'cluster', 'infrastructure', 'datacenter'],
@@ -73,7 +179,7 @@ const STOP_WORDS = new Set([
 ]);
 
 function parseArgs(args) {
-  const options = { target: '', query: '', select: 0, selectId: '', preview: false, report: '' };
+  const options = { target: '', query: '', select: 0, selectId: '', scoreOverride: null, preview: false, report: '' };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     const next = args[i + 1];
@@ -81,6 +187,12 @@ function parseArgs(args) {
     else if (arg === '--query' && next) { options.query = next.trim(); i += 1; }
     else if (arg === '--select' && next) { options.select = Number.parseInt(next, 10); i += 1; }
     else if (arg === '--select-id' && next) { options.selectId = String(next).trim(); i += 1; }
+    else if (arg === '--score' && next) {
+      const score = Number(next);
+      if (!Number.isFinite(score) || score < 0 || score > 100) throw new Error('--score must be between 0 and 100');
+      options.scoreOverride = Math.round(score);
+      i += 1;
+    }
     else if (arg === '--report' && next) { options.report = next.trim(); i += 1; }
     else if (arg === '--preview') options.preview = true;
     else throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -112,6 +224,67 @@ function listFrom(value) {
   if (Array.isArray(value)) return value.flatMap((item) => tokensFrom(item));
   return String(value || '').split(/[,;]+/).flatMap((item) => tokensFrom(item));
 }
+
+function markerMatches(value, markers) {
+  const haystack = normalizeText(value);
+  if (!haystack) return [];
+
+  return markers.filter((marker) => haystack.includes(normalizeText(marker)));
+}
+
+function visualIntentEvidence(data, intent) {
+  const searchQueries = Array.isArray(data.search_queries)
+    ? data.search_queries.map((entry) => typeof entry === 'string' ? entry : entry?.query).filter(Boolean)
+    : [];
+
+  const sources = [
+    { value: data.cover_subject, weight: 12 },
+    { value: data.title, weight: 10 },
+    { value: normalizedTags(data).join(' '), weight: 4 },
+    { value: data.category, weight: 3 },
+    { value: data.excerpt, weight: 2 },
+    { value: searchQueries.join(' '), weight: 1 }
+  ];
+
+  let evidenceScore = 0;
+  const matchedMarkers = new Set();
+
+  for (const source of sources) {
+    for (const marker of markerMatches(source.value, intent.markers)) {
+      evidenceScore += source.weight;
+      matchedMarkers.add(marker);
+    }
+  }
+
+  return {
+    evidenceScore,
+    matchedMarkers: [...matchedMarkers]
+  };
+}
+
+function visualIntent(data = {}) {
+  const matches = VISUAL_INTENTS
+    .map((intent) => ({
+      ...intent,
+      ...visualIntentEvidence(data, intent)
+    }))
+    .filter((intent) => intent.evidenceScore >= Number(intent.minEvidence || 6))
+    .sort((left, right) => {
+      if (right.evidenceScore !== left.evidenceScore) {
+        return right.evidenceScore - left.evidenceScore;
+      }
+      if (right.matchedMarkers.length !== left.matchedMarkers.length) {
+        return right.matchedMarkers.length - left.matchedMarkers.length;
+      }
+
+      const rightSpecificity = right.matchedMarkers.reduce((sum, marker) => sum + marker.length, 0);
+      const leftSpecificity = left.matchedMarkers.reduce((sum, marker) => sum + marker.length, 0);
+      return rightSpecificity - leftSpecificity;
+    });
+
+  return matches[0] || null;
+}
+
 
 function seriesSlug(value) {
   return normalizeText(value)
@@ -165,6 +338,7 @@ function visualQuery(data) {
 
 function queryCandidates(data, explicitQuery = '') {
   const tags = normalizedTags(data);
+  const intent = visualIntent(data);
   const primary = String(explicitQuery || defaultQuery(data)).trim().slice(0, 100);
   const visual = visualQuery(data);
   const fallback = [data.cover_subject, data.category, ...tags.slice(0, 2)]
@@ -174,13 +348,21 @@ function queryCandidates(data, explicitQuery = '') {
     .slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
-  const candidates = [primary, visual, fallback].filter(Boolean);
-  if (!visual && title) candidates.push(title);
+  const candidates = explicitQuery
+    ? (intent
+      ? [primary, intent.query, visual || fallback]
+      : [primary, visual, fallback])
+    : (intent
+      ? [intent.query, primary, visual || fallback]
+      : [primary, visual, fallback]);
 
-  return [...new Set(candidates)].slice(0, 3);
+  if (!intent && !visual && title) candidates.push(title);
+
+  return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, 3);
 }
 
 function articleProfile(data, query = '') {
+  const intent = visualIntent(data);
   const primary = new Set([
     ...tokensFrom(data.cover_subject),
     ...tokensFrom(data.cover_query),
@@ -203,10 +385,25 @@ function articleProfile(data, query = '') {
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
     ...contextualAvoid,
+    ...(intent?.avoid || []),
     ...listFrom(data.cover_avoid)
-  ].map((value) => normalizeText(value)));
+  ].flatMap((value) => tokensFrom(value)));
 
-  return { primary, expanded, avoid };
+  const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
+  const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
+  const intentRequiredGroups = (intent?.requiredGroups || []).map(
+    (group) => new Set(group.flatMap((value) => tokensFrom(value)))
+  );
+
+  return {
+    primary,
+    expanded,
+    avoid,
+    intent,
+    intentPositive,
+    intentAvoid,
+    intentRequiredGroups
+  };
 }
 
 function scoreHit(hit, data = {}, query = '') {
@@ -220,6 +417,36 @@ function scoreHit(hit, data = {}, query = '') {
   );
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
+  const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
+  const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
+  const requiredGroupMatches = profile.intentRequiredGroups.map(
+    (group) => [...hitTokens].filter((token) => group.has(token))
+  );
+  const requiredGroupsMet = requiredGroupMatches.every((matches) => matches.length > 0);
+
+  if (profile.intent) {
+    const minIntentMatches = Math.max(1, Number(profile.intent.minMatches || 1));
+    const intentRequirementMet = intentMatches.length >= minIntentMatches && requiredGroupsMet;
+    if (intentRequirementMet) {
+      const points = Math.min(42, intentMatches.length * 14);
+      score += points;
+      reasons.push(`+${points} visual intent (${profile.intent.key}): ${intentMatches.slice(0, 4).join(', ')}`);
+    } else {
+      score -= 35;
+      const groupStatus = profile.intentRequiredGroups.length
+        ? `, groups ${requiredGroupMatches.filter((matches) => matches.length > 0).length}/${profile.intentRequiredGroups.length}`
+        : '';
+      reasons.push(
+        `-35 visual intent mismatch: ${profile.intent.key} (${intentMatches.length}/${minIntentMatches}${groupStatus})`
+      );
+    }
+
+    if (intentAvoidMatches.length) {
+      const points = Math.min(54, intentAvoidMatches.length * 18);
+      score -= points;
+      reasons.push(`-${points} intent avoid: ${intentAvoidMatches.slice(0, 3).join(', ')}`);
+    }
+  }
 
   if (directMatches.length) {
     const points = Math.min(36, directMatches.length * 12);
@@ -279,7 +506,17 @@ function scoreHit(hit, data = {}, query = '') {
     reasons,
     directMatches,
     expandedMatches,
-    avoidMatches
+    avoidMatches,
+    intentKey: profile.intent?.key || '',
+    intentMatches,
+    intentAvoidMatches,
+    requiredGroupMatches,
+    semanticMismatch: Boolean(
+      profile.intent && (
+        intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
+        || !requiredGroupsMet
+      )
+    )
   };
 }
 
@@ -294,7 +531,7 @@ function rankCandidates(hits, data = {}, query = '') {
     });
 }
 
-async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
+async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, options = {}) {
   const url = new URL('https://pixabay.com/api/');
   url.searchParams.set('key', apiKey);
   url.searchParams.set('q', query);
@@ -306,14 +543,20 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
   url.searchParams.set('min_width', '1280');
   url.searchParams.set('min_height', '720');
 
+  const category = String(options.category || '').trim().toLowerCase();
+  if (category) url.searchParams.set('category', category);
+
   const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`Pixabay search failed with HTTP ${response.status}`);
   const payload = await response.json();
   return Array.isArray(payload.hits) ? payload.hits : [];
 }
 
-function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay')) {
-  const digest = crypto.createHash('sha256').update(`v2:${String(query)}`).digest('hex').slice(0, 24);
+function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay'), category = '') {
+  const digest = crypto.createHash('sha256')
+    .update(`v3:${String(category)}:${String(query)}`)
+    .digest('hex')
+    .slice(0, 24);
   return path.join(cacheDir, `${digest}.json`);
 }
 
@@ -321,7 +564,8 @@ async function searchPixabayCached(query, apiKey, options = {}) {
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const cacheDir = options.cacheDir || path.join(root, '.cache', 'pixabay');
   const now = Number.isFinite(options.now) ? options.now : Date.now();
-  const cacheFile = cacheFileForQuery(query, cacheDir);
+  const category = String(options.category || '').trim().toLowerCase();
+  const cacheFile = cacheFileForQuery(query, cacheDir, category);
 
   try {
     const cached = JSON.parse(await fs.readFile(cacheFile, 'utf8'));
@@ -333,9 +577,13 @@ async function searchPixabayCached(query, apiKey, options = {}) {
     if (!error || (error.code !== 'ENOENT' && error.name !== 'SyntaxError')) throw error;
   }
 
-  const hits = await searchPixabay(query, apiKey, fetchImpl);
+  const hits = await searchPixabay(query, apiKey, fetchImpl, { category });
   await fs.mkdir(cacheDir, { recursive: true });
-  await fs.writeFile(cacheFile, JSON.stringify({ cachedAt: now, query, hits }, null, 2), 'utf8');
+  await fs.writeFile(
+    cacheFile,
+    JSON.stringify({ cachedAt: now, query, category, hits }, null, 2),
+    'utf8'
+  );
   return hits;
 }
 
@@ -516,6 +764,10 @@ function reportCandidate(entry, index) {
     previewURL: hit.previewURL || hit.webformatURL || '',
     searchQuery: hit.__coverQuery || '',
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
+    intentKey: entry.intentKey || '',
+    intentMatches: entry.intentMatches || [],
+    requiredGroupMatches: entry.requiredGroupMatches || [],
+    semanticMismatch: Boolean(entry.semanticMismatch),
     reasons: entry.reasons
   };
 }
@@ -529,7 +781,7 @@ async function writeReport(reportPath, report) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1 | --select-id 123] [--report /tmp/report.json]');
+  if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1 | --select-id 123] [--score 88] [--report /tmp/report.json]');
 
   const apiKey = String(process.env.PIXABAY_API_KEY || '').trim();
   if (!apiKey) throw new Error('PIXABAY_API_KEY is required');
@@ -543,7 +795,11 @@ async function main() {
   const queries = queryCandidates(parsed.data, options.query);
   if (!queries.length) throw new Error('Could not derive a Pixabay cover query');
 
-  const hits = await collectCandidates(queries, apiKey);
+  const intent = visualIntent(parsed.data);
+  const pixabayCategory = String(intent?.pixabayCategory || '').trim();
+  const hits = await collectCandidates(queries, apiKey, {
+    searchOptions: { category: pixabayCategory }
+  });
   if (!hits.length) throw new Error(`No Pixabay images matched: ${queries.join(' | ')}`);
 
   const rankingQuery = String(options.query || queries[0] || '').trim();
@@ -552,9 +808,12 @@ async function main() {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
     series: detectSeries(parsed.data),
+    visualIntent: intent?.key || '',
+    visualIntentEvidence: intent?.evidenceScore || 0,
+    pixabayCategory,
     query: rankingQuery,
     queries,
-    candidates: ranked.slice(0, 5).map(reportCandidate)
+    candidates: ranked.slice(0, 10).map(reportCandidate)
   };
 
   if (options.preview) {
@@ -591,7 +850,7 @@ async function main() {
     cover_image: coverImage,
     cover_alt: hit.tags || `Cover for ${parsed.data.title || slug}`,
     cover_focus: 'center',
-    cover_score: selectedEntry.score,
+    cover_score: options.scoreOverride ?? selectedEntry.score,
     cover_credit: `by ${hit.user || 'Pixabay contributor'} via Pixabay`,
     cover_credit_url: hit.pageURL || contributorUrl(hit),
     cover_source_url: hit.pageURL || 'https://pixabay.com/',
@@ -627,6 +886,7 @@ module.exports = {
   PIXABAY_LICENSE,
   PIXABAY_LICENSE_URL,
   TOPIC_EXPANSIONS,
+  VISUAL_INTENTS,
   articleProfile,
   cacheFileForQuery,
   choosePhoto,
@@ -638,6 +898,8 @@ module.exports = {
   findPhotoById,
   parseArgs,
   queryCandidates,
+  visualIntent,
+  visualIntentEvidence,
   visualQuery,
   rankCandidates,
   renderCandidates,
