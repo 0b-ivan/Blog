@@ -268,27 +268,6 @@
     border-radius: 0;
   }
 
-  .article-hero--has-cover {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(3, 13, 18, 0.52) 0%,
-        rgba(3, 13, 18, 0.36) 18%,
-        rgba(3, 13, 18, 0.14) 39%,
-        rgba(8, 17, 25, 0.36) 64%,
-        rgba(12, 18, 27, 0.84) 85%,
-        var(--terminal-surface) 100%
-      ),
-      var(--article-cover-image);
-    background-position:
-      center,
-      var(--article-cover-focus);
-    background-size:
-      cover,
-      cover;
-    background-repeat: no-repeat;
-  }
-
   .article-hero__chrome {
     min-height: 44px;
     gap: 0.62rem;
