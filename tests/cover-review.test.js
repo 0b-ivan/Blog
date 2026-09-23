@@ -86,6 +86,18 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('https://pixabay.com/photos/example-42/');
   });
 
+  it('renders compact batch review without the verbose Top-3 table', () => {
+    const markdown = renderReport(report, {
+      repository: '0b-ivan/Blog',
+      commit: 'abc123',
+      compact: true
+    });
+
+    expect(markdown).toContain('![Cover-Vorschau: Example Article]');
+    expect(markdown).toContain('aus Platzgründen ausgeblendet');
+    expect(markdown).not.toContain('| Rang | Score | Vorschau | Details |');
+  });
+
   it('renders a compact candidate comparison table', () => {
     const markdown = candidateTable(report.candidates);
     expect(markdown).toContain('| Rang | Score | Vorschau | Details |');
