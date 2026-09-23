@@ -4,6 +4,7 @@ const {
   buildCoverSvg,
   buildPhotoCoverSvg,
   displayAuthor,
+  ensureCoverImageProperty,
   normalizeEpubDate,
   prepareChapterHtml,
   wrapCoverTitle
@@ -70,19 +71,31 @@ describe('article ebook export helpers', () => {
     expect(html).toContain('https://pixabay.com/service/license-summary/');
   });
 
-  it('creates a book-style cover around a selected article photo', () => {
+  it('creates a typewriter-style book cover around the selected article photo', () => {
     const svg = buildPhotoCoverSvg({
-      title: 'Chaos Engineering',
+      slug: 'chaos-engineering-chaos-monkey-kubernetes',
+      title: 'Chaos Monkey ist kein Zufall',
       author: 'obivan',
       category: 'DevOps',
+      tags: ['Chaos-Engineering', 'Kubernetes'],
       date: '2026-09-22',
       coverCredit: 'Image by Example from Pixabay'
     }, 'data:image/jpeg;base64,ZmFrZQ==');
 
     expect(svg).toContain('data:image/jpeg;base64,ZmFrZQ==');
-    expect(svg).toContain('Chaos Engineering');
+    expect(svg).toContain('Chaos Monkey ist kein');
     expect(svg).toContain('Image by Example from Pixabay');
     expect(svg).toContain('Ivan Babayev');
+    expect(svg).toContain('Courier New');
+    expect(svg).toContain('class="cover-monkey"');
+  });
+
+  it('marks the manifest image as the EPUB 3 cover image without dropping other properties', () => {
+    const opf = '<manifest><item id="image_cover" href="cover.svg" media-type="image/svg+xml" properties="svg" /></manifest>';
+    const patched = ensureCoverImageProperty(opf);
+
+    expect(patched).toContain('properties="svg cover-image"');
+    expect(ensureCoverImageProperty(patched)).toBe(patched);
   });
 
   it('rewrites local article assets to file URLs for offline EPUB embedding', () => {
