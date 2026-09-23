@@ -55,9 +55,12 @@ const VISUAL_INTENTS = [
   {
     key: 'systemd-service',
     markers: ['systemd', 'journalctl'],
-    query: 'linux command line shell service logs daemon code',
-    positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'code'],
-    avoid: ['game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
+    query: 'linux command prompt shell daemon service logs',
+    positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'prompt'],
+    requiredGroups: [
+      ['linux', 'service', 'logs', 'shell', 'command', 'daemon', 'prompt']
+    ],
+    avoid: ['smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
   },
   {
     key: 'docker-compose',
@@ -85,9 +88,12 @@ const VISUAL_INTENTS = [
   {
     key: 'chaos-engineering',
     markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
-    query: 'server monitoring dashboard alert outage infrastructure reliability',
-    positive: ['server', 'monitoring', 'dashboard', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'observability'],
+    query: 'server monitoring alert outage incident failure reliability',
+    positive: ['server', 'monitoring', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'observability'],
     minMatches: 2,
+    requiredGroups: [
+      ['monitoring', 'alert', 'outage', 'incident', 'failure', 'reliability', 'observability']
+    ],
     avoid: ['touch', 'finger', 'school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
   },
   {
@@ -100,17 +106,24 @@ const VISUAL_INTENTS = [
   {
     key: 'logging-observability',
     markers: ['logger.info', 'logging', 'logger', 'observability'],
-    query: 'server logs monitoring dashboard metrics observability cloudwatch',
-    positive: ['logs', 'logging', 'monitoring', 'dashboard', 'metrics', 'observability', 'cloudwatch', 'alerts'],
-    avoid: ['smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office']
+    query: 'server logs monitoring metrics observability cloudwatch alerts',
+    positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts'],
+    requiredGroups: [
+      ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts']
+    ],
+    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office']
   },
   {
     key: 'photo-storage-sync',
     markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
-    query: 'photo gallery cloud files sync digital images',
-    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'digital'],
+    query: 'cloud photo backup files gallery sync',
+    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup'],
     minMatches: 2,
-    avoid: ['warehouse', 'mini storage', 'self storage', 'music', 'business', 'meeting', 'office']
+    requiredGroups: [
+      ['photo', 'gallery', 'image'],
+      ['files', 'sync', 'cloud', 'backup']
+    ],
+    avoid: ['airplane', 'jet', 'fighter', 'aircraft', 'military', 'war', 'aviation', 'pilot', 'owl', 'photographer', 'tourist', 'warehouse', 'mini storage', 'self storage', 'music', 'business', 'meeting', 'office']
   }
 ];
 
@@ -363,8 +376,19 @@ function articleProfile(data, query = '') {
 
   const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
   const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
+  const intentRequiredGroups = (intent?.requiredGroups || []).map(
+    (group) => new Set(group.flatMap((value) => tokensFrom(value)))
+  );
 
-  return { primary, expanded, avoid, intent, intentPositive, intentAvoid };
+  return {
+    primary,
+    expanded,
+    avoid,
+    intent,
+    intentPositive,
+    intentAvoid,
+    intentRequiredGroups
+  };
 }
 
 function scoreHit(hit, data = {}, query = '') {
@@ -380,16 +404,26 @@ function scoreHit(hit, data = {}, query = '') {
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
   const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
+  const requiredGroupMatches = profile.intentRequiredGroups.map(
+    (group) => [...hitTokens].filter((token) => group.has(token))
+  );
+  const requiredGroupsMet = requiredGroupMatches.every((matches) => matches.length > 0);
 
   if (profile.intent) {
     const minIntentMatches = Math.max(1, Number(profile.intent.minMatches || 1));
-    if (intentMatches.length >= minIntentMatches) {
+    const intentRequirementMet = intentMatches.length >= minIntentMatches && requiredGroupsMet;
+    if (intentRequirementMet) {
       const points = Math.min(42, intentMatches.length * 14);
       score += points;
       reasons.push(`+${points} visual intent (${profile.intent.key}): ${intentMatches.slice(0, 4).join(', ')}`);
     } else {
       score -= 35;
-      reasons.push(`-35 visual intent mismatch: ${profile.intent.key} (${intentMatches.length}/${minIntentMatches})`);
+      const groupStatus = profile.intentRequiredGroups.length
+        ? `, groups ${requiredGroupMatches.filter((matches) => matches.length > 0).length}/${profile.intentRequiredGroups.length}`
+        : '';
+      reasons.push(
+        `-35 visual intent mismatch: ${profile.intent.key} (${intentMatches.length}/${minIntentMatches}${groupStatus})`
+      );
     }
 
     if (intentAvoidMatches.length) {
@@ -461,8 +495,12 @@ function scoreHit(hit, data = {}, query = '') {
     intentKey: profile.intent?.key || '',
     intentMatches,
     intentAvoidMatches,
+    requiredGroupMatches,
     semanticMismatch: Boolean(
-      profile.intent && intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
+      profile.intent && (
+        intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
+        || !requiredGroupsMet
+      )
     )
   };
 }
@@ -702,6 +740,7 @@ function reportCandidate(entry, index) {
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
     intentMatches: entry.intentMatches || [],
+    requiredGroupMatches: entry.requiredGroupMatches || [],
     semanticMismatch: Boolean(entry.semanticMismatch),
     reasons: entry.reasons
   };
