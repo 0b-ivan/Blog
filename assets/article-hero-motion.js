@@ -1,5 +1,5 @@
 (() => {
-  const terminal = document.querySelector('.terminal-post--article.terminal-post--has-cover');
+  const terminal = globalThis.document.querySelector('.terminal-post--article.terminal-post--has-cover');
   const hero = terminal?.querySelector('[data-article-hero]');
   if (!terminal || !hero) return;
 
