@@ -72,6 +72,27 @@
 \providecommand{\passthrough}[1]{#1}
 \providecommand{\pandocbounded}[1]{#1}
 
+% Pandoc citeproc emits CSLReferences for bibliography blocks. The stock
+% Pandoc LaTeX template defines these helpers; our custom KOMA template must
+% provide them as well.
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2]
+ {%
+  \setlength{\parindent}{0pt}%
+  \ifodd #1%
+    \let\oldpar\par%
+    \def\par{\hangindent=\cslhangindent\oldpar}%
+  \fi%
+  \setlength{\parskip}{#2\baselineskip}%
+ }{}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
 \begin{document}
 
 $if(coverImage)$
