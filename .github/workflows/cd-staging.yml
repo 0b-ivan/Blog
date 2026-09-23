@@ -141,7 +141,7 @@ jobs:
         if: steps.cover_candidates.outputs.needed == 'true'
         id: pixabay_cache_key
         shell: bash
-        run: echo "key=pixabay-api-${RUNNER_OS}-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: echo "key=pixabay-api-${RUNNER_OS}-$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       - name: Restore Pixabay API cache
         if: steps.cover_candidates.outputs.needed == 'true'
