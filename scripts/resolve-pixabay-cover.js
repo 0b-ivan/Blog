@@ -10,6 +10,39 @@ const root = path.join(__dirname, '..');
 const PIXABAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const PIXABAY_LICENSE = 'Pixabay Content License';
 const PIXABAY_LICENSE_URL = 'https://pixabay.com/service/license-summary/';
+const MAX_CANDIDATES = 12;
+
+const DEFAULT_AVOID = [
+  'people', 'person', 'portrait', 'woman', 'women', 'man', 'men',
+  'meeting', 'teamwork', 'handshake', 'smile', 'smiling', 'fashion'
+];
+
+const LOW_VALUE_TERMS = new Set([
+  'a', 'an', 'and', 'article', 'auf', 'aus', 'blog', 'das', 'dem', 'den', 'der',
+  'die', 'ein', 'eine', 'einer', 'eines', 'for', 'für', 'gegen', 'ich', 'im',
+  'in', 'ist', 'mein', 'meine', 'mit', 'nicht', 'of', 'on', 'oder', 'part',
+  'statt', 'the', 'teil', 'und', 'von', 'warum', 'wie', 'with', 'zu'
+]);
+
+const TOPIC_EXPANSIONS = [
+  { match: ['kubernetes', 'k3s'], terms: ['kubernetes', 'container', 'cluster', 'server', 'infrastructure'] },
+  { match: ['proxmox'], terms: ['server', 'virtualization', 'datacenter', 'infrastructure'] },
+  { match: ['immich'], terms: ['photo', 'storage', 'cloud', 'server'] },
+  { match: ['nextcloud'], terms: ['cloud', 'storage', 'files', 'server'] },
+  { match: ['webdav', 'rclone'], terms: ['cloud', 'storage', 'sync', 'files', 'server'] },
+  { match: ['rss', 'freshrss', 'miniflux'], terms: ['rss', 'feed', 'reader', 'news', 'syndication'] },
+  { match: ['docker', 'compose'], terms: ['docker', 'container', 'server', 'devops'] },
+  { match: ['cloudflare'], terms: ['network', 'security', 'cloud', 'internet'] },
+  { match: ['aws', 'ec2', 'vpc'], terms: ['cloud', 'network', 'server', 'infrastructure'] },
+  { match: ['systemd', 'linux'], terms: ['linux', 'server', 'terminal', 'computer'] },
+  { match: ['dependabot'], terms: ['security', 'code', 'software', 'computer'] },
+  { match: ['security', 'waf', 'hardening', 'secret', 'secrets'], terms: ['security', 'server', 'network', 'protection'] },
+  { match: ['semantic', 'embedding', 'embeddings'], terms: ['search', 'data', 'ai', 'technology'] },
+  { match: ['regression', 'testing', 'test'], terms: ['testing', 'code', 'software', 'computer'] },
+  { match: ['observability', 'cloudwatch', 'logger', 'logging'], terms: ['monitoring', 'server', 'data', 'dashboard'] },
+  { match: ['chaos', 'resilience'], terms: ['server', 'resilience', 'infrastructure', 'network'] },
+  { match: ['self-hosting', 'selfhosting'], terms: ['server', 'homelab', 'storage', 'network'] }
+];
 
 function parseArgs(args) {
   const options = { target: '', query: '', select: 0, preview: false };
@@ -31,31 +64,88 @@ function normalizedTags(data) {
     : String(data.tags || '').split(',').map((value) => value.trim()).filter(Boolean);
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function tokenize(value) {
+  const matches = normalizeText(value).match(/[a-z0-9][a-z0-9+.#-]*/g) || [];
+  return matches
+    .map((term) => term.replace(/^-+|-+$/g, ''))
+    .filter((term) => term && !LOW_VALUE_TERMS.has(term));
+}
+
+function uniqueTerms(values) {
+  return [...new Set(values.flatMap((value) => tokenize(value)))];
+}
+
+function topicProfile(data, explicitQuery = '') {
+  const tags = normalizedTags(data);
+  const source = [
+    explicitQuery,
+    data.cover_query,
+    data.cover_subject,
+    data.title,
+    data.category,
+    ...tags
+  ].filter(Boolean).join(' ');
+  const normalizedSource = normalizeText(source);
+
+  const positive = new Set(uniqueTerms([
+    explicitQuery,
+    data.cover_query,
+    data.cover_subject,
+    data.category,
+    ...tags
+  ]));
+
+  for (const expansion of TOPIC_EXPANSIONS) {
+    if (expansion.match.some((needle) => normalizedSource.includes(normalizeText(needle)))) {
+      expansion.terms.forEach((term) => positive.add(term));
+    }
+  }
+
+  const customAvoid = Array.isArray(data.cover_avoid)
+    ? data.cover_avoid
+    : String(data.cover_avoid || '').split(',');
+
+  const avoid = new Set([
+    ...DEFAULT_AVOID,
+    ...uniqueTerms(customAvoid)
+  ]);
+
+  return {
+    positive: [...positive],
+    avoid: [...avoid]
+  };
+}
+
 function defaultQuery(data) {
   const explicit = String(data.cover_query || '').trim();
   if (explicit) return explicit.slice(0, 100);
 
-  const tags = normalizedTags(data).slice(0, 3);
-  const topicQuery = [...tags, data.category]
-    .map((value) => String(value || '').trim())
-    .filter(Boolean)
-    .join(' ')
-    .slice(0, 100);
+  const profile = topicProfile(data);
+  const tags = normalizedTags(data);
+  const focused = uniqueTerms([
+    ...tags,
+    data.category,
+    data.cover_subject,
+    ...profile.positive
+  ]).slice(0, 10).join(' ');
 
-  return topicQuery || String(data.title || '').trim().slice(0, 100);
+  return (focused || String(data.title || '').trim()).slice(0, 100);
 }
 
 function queryCandidates(data, explicitQuery = '') {
-  const tags = normalizedTags(data);
+  const profile = topicProfile(data, explicitQuery);
   const primary = String(explicitQuery || defaultQuery(data)).trim().slice(0, 100);
-  const fallback = [data.category, ...tags.slice(0, 2)]
-    .map((value) => String(value || '').trim())
-    .filter(Boolean)
-    .join(' ')
-    .slice(0, 100);
+  const semantic = profile.positive.slice(0, 9).join(' ').slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
-  return [...new Set([primary, fallback, title].filter(Boolean))].slice(0, 3);
+  return [...new Set([primary, semantic, title].filter(Boolean))].slice(0, 3);
 }
 
 async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
@@ -66,7 +156,7 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
   url.searchParams.set('orientation', 'horizontal');
   url.searchParams.set('safesearch', 'true');
   url.searchParams.set('order', 'popular');
-  url.searchParams.set('per_page', '6');
+  url.searchParams.set('per_page', String(MAX_CANDIDATES));
   url.searchParams.set('min_width', '1280');
   url.searchParams.set('min_height', '720');
 
@@ -103,18 +193,81 @@ async function searchPixabayCached(query, apiKey, options = {}) {
   return hits;
 }
 
-function renderCandidates(hits) {
-  return hits.map((hit, index) => {
+function scoreHit(hit, profile) {
+  const hitTerms = new Set(tokenize(hit.tags || ''));
+  const matched = profile.positive.filter((term) => hitTerms.has(term));
+  const avoided = profile.avoid.filter((term) => hitTerms.has(term));
+
+  let score = 30;
+  score += Math.min(48, matched.length * 12);
+  score -= Math.min(60, avoided.length * 24);
+
+  if (!matched.length) score -= 14;
+
+  const width = Number(hit.imageWidth || hit.webformatWidth || 0);
+  const height = Number(hit.imageHeight || hit.webformatHeight || 0);
+  const ratio = height > 0 ? width / height : 0;
+
+  if (ratio >= 1.45 && ratio <= 2.2) score += 12;
+  else if (ratio >= 1.25 && ratio <= 2.5) score += 6;
+  else if (ratio > 0) score -= 8;
+
+  if (width >= 1920 && height >= 1080) score += 8;
+  else if (width >= 1280 && height >= 720) score += 4;
+
+  const likes = Math.max(0, Number(hit.likes || 0));
+  const downloads = Math.max(0, Number(hit.downloads || 0));
+  score += Math.min(6, Math.log10(likes + 1) * 3);
+  score += Math.min(4, Math.log10(downloads + 1));
+
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    matched,
+    avoided
+  };
+}
+
+function rankHits(hits, data, query = '') {
+  const profile = topicProfile(data, query);
+  return hits
+    .map((hit) => ({
+      hit,
+      ...scoreHit(hit, profile)
+    }))
+    .sort((left, right) => (
+      right.score - left.score
+      || Number(right.hit.likes || 0) - Number(left.hit.likes || 0)
+      || Number(right.hit.downloads || 0) - Number(left.hit.downloads || 0)
+      || Number(left.hit.id || 0) - Number(right.hit.id || 0)
+    ));
+}
+
+function confidenceLabel(score) {
+  if (score >= 70) return 'sehr passend';
+  if (score >= 55) return 'passend';
+  if (score >= 40) return 'brauchbar';
+  return 'unsicher';
+}
+
+function renderCandidates(rankedHits) {
+  return rankedHits.map((entry, index) => {
+    const hit = entry.hit || entry;
+    const score = Number.isFinite(entry.score) ? entry.score : null;
     const author = hit.user || 'unknown';
     const tags = hit.tags || 'untitled';
     const page = hit.pageURL || '';
-    const preview = hit.previewURL || hit.webformatURL || '';
-    return [
-      `### ${index + 1}. ${tags}`,
+    const preview = hit.webformatURL || hit.previewURL || '';
+    const query = hit.__coverQuery || '';
+    const lines = [
+      `### ${index + 1}. ${score === null ? '' : `${score}/100 · ${confidenceLabel(score)} · `}${tags}`,
       `- Fotograf: ${author}`,
+      query ? `- Suchpfad: \`${query}\`` : '',
+      entry.matched?.length ? `- Themen-Matches: ${entry.matched.join(', ')}` : '- Themen-Matches: keine',
+      entry.avoided?.length ? `- Abzug: ${entry.avoided.join(', ')}` : '',
       `- Pixabay: ${page}`,
-      `- Vorschau: ${preview}`
-    ].join('\n');
+      preview ? `![Pixabay Kandidat ${index + 1}](${preview})` : ''
+    ].filter(Boolean);
+    return lines.join('\n');
   }).join('\n\n');
 }
 
@@ -207,6 +360,22 @@ ${end}`;
   await fs.writeFile(stylesheetPath, css, 'utf8');
 }
 
+async function collectCandidates(queries, apiKey) {
+  const byId = new Map();
+
+  for (const query of queries) {
+    console.log(`Searching Pixabay for: ${query}`);
+    const hits = await searchPixabayCached(query, apiKey);
+    for (const hit of hits) {
+      const key = String(hit.id || hit.pageURL || hit.webformatURL || '');
+      if (!key || byId.has(key)) continue;
+      byId.set(key, { ...hit, __coverQuery: query });
+    }
+  }
+
+  return [...byId.values()];
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1]');
@@ -223,25 +392,19 @@ async function main() {
   const queries = queryCandidates(parsed.data, options.query);
   if (!queries.length) throw new Error('Could not derive a Pixabay cover query');
 
-  let query = queries[0];
-  let hits = [];
-  for (const candidate of queries) {
-    console.log(`Searching Pixabay for: ${candidate}`);
-    hits = await searchPixabayCached(candidate, apiKey);
-    if (hits.length) {
-      query = candidate;
-      break;
-    }
-  }
-
+  const hits = await collectCandidates(queries, apiKey);
   if (!hits.length) throw new Error(`No Pixabay images matched: ${queries.join(' | ')}`);
 
+  const ranked = rankHits(hits, parsed.data, options.query || queries[0]);
+
   if (options.preview) {
-    console.log(renderCandidates(hits));
+    console.log(renderCandidates(ranked.slice(0, MAX_CANDIDATES)));
     return;
   }
 
-  const hit = await choosePhoto(hits, options.select);
+  const orderedHits = ranked.map((entry) => entry.hit);
+  const hit = await choosePhoto(orderedHits, options.select);
+  const selected = ranked.find((entry) => String(entry.hit.id) === String(hit.id)) || ranked[0];
   const downloaded = await downloadPhoto(hit);
 
   const slug = path.basename(target, '.md');
@@ -254,9 +417,10 @@ async function main() {
 
   const updated = matter.stringify(parsed.content, {
     ...parsed.data,
-    cover_query: query,
+    cover_query: hit.__coverQuery || queries[0],
     cover_provider: 'pixabay',
     cover_provider_id: String(hit.id),
+    cover_score: selected.score,
     cover_image: coverImage,
     cover_alt: hit.tags || `Cover for ${parsed.data.title || slug}`,
     cover_focus: 'center',
@@ -269,6 +433,7 @@ async function main() {
   await fs.writeFile(target, updated, 'utf8');
   await updateCoverStylesheet(slug, coverImage, 'center');
 
+  console.log(`Selected Pixabay image ${hit.id} with topic score ${selected.score}/100`);
   console.log(`Saved ${path.relative(root, coverPath)} from Pixabay image ${hit.id}`);
   console.log('Updated assets/css/article-covers.css');
 }
@@ -280,4 +445,25 @@ if (require.main === module) {
   });
 }
 
-module.exports = { PIXABAY_CACHE_TTL_MS, PIXABAY_LICENSE, PIXABAY_LICENSE_URL, cacheFileForQuery, choosePhoto, defaultQuery, downloadPhoto, fileExtension, parseArgs, queryCandidates, renderCandidates, searchPixabay, searchPixabayCached, updateCoverStylesheet };
+module.exports = {
+  DEFAULT_AVOID,
+  MAX_CANDIDATES,
+  PIXABAY_CACHE_TTL_MS,
+  PIXABAY_LICENSE,
+  PIXABAY_LICENSE_URL,
+  cacheFileForQuery,
+  choosePhoto,
+  confidenceLabel,
+  defaultQuery,
+  downloadPhoto,
+  fileExtension,
+  parseArgs,
+  queryCandidates,
+  rankHits,
+  renderCandidates,
+  scoreHit,
+  searchPixabay,
+  searchPixabayCached,
+  topicProfile,
+  updateCoverStylesheet
+};
