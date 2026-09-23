@@ -13,6 +13,7 @@ const {
   findPhotoById,
   parseArgs,
   queryCandidates,
+  visualIntent,
   visualQuery,
   rankCandidates,
   renderCandidates,
@@ -107,6 +108,128 @@ describe('Pixabay cover resolver', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0].id).toBe(42);
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('derives a visual intent before generic technical metadata', () => {
+    const writing = {
+      title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
+      category: 'Automation',
+      tags: ['GitHub-Actions', 'Automation', 'CSpell', 'LanguageTool'],
+      excerpt: 'CSpell und LanguageTool prüfen meine Texte automatisch.'
+    };
+
+    expect(visualIntent(writing).key).toBe('writing-proofreading');
+    expect(queryCandidates(writing)[0]).toBe(
+      'writing proofreading text document keyboard spelling grammar'
+    );
+
+    expect(visualIntent({
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      tags: ['RSS', 'FreshRSS', 'Miniflux']
+    }).key).toBe('rss-reader');
+
+    expect(visualIntent({
+      title: 'Eine VPC ist keine schwarze Magie',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet']
+    }).key).toBe('vpc-networking');
+  });
+
+  it('ranks the article image idea above generic metadata matches', () => {
+    const writing = {
+      title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
+      category: 'Automation',
+      tags: ['GitHub-Actions', 'Automation', 'CSpell', 'LanguageTool']
+    };
+    const relevantWriting = scoreHit({
+      tags: 'writing, keyboard, document, spelling, text, editing',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, writing);
+    const genericWriting = scoreHit({
+      tags: 'secretary, desk, office automation, telephone, sales, screen',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, writing);
+
+    expect(relevantWriting.score).toBeGreaterThan(genericWriting.score);
+    expect(relevantWriting.semanticMismatch).toBe(false);
+    expect(genericWriting.semanticMismatch).toBe(true);
+
+    const rss = {
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      category: 'Self-Hosting',
+      tags: ['RSS', 'FreshRSS', 'Miniflux']
+    };
+    expect(
+      scoreHit({
+        tags: 'rss, feed, news, reader, article, reading',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'server, drive bay, hard drives, storage, network, database',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, rss).score
+    );
+
+    const dependabot = {
+      title: 'Dependabot im Einsatz',
+      category: 'Security',
+      tags: ['GitHub', 'Dependabot', 'Security', 'Supply-Chain']
+    };
+    expect(
+      scoreHit({
+        tags: 'software, dependency, package, update, code, vulnerability',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, dependabot).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'wall safe, secure, lock, key, insurance, security',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, dependabot).score
+    );
+
+    const vpc = {
+      title: 'Eine VPC ist keine schwarze Magie',
+      category: 'AWS',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet', 'Route-Table']
+    };
+    expect(
+      scoreHit({
+        tags: 'network, topology, router, routing, cloud, connection',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, vpc).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'server, datacenter, database, cloud, business',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, vpc).score
+    );
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      category: 'DevOps',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability', 'Testing']
+    };
+    expect(
+      scoreHit({
+        tags: 'testing, failure, monitoring, reliability, experiment, observability',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, chaos).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'server, cloud, development, business, database, management',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, chaos).score
+    );
   });
 
   it('uses focused fallback queries when an article query returns no result', () => {
