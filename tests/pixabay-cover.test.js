@@ -95,7 +95,7 @@ describe('Pixabay cover resolver', () => {
     );
   });
 
-  it('calls Pixabay search with safe landscape photo filters', async () => {
+  it('calls Pixabay search with safe landscape filters', async () => {
     const fetchImpl = globalThis.vi.fn(async (url) => {
       const parsed = new URL(url);
       expect(parsed.origin).toBe('https://pixabay.com');
@@ -103,7 +103,7 @@ describe('Pixabay cover resolver', () => {
       expect(parsed.searchParams.get('image_type')).toBe('photo');
       expect(parsed.searchParams.get('orientation')).toBe('horizontal');
       expect(parsed.searchParams.get('safesearch')).toBe('true');
-      expect(parsed.searchParams.get('per_page')).toBe('20');
+      expect(parsed.searchParams.get('per_page')).toBe('30');
       expect(parsed.searchParams.get('key')).toBe('test-key');
       return {
         ok: true,
@@ -125,10 +125,12 @@ describe('Pixabay cover resolver', () => {
       tags: ['Linux', 'systemd', 'Operations']
     });
     expect(systemdIntent.pixabayCategory).toBe('computer');
+    expect(systemdIntent.pixabayImageType).toBe('all');
 
     const fetchImpl = globalThis.vi.fn(async (url) => {
       const parsed = new URL(url);
       expect(parsed.searchParams.get('category')).toBe('computer');
+      expect(parsed.searchParams.get('image_type')).toBe('all');
       return {
         ok: true,
         json: async () => ({ hits: [] })
@@ -136,7 +138,8 @@ describe('Pixabay cover resolver', () => {
     });
 
     await searchPixabay('linux shell service logs', 'test-key', fetchImpl, {
-      category: 'computer'
+      category: 'computer',
+      imageType: 'all'
     });
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
@@ -160,6 +163,7 @@ describe('Pixabay cover resolver', () => {
     });
     expect(rssIntent.key).toBe('rss-reader');
     expect(rssIntent.pixabayCategory).toBe('computer');
+    expect(rssIntent.pixabayImageType).toBe('all');
     expect(queryCandidates({
       title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
       tags: ['RSS', 'FreshRSS', 'Miniflux']

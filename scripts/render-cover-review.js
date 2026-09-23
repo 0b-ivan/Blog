@@ -164,6 +164,7 @@ function renderReport(report, options = {}) {
     report.visualIntent ? `**Bildidee:** \`${markdownText(report.visualIntent)}\`` : '**Bildidee:** generisch',
     report.visualIntent ? `**Intent-Evidenz:** ${Number(report.visualIntentEvidence || 0)}` : '',
     report.pixabayCategory ? `**Pixabay-Kategorie:** \`${markdownText(report.pixabayCategory)}\`` : '',
+    report.pixabayImageType ? `**Pixabay-Bildtyp:** \`${markdownText(report.pixabayImageType)}\`` : '',
     report.semanticModel ? `**Semantisches Ranking:** \`${markdownText(report.semanticModel)}\` · E5 ${Math.round(Number(report.semanticWeight || 0) * 100)}%` : '',
     report.semanticPrototype ? `**Konzept-Prototyp:** \`${markdownText(report.semanticPrototype)}\`` : '',
     options.compact
