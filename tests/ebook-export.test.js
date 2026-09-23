@@ -1,5 +1,6 @@
 const path = require('node:path');
 const {
+  buildColophon,
   buildCoverSvg,
   buildPhotoCoverSvg,
   displayAuthor,
@@ -48,6 +49,25 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('Kubernetes ohne');
     expect(svg).toContain('Ivan Babayev');
     expect(svg).toContain('DIGITAL EDITION');
+  });
+
+  it('keeps Pixabay source and license metadata in the ebook colophon', () => {
+    const html = buildColophon({
+      slug: 'pixabay-test',
+      title: 'Pixabay Test',
+      author: 'obivan',
+      category: 'DevOps',
+      date: '2026-09-23',
+      coverCredit: 'by Example via Pixabay',
+      coverSourceUrl: 'https://pixabay.com/photos/example-42/',
+      coverLicense: 'Pixabay Content License',
+      coverLicenseUrl: 'https://pixabay.com/service/license-summary/'
+    }, 'https://blog.obivan.org');
+
+    expect(html).toContain('by Example via Pixabay');
+    expect(html).toContain('https://pixabay.com/photos/example-42/');
+    expect(html).toContain('Pixabay Content License');
+    expect(html).toContain('https://pixabay.com/service/license-summary/');
   });
 
   it('creates a book-style cover around a selected article photo', () => {

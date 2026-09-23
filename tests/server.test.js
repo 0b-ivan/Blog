@@ -256,6 +256,10 @@ describe('blog server', () => {
       category: 'Node',
       tags: ['Linux'],
       excerpt: 'Excerpt',
+      coverCredit: 'by Example via Pixabay',
+      coverCreditUrl: 'https://pixabay.com/photos/example-42/',
+      coverLicense: 'Pixabay Content License',
+      coverLicenseUrl: 'https://pixabay.com/service/license-summary/',
       readingTime: 3,
       html: '<p>Rendered</p>'
     });
@@ -274,6 +278,10 @@ describe('blog server', () => {
     expect(html).toContain('<svg viewBox="0 0 64 48" focusable="false">');
     expect(html).toContain('article-hero__excerpt');
     expect(html).toContain('>Excerpt<');
+    expect(html).toContain('by Example via Pixabay');
+    expect(html).toContain('https://pixabay.com/photos/example-42/');
+    expect(html).toContain('Pixabay Content License');
+    expect(html).toContain('https://pixabay.com/service/license-summary/');
     expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*terminal-content[\s\S]*<\/section>[\s\S]*article-post-meta/);
     expect(html).not.toContain('article-terminal__meta-strip');
     expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);

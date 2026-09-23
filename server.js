@@ -124,7 +124,7 @@ function parseMetadataLine(line) {
 
 function recoverMetadata(raw, parsed) {
   const fallbackData = {};
-  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'cover_query', 'cover_provider', 'cover_provider_id', 'cover_image', 'cover_alt', 'cover_focus', 'cover_credit', 'cover_credit_url', 'cover_source_url']);
+  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'cover_query', 'cover_provider', 'cover_provider_id', 'cover_image', 'cover_alt', 'cover_focus', 'cover_credit', 'cover_credit_url', 'cover_source_url', 'cover_license', 'cover_license_url']);
 
   const hasParsedData = parsed && parsed.data && Object.keys(parsed.data).length > 0;
   if (hasParsedData) {
@@ -312,6 +312,9 @@ async function loadPosts(postsDir) {
       const coverFocus = String(recovered.data.cover_focus || 'center').trim();
       const coverCredit = String(recovered.data.cover_credit || '').trim();
       const coverCreditUrl = String(recovered.data.cover_credit_url || '').trim();
+      const coverSourceUrl = String(recovered.data.cover_source_url || '').trim();
+      const coverLicense = String(recovered.data.cover_license || '').trim();
+      const coverLicenseUrl = String(recovered.data.cover_license_url || '').trim();
       const wordCount = countWords(recovered.content);
       const readingTime = calculateReadingTime(recovered.content);
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
@@ -333,6 +336,9 @@ async function loadPosts(postsDir) {
         coverFocus,
         coverCredit,
         coverCreditUrl,
+        coverSourceUrl,
+        coverLicense,
+        coverLicenseUrl,
         wordCount,
         readingTime,
         html: md.render(markdownContent, { snippets })
@@ -613,10 +619,19 @@ function renderPostPage(post, relatedPosts = []) {
       ? `<button class="tag-chip tag-toggle" type="button" data-tag-toggle data-hidden-count="${hiddenTagCount}" aria-expanded="false" aria-label="${hiddenTagCount} weitere Tags anzeigen">+${hiddenTagCount}</button>`
       : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
-  const coverCreditHtml = post.coverCredit
-    ? `<p class="article-hero__credit">${post.coverCreditUrl
+  const coverCreditParts = [];
+  if (post.coverCredit) {
+    coverCreditParts.push(post.coverCreditUrl
       ? `<a href="${md.utils.escapeHtml(String(post.coverCreditUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverCredit))}</a>`
-      : md.utils.escapeHtml(String(post.coverCredit))}</p>`
+      : md.utils.escapeHtml(String(post.coverCredit)));
+  }
+  if (post.coverLicense) {
+    coverCreditParts.push(post.coverLicenseUrl
+      ? `<a href="${md.utils.escapeHtml(String(post.coverLicenseUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverLicense))}</a>`
+      : md.utils.escapeHtml(String(post.coverLicense)));
+  }
+  const coverCreditHtml = coverCreditParts.length
+    ? `<p class="article-hero__credit">${coverCreditParts.join(' · ')}</p>`
     : '';
 
   return `<!doctype html>

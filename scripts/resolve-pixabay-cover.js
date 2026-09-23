@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const readline = require('node:readline/promises');
@@ -6,6 +7,9 @@ const { URL } = require('node:url');
 const matter = require('gray-matter');
 
 const root = path.join(__dirname, '..');
+const PIXABAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const PIXABAY_LICENSE = 'Pixabay Content License';
+const PIXABAY_LICENSE_URL = 'https://pixabay.com/service/license-summary/';
 
 function parseArgs(args) {
   const options = { target: '', query: '', select: 0, preview: false };
@@ -21,15 +25,37 @@ function parseArgs(args) {
   return options;
 }
 
+function normalizedTags(data) {
+  return Array.isArray(data.tags)
+    ? data.tags.map((value) => String(value || '').trim()).filter(Boolean)
+    : String(data.tags || '').split(',').map((value) => value.trim()).filter(Boolean);
+}
+
 function defaultQuery(data) {
-  const tags = Array.isArray(data.tags)
-    ? data.tags.slice(0, 3).join(' ')
-    : String(data.tags || '').split(',').slice(0, 3).join(' ');
-  return [data.cover_query, data.title, data.category, tags]
+  const explicit = String(data.cover_query || '').trim();
+  if (explicit) return explicit.slice(0, 100);
+
+  const tags = normalizedTags(data).slice(0, 3);
+  const topicQuery = [...tags, data.category]
     .map((value) => String(value || '').trim())
     .filter(Boolean)
     .join(' ')
     .slice(0, 100);
+
+  return topicQuery || String(data.title || '').trim().slice(0, 100);
+}
+
+function queryCandidates(data, explicitQuery = '') {
+  const tags = normalizedTags(data);
+  const primary = String(explicitQuery || defaultQuery(data)).trim().slice(0, 100);
+  const fallback = [data.category, ...tags.slice(0, 2)]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 100);
+  const title = String(data.title || '').trim().slice(0, 100);
+
+  return [...new Set([primary, fallback, title].filter(Boolean))].slice(0, 3);
 }
 
 async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
@@ -50,6 +76,33 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
   return Array.isArray(payload.hits) ? payload.hits : [];
 }
 
+function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay')) {
+  const digest = crypto.createHash('sha256').update(String(query)).digest('hex').slice(0, 24);
+  return path.join(cacheDir, `${digest}.json`);
+}
+
+async function searchPixabayCached(query, apiKey, options = {}) {
+  const fetchImpl = options.fetchImpl || globalThis.fetch;
+  const cacheDir = options.cacheDir || path.join(root, '.cache', 'pixabay');
+  const now = Number.isFinite(options.now) ? options.now : Date.now();
+  const cacheFile = cacheFileForQuery(query, cacheDir);
+
+  try {
+    const cached = JSON.parse(await fs.readFile(cacheFile, 'utf8'));
+    const age = now - Number(cached.cachedAt || 0);
+    if (age >= 0 && age < PIXABAY_CACHE_TTL_MS && Array.isArray(cached.hits)) {
+      return cached.hits;
+    }
+  } catch (error) {
+    if (!error || (error.code !== 'ENOENT' && error.name !== 'SyntaxError')) throw error;
+  }
+
+  const hits = await searchPixabay(query, apiKey, fetchImpl);
+  await fs.mkdir(cacheDir, { recursive: true });
+  await fs.writeFile(cacheFile, JSON.stringify({ cachedAt: now, query, hits }, null, 2), 'utf8');
+  return hits;
+}
+
 function renderCandidates(hits) {
   return hits.map((hit, index) => {
     const author = hit.user || 'unknown';
@@ -67,7 +120,12 @@ function renderCandidates(hits) {
 
 async function choosePhoto(hits, selectedIndex) {
   if (!hits.length) throw new Error('No Pixabay images matched the query');
-  if (selectedIndex > 0) return hits[selectedIndex - 1];
+  if (selectedIndex > 0) {
+    if (selectedIndex > hits.length) {
+      throw new Error(`Selected Pixabay candidate ${selectedIndex} is unavailable; received ${hits.length} result(s)`);
+    }
+    return hits[selectedIndex - 1];
+  }
 
   const rl = readline.createInterface({ input, output });
   try {
@@ -98,11 +156,21 @@ function fileExtension(url, contentType) {
 async function downloadPhoto(hit, fetchImpl = globalThis.fetch) {
   const sourceUrl = hit.largeImageURL || hit.webformatURL;
   if (!sourceUrl) throw new Error('Pixabay result has no downloadable image URL');
+
+  const parsedUrl = new URL(sourceUrl);
+  if (parsedUrl.protocol !== 'https:') throw new Error('Pixabay image URL must use HTTPS');
+
   const response = await fetchImpl(sourceUrl);
   if (!response.ok) throw new Error(`Pixabay image download failed with HTTP ${response.status}`);
+
+  const contentType = response.headers.get('content-type') || 'image/jpeg';
+  if (!/^image\/(?:jpeg|png|webp)(?:;|$)/i.test(contentType)) {
+    throw new Error(`Unexpected Pixabay image content type: ${contentType}`);
+  }
+
   return {
     buffer: Buffer.from(await response.arrayBuffer()),
-    contentType: response.headers.get('content-type') || 'image/jpeg',
+    contentType,
     sourceUrl
   };
 }
@@ -152,11 +220,21 @@ async function main() {
 
   const raw = await fs.readFile(target, 'utf8');
   const parsed = matter(raw);
-  const query = (options.query || defaultQuery(parsed.data)).trim();
-  if (!query) throw new Error('Could not derive a Pixabay cover query');
+  const queries = queryCandidates(parsed.data, options.query);
+  if (!queries.length) throw new Error('Could not derive a Pixabay cover query');
 
-  console.log(`Searching Pixabay for: ${query}`);
-  const hits = await searchPixabay(query, apiKey);
+  let query = queries[0];
+  let hits = [];
+  for (const candidate of queries) {
+    console.log(`Searching Pixabay for: ${candidate}`);
+    hits = await searchPixabayCached(candidate, apiKey);
+    if (hits.length) {
+      query = candidate;
+      break;
+    }
+  }
+
+  if (!hits.length) throw new Error(`No Pixabay images matched: ${queries.join(' | ')}`);
 
   if (options.preview) {
     console.log(renderCandidates(hits));
@@ -182,9 +260,11 @@ async function main() {
     cover_image: coverImage,
     cover_alt: hit.tags || `Cover for ${parsed.data.title || slug}`,
     cover_focus: 'center',
-    cover_credit: `Image by ${hit.user || 'Pixabay contributor'} from Pixabay`,
-    cover_credit_url: contributorUrl(hit),
-    cover_source_url: hit.pageURL
+    cover_credit: `by ${hit.user || 'Pixabay contributor'} via Pixabay`,
+    cover_credit_url: hit.pageURL || contributorUrl(hit),
+    cover_source_url: hit.pageURL || 'https://pixabay.com/',
+    cover_license: PIXABAY_LICENSE,
+    cover_license_url: PIXABAY_LICENSE_URL
   });
   await fs.writeFile(target, updated, 'utf8');
   await updateCoverStylesheet(slug, coverImage, 'center');
@@ -200,4 +280,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { defaultQuery, downloadPhoto, fileExtension, parseArgs, renderCandidates, searchPixabay, updateCoverStylesheet };
+module.exports = { PIXABAY_CACHE_TTL_MS, PIXABAY_LICENSE, PIXABAY_LICENSE_URL, cacheFileForQuery, choosePhoto, defaultQuery, downloadPhoto, fileExtension, parseArgs, queryCandidates, renderCandidates, searchPixabay, searchPixabayCached, updateCoverStylesheet };

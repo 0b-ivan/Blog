@@ -1,10 +1,17 @@
+const fs = require('node:fs/promises');
+const os = require('node:os');
+const path = require('node:path');
 const { URL } = require('node:url');
 const {
+  PIXABAY_CACHE_TTL_MS,
+  choosePhoto,
   defaultQuery,
   downloadPhoto,
   fileExtension,
   parseArgs,
-  searchPixabay
+  queryCandidates,
+  searchPixabay,
+  searchPixabayCached
 } = require('../scripts/resolve-pixabay-cover');
 
 describe('Pixabay cover resolver', () => {
@@ -13,7 +20,7 @@ describe('Pixabay cover resolver', () => {
       title: 'Chaos Monkey gegen meinen Blog',
       category: 'DevOps',
       tags: ['Kubernetes', 'Chaos Engineering', 'K3s', 'Cloudflare']
-    })).toContain('Chaos Monkey gegen meinen Blog');
+    })).toBe('Kubernetes Chaos Engineering K3s DevOps');
     expect(defaultQuery({ title: 'Test', tags: [] }).length).toBeLessThanOrEqual(100);
   });
 
@@ -58,6 +65,54 @@ describe('Pixabay cover resolver', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0].id).toBe(42);
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('uses focused fallback queries when an article query returns no result', () => {
+    expect(queryCandidates({
+      title: 'Ein deutscher Titel',
+      category: 'DevOps',
+      tags: ['Kubernetes', 'Cloudflare']
+    }, 'specific query')).toEqual([
+      'specific query',
+      'DevOps Kubernetes Cloudflare',
+      'Ein deutscher Titel'
+    ]);
+  });
+
+  it('caches Pixabay API responses for 24 hours without storing the API key', async () => {
+    const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pixabay-cache-'));
+    const fetchImpl = globalThis.vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ hits: [{ id: 42, pageURL: 'https://pixabay.com/photos/example-42/' }] })
+    }));
+
+    try {
+      const first = await searchPixabayCached('kubernetes', 'super-secret', {
+        cacheDir,
+        fetchImpl,
+        now: 1_000
+      });
+      const second = await searchPixabayCached('kubernetes', 'super-secret', {
+        cacheDir,
+        fetchImpl,
+        now: 1_000 + PIXABAY_CACHE_TTL_MS - 1
+      });
+
+      expect(first).toEqual(second);
+      expect(fetchImpl).toHaveBeenCalledOnce();
+
+      const files = await fs.readdir(cacheDir);
+      const cached = await fs.readFile(path.join(cacheDir, files[0]), 'utf8');
+      expect(cached).not.toContain('super-secret');
+    } finally {
+      await fs.rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a selected candidate that Pixabay did not return', async () => {
+    await expect(choosePhoto([{ id: 1 }], 2)).rejects.toThrow(
+      'Selected Pixabay candidate 2 is unavailable'
+    );
   });
 
   it('downloads the selected image without exposing the API key', async () => {

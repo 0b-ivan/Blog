@@ -5,6 +5,7 @@ coverage/
 
 # Local semantic-search database and model cache
 .data/
+.cache/pixabay/
 rag/node_modules/
 
 # Generated article history (rebuilt from Git in CI/CD)
