@@ -961,6 +961,10 @@ h1 {
     --article-shell-radius: 18px;
   }
 
+  .terminal-post--article::before {
+    display: none;
+  }
+
   .terminal-chrome {
     height: var(--window-chrome-height-mobile);
     min-height: 0;
@@ -980,6 +984,7 @@ h1 {
     gap: 0.5rem;
     width: min(calc(100% - 1rem), 980px);
     padding: 0.68rem 0.72rem;
+    overflow: hidden;
     border-color: rgba(184, 175, 158, 0.72);
     border-radius: 18px;
     background:
@@ -1003,7 +1008,9 @@ h1 {
   .main-nav {
     min-width: 0;
     overflow-x: auto;
+    padding-right: 1.8rem;
     scrollbar-width: none;
+    scroll-padding-inline: 0.45rem 2.2rem;
     overscroll-behavior-inline: contain;
   }
 
