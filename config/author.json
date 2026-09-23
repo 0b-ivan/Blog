@@ -1,0 +1,19 @@
+{
+  "name": "Ivan Babayev",
+  "role": "Cloud Infrastructure Engineer",
+  "experience": "über 8 Jahre IT zwischen Administration, Entwicklung und Cloud",
+  "focus": [
+    "AWS",
+    "Linux",
+    "Netzwerke",
+    "Security",
+    "Automation"
+  ],
+  "bio": [
+    "Kernel Notes ist mein technisches Notizbuch für Dinge, die ich in der Praxis baue, betreibe, debugge und automatisiere.",
+    "Ich komme aus der Systemadministration und Softwareentwicklung und arbeite heute mit Schwerpunkt auf Cloud-Infrastruktur. Im Blog dokumentiere ich Architekturentscheidungen, Runbooks, Fehlersuche und kleine Tools so, dass Lösungen später noch nachvollziehbar und reproduzierbar sind."
+  ],
+  "website": "https://blog.obivan.org",
+  "linkedin": "https://www.linkedin.com/in/ivan-babayev/",
+  "photo": "/assets/profile-obivan.PNG"
+}
