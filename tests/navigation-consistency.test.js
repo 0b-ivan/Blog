@@ -50,4 +50,10 @@ describe('primary navigation', () => {
 
     expect(sources.join('\n')).not.toMatch(/roadmap/i);
   });
+
+  it('loads the mobile navigation overflow cue on rendered article pages', async () => {
+    const source = await fs.readFile(path.join(repoRoot, 'server.js'), 'utf8');
+
+    expect(source).toContain('<script src="/assets/nav-scroll-cue.js" defer></script>');
+  });
 });

@@ -961,6 +961,45 @@ h1 {
     --article-shell-radius: 18px;
   }
 
+  .terminal-post--article::before {
+    display: block;
+    height: clamp(24rem, 112vw, 30rem);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(3, 13, 18, 0.54) 0%,
+        rgba(3, 13, 18, 0.38) 18%,
+        rgba(3, 13, 18, 0.14) 40%,
+        rgba(8, 17, 25, 0.34) 64%,
+        rgba(12, 18, 27, 0.82) 82%,
+        var(--terminal-surface) 100%
+      ),
+      var(--article-cover-image);
+    background-position:
+      center,
+      var(--article-cover-focus);
+    background-size:
+      cover,
+      cover;
+    background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 72%,
+      rgba(0, 0, 0, 0.9) 82%,
+      rgba(0, 0, 0, 0.45) 92%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 72%,
+      rgba(0, 0, 0, 0.9) 82%,
+      rgba(0, 0, 0, 0.45) 92%,
+      transparent 100%
+    );
+  }
+
   .terminal-chrome {
     height: var(--window-chrome-height-mobile);
     min-height: 0;
@@ -980,6 +1019,7 @@ h1 {
     gap: 0.5rem;
     width: min(calc(100% - 1rem), 980px);
     padding: 0.68rem 0.72rem;
+    overflow: hidden;
     border-color: rgba(184, 175, 158, 0.72);
     border-radius: 18px;
     background:
@@ -1003,7 +1043,9 @@ h1 {
   .main-nav {
     min-width: 0;
     overflow-x: auto;
+    padding-right: 1.8rem;
     scrollbar-width: none;
+    scroll-padding-inline: 0.45rem 2.2rem;
     overscroll-behavior-inline: contain;
   }
 
