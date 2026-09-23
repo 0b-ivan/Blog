@@ -167,12 +167,23 @@ describe('Pixabay cover resolver', () => {
     expect(queryCandidates({
       title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
       tags: ['RSS', 'FreshRSS', 'Miniflux']
-    })[0]).toBe('rss feed reader website subscription aggregator syndication');
+    })[0]).toBe('rss feed reader dashboard news aggregator browser website');
 
     expect(visualIntent({
       title: 'Eine VPC ist keine schwarze Magie',
       tags: ['AWS', 'VPC', 'Networking', 'Subnet']
     }).key).toBe('vpc-networking');
+
+    const chaosMonkeyIntent = visualIntent({
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience']
+    });
+    expect(chaosMonkeyIntent.key).toBe('chaos-monkey');
+    expect(chaosMonkeyIntent.pixabayCategory).toBe('animals');
+    expect(queryCandidates({
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience']
+    })[0]).toBe('monkey ape primate chimpanzee macaque');
   });
 
   it('ranks the article image idea above generic metadata matches', () => {
@@ -254,7 +265,7 @@ describe('Pixabay cover resolver', () => {
     );
 
     const chaos = {
-      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      title: 'Chaos Engineering systematisch testen',
       category: 'DevOps',
       tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability', 'Testing']
     };
@@ -283,6 +294,29 @@ describe('Pixabay cover resolver', () => {
     const intent = visualIntent(kernelGrep);
     expect(intent.key).toBe('semantic-search');
     expect(intent.matchedMarkers.length).toBeGreaterThan(1);
+  });
+
+  it('prefers an actual monkey motif over generic error symbols for Chaos Monkey', () => {
+    const article = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      category: 'DevOps',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability']
+    };
+
+    const monkey = scoreHit({
+      tags: 'monkey, ape, primate, chimpanzee, animal',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const errorIcon = scoreHit({
+      tags: 'error, cross, warning, sign, icon, symbol, interface',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(monkey.score).toBeGreaterThan(errorIcon.score);
+    expect(monkey.semanticMismatch).toBe(false);
+    expect(errorIcon.semanticMismatch).toBe(true);
   });
 
   it('rejects literal keyword collisions for systemd, Docker, VPC, RSS and Chaos Engineering', () => {
