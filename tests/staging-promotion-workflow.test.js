@@ -12,6 +12,9 @@ describe('staging promotion workflow', () => {
     expect(workflow).toContain('COVER_BACKFILL_LIMIT: "20"');
     expect(workflow).toContain('scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT"');
     expect(workflow).toContain('Resolve missing Pixabay covers');
+    expect(workflow).toContain('--report "/tmp/cover-reports/${slug}.json"');
+    expect(workflow).toContain('scripts/render-cover-review.js');
+    expect(workflow).toContain('--reports-dir /tmp/cover-reports');
     expect(workflow).toContain('PIXABAY_API_KEY');
     expect(workflow).toContain('steps.source.outputs.sha');
     expect(workflow).toContain('actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9');
