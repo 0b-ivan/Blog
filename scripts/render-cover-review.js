@@ -107,6 +107,7 @@ function renderReport(report, options = {}) {
     report.series ? `**Serie:** \`${markdownText(report.series)}\`` : '**Serie:** keine',
     report.visualIntent ? `**Bildidee:** \`${markdownText(report.visualIntent)}\`` : '**Bildidee:** generisch',
     report.visualIntent ? `**Intent-Evidenz:** ${Number(report.visualIntentEvidence || 0)}` : '',
+    report.pixabayCategory ? `**Pixabay-Kategorie:** \`${markdownText(report.pixabayCategory)}\`` : '',
     options.compact
       ? ''
       : (queries.length

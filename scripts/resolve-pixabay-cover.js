@@ -47,6 +47,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'dependency-updates',
+    pixabayCategory: 'computer',
     markers: ['dependabot', 'dependency', 'dependencies', 'supply-chain', 'supply chain'],
     query: 'software dependency package update code github vulnerability',
     positive: ['dependency', 'dependencies', 'package', 'update', 'software', 'code', 'github', 'vulnerability'],
@@ -54,6 +55,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'systemd-service',
+    pixabayCategory: 'computer',
     markers: ['systemd', 'journalctl'],
     query: 'linux command prompt shell daemon service logs',
     positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'prompt'],
@@ -64,6 +66,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'docker-compose',
+    pixabayCategory: 'computer',
     markers: ['docker compose', 'docker', 'compose'],
     query: 'devops software code terminal deployment programming',
     positive: ['software', 'code', 'deployment', 'devops', 'development', 'programming', 'terminal'],
@@ -71,6 +74,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'semantic-search',
+    pixabayCategory: 'computer',
     markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
     query: 'search data code analytics magnifying glass',
     positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
@@ -79,6 +83,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'vpc-networking',
+    pixabayCategory: 'computer',
     markers: ['vpc', 'subnet', 'route-table', 'route table', 'nat-gateway', 'internet-gateway'],
     query: 'computer network topology router routing subnet infrastructure',
     positive: ['topology', 'router', 'routing', 'subnet', 'infrastructure', 'ethernet'],
@@ -87,6 +92,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'chaos-engineering',
+    pixabayCategory: 'computer',
     markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
     query: 'server monitoring alert outage incident failure reliability',
     positive: ['server', 'monitoring', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'observability'],
@@ -98,6 +104,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'regression-testing',
+    pixabayCategory: 'computer',
     markers: ['regressionstest', 'regression test', 'regression'],
     query: 'software testing quality assurance bug code',
     positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
@@ -105,6 +112,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'logging-observability',
+    pixabayCategory: 'computer',
     markers: ['logger.info', 'logging', 'logger', 'observability'],
     query: 'server logs monitoring metrics observability cloudwatch alerts',
     positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts'],
@@ -115,6 +123,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'photo-storage-sync',
+    pixabayCategory: 'computer',
     markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
     query: 'cloud photo backup files gallery sync',
     positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup'],
@@ -516,7 +525,7 @@ function rankCandidates(hits, data = {}, query = '') {
     });
 }
 
-async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
+async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, options = {}) {
   const url = new URL('https://pixabay.com/api/');
   url.searchParams.set('key', apiKey);
   url.searchParams.set('q', query);
@@ -528,14 +537,20 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
   url.searchParams.set('min_width', '1280');
   url.searchParams.set('min_height', '720');
 
+  const category = String(options.category || '').trim().toLowerCase();
+  if (category) url.searchParams.set('category', category);
+
   const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`Pixabay search failed with HTTP ${response.status}`);
   const payload = await response.json();
   return Array.isArray(payload.hits) ? payload.hits : [];
 }
 
-function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay')) {
-  const digest = crypto.createHash('sha256').update(`v2:${String(query)}`).digest('hex').slice(0, 24);
+function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay'), category = '') {
+  const digest = crypto.createHash('sha256')
+    .update(`v3:${String(category)}:${String(query)}`)
+    .digest('hex')
+    .slice(0, 24);
   return path.join(cacheDir, `${digest}.json`);
 }
 
@@ -543,7 +558,8 @@ async function searchPixabayCached(query, apiKey, options = {}) {
   const fetchImpl = options.fetchImpl || globalThis.fetch;
   const cacheDir = options.cacheDir || path.join(root, '.cache', 'pixabay');
   const now = Number.isFinite(options.now) ? options.now : Date.now();
-  const cacheFile = cacheFileForQuery(query, cacheDir);
+  const category = String(options.category || '').trim().toLowerCase();
+  const cacheFile = cacheFileForQuery(query, cacheDir, category);
 
   try {
     const cached = JSON.parse(await fs.readFile(cacheFile, 'utf8'));
@@ -555,9 +571,13 @@ async function searchPixabayCached(query, apiKey, options = {}) {
     if (!error || (error.code !== 'ENOENT' && error.name !== 'SyntaxError')) throw error;
   }
 
-  const hits = await searchPixabay(query, apiKey, fetchImpl);
+  const hits = await searchPixabay(query, apiKey, fetchImpl, { category });
   await fs.mkdir(cacheDir, { recursive: true });
-  await fs.writeFile(cacheFile, JSON.stringify({ cachedAt: now, query, hits }, null, 2), 'utf8');
+  await fs.writeFile(
+    cacheFile,
+    JSON.stringify({ cachedAt: now, query, category, hits }, null, 2),
+    'utf8'
+  );
   return hits;
 }
 
@@ -769,7 +789,11 @@ async function main() {
   const queries = queryCandidates(parsed.data, options.query);
   if (!queries.length) throw new Error('Could not derive a Pixabay cover query');
 
-  const hits = await collectCandidates(queries, apiKey);
+  const intent = visualIntent(parsed.data);
+  const pixabayCategory = String(intent?.pixabayCategory || '').trim();
+  const hits = await collectCandidates(queries, apiKey, {
+    searchOptions: { category: pixabayCategory }
+  });
   if (!hits.length) throw new Error(`No Pixabay images matched: ${queries.join(' | ')}`);
 
   const rankingQuery = String(options.query || queries[0] || '').trim();
@@ -778,8 +802,9 @@ async function main() {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
     series: detectSeries(parsed.data),
-    visualIntent: visualIntent(parsed.data)?.key || '',
-    visualIntentEvidence: visualIntent(parsed.data)?.evidenceScore || 0,
+    visualIntent: intent?.key || '',
+    visualIntentEvidence: intent?.evidenceScore || 0,
+    pixabayCategory,
     query: rankingQuery,
     queries,
     candidates: ranked.slice(0, 5).map(reportCandidate)
