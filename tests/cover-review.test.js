@@ -9,6 +9,7 @@ describe('cover review markdown', () => {
     postPath: 'posts/example.md',
     title: 'Example Article',
     series: 'example-series',
+    visualIntent: 'writing-proofreading',
     query: 'server storage cloud',
     queries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV', 'Example Article'],
     selected: {
@@ -75,6 +76,7 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('raw.githubusercontent.com/0b-ivan/Blog/abc123/assets/covers/example.jpg');
     expect(markdown).toContain('88/100');
     expect(markdown).toContain('**Serie:** `example-series`');
+    expect(markdown).toContain('**Bildidee:** `writing-proofreading`');
     expect(markdown).toContain('**Vielfalt:** Motiv `storage` · Score 88 → 76');
     expect(markdown).toContain('außerhalb von Serien eindeutig');
     expect(markdown).toContain('motif diversity');
