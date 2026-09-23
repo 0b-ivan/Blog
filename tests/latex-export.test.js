@@ -50,7 +50,7 @@ describe('LaTeX publication export', () => {
 
     expect(
       rewriteSourceLinksForPdf('<a href="sources.xhtml#source-docker-compose">[1]</a>')
-    ).toBe('<a href="#source-docker-compose">[1]</a>');
+    ).toBe('<a href="#ref-docker-compose">[1]</a>');
   });
 
   it('generates bibliography records for the sources used by the paper', () => {
