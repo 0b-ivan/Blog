@@ -1,5 +1,6 @@
 const {
   COMMENT_MARKER,
+  canonicalizeCandidateTerm,
   renderMarkdownReport,
   suggestGlossaryTerms
 } = require('../lib/glossary-suggestions');
@@ -125,6 +126,61 @@ describe('glossary suggestions', () => {
 
     expect(suggestions.some((entry) => entry.term === 'RRF')).toBe(false);
     expect(suggestions.some((entry) => entry.term === 'OpenTelemetry')).toBe(true);
+  });
+
+  it('normalizes plural acronyms, IDs and generic compound suffixes', () => {
+    expect(canonicalizeCandidateTerm('APIs')).toBe('API');
+    expect(canonicalizeCandidateTerm('IPs')).toBe('IP');
+    expect(canonicalizeCandidateTerm('AMI-ID')).toBe('AMI');
+    expect(canonicalizeCandidateTerm('Cloudflare-Konfiguration')).toBe('Cloudflare');
+    expect(canonicalizeCandidateTerm('Checksum-Prüfung')).toBe('Checksum');
+
+    const suggestions = suggestGlossaryTerms('APIs, IPs und AMI-ID werden hier erwähnt.', {
+      entries: [
+        ...entries,
+        { key: 'API', aliases: [] },
+        { key: 'IP', aliases: [] }
+      ],
+      file: 'posts/test.md'
+    });
+    const terms = new Set(suggestions.map((entry) => entry.term));
+
+    expect(terms.has('APIs')).toBe(false);
+    expect(terms.has('IPs')).toBe(false);
+    expect(terms.has('API')).toBe(false);
+    expect(terms.has('IP')).toBe(false);
+    expect(terms.has('AMI-ID')).toBe(false);
+    expect(terms.has('AMI')).toBe(true);
+  });
+
+  it('rejects ordinary language and numeric fragments before occurrence count can inflate them', () => {
+    const suggestions = suggestGlossaryTerms([
+      'Wir betreiben werden später verbessert.',
+      'Wir verwenden bekannten Schwachstellen nur als Beispielsatz.',
+      'Wir testen mit 83 Prozent Wahrscheinlichkeit.',
+      'Wir deployen mit Kubernetes.'
+    ].join('\n'), {
+      entries,
+      file: 'posts/test.md'
+    });
+    const terms = new Set(suggestions.map((entry) => entry.term));
+
+    expect(terms.has('werden')).toBe(false);
+    expect(terms.has('bekannten Schwachstellen')).toBe(false);
+    expect([...terms].some((term) => term.startsWith('83'))).toBe(false);
+    expect(terms.has('Kubernetes')).toBe(true);
+  });
+
+  it('cuts contextual candidates at sentence boundaries', () => {
+    const suggestions = suggestGlossaryTerms('Wir arbeiten mit Cloudflare. Mit Credentials. Aber kontrolliert.', {
+      entries,
+      file: 'posts/test.md'
+    });
+    const terms = new Set(suggestions.map((entry) => entry.term));
+
+    expect(terms.has('Cloudflare')).toBe(true);
+    expect(terms.has('Cloudflare. Mit')).toBe(false);
+    expect(terms.has('Credentials. Aber')).toBe(false);
   });
 
   it('renders one stable, non-blocking PR report', () => {
