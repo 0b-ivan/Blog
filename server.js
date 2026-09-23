@@ -15,6 +15,7 @@ const {
   withGlossaryDefinitions
 } = require('./lib/glossary');
 const { countWords, calculateReadingTime } = require('./lib/reading-time');
+const { articleCoverStyle } = require('./lib/post-cover');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -633,6 +634,7 @@ function renderPostPage(post, relatedPosts = []) {
   const coverCreditHtml = coverCreditParts.length
     ? `<p class="article-hero__credit">${coverCreditParts.join(' · ')}</p>`
     : '';
+  const coverStyle = articleCoverStyle(post);
 
   return `<!doctype html>
 <html lang="de">
@@ -692,7 +694,7 @@ function renderPostPage(post, relatedPosts = []) {
             <p class="terminal-title">live-terminal://kernel-notes/${md.utils.escapeHtml(String(post.title || ''))}</p>
           </div>
 
-          <header class="article-hero" data-article-hero>
+          <header class="article-hero" data-article-hero${coverStyle ? ` style="${coverStyle}"` : ''}>
             <div class="article-hero__chrome" aria-hidden="true">
               <span class="article-hero__path">${md.utils.escapeHtml(heroPath)}</span>
               <span class="article-hero__topic"># ${md.utils.escapeHtml(String(heroTopic).toLowerCase())}</span>
