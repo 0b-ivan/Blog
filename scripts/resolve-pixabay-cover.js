@@ -73,13 +73,14 @@ const STOP_WORDS = new Set([
 ]);
 
 function parseArgs(args) {
-  const options = { target: '', query: '', select: 0, preview: false, report: '' };
+  const options = { target: '', query: '', select: 0, selectId: '', preview: false, report: '' };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     const next = args[i + 1];
     if (!arg.startsWith('--') && !options.target) options.target = arg;
     else if (arg === '--query' && next) { options.query = next.trim(); i += 1; }
     else if (arg === '--select' && next) { options.select = Number.parseInt(next, 10); i += 1; }
+    else if (arg === '--select-id' && next) { options.selectId = String(next).trim(); i += 1; }
     else if (arg === '--report' && next) { options.report = next.trim(); i += 1; }
     else if (arg === '--preview') options.preview = true;
     else throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -517,7 +518,7 @@ async function writeReport(reportPath, report) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1] [--report /tmp/report.json]');
+  if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1 | --select-id 123] [--report /tmp/report.json]');
 
   const apiKey = String(process.env.PIXABAY_API_KEY || '').trim();
   if (!apiKey) throw new Error('PIXABAY_API_KEY is required');
@@ -552,7 +553,15 @@ async function main() {
   }
 
   const rankedHits = ranked.map((entry) => entry.hit);
-  const hit = await choosePhoto(rankedHits, options.select);
+  let hit;
+  if (options.selectId) {
+    hit = rankedHits.find((candidate) => String(candidate.id) === options.selectId);
+    if (!hit) {
+      throw new Error(`Selected Pixabay image id ${options.selectId} is unavailable in the current ranked candidate pool`);
+    }
+  } else {
+    hit = await choosePhoto(rankedHits, options.select);
+  }
   const selectedIndex = rankedHits.findIndex((candidate) => String(candidate.id) === String(hit.id));
   const selectedEntry = ranked[Math.max(0, selectedIndex)];
   const downloaded = await downloadPhoto(hit);
@@ -592,7 +601,7 @@ async function main() {
     }
   });
 
-  console.log(`Selected ranked candidate ${selectedIndex + 1} with score ${selectedEntry.score}/100`);
+  console.log(`Selected Pixabay image ${hit.id} at ranked candidate ${selectedIndex + 1} with score ${selectedEntry.score}/100`);
   console.log(`Saved ${path.relative(root, coverPath)} from Pixabay image ${hit.id}`);
   console.log('Updated assets/css/article-covers.css');
 }
