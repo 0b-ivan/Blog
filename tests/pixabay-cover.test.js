@@ -154,10 +154,16 @@ describe('Pixabay cover resolver', () => {
       'writing proofreading text document keyboard spelling grammar'
     );
 
-    expect(visualIntent({
+    const rssIntent = visualIntent({
       title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
       tags: ['RSS', 'FreshRSS', 'Miniflux']
-    }).key).toBe('rss-reader');
+    });
+    expect(rssIntent.key).toBe('rss-reader');
+    expect(rssIntent.pixabayCategory).toBe('computer');
+    expect(queryCandidates({
+      title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
+      tags: ['RSS', 'FreshRSS', 'Miniflux']
+    })[0]).toBe('rss feed reader website subscription aggregator syndication');
 
     expect(visualIntent({
       title: 'Eine VPC ist keine schwarze Magie',
@@ -193,7 +199,7 @@ describe('Pixabay cover resolver', () => {
     };
     expect(
       scoreHit({
-        tags: 'rss, feed, news, reader, article, reading',
+        tags: 'rss, feed, reader, subscription, aggregator, website',
         imageWidth: 1920,
         imageHeight: 1080
       }, rss).score
@@ -338,13 +344,13 @@ describe('Pixabay cover resolver', () => {
     };
     expect(
       scoreHit({
-        tags: 'rss, feed, news, article, newspaper, subscription',
+        tags: 'rss, feed, reader, subscription, aggregator, website',
         imageWidth: 1920,
         imageHeight: 1080
       }, rss).score
     ).toBeGreaterThan(
       scoreHit({
-        tags: 'books, bookstore, reading, reader, library, novels',
+        tags: 'press, journalist, photographer, news, newspaper, reporter',
         imageWidth: 1920,
         imageHeight: 1080
       }, rss).score

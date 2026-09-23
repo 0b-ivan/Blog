@@ -40,10 +40,11 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'rss-reader',
+    pixabayCategory: 'computer',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
-    query: 'rss feed news articles newspaper website subscription',
-    positive: ['rss', 'feed', 'news', 'article', 'newspaper', 'subscription', 'website'],
-    avoid: ['book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    query: 'rss feed reader website subscription aggregator syndication',
+    positive: ['rss', 'feed', 'reader', 'subscription', 'website', 'aggregator', 'syndication'],
+    avoid: ['journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',

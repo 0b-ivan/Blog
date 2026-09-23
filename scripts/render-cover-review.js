@@ -108,7 +108,10 @@ function candidateTable(candidates, options = {}) {
       : 'Pixabay';
     const reasons = markdownText((candidate.reasons || []).join(' · ')) || 'keine zusätzlichen Signale';
     const semantic = Number.isFinite(Number(candidate.semanticSimilarity))
-      ? `E5: ${Number(candidate.semanticSimilarity).toFixed(4)}`
+      ? `E5 Artikel: ${Number(candidate.semanticSimilarity).toFixed(4)}`
+      : '';
+    const prototype = Number.isFinite(Number(candidate.prototypeMargin))
+      ? `Konzept: ${Number(candidate.prototypeMargin) >= 0 ? '+' : ''}${Number(candidate.prototypeMargin).toFixed(4)}`
       : '';
     const heuristic = Number.isFinite(Number(candidate.heuristicScore))
       ? `Heuristik: ${Math.round(Number(candidate.heuristicScore))}/100`
@@ -118,12 +121,14 @@ function candidateTable(candidates, options = {}) {
       ? [
           markdownText(candidate.tags).slice(0, 180),
           semantic,
+          prototype,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
         ].filter(Boolean).join('<br>')
       : [
           markdownText(candidate.tags),
           semantic,
+          prototype,
           heuristic,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
@@ -160,6 +165,7 @@ function renderReport(report, options = {}) {
     report.visualIntent ? `**Intent-Evidenz:** ${Number(report.visualIntentEvidence || 0)}` : '',
     report.pixabayCategory ? `**Pixabay-Kategorie:** \`${markdownText(report.pixabayCategory)}\`` : '',
     report.semanticModel ? `**Semantisches Ranking:** \`${markdownText(report.semanticModel)}\` · E5 ${Math.round(Number(report.semanticWeight || 0) * 100)}%` : '',
+    report.semanticPrototype ? `**Konzept-Prototyp:** \`${markdownText(report.semanticPrototype)}\`` : '',
     options.compact
       ? ''
       : (queries.length
@@ -186,7 +192,10 @@ function renderReport(report, options = {}) {
     lines.push(
       `**Ausgewählt:** Rang ${selected.rank} · **${selected.score}/100**`,
       Number.isFinite(Number(selected.semanticSimilarity))
-        ? `**E5-Ähnlichkeit:** ${Number(selected.semanticSimilarity).toFixed(5)}`
+        ? `**E5 Artikel-Ähnlichkeit:** ${Number(selected.semanticSimilarity).toFixed(5)}`
+        : '',
+      Number.isFinite(Number(selected.prototypeMargin))
+        ? `**E5 Konzept-Marge:** ${Number(selected.prototypeMargin) >= 0 ? '+' : ''}${Number(selected.prototypeMargin).toFixed(5)}`
         : '',
       selected.pageURL ? `**Quelle:** [Pixabay – ${markdownText(selected.tags || 'Bild')}](${selected.pageURL})` : '',
       '',

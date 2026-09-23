@@ -5,8 +5,57 @@ const { createEmbedder } = require('../rag/lib/embedder-factory');
 const { cosineSimilarity } = require('../rag/lib/ranking');
 
 const root = path.join(__dirname, '..');
-const DEFAULT_SEMANTIC_WEIGHT = 0.82;
+const DEFAULT_SEMANTIC_WEIGHT = 0.90;
 const DEFAULT_MISMATCH_DELTA = 0.07;
+const ARTICLE_SEMANTIC_SHARE = 0.65;
+const PROTOTYPE_SEMANTIC_SHARE = 0.35;
+
+const COVER_CONCEPT_PROTOTYPES = {
+  'writing-proofreading': {
+    positive: 'writing proofreading spelling grammar text editing document keyboard manuscript corrected text language tool',
+    negative: 'secretary office sales telephone call center business meeting portrait person'
+  },
+  'rss-reader': {
+    positive: 'RSS feed reader web feed subscription aggregator syndicated website articles unread feed list RSS icon',
+    negative: 'journalist press photographer newspaper reporter television news camera paparazzi'
+  },
+  'dependency-updates': {
+    positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
+    negative: 'physical lock safe vault key insurance house security'
+  },
+  'systemd-service': {
+    positive: 'Linux system service daemon command line shell logs journal process server administration',
+    negative: 'train station airport terminal transport computer repair electronics hardware'
+  },
+  'docker-compose': {
+    positive: 'software deployment DevOps application services orchestration compose configuration code terminal',
+    negative: 'shipping cargo port freight metal container box jar can storage vessel'
+  },
+  'semantic-search': {
+    positive: 'semantic search embeddings vector search similarity ranking data retrieval code search index',
+    negative: 'social media search engine smartphone robot portrait generic artificial intelligence human'
+  },
+  'vpc-networking': {
+    positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
+    negative: 'social media network people icons smartphone generic server rack database storage'
+  },
+  'chaos-engineering': {
+    positive: 'site reliability engineering resilience failure injection outage monitoring incident recovery infrastructure reliability experiment',
+    negative: 'school exam chemistry laboratory medical experiment business management sales'
+  },
+  'regression-testing': {
+    positive: 'software regression testing automated tests bug quality assurance test suite continuous integration code failure',
+    negative: 'school exam laboratory medical test car crash business meeting'
+  },
+  'logging-observability': {
+    positive: 'software logs observability metrics monitoring alerts dashboard log lines terminal server application telemetry',
+    negative: 'car dashboard speedometer vehicle smartphone photography game'
+  },
+  'photo-storage-sync': {
+    positive: 'photo library gallery cloud sync backup files images photo management storage synchronization',
+    negative: 'airplane fighter aircraft warehouse self storage tourist photographer music business'
+  }
+};
 
 function parseArgs(args) {
   const options = {
@@ -109,6 +158,25 @@ function round(value, digits = 4) {
   return Math.round(Number(value || 0) * factor) / factor;
 }
 
+function conceptPrototype(report = {}) {
+  const key = String(report.visualIntent || '').trim();
+  if (!key) return null;
+  const prototype = COVER_CONCEPT_PROTOTYPES[key];
+  return prototype ? { key, ...prototype } : null;
+}
+
+function prototypeMarginScore(margin) {
+  return Math.max(0, Math.min(100, Math.round(50 + (Number(margin || 0) * 600))));
+}
+
+function combinedSemanticScore(articleScore, prototypeScore, hasPrototype) {
+  if (!hasPrototype) return Math.max(0, Math.min(100, Math.round(Number(articleScore || 0))));
+  return Math.max(0, Math.min(100, Math.round(
+    (Number(articleScore || 0) * ARTICLE_SEMANTIC_SHARE)
+    + (Number(prototypeScore || 0) * PROTOTYPE_SEMANTIC_SHARE)
+  )));
+}
+
 function semanticRelativeScore(similarity, bestSimilarity, mismatchDelta = DEFAULT_MISMATCH_DELTA) {
   const gap = Math.max(0, Number(bestSimilarity || 0) - Number(similarity || 0));
   return Math.max(0, Math.min(100, Math.round(100 - ((gap / mismatchDelta) * 35))));
@@ -129,7 +197,15 @@ async function rerankReport(report, articleText, embedder, options = {}) {
 
   if (!candidates.length) return report;
 
+  const prototype = conceptPrototype(report);
   const queryEmbedding = await embedder.embedQuery(articleText);
+  const positivePrototypeEmbedding = prototype
+    ? await embedder.embedQuery(prototype.positive)
+    : null;
+  const negativePrototypeEmbedding = prototype
+    ? await embedder.embedQuery(prototype.negative)
+    : null;
+
   const candidateTexts = candidates.map(candidateSemanticText);
   const candidateEmbeddings = await embedder.embedDocuments(candidateTexts);
   const similarities = candidateEmbeddings.map((embedding) =>
@@ -139,24 +215,59 @@ async function rerankReport(report, articleText, embedder, options = {}) {
 
   const reranked = candidates.map((candidate, index) => {
     const similarity = similarities[index];
-    const semanticScore = semanticRelativeScore(similarity, bestSimilarity, mismatchDelta);
+    const articleSemanticScore = semanticRelativeScore(similarity, bestSimilarity, mismatchDelta);
     const heuristicScore = Number(candidate.score || 0);
+
+    const positiveSimilarity = prototype
+      ? cosineSimilarity(positivePrototypeEmbedding, candidateEmbeddings[index])
+      : null;
+    const negativeSimilarity = prototype
+      ? cosineSimilarity(negativePrototypeEmbedding, candidateEmbeddings[index])
+      : null;
+    const prototypeMargin = prototype
+      ? Number(positiveSimilarity) - Number(negativeSimilarity)
+      : null;
+    const prototypeScore = prototype
+      ? prototypeMarginScore(prototypeMargin)
+      : null;
+    const semanticScore = combinedSemanticScore(
+      articleSemanticScore,
+      prototypeScore,
+      Boolean(prototype)
+    );
     const score = blendScore(semanticScore, heuristicScore, semanticWeight);
-    const semanticMismatch = similarity < (bestSimilarity - mismatchDelta);
+    const articleMismatch = similarity < (bestSimilarity - mismatchDelta);
+    const prototypeMismatch = Boolean(
+      prototype && Number(positiveSimilarity) <= Number(negativeSimilarity)
+    );
+    const semanticMismatch = articleMismatch || prototypeMismatch;
 
     return {
       ...candidate,
       originalRank: candidate.rank,
       heuristicScore,
       semanticSimilarity: round(similarity, 5),
+      articleSemanticScore,
+      prototypeKey: prototype?.key || '',
+      prototypePositiveSimilarity: prototype ? round(positiveSimilarity, 5) : null,
+      prototypeNegativeSimilarity: prototype ? round(negativeSimilarity, 5) : null,
+      prototypeMargin: prototype ? round(prototypeMargin, 5) : null,
+      prototypeScore,
       semanticScore,
       score,
       semanticMismatch,
+      prototypeMismatch,
       reasons: [
-        `E5 semantic similarity ${round(similarity, 5)} (${semanticScore}/100 relative)`,
+        `E5 article similarity ${round(similarity, 5)} (${articleSemanticScore}/100 relative)`,
+        prototype
+          ? `E5 concept margin ${round(prototypeMargin, 5)} (positive ${round(positiveSimilarity, 5)} vs negative ${round(negativeSimilarity, 5)}; ${prototypeScore}/100)`
+          : '',
+        prototype
+          ? `semantic mix ${Math.round(ARTICLE_SEMANTIC_SHARE * 100)}/${Math.round(PROTOTYPE_SEMANTIC_SHARE * 100)} article/concept`
+          : '',
         `semantic/heuristic blend ${Math.round(semanticWeight * 100)}/${Math.round((1 - semanticWeight) * 100)}`,
         ...(Array.isArray(candidate.reasons) ? candidate.reasons : [])
-      ]
+      ].filter(Boolean)
     };
   }).sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
@@ -174,6 +285,9 @@ async function rerankReport(report, articleText, embedder, options = {}) {
     semanticModel: options.embeddingModel || '',
     semanticWeight,
     semanticBestSimilarity: round(bestSimilarity, 5),
+    semanticPrototype: prototype?.key || '',
+    semanticPrototypePositive: prototype?.positive || '',
+    semanticPrototypeNegative: prototype?.negative || '',
     candidates: reranked
   };
 }
@@ -245,12 +359,18 @@ if (require.main === module) {
 }
 
 module.exports = {
+  ARTICLE_SEMANTIC_SHARE,
+  COVER_CONCEPT_PROTOTYPES,
   DEFAULT_MISMATCH_DELTA,
   DEFAULT_SEMANTIC_WEIGHT,
+  PROTOTYPE_SEMANTIC_SHARE,
   articleSemanticText,
   blendScore,
   candidateSemanticText,
+  combinedSemanticScore,
+  conceptPrototype,
   parseArgs,
+  prototypeMarginScore,
   rerankReport,
   rerankReports,
   semanticRelativeScore,
