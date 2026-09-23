@@ -32,20 +32,22 @@ snippets:
     description: Zeigt einen festen Image-Tag für den Blog-Service.
     type: Compose-Ausschnitt
     language: yaml
-cover_query: Hetzner Docker Cloudflare DevOps
+cover_query: 'Deployment mit Hetzner, Docker und Cloudflare Zero Trust'
 cover_provider: pixabay
-cover_provider_id: '7707507'
+cover_provider_id: '60650'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  statue, sculpture, iron, steel, docker, finland, hamina, docker, docker,
-  docker, docker, docker, finland
+  afghanistan, soldier, security, weapon, village, patrol, deployment, brown
+  security, brown village, afghanistan, afghanistan, afghanistan, afghanistan,
+  afghanistan
 cover_focus: center
-cover_credit: by Olga_Fil via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/statue-sculpture-iron-steel-docker-7707507/'
-cover_source_url: 'https://pixabay.com/photos/statue-sculpture-iron-steel-docker-7707507/'
+cover_credit: by ArmyAmber via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/afghanistan-soldier-security-weapon-60650/'
+cover_source_url: 'https://pixabay.com/photos/afghanistan-soldier-security-weapon-60650/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 64
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

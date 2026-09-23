@@ -27,19 +27,20 @@ snippets:
     language: yaml
 cover_query: GitHub Dependabot Security Security
 cover_provider: pixabay
-cover_provider_id: '5839836'
+cover_provider_id: '597495'
 cover_image: /assets/covers/2026-08-19-dependabot-im-einsatz.jpg
 cover_alt: >-
-  lifebuoy, fishing supplies, security, fishing port, fishnet, fishing,
-  seafaring, overfishing, maritime, lifebuoy, fishing supplies, security,
-  fishing, fishing, fishing, overfishing, overfishing, overfishing, overfishing,
-  overfishing, maritime
+  padlock, lock, chain, key, security, protection, safety, access, locked, link,
+  crime, steel, privacy, secure, criminal, shackle, danger, thief, theft,
+  vulnerable, restrain, break-in, protect, strong, padlock, padlock, lock, lock,
+  lock, lock, lock, chain, crime, privacy, privacy, thief, thief, theft, strong
 cover_focus: center
-cover_credit: by fotoblend via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/lifebuoy-fishing-supplies-security-5839836/'
-cover_source_url: 'https://pixabay.com/photos/lifebuoy-fishing-supplies-security-5839836/'
+cover_credit: by stevepb via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/padlock-lock-chain-key-security-597495/'
+cover_source_url: 'https://pixabay.com/photos/padlock-lock-chain-key-security-597495/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 70
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.

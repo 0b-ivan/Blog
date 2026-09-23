@@ -82,6 +82,7 @@ cover_credit_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-474
 cover_source_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 47
 ---
 Teil I: Der Blog läuft auf K3s.
 

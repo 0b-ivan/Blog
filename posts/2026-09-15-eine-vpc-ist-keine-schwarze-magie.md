@@ -31,17 +31,19 @@ search_queries:
     maxRank: 1
 cover_query: AWS VPC Networking AWS
 cover_provider: pixabay
-cover_provider_id: '6614312'
+cover_provider_id: '292988'
 cover_image: /assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg
 cover_alt: >-
-  agustawestland aw189, helicopter, aircraft, helicopter, helicopter,
-  helicopter, helicopter, helicopter
+  social media, connection, icons, internet, online, communication, concept,
+  network, networking, social media, social media, social media, social media,
+  social media, online
 cover_focus: center
-cover_credit: by onkelglocke via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
-cover_source_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
+cover_credit: by LoboStudioHamburg via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/social-media-connection-icons-292988/'
+cover_source_url: 'https://pixabay.com/photos/social-media-connection-icons-292988/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 65
 ---
 
 VPC, Subnet, Route Table, Internet Gateway, NAT Gateway, Security Group, NACL …

@@ -31,21 +31,22 @@ search_queries:
     maxRank: 1
 cover_query: Semantic-Search DuckDB Embeddings Engineering
 cover_provider: pixabay
-cover_provider_id: '1236578'
+cover_provider_id: '1452987'
 cover_image: /assets/covers/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.jpg
 cover_alt: >-
-  gears, cogs, machine, machinery, mechanical, gears and cogs, technology,
-  industry, industrial, engineering, cogwheels, metals, monochrome, black and
-  white, gears, gears, gears, cogs, machine, machine, machine, machine, machine,
-  machinery, machinery, mechanical, technology, technology, technology,
-  technology, industry, industry, industry, industrial, engineering,
-  engineering, engineering, engineering
+  macro, cogwheel, gear, engine, vintage, industrial, work, mechanism,
+  mechanics, technology, accuracy, clock, analogue, time, engineering, machine,
+  metal, mechanical, equipment, industry, repair, parts, old, retro, gear,
+  engine, industrial, work, work, work, technology, technology, technology,
+  technology, clock, clock, clock, time, time, time, time, time, engineering,
+  engineering, machine, machine, machine, metal, metal, metal, industry
 cover_focus: center
-cover_credit: by MustangJoe via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/gears-cogs-machine-machinery-1236578/'
-cover_source_url: 'https://pixabay.com/photos/gears-cogs-machine-machinery-1236578/'
+cover_credit: by Pavlofox via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/macro-cogwheel-gear-engine-vintage-1452987/'
+cover_source_url: 'https://pixabay.com/photos/macro-cogwheel-gear-engine-vintage-1452987/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 60
 ---
 
 Eine normale Volltextsuche ist gut darin, Wörter wiederzufinden. Ich tippe `Docker` ein und bekomme Artikel zurück, in denen `Docker` steht.

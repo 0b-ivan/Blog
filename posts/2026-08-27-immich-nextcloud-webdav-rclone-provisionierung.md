@@ -33,22 +33,19 @@ search_queries:
     maxRank: 1
 cover_query: Immich Nextcloud WebDAV Self-Hosting
 cover_provider: pixabay
-cover_provider_id: '2433978'
+cover_provider_id: '4166221'
 cover_image: /assets/covers/2026-08-27-immich-nextcloud-webdav-rclone-provisionierung.jpg
 cover_alt: >-
-  board, school, self confidence, believe, self worth, trust, personality,
-  slate, teaching, chalk, to learn, training, writing board, smeared, black,
-  college, study, self-esteem, self-liberation, self-reflection, security,
-  sovereignty, self-assurance, self-consciousness, assertion, self,
-  self-control, self-humiliation, self-restraint, self-confessions, think,
-  psychology, behave, self-love, ego, feel, self-image, myself, positive, self
-  acceptance, i, conscious life, believe, believe, believe, believe, believe
+  make the day great, letterbox, light box, motivation, encourage,
+  self-confidence, live, courage, strengthen, enjoy, letters, text, overhead
+  projector, motivation, motivation, motivation, motivation, motivation
 cover_focus: center
-cover_credit: by geralt via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/board-school-self-confidence-2433978/'
-cover_source_url: 'https://pixabay.com/photos/board-school-self-confidence-2433978/'
+cover_credit: by Alexas_Fotos via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/make-the-day-great-letterbox-4166221/'
+cover_source_url: 'https://pixabay.com/photos/make-the-day-great-letterbox-4166221/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 48
 ---
 
 Meine Fotos liegen bereits in **Nextcloud**. Für die eigentliche Verwaltung gefällt mir **Immich** aber deutlich besser.

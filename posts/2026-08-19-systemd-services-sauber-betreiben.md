@@ -30,17 +30,20 @@ snippets:
     language: ini
 cover_query: Linux systemd Operations Linux
 cover_provider: pixabay
-cover_provider_id: '994910'
+cover_provider_id: '4980917'
 cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
 cover_alt: >-
-  android, linux, marshmallow, smartphone, upgrade, android 6, google, android,
-  android, android, android, android
+  raspberry pi, pi, computer, electronics, linux, microcontroller, iot, arduino,
+  microchip, electrical engineering, circuit board, network, lan, usb,
+  technology, computer science, data, web, communication, raspberry pi, iot,
+  iot, iot, iot, iot, arduino
 cover_focus: center
-cover_credit: by mammela via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/android-linux-marshmallow-994910/'
-cover_source_url: 'https://pixabay.com/photos/android-linux-marshmallow-994910/'
+cover_credit: by planet_fox via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/raspberry-pi-pi-computer-4980917/'
+cover_source_url: 'https://pixabay.com/photos/raspberry-pi-pi-computer-4980917/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 64
 ---
 
 `systemd` ist mehr als nur `systemctl start`.

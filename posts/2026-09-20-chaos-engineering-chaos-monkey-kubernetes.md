@@ -33,19 +33,22 @@ search_queries:
     maxRank: 1
 cover_query: Chaos-Engineering Kubernetes SRE DevOps
 cover_provider: pixabay
-cover_provider_id: '4605684'
+cover_provider_id: '1452987'
 cover_image: /assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg
 cover_alt: >-
-  rolls-royce, aircraft engine, progress, technology, engine, jumble, mixed up,
-  chaos, perfection, development, complicated, complex, difficult, confusion,
-  aircraft engine, complicated, complicated, complicated, complicated,
-  complicated, difficult
+  macro, cogwheel, gear, engine, vintage, industrial, work, mechanism,
+  mechanics, technology, accuracy, clock, analogue, time, engineering, machine,
+  metal, mechanical, equipment, industry, repair, parts, old, retro, gear,
+  engine, industrial, work, work, work, technology, technology, technology,
+  technology, clock, clock, clock, time, time, time, time, time, engineering,
+  engineering, machine, machine, machine, metal, metal, metal, industry
 cover_focus: center
-cover_credit: by danielkirsch via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/rolls-royce-aircraft-engine-progress-4605684/'
-cover_source_url: 'https://pixabay.com/photos/rolls-royce-aircraft-engine-progress-4605684/'
+cover_credit: by Pavlofox via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/macro-cogwheel-gear-engine-vintage-1452987/'
+cover_source_url: 'https://pixabay.com/photos/macro-cogwheel-gear-engine-vintage-1452987/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 60
 ---
 
 Ein Chaos Monkey klingt zunächst nach einem schlechten Betriebsmodell:

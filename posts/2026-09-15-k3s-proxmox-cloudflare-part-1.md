@@ -85,6 +85,7 @@ cover_credit_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-474
 cover_source_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 47
 ---
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.

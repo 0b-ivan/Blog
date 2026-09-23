@@ -45,19 +45,21 @@ snippets:
     description: Baut das lokale Image und veröffentlicht Port 8080.
     type: Compose-Beispiel
     language: yaml
-cover_query: Docker DevOps Operations DevOps
+cover_query: DevOps Docker DevOps
 cover_provider: pixabay
-cover_provider_id: '650534'
+cover_provider_id: '6271649'
 cover_image: /assets/covers/2026-08-21-docker-vs-docker-compose.jpg
 cover_alt: >-
-  doctor, surgeon, operation, instruments, medical, health, doctor, doctor,
-  doctor, doctor, doctor, surgeon, operation, medical, medical, health
+  ship, container, cargo, port, docker, transport, mannheim, inner harbour,
+  harbour area, charge, inland waterway transport, transport of goods, docker,
+  docker, docker, docker, docker
 cover_focus: center
-cover_credit: by marionbrun via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/doctor-surgeon-operation-650534/'
-cover_source_url: 'https://pixabay.com/photos/doctor-surgeon-operation-650534/'
+cover_credit: by planet_fox via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/ship-container-cargo-port-docker-6271649/'
+cover_source_url: 'https://pixabay.com/photos/ship-container-cargo-port-docker-6271649/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 63
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.

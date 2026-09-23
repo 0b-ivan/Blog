@@ -33,20 +33,20 @@ snippets:
     language: yaml
 cover_query: RSS FreshRSS Miniflux Self-Hosting
 cover_provider: pixabay
-cover_provider_id: '5235089'
+cover_provider_id: '6181051'
 cover_image: >-
   /assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.jpg
 cover_alt: >-
-  podcast, audio, podcaster, microphone, radio, volume, music, technology,
-  recording, digital, mp3, headphones, voice, mic, studio, listen, broadcast,
-  programs, media, social media, rss, app, listener, list, laptop, podcast,
-  podcast, podcast, podcast, podcast
+  cloud, network, finger, cloud computing, internet, server, connection,
+  business, digital, web, hosting, technology, cloud computing, cloud computing,
+  cloud computing, cloud computing, cloud computing, hosting
 cover_focus: center
-cover_credit: by viarami via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/podcast-audio-podcaster-microphone-5235089/'
-cover_source_url: 'https://pixabay.com/photos/podcast-audio-podcaster-microphone-5235089/'
+cover_credit: by Tumisu via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
+cover_source_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 62
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.
