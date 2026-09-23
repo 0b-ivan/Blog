@@ -537,11 +537,51 @@ async function main() {
       'Article transition must not use an overlay element that can obscure hero copy'
     );
     if (await articleExcerpt.count()) {
-      const excerptOpacity = await articleExcerpt.evaluate((element) =>
-        Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).opacity)
+      const excerptLayout = await articleExcerpt.evaluate((element) => {
+        const view = element.ownerDocument.defaultView;
+        const style = view.getComputedStyle(element);
+        return {
+          opacity: Number.parseFloat(style.opacity),
+          clientHeight: element.clientHeight,
+          scrollHeight: element.scrollHeight,
+          lineClamp: style.webkitLineClamp,
+          maskImage: style.webkitMaskImage || style.maskImage
+        };
+      });
+      assert.ok(excerptLayout.opacity >= 0.99, 'Article excerpt must remain fully opaque through the hero/body transition');
+      assert.ok(
+        excerptLayout.scrollHeight <= excerptLayout.clientHeight + 1,
+        `Mobile article excerpt must not be clipped (client=${excerptLayout.clientHeight}, scroll=${excerptLayout.scrollHeight})`
       );
-      assert.ok(excerptOpacity >= 0.99, 'Article excerpt must remain fully opaque through the hero/body transition');
+      assert.ok(
+        excerptLayout.lineClamp === 'none' || excerptLayout.lineClamp === 'unset',
+        `Mobile article excerpt must not use a line clamp (actual=${excerptLayout.lineClamp})`
+      );
+      assert.equal(
+        excerptLayout.maskImage,
+        'none',
+        'Mobile article excerpt must not fade its own text'
+      );
     }
+
+    const heroReadability = await articleHero.evaluate((hero) => {
+      const view = hero.ownerDocument.defaultView;
+      const overlay = view.getComputedStyle(hero, '::after');
+      return {
+        background: overlay.backgroundImage,
+        backdropFilter: overlay.webkitBackdropFilter || overlay.backdropFilter
+      };
+    });
+    assert.notEqual(
+      heroReadability.background,
+      'none',
+      'Mobile cover hero should have a soft readability scrim behind copy'
+    );
+    assert.match(
+      heroReadability.backdropFilter,
+      /blur\(/,
+      'Mobile readability scrim should blur only the cover behind copy'
+    );
     const transitionPaint = await page.locator('.terminal-post--article').evaluate((terminal) => {
       const view = terminal.ownerDocument.defaultView;
       const hero = terminal.querySelector('.article-hero');
@@ -587,7 +627,7 @@ async function main() {
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
     assert.ok(
-      (await page.request.get(`${baseUrl}/assets/article-hero-motion.js?v=20260923-1`)).ok(),
+      (await page.request.get(`${baseUrl}/assets/article-hero-motion.js`)).ok(),
       'Article hero motion asset should be available'
     );
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
