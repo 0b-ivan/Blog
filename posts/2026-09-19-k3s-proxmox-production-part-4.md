@@ -10,6 +10,7 @@ author: obivan
 reviewed_by: pending
 category: DevOps
 excerpt: "Mein Blog läuft inzwischen produktiv auf K3s mit drei Replicas, Flux und Cloudflare Tunnel. Der Pod-Failover funktioniert – aber ein einzelner Proxmox-Host bleibt trotzdem ein Single Point of Failure."
+cover_query: kubernetes proxmox server datacenter infrastructure
 tags:
   - Kubernetes
   - K3s
