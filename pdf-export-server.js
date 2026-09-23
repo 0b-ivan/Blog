@@ -51,7 +51,6 @@ async function compileArticlePdf(post) {
       '--pdf-engine=lualatex',
       `--template=${template}`,
       '--number-sections',
-      '--shift-heading-level-by=-1',
       '--listings',
       `--resource-path=${[root, path.join(root, 'assets'), path.join(root, 'snippets')].join(':')}`,
       '--pdf-engine-opt=-interaction=nonstopmode',
