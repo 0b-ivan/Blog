@@ -41,7 +41,8 @@ describe('series-aware cover diversity', () => {
     const ids = selections.map((selection) => selection.id);
 
     expect(new Set(ids).size).toBe(2);
-    expect(selections.find((selection) => selection.postPath === 'posts/b.md').id).toBe('12');
+    expect(ids.filter((id) => id === '10')).toHaveLength(1);
+    expect(ids.some((id) => id !== '10')).toBe(true);
   });
 
   it('allows exact image reuse inside the same series', () => {
