@@ -124,6 +124,16 @@ Bei reinen Content-Änderungen vermeidet dieser Pfad einen vollständigen Image-
 
 Bei Runtime- oder Anwendungsänderungen werden Blog und Search als neue Images gebaut und per Docker Compose ausgerollt.
 
+Damit der parallele K3s-Build denselben Commit gefahrlos veröffentlichen kann, verwendet Hetzner für commit-spezifische Images den Tag `<git-sha>-hetzner`. K3s behält den rohen `<git-sha>`-Tag. Die beiden Workflows können dadurch nicht mehr denselben GHCR-Tag gegenseitig überschreiben.
+
+### Ressourcenbewusste K3s-Rollouts
+
+Der K3s-Production-Workflow baut Images nur dann neu, wenn deren tatsächliche Inputs geändert wurden. Eine reine Änderung an HTML, CSS oder Blog-Runtime rollt deshalb nicht mehr automatisch Kernel Grep oder den Status-Service neu aus.
+
+Kernel Grep läuft in Production mit einer Replica. Wegen des hohen RAM-Bedarfs beim Laden des Embedding-Modells verwendet der Search-Rollout `maxSurge: 0` und `maxUnavailable: 1`. Dadurch existieren nicht gleichzeitig zwei speicherintensive Search-Pods auf dem kleinen K3s-Node. Während eines Search-Rollouts kann die Suche kurz nicht verfügbar sein; der Blog selbst soll erreichbar bleiben.
+
+Nach dem GitOps-Publish prüft der Production-Workflow `/healthz` im Sekundentakt. Bereits ein einzelner fehlgeschlagener Healthcheck markiert den Rollout als Downtime. Bei einem Blog-Image-Wechsel muss die neue Build-Version außerdem mehrfach hintereinander beobachtet werden, damit der Canary nicht schon beim ersten neuen Pod beendet wird.
+
 ## Content-Änderungen
 
 Die beiden Production-Pfade behandeln Content bewusst unterschiedlich.
