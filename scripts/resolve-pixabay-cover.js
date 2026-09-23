@@ -392,6 +392,17 @@ function renderCandidates(ranked, limit = 6) {
   }).join('\n\n');
 }
 
+function findPhotoById(hits, selectedId) {
+  const id = String(selectedId || '').trim();
+  if (!id) throw new Error('Pixabay image id is required');
+
+  const hit = hits.find((candidate) => String(candidate.id) === id);
+  if (!hit) {
+    throw new Error(`Selected Pixabay image id ${id} is unavailable in the current ranked candidate pool`);
+  }
+  return hit;
+}
+
 async function choosePhoto(hits, selectedIndex) {
   if (!hits.length) throw new Error('No Pixabay images matched the query');
   if (selectedIndex > 0) {
@@ -555,10 +566,7 @@ async function main() {
   const rankedHits = ranked.map((entry) => entry.hit);
   let hit;
   if (options.selectId) {
-    hit = rankedHits.find((candidate) => String(candidate.id) === options.selectId);
-    if (!hit) {
-      throw new Error(`Selected Pixabay image id ${options.selectId} is unavailable in the current ranked candidate pool`);
-    }
+    hit = findPhotoById(rankedHits, options.selectId);
   } else {
     hit = await choosePhoto(rankedHits, options.select);
   }
@@ -627,6 +635,7 @@ module.exports = {
   detectSeries,
   downloadPhoto,
   fileExtension,
+  findPhotoById,
   parseArgs,
   queryCandidates,
   visualQuery,
