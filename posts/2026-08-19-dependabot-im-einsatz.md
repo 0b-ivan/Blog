@@ -25,21 +25,24 @@ snippets:
     description: Vereinfachtes Beispiel für wöchentliche Dependency-Updates.
     type: Dependabot-Konfiguration
     language: yaml
-cover_query: GitHub Dependabot Security Security
+cover_query: code security software dependency automation lock shield firewall
 cover_provider: pixabay
-cover_provider_id: '5839836'
+cover_provider_id: '3194286'
 cover_image: /assets/covers/2026-08-19-dependabot-im-einsatz.jpg
 cover_alt: >-
-  lifebuoy, fishing supplies, security, fishing port, fishnet, fishing,
-  seafaring, overfishing, maritime, lifebuoy, fishing supplies, security,
-  fishing, fishing, fishing, overfishing, overfishing, overfishing, overfishing,
-  overfishing, maritime
+  cyber security, hacker, security, internet, protection, secure, padlock,
+  firewall, protect, password, safety, lock, technology, computer, network,
+  access, privacy, gray computer, gray technology, gray laptop, gray network,
+  gray internet, gray security, gray safety, cybersecurity, cyber security,
+  cyber security, cybersecurity, cybersecurity, cybersecurity, cybersecurity,
+  cybersecurity
 cover_focus: center
-cover_credit: by fotoblend via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/lifebuoy-fishing-supplies-security-5839836/'
-cover_source_url: 'https://pixabay.com/photos/lifebuoy-fishing-supplies-security-5839836/'
+cover_credit: by Tumisu via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cyber-security-hacker-security-3194286/'
+cover_source_url: 'https://pixabay.com/photos/cyber-security-hacker-security-3194286/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 75
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.

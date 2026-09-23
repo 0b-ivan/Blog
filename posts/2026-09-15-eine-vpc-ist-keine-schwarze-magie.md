@@ -29,19 +29,23 @@ search_queries:
     maxRank: 1
   - query: Wie troubleshootet man AWS VPC Netzwerkprobleme?
     maxRank: 1
-cover_query: AWS VPC Networking AWS
+cover_query: cloud server network datacenter infrastructure
 cover_provider: pixabay
-cover_provider_id: '6614312'
+cover_provider_id: '2791434'
 cover_image: /assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg
 cover_alt: >-
-  agustawestland aw189, helicopter, aircraft, helicopter, helicopter,
-  helicopter, helicopter, helicopter
+  cloud, finger, touch, cloud computing, data store, capacity, network,
+  services, data, disk space, technical, concept, technology, information,
+  system, networking, data processing, internet, server, interface, service,
+  cloud computing, cloud computing, cloud computing, cloud computing, cloud
+  computing
 cover_focus: center
-cover_credit: by onkelglocke via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
-cover_source_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
+cover_credit: by geralt via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cloud-finger-touch-cloud-computing-2791434/'
+cover_source_url: 'https://pixabay.com/photos/cloud-finger-touch-cloud-computing-2791434/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 74
 ---
 
 VPC, Subnet, Route Table, Internet Gateway, NAT Gateway, Security Group, NACL …

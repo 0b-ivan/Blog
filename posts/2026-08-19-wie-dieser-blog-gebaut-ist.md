@@ -22,20 +22,23 @@ search_queries:
     maxRank: 1
   - query: Wie ist die Architektur dieses Blogs aufgebaut?
     maxRank: 1
-cover_query: Blog Architecture DevOps Engineering
+cover_query: website code server publishing deployment automation infrastructure cloud
 cover_provider: pixabay
-cover_provider_id: '1081825'
+cover_provider_id: '2784907'
 cover_image: /assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.jpg
 cover_alt: >-
-  copper, metal, modern, design, architecture, metallic, engineering,
-  construction, building, copper, copper, copper, copper, metal, metal, metal,
-  metal, metal, engineering, engineering, construction, construction
+  cyberspace, data, wire, electronic, electric, ethernet, infrastructure, cable,
+  computer, communication, panel, connection, to combine, the industry, router,
+  server, network, equipment, system, broadband, technology, telecommunication,
+  service provider, plug, node, dam, connector, link, lan, server, server,
+  server, server, server, network, broadband
 cover_focus: center
-cover_credit: by sakulich via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/copper-metal-modern-design-1081825/'
-cover_source_url: 'https://pixabay.com/photos/copper-metal-modern-design-1081825/'
+cover_credit: by jarmoluk via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
+cover_source_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 70
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.

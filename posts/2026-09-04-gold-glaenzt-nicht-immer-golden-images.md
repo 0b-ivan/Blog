@@ -29,19 +29,23 @@ search_queries:
     maxRank: 1
   - query: Wann sind Golden Images sinnvoll?
     maxRank: 1
-cover_query: AWS EC2 AMI AWS
+cover_query: cloud server network datacenter infrastructure deployment automation terminal
 cover_provider: pixabay
-cover_provider_id: '6614312'
+cover_provider_id: '8598424'
 cover_image: /assets/covers/2026-09-04-gold-glaenzt-nicht-immer-golden-images.jpg
 cover_alt: >-
-  agustawestland aw189, helicopter, aircraft, helicopter, helicopter,
-  helicopter, helicopter, helicopter
+  cloud, server, cloud computing, secure, digital, network, business,
+  application, connect, modernization, global, privacy, hardware,
+  infrastructure, database, security, cloudscape, smart, computer, design,
+  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
+  cloud computing, cloud computing, cloud computing, cloud computing
 cover_focus: center
-cover_credit: by onkelglocke via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
-cover_source_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
+cover_credit: by kumar111aakashin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 79
 ---
 
 Server von Hand aufzusetzen funktioniert erstaunlich lange.

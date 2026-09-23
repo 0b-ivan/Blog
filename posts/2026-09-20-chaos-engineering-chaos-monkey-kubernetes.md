@@ -31,21 +31,21 @@ search_queries:
       Wie plane ich sichere Chaos Experimente mit Steady State und Stop
       Conditions?
     maxRank: 1
-cover_query: Chaos-Engineering Kubernetes SRE DevOps
+cover_query: server datacenter infrastructure network cloud container cluster deployment
 cover_provider: pixabay
-cover_provider_id: '4605684'
+cover_provider_id: '2402637'
 cover_image: /assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg
 cover_alt: >-
-  rolls-royce, aircraft engine, progress, technology, engine, jumble, mixed up,
-  chaos, perfection, development, complicated, complex, difficult, confusion,
-  aircraft engine, complicated, complicated, complicated, complicated,
-  complicated, difficult
+  network, server, system, infrastructure, managed services, connection,
+  computer, cloud, gray computer, gray laptop, network, network, server, server,
+  server, server, server
 cover_focus: center
-cover_credit: by danielkirsch via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/rolls-royce-aircraft-engine-progress-4605684/'
-cover_source_url: 'https://pixabay.com/photos/rolls-royce-aircraft-engine-progress-4605684/'
+cover_credit: by bsdrouin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 68
 ---
 
 Ein Chaos Monkey klingt zunächst nach einem schlechten Betriebsmodell:

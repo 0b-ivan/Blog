@@ -36,17 +36,21 @@ search_queries:
     maxRank: 1
   - query: Wie teste ich 500 ms Latenz von Blog zu Search mit Chaos Mesh?
     maxRank: 1
-cover_query: Kubernetes K3s Proxmox DevOps
+cover_query: server datacenter infrastructure network cloud container cluster kubernetes
 cover_provider: pixabay
-cover_provider_id: '4745050'
+cover_provider_id: '2402637'
 cover_image: /assets/covers/2026-09-20-k3s-proxmox-chaos-monkey-part-5.jpg
-cover_alt: 'train, mist, k3, mongolia, railway, train, train, train, train, train'
+cover_alt: >-
+  network, server, system, infrastructure, managed services, connection,
+  computer, cloud, gray computer, gray laptop, network, network, server, server,
+  server, server, server
 cover_focus: center
-cover_credit: by jeremy888 via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
-cover_source_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
+cover_credit: by bsdrouin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 68
 ---
 
 Teil IV endete mit einer einfachen Frage:
