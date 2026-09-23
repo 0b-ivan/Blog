@@ -48,7 +48,7 @@ env:
   STATUS_IMAGE_NAME: kernel-notes-status
   CHAOS_IMAGE_NAME: kernel-notes-chaos
   PROMOTION_BRANCH: promotion/staging-verified
-  COVER_BACKFILL_LIMIT: "4"
+  COVER_BACKFILL_LIMIT: "20"
 
 jobs:
   deploy-staging:
