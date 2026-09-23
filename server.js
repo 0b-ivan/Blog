@@ -87,11 +87,20 @@ function coverSourceId(post) {
   return slug ? `cover-${slug}` : '';
 }
 
+function coverAuthorFromCredit(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^by\s+/i, '')
+    .replace(/\s+via\s+Pixabay$/i, '')
+    .trim();
+}
+
 function coverSourceRecord(post) {
   const sourceUrl = String((post && (post.coverSourceUrl || post.coverCreditUrl)) || '').trim();
   const credit = String((post && post.coverCredit) || '').trim();
   const license = String((post && post.coverLicense) || '').trim();
   const licenseUrl = String((post && post.coverLicenseUrl) || '').trim();
+  const author = coverAuthorFromCredit(credit);
 
   if (!sourceUrl && !credit && !license) {
     return null;
@@ -101,6 +110,7 @@ function coverSourceRecord(post) {
     title: `Coverbild: ${String((post && (post.title || post.slug)) || 'Kernel Notes')}`,
     publisher: 'Pixabay',
     url: sourceUrl || licenseUrl || 'https://pixabay.com/',
+    author,
     credit,
     license,
     license_url: licenseUrl
@@ -112,8 +122,8 @@ function appendCoverSourceReference(html, post) {
   const sourceId = coverSourceId(post);
   if (!record || !sourceId) return String(html || '');
 
-  const label = record.credit
-    ? `Coverbild: ${record.credit}`
+  const label = record.author
+    ? `Coverbild: ${record.author} via Pixabay`
     : 'Coverbild: Pixabay';
   const item = `<li class="cover-source-reference"><a href="/sources.html#${sourceId}">${escapeXml(label)}</a></li>`;
   const sourceHtml = String(html || '');
@@ -1058,6 +1068,7 @@ module.exports = {
   getPostsDir,
   getSiteUrl,
   coverSourceId,
+  coverAuthorFromCredit,
   coverSourceRecord,
   appendCoverSourceReference,
   mergeCoverSources,
