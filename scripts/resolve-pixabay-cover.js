@@ -272,6 +272,36 @@ async function searchPixabayCached(query, apiKey, options = {}) {
   return hits;
 }
 
+async function collectCandidates(queries, apiKey, options = {}) {
+  const searchImpl = options.searchImpl || searchPixabayCached;
+  const byId = new Map();
+
+  for (const query of queries) {
+    console.log(`Searching Pixabay for: ${query}`);
+    const hits = await searchImpl(query, apiKey, options.searchOptions || {});
+
+    for (const hit of hits) {
+      const key = String(hit.id || hit.pageURL || hit.webformatURL || '');
+      if (!key) continue;
+
+      const existing = byId.get(key);
+      if (existing) {
+        const paths = new Set([...(existing.__coverQueries || []), query]);
+        existing.__coverQueries = [...paths];
+        continue;
+      }
+
+      byId.set(key, {
+        ...hit,
+        __coverQuery: query,
+        __coverQueries: [query]
+      });
+    }
+  }
+
+  return [...byId.values()];
+}
+
 function cleanInline(value) {
   return String(value || '').replace(/[\r\n|]+/g, ' ').trim();
 }
@@ -283,10 +313,12 @@ function renderCandidates(ranked, limit = 6) {
     const tags = cleanInline(hit.tags || 'untitled');
     const page = hit.pageURL || '';
     const preview = hit.previewURL || hit.webformatURL || '';
+    const searchPaths = (hit.__coverQueries || [hit.__coverQuery]).filter(Boolean).join(' · ');
     return [
       `### ${index + 1}. Score ${entry.score}/100 — ${tags}`,
       preview ? `![Kandidat ${index + 1}](${preview})` : '',
       `- Fotograf: ${author}`,
+      searchPaths ? `- Suchpfad: ${searchPaths}` : '',
       `- Pixabay: ${page}`,
       `- Bewertung: ${entry.reasons.join(' · ') || 'keine zusätzlichen Signale'}`
     ].filter(Boolean).join('\n');
@@ -404,6 +436,8 @@ function reportCandidate(entry, index) {
     user: hit.user || '',
     pageURL: hit.pageURL || '',
     previewURL: hit.previewURL || hit.webformatURL || '',
+    searchQuery: hit.__coverQuery || '',
+    searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     reasons: entry.reasons
   };
 }
@@ -431,24 +465,16 @@ async function main() {
   const queries = queryCandidates(parsed.data, options.query);
   if (!queries.length) throw new Error('Could not derive a Pixabay cover query');
 
-  let query = queries[0];
-  let hits = [];
-  for (const candidate of queries) {
-    console.log(`Searching Pixabay for: ${candidate}`);
-    hits = await searchPixabayCached(candidate, apiKey);
-    if (hits.length) {
-      query = candidate;
-      break;
-    }
-  }
-
+  const hits = await collectCandidates(queries, apiKey);
   if (!hits.length) throw new Error(`No Pixabay images matched: ${queries.join(' | ')}`);
 
-  const ranked = rankCandidates(hits, parsed.data, query);
+  const rankingQuery = String(options.query || queries[0] || '').trim();
+  const ranked = rankCandidates(hits, parsed.data, rankingQuery);
   const reportBase = {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
-    query,
+    query: rankingQuery,
+    queries,
     candidates: ranked.slice(0, 3).map(reportCandidate)
   };
 
@@ -475,7 +501,7 @@ async function main() {
 
   const updated = matter.stringify(parsed.content, {
     ...parsed.data,
-    cover_query: query,
+    cover_query: hit.__coverQuery || queries[0],
     cover_provider: 'pixabay',
     cover_provider_id: String(hit.id),
     cover_image: coverImage,
@@ -520,6 +546,7 @@ module.exports = {
   articleProfile,
   cacheFileForQuery,
   choosePhoto,
+  collectCandidates,
   defaultQuery,
   downloadPhoto,
   fileExtension,
