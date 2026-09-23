@@ -29,6 +29,7 @@ describe('central sources', () => {
     expect(res.status).toBe(200);
     expect(res.body['cover-2026-09-20-chaos-engineering-chaos-monkey-kubernetes']).toMatchObject({
       publisher: 'Pixabay',
+      author: 'ColossusCloud',
       credit: 'by ColossusCloud via Pixabay',
       url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/',
       license: 'Pixabay Content License',
