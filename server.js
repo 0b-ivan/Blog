@@ -714,7 +714,7 @@ function renderPostPage(post, relatedPosts = []) {
             ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
             ${coverCreditHtml}
           </header>
-          <div class="article-hero-transition" aria-hidden="true"></div>
+          <div class="article-hero-transition" data-article-seam aria-hidden="true"></div>
 
           <div class="post-content terminal-content">${post.html}</div>
         </section>
