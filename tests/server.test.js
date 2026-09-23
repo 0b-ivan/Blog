@@ -276,8 +276,9 @@ describe('blog server', () => {
     expect(html).toContain('>Excerpt<');
     expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*terminal-content[\s\S]*<\/section>[\s\S]*article-post-meta/);
     expect(html).not.toContain('article-terminal__meta-strip');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260922-3');
-    expect(html).toContain('/styles.css?v=20260922-3');
+    expect(html).toContain('/assets/css/article-metrics.css?v=20260922-4');
+    expect(html).toContain('/styles.css?v=20260922-4');
+    expect(html).toContain('class="article-hero-transition"');
     expect(html).not.toContain('GMT');
     expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-reading-progress-toggle');
