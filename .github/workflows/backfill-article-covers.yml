@@ -13,6 +13,14 @@ on:
           - "8"
           - "12"
           - "20"
+      scope:
+        description: Backfill only missing covers or re-rank all published covers
+        required: true
+        type: choice
+        default: missing
+        options:
+          - missing
+          - all
 
 permissions:
   contents: write
@@ -30,6 +38,7 @@ jobs:
     env:
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
       BATCH_SIZE: ${{ inputs.batch_size }}
+      COVER_SCOPE: ${{ inputs.scope }}
 
     steps:
       - name: Checkout staging
@@ -75,18 +84,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run covers:missing -- --limit "$BATCH_SIZE" > /tmp/pixabay-cover-posts.txt
+          if [ "$COVER_SCOPE" = "all" ]; then
+            npm run covers:missing -- --limit "$BATCH_SIZE" --include-existing > /tmp/pixabay-cover-posts.txt
+          else
+            npm run covers:missing -- --limit "$BATCH_SIZE" > /tmp/pixabay-cover-posts.txt
+          fi
 
           if [ -s /tmp/pixabay-cover-posts.txt ]; then
             echo "needed=true" >> "$GITHUB_OUTPUT"
             {
+              if [ "$COVER_SCOPE" = "all" ]; then
+              echo '# Existing articles selected for smart cover review'
+            else
               echo '# Existing articles selected for cover backfill'
+            fi
               echo
               sed 's/^/- `/; s/$/`/' /tmp/pixabay-cover-posts.txt
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "needed=false" >> "$GITHUB_OUTPUT"
-            echo 'All published articles already have a cover.' >> "$GITHUB_STEP_SUMMARY"
+            if [ "$COVER_SCOPE" = "all" ]; then
+              echo 'No published articles were selected for cover review.' >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo 'All published articles already have a cover.' >> "$GITHUB_STEP_SUMMARY"
+            fi
           fi
 
       - name: Resolve Pixabay covers
