@@ -7,7 +7,8 @@ function parseArgs(args) {
     reportsDir: '',
     repository: '',
     commit: '',
-    selectionManifest: ''
+    selectionManifest: '',
+    compact: false
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -29,6 +30,8 @@ function parseArgs(args) {
     } else if (arg === '--selection-manifest' && next) {
       options.selectionManifest = next;
       index += 1;
+    } else if (arg === '--compact') {
+      options.compact = true;
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
     }
@@ -51,24 +54,33 @@ function rawGithubUrl(repository, commit, assetPath) {
   return `https://raw.githubusercontent.com/${repository}/${commit}/${encodedPath}`;
 }
 
-function candidateTable(candidates) {
+function candidateTable(candidates, options = {}) {
+  const compact = options.compact === true;
   const rows = (candidates || []).slice(0, 3).map((candidate) => {
     const preview = candidate.previewURL
-      ? `<img src="${candidate.previewURL}" width="220" alt="Pixabay candidate ${candidate.rank}">`
+      ? (compact
+        ? `[Vorschau](${candidate.previewURL})`
+        : `<img src="${candidate.previewURL}" width="220" alt="Pixabay candidate ${candidate.rank}">`)
       : '–';
     const source = candidate.pageURL
       ? `[Pixabay](${candidate.pageURL})`
       : 'Pixabay';
     const reasons = markdownText((candidate.reasons || []).join(' · ')) || 'keine zusätzlichen Signale';
-    const details = [
-      markdownText(candidate.tags),
-      candidate.user ? `by ${markdownText(candidate.user)}` : '',
-      candidate.searchQueries?.length
-        ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
-        : (candidate.searchQuery ? `Suchpfad: ${markdownText(candidate.searchQuery)}` : ''),
-      source,
-      reasons
-    ].filter(Boolean).join('<br>');
+    const details = compact
+      ? [
+          markdownText(candidate.tags).slice(0, 180),
+          candidate.user ? `by ${markdownText(candidate.user)}` : '',
+          source
+        ].filter(Boolean).join('<br>')
+      : [
+          markdownText(candidate.tags),
+          candidate.user ? `by ${markdownText(candidate.user)}` : '',
+          candidate.searchQueries?.length
+            ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
+            : (candidate.searchQuery ? `Suchpfad: ${markdownText(candidate.searchQuery)}` : ''),
+          source,
+          reasons
+        ].filter(Boolean).join('<br>');
 
     return `| ${candidate.rank} | ${candidate.score}/100 | ${preview} | ${details} |`;
   });
@@ -93,9 +105,11 @@ function renderReport(report, options = {}) {
     '',
     `**Artikel:** \`${markdownText(report.postPath || '')}\``,
     report.series ? `**Serie:** \`${markdownText(report.series)}\`` : '**Serie:** keine',
-    queries.length
-      ? `**Pixabay-Suchpfade:** ${queries.map((value) => `\`${value}\``).join(' → ')}`
-      : (query ? `**Pixabay-Query:** \`${query}\`` : '')
+    options.compact
+      ? ''
+      : (queries.length
+        ? `**Pixabay-Suchpfade:** ${queries.map((value) => `\`${value}\``).join(' → ')}`
+        : (query ? `**Pixabay-Query:** \`${query}\`` : ''))
   ].filter(Boolean);
 
   if (diversity) {
@@ -106,7 +120,7 @@ function renderReport(report, options = {}) {
         : (diversity.forcedDuplicate
           ? '**Wiederverwendung:** ⚠ erzwungen – alle Top-Kandidaten waren außerhalb der Serie bereits vergeben'
           : '**Wiederverwendung:** außerhalb von Serien eindeutig'),
-      diversity.reasons?.length
+      (!options.compact && diversity.reasons?.length)
         ? `**Diversitätsgründe:** ${diversity.reasons.map(markdownText).join(' · ')}`
         : ''
     );
@@ -129,7 +143,7 @@ function renderReport(report, options = {}) {
     '<details>',
     '<summary><strong>Top-3-Kandidaten und Bewertung</strong></summary>',
     '',
-    candidateTable(report.candidates || []),
+    candidateTable(report.candidates || [], options),
     '',
     '</details>',
     ''

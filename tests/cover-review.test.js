@@ -87,9 +87,25 @@ describe('cover review markdown', () => {
   });
 
   it('renders a compact candidate comparison table', () => {
-    const markdown = candidateTable(report.candidates);
+    const markdown = candidateTable(report.candidates, { compact: true });
     expect(markdown).toContain('| Rang | Score | Vorschau | Details |');
     expect(markdown).toContain('88/100');
     expect(markdown).toContain('67/100');
+    expect(markdown).toContain('[Vorschau](https://cdn.example.test/preview-1.jpg)');
+    expect(markdown).not.toContain('<img');
+  });
+
+  it('keeps batch review compact while preserving the selected local cover', () => {
+    const markdown = renderReport(report, {
+      repository: '0b-ivan/Blog',
+      commit: 'abc123',
+      compact: true,
+      selectionByPost: new Map()
+    });
+
+    expect(markdown).toContain('![Cover-Vorschau: Example Article]');
+    expect(markdown).not.toContain('Pixabay-Suchpfade');
+    expect(markdown).toContain('[Vorschau](https://cdn.example.test/preview-1.jpg)');
+    expect(markdown).not.toContain('Bewertung:');
   });
 });

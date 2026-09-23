@@ -236,7 +236,7 @@ async function main() {
   await fs.writeFile(options.output, JSON.stringify(manifest, null, 2), 'utf8');
   await fs.writeFile(
     options.selectionList,
-    selections.map((selection) => `${selection.postPath}|${selection.rank}\n`).join(''),
+    selections.map((selection) => `${selection.postPath}|${selection.id}\n`).join(''),
     'utf8'
   );
 
