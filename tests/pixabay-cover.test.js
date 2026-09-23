@@ -112,6 +112,28 @@ describe('Pixabay cover resolver', () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it('scopes technical visual intents to the Pixabay computer category', async () => {
+    const systemdIntent = visualIntent({
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations']
+    });
+    expect(systemdIntent.pixabayCategory).toBe('computer');
+
+    const fetchImpl = globalThis.vi.fn(async (url) => {
+      const parsed = new URL(url);
+      expect(parsed.searchParams.get('category')).toBe('computer');
+      return {
+        ok: true,
+        json: async () => ({ hits: [] })
+      };
+    });
+
+    await searchPixabay('linux shell service logs', 'test-key', fetchImpl, {
+      category: 'computer'
+    });
+    expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
   it('derives a visual intent before generic technical metadata', () => {
     const writing = {
       title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
@@ -722,6 +744,41 @@ describe('Pixabay cover resolver', () => {
       const files = await fs.readdir(cacheDir);
       const cached = await fs.readFile(path.join(cacheDir, files[0]), 'utf8');
       expect(cached).not.toContain('super-secret');
+    } finally {
+      await fs.rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps Pixabay cache entries separate by category', async () => {
+    const cacheDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pixabay-category-cache-'));
+    const fetchImpl = globalThis.vi.fn(async (url) => {
+      const parsed = new URL(url);
+      return {
+        ok: true,
+        json: async () => ({
+          hits: [{ id: parsed.searchParams.get('category') === 'computer' ? 1 : 2 }]
+        })
+      };
+    });
+
+    try {
+      const computer = await searchPixabayCached('monitoring', 'secret', {
+        cacheDir,
+        fetchImpl,
+        category: 'computer',
+        now: 1000
+      });
+      const unrestricted = await searchPixabayCached('monitoring', 'secret', {
+        cacheDir,
+        fetchImpl,
+        category: '',
+        now: 1000
+      });
+
+      expect(computer[0].id).toBe(1);
+      expect(unrestricted[0].id).toBe(2);
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      expect((await fs.readdir(cacheDir))).toHaveLength(2);
     } finally {
       await fs.rm(cacheDir, { recursive: true, force: true });
     }
