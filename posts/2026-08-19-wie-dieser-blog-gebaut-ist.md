@@ -24,18 +24,16 @@ search_queries:
     maxRank: 1
 cover_query: website code server publishing deployment automation infrastructure cloud
 cover_provider: pixabay
-cover_provider_id: '2784907'
+cover_provider_id: '2402637'
 cover_image: /assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.jpg
 cover_alt: >-
-  cyberspace, data, wire, electronic, electric, ethernet, infrastructure, cable,
-  computer, communication, panel, connection, to combine, the industry, router,
-  server, network, equipment, system, broadband, technology, telecommunication,
-  service provider, plug, node, dam, connector, link, lan, server, server,
-  server, server, server, network, broadband
+  network, server, system, infrastructure, managed services, connection,
+  computer, cloud, gray computer, gray laptop, network, network, server, server,
+  server, server, server
 cover_focus: center
-cover_credit: by jarmoluk via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
-cover_source_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
+cover_credit: by bsdrouin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
 cover_score: 84
