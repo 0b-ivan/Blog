@@ -573,16 +573,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          promotion_sha="$(
-            git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}" |
-              awk 'NR == 1 { print $1 }'
-          )"
-
-          if [ -z "$promotion_sha" ]; then
-            echo 'No promotion branch exists yet; nothing to validate.'
-            exit 0
-          fi
-
           promotion_pr="$(
             gh pr list \
               --repo "$REPOSITORY" \
@@ -598,11 +588,40 @@ jobs:
             exit 0
           fi
 
+          merge_sha=''
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            api_merge_sha="$(
+              gh api \
+                "/repos/${REPOSITORY}/pulls/${promotion_pr}" \
+                --jq '.merge_commit_sha // empty'
+            )"
+
+            if [ -n "$api_merge_sha" ]; then
+              git fetch --force origin "refs/pull/${promotion_pr}/merge"
+              fetched_merge_sha="$(git rev-parse FETCH_HEAD)"
+
+              if [ "$fetched_merge_sha" = "$api_merge_sha" ]; then
+                merge_sha="$api_merge_sha"
+                break
+              fi
+            fi
+
+            [ "$attempt" -eq 10 ] || sleep 2
+          done
+
+          if [ -z "$merge_sha" ]; then
+            echo "Could not resolve the current synthetic merge commit for promotion PR #${promotion_pr}." >&2
+            exit 1
+          fi
+
+          check_branch="promotion/merge-check"
+          git push --force origin "${merge_sha}:refs/heads/${check_branch}"
+
           gh workflow run ci.yml \
             --repo "$REPOSITORY" \
-            --ref "$PROMOTION_BRANCH"
+            --ref "$check_branch"
 
-          echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
+          echo "Triggered required PR Checks for promotion PR #${promotion_pr} on merge commit ${merge_sha}."
 
       - name: Deployment handoff
         env:
