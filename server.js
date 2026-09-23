@@ -651,7 +651,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-2" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-3" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -694,7 +694,7 @@ function renderPostPage(post, relatedPosts = []) {
             <p class="terminal-title">live-terminal://kernel-notes/${md.utils.escapeHtml(String(post.title || ''))}</p>
           </div>
 
-          <header class="article-hero" data-article-hero${coverStyle ? ` style="${coverStyle}"` : ''}>
+          <header class="article-hero${coverStyle ? ' article-hero--has-cover' : ''}" data-article-hero${coverStyle ? ` style="${coverStyle}"` : ''}>
             <div class="article-hero__chrome" aria-hidden="true">
               <span class="article-hero__path">${md.utils.escapeHtml(heroPath)}</span>
               <span class="article-hero__topic"># ${md.utils.escapeHtml(String(heroTopic).toLowerCase())}</span>
