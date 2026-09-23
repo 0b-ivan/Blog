@@ -1,7 +1,8 @@
 const {
   candidateTable,
   rawGithubUrl,
-  renderReport
+  renderReport,
+  selectedFromPost
 } = require('../scripts/render-cover-review');
 
 describe('cover review markdown', () => {
@@ -95,6 +96,40 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('Top-3-Kandidaten');
     expect(markdown).toContain('https://cdn.example.test/preview-1.jpg');
     expect(markdown).toContain('https://pixabay.com/photos/example-42/');
+  });
+
+  it('recovers the selected semantic candidate from updated post frontmatter', () => {
+    const candidateReport = {
+      ...report,
+      selected: undefined,
+      candidates: [
+        {
+          rank: 1,
+          id: '42',
+          score: 93,
+          heuristicScore: 61,
+          semanticSimilarity: 0.90123,
+          tags: 'writing, text, document',
+          pageURL: 'https://pixabay.com/photos/example-42/'
+        }
+      ]
+    };
+    const raw = `---
+title: Example Article
+cover_provider: pixabay
+cover_provider_id: "42"
+cover_image: /assets/covers/example.jpg
+cover_score: 93
+---
+
+Body
+`;
+
+    const selected = selectedFromPost(candidateReport, raw);
+    expect(selected.id).toBe('42');
+    expect(selected.coverImage).toBe('/assets/covers/example.jpg');
+    expect(selected.score).toBe(93);
+    expect(selected.semanticSimilarity).toBe(0.90123);
   });
 
   it('renders a compact candidate comparison table', () => {
