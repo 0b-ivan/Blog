@@ -218,8 +218,10 @@ async function main() {
         const controlGeometry = await terminal.locator('[data-terminal-action]').evaluateAll((buttons) =>
           buttons.map((button) => {
             const rect = button.getBoundingClientRect();
-            const dot = button.ownerDocument.defaultView.globalThis.getComputedStyle(button, '::before');
+            const view = button.ownerDocument.defaultView;
+            const dot = view.globalThis.getComputedStyle(button, '::before');
             return {
+              x: rect.x,
               width: rect.width,
               height: rect.height,
               dotWidth: Number.parseFloat(dot.width),
@@ -228,8 +230,18 @@ async function main() {
           })
         );
         for (const geometry of controlGeometry) {
-          assert.ok(Math.abs(geometry.width - geometry.height) < 0.5, 'Terminal control touch target must stay round');
+          assert.ok(geometry.height >= 38, 'Terminal controls must keep the full chrome-height interaction lane');
           assert.ok(Math.abs(geometry.dotWidth - geometry.dotHeight) < 0.5, 'Visible terminal dot must stay round');
+          assert.ok(Math.abs(geometry.dotWidth - 11) < 0.5, 'Terminal dots must match the 11px knowledge-graph controls');
+        }
+        for (let index = 1; index < controlGeometry.length; index += 1) {
+          const previous = controlGeometry[index - 1];
+          const current = controlGeometry[index];
+          const visibleGap = current.x - previous.x - previous.dotWidth;
+          assert.ok(
+            Math.abs(visibleGap - 8) < 0.5,
+            `Terminal dot spacing must match the 8px knowledge-graph gap (actual=${visibleGap})`
+          );
         }
 
         await terminal.locator('[data-terminal-action="maximize"]').click();
