@@ -28,6 +28,8 @@ describe('cover review workflows', () => {
     expect(workflow).toContain('--selection-list /tmp/cover-selection.list');
     expect(workflow).toContain("--select \"$rank\"");
     expect(workflow).toContain('--selection-manifest /tmp/cover-selection.json');
+    expect(workflow).toContain('--compact > "$body_file"');
+    expect(workflow).toContain("cat >> \"$body_file\" <<'EOF'");
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--reports-dir /tmp/cover-reports');
     expect(workflow).toContain('--commit "$cover_commit"');
