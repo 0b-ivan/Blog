@@ -1,15 +1,18 @@
 ---
 id: 2026-09-15-k3s-proxmox-cloudflare-part-1
 version: 6
-title: "K3s auf Proxmox – Teil I: Blog-Staging mit Cloudflare Tunnel"
+title: 'K3s auf Proxmox – Teil I: Blog-Staging mit Cloudflare Tunnel'
 status: publish
-date: 2026-09-15
-created_at: 2026-09-15
-updated_at: 2026-09-19
+date: 2026-09-15T00:00:00.000Z
+created_at: 2026-09-15T00:00:00.000Z
+updated_at: 2026-09-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Praxisanleitung vom Proxmox-VM-Setup bis zum öffentlichen K3s-Service: Debian 13, Ansible, private GHCR Images, ClusterIP Services, Healthchecks und Cloudflare Tunnel ohne Portfreigabe."
+excerpt: >-
+  Praxisanleitung vom Proxmox-VM-Setup bis zum öffentlichen K3s-Service: Debian
+  13, Ansible, private GHCR Images, ClusterIP Services, Healthchecks und
+  Cloudflare Tunnel ohne Portfreigabe.
 tags:
   - Kubernetes
   - K3s
@@ -22,43 +25,66 @@ tags:
   - DevOps
   - Self-Hosting
 search_queries:
-  - query: Wie installiere ich K3s auf einer Proxmox VM und veröffentliche einen Service über Cloudflare Tunnel?
+  - query: >-
+      Wie installiere ich K3s auf einer Proxmox VM und veröffentliche einen
+      Service über Cloudflare Tunnel?
     maxRank: 1
   - query: Wie betreibe ich Kubernetes im Homelab ohne Portfreigabe am Router?
     maxRank: 1
   - query: Wie ziehe ich private GHCR Images in K3s?
     maxRank: 1
 snippets:
-  - file: "01-k3s-ansible-bootstrap.yml"
-    title: "K3s-Node mit Ansible bootstrappen"
-    description: "Installiert Basis-Pakete, aktiviert den QEMU Guest Agent und konfiguriert K3s ohne Traefik und ServiceLB."
-    type: "Ansible-Playbook"
-    language: "yaml"
-  - file: "02-ghcr-pull-secret.sh"
-    title: "GHCR Pull Secret für den Staging-Namespace"
-    description: "Erzeugt ein Docker-Registry-Secret für private GHCR Images, ohne Credentials in Git abzulegen."
-    type: "Shellskript"
-    language: "bash"
-  - file: "03-blog-search-services.yml"
-    title: "Interne ClusterIP-Services für Blog und Search"
-    description: "Definiert die internen Kubernetes Services, über die Blog und Search miteinander sprechen."
-    type: "Kubernetes-Manifest"
-    language: "yaml"
-  - file: "04-internal-healthchecks.sh"
-    title: "Blog intern per ClusterIP und Kubernetes DNS testen"
-    description: "Prüft den Blog zuerst direkt über die ClusterIP und anschließend aus einem temporären Pod."
-    type: "Shellskript"
-    language: "bash"
-  - file: "05-cloudflared-deployment.yml"
-    title: "cloudflared als Deployment im Cluster"
-    description: "Startet cloudflared mit einem Tunnel-Token aus einem Kubernetes Secret."
-    type: "Kubernetes-Manifest"
-    language: "yaml"
-  - file: "06-cross-namespace-healthcheck.sh"
-    title: "Cloudflare-Namespace gegen den Blog-Service testen"
-    description: "Prüft die Erreichbarkeit des Blog-Service über den vollständigen Kubernetes DNS-Namen."
-    type: "Shellskript"
-    language: "bash"
+  - file: 01-k3s-ansible-bootstrap.yml
+    title: K3s-Node mit Ansible bootstrappen
+    description: >-
+      Installiert Basis-Pakete, aktiviert den QEMU Guest Agent und konfiguriert
+      K3s ohne Traefik und ServiceLB.
+    type: Ansible-Playbook
+    language: yaml
+  - file: 02-ghcr-pull-secret.sh
+    title: GHCR Pull Secret für den Staging-Namespace
+    description: >-
+      Erzeugt ein Docker-Registry-Secret für private GHCR Images, ohne
+      Credentials in Git abzulegen.
+    type: Shellskript
+    language: bash
+  - file: 03-blog-search-services.yml
+    title: Interne ClusterIP-Services für Blog und Search
+    description: >-
+      Definiert die internen Kubernetes Services, über die Blog und Search
+      miteinander sprechen.
+    type: Kubernetes-Manifest
+    language: yaml
+  - file: 04-internal-healthchecks.sh
+    title: Blog intern per ClusterIP und Kubernetes DNS testen
+    description: >-
+      Prüft den Blog zuerst direkt über die ClusterIP und anschließend aus einem
+      temporären Pod.
+    type: Shellskript
+    language: bash
+  - file: 05-cloudflared-deployment.yml
+    title: cloudflared als Deployment im Cluster
+    description: Startet cloudflared mit einem Tunnel-Token aus einem Kubernetes Secret.
+    type: Kubernetes-Manifest
+    language: yaml
+  - file: 06-cross-namespace-healthcheck.sh
+    title: Cloudflare-Namespace gegen den Blog-Service testen
+    description: >-
+      Prüft die Erreichbarkeit des Blog-Service über den vollständigen
+      Kubernetes DNS-Namen.
+    type: Shellskript
+    language: bash
+cover_query: Kubernetes K3s Proxmox DevOps
+cover_provider: pixabay
+cover_provider_id: '4745050'
+cover_image: /assets/covers/2026-09-15-k3s-proxmox-cloudflare-part-1.jpg
+cover_alt: 'train, mist, k3, mongolia, railway, train, train, train, train, train'
+cover_focus: center
+cover_credit: by jeremy888 via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
+cover_source_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.

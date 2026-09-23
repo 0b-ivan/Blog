@@ -34,3 +34,31 @@
   --article-cover-focus: center;
 }
 /* cover:2026-09-20-k3s-proxmox-chaos-monkey-part-5:end */
+
+/* cover:2026-09-04-gold-glaenzt-nicht-immer-golden-images:start */
+.post-page[data-post-slug="2026-09-04-gold-glaenzt-nicht-immer-golden-images"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-04-gold-glaenzt-nicht-immer-golden-images.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-04-gold-glaenzt-nicht-immer-golden-images:end */
+
+/* cover:2026-09-11-logger-info-wird-schon-nichts-kosten:start */
+.post-page[data-post-slug="2026-09-11-logger-info-wird-schon-nichts-kosten"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-11-logger-info-wird-schon-nichts-kosten.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-11-logger-info-wird-schon-nichts-kosten:end */
+
+/* cover:2026-09-15-eine-vpc-ist-keine-schwarze-magie:start */
+.post-page[data-post-slug="2026-09-15-eine-vpc-ist-keine-schwarze-magie"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-15-eine-vpc-ist-keine-schwarze-magie:end */
+
+/* cover:2026-09-15-k3s-proxmox-cloudflare-part-1:start */
+.post-page[data-post-slug="2026-09-15-k3s-proxmox-cloudflare-part-1"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-15-k3s-proxmox-cloudflare-part-1.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-15-k3s-proxmox-cloudflare-part-1:end */

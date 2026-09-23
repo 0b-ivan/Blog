@@ -1,15 +1,18 @@
 ---
 id: 2026-09-11-logger-info-wird-schon-nichts-kosten
 version: 1
-title: "logger.info() – wird schon nichts kosten"
+title: logger.info() – wird schon nichts kosten
 status: publish
-date: 2026-09-11
-created_at: 2026-09-11
-updated_at: 2026-09-11
+date: 2026-09-11T00:00:00.000Z
+created_at: 2026-09-11T00:00:00.000Z
+updated_at: 2026-09-11T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: AWS
-excerpt: Ein einzelner Log-Eintrag ist praktisch kostenlos. Millionen davon sind es nicht. Ein Blick darauf, warum gute Observability nicht bedeutet, einfach alles zu loggen.
+excerpt: >-
+  Ein einzelner Log-Eintrag ist praktisch kostenlos. Millionen davon sind es
+  nicht. Ein Blick darauf, warum gute Observability nicht bedeutet, einfach
+  alles zu loggen.
 tags:
   - AWS
   - CloudWatch
@@ -25,6 +28,19 @@ search_queries:
     maxRank: 1
   - query: Was sollte ich in Java und GraphQL auf INFO loggen?
     maxRank: 1
+cover_query: AWS CloudWatch Observability AWS
+cover_provider: pixabay
+cover_provider_id: '6614312'
+cover_image: /assets/covers/2026-09-11-logger-info-wird-schon-nichts-kosten.jpg
+cover_alt: >-
+  agustawestland aw189, helicopter, aircraft, helicopter, helicopter,
+  helicopter, helicopter, helicopter
+cover_focus: center
+cover_credit: by onkelglocke via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
+cover_source_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Logs fühlen sich erstmal kostenlos an.
