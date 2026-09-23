@@ -41,9 +41,9 @@ const VISUAL_INTENTS = [
   {
     key: 'rss-reader',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
-    query: 'rss feed news reader articles reading newspaper',
-    positive: ['rss', 'feed', 'news', 'reader', 'reading', 'article', 'newspaper', 'subscription'],
-    avoid: ['server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    query: 'rss feed news articles newspaper website subscription',
+    positive: ['rss', 'feed', 'news', 'article', 'newspaper', 'subscription', 'website'],
+    avoid: ['book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',
@@ -55,37 +55,40 @@ const VISUAL_INTENTS = [
   {
     key: 'systemd-service',
     markers: ['systemd', 'journalctl'],
-    query: 'linux terminal service logs system administration',
-    positive: ['linux', 'terminal', 'service', 'logs', 'console', 'system', 'administration', 'shell'],
-    avoid: ['html', 'css', 'website', 'web design']
+    query: 'linux shell console service logs command daemon',
+    positive: ['linux', 'service', 'logs', 'console', 'administration', 'shell', 'command', 'daemon'],
+    avoid: ['train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
   },
   {
     key: 'docker-compose',
     markers: ['docker compose', 'docker', 'compose'],
-    query: 'software containers container terminal code deployment',
-    positive: ['container', 'containers', 'software', 'terminal', 'code', 'deployment', 'devops'],
-    avoid: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+    query: 'devops software code terminal deployment programming',
+    positive: ['software', 'code', 'deployment', 'devops', 'development', 'programming', 'terminal'],
+    avoid: ['container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
   },
   {
     key: 'semantic-search',
     markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
     query: 'search data artificial intelligence code magnifying glass',
     positive: ['search', 'data', 'artificial', 'intelligence', 'code', 'magnifying', 'analytics', 'ai'],
-    avoid: ['google', 'smartphone', 'mobile phone', 'telephone']
+    minMatches: 2,
+    avoid: ['google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar']
   },
   {
     key: 'vpc-networking',
     markers: ['vpc', 'subnet', 'route-table', 'route table', 'nat-gateway', 'internet-gateway'],
-    query: 'network topology router routing cloud subnet',
-    positive: ['network', 'topology', 'router', 'routing', 'cloud', 'subnet', 'connection'],
-    avoid: ['database', 'storage', 'rack', 'datacenter']
+    query: 'computer network topology router routing subnet infrastructure',
+    positive: ['topology', 'router', 'routing', 'subnet', 'infrastructure', 'ethernet'],
+    minMatches: 2,
+    avoid: ['social media', 'icons', 'online', 'smartphone', 'database', 'storage', 'rack', 'datacenter']
   },
   {
     key: 'chaos-engineering',
     markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
-    query: 'resilience testing failure monitoring reliability experiment',
-    positive: ['resilience', 'testing', 'failure', 'monitoring', 'reliability', 'experiment', 'observability', 'chaos'],
-    avoid: ['business', 'management', 'database', 'sales', 'marketing']
+    query: 'resilience reliability monitoring outage failure infrastructure incident',
+    positive: ['resilience', 'reliability', 'monitoring', 'outage', 'failure', 'infrastructure', 'incident', 'observability'],
+    minMatches: 2,
+    avoid: ['school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
   },
   {
     key: 'regression-testing',
@@ -210,20 +213,25 @@ function searchQueryText(data = {}) {
 
 function visualIntent(data = {}) {
   const haystack = normalizeText(searchQueryText(data));
-
-  for (const intent of VISUAL_INTENTS) {
-    const matchedMarkers = intent.markers.filter((marker) =>
-      haystack.includes(normalizeText(marker))
-    );
-    if (!matchedMarkers.length) continue;
-
-    return {
+  const matches = VISUAL_INTENTS
+    .map((intent) => ({
       ...intent,
-      matchedMarkers
-    };
-  }
+      matchedMarkers: intent.markers.filter((marker) =>
+        haystack.includes(normalizeText(marker))
+      )
+    }))
+    .filter((intent) => intent.matchedMarkers.length > 0)
+    .sort((left, right) => {
+      if (right.matchedMarkers.length !== left.matchedMarkers.length) {
+        return right.matchedMarkers.length - left.matchedMarkers.length;
+      }
 
-  return null;
+      const rightSpecificity = right.matchedMarkers.reduce((sum, marker) => sum + marker.length, 0);
+      const leftSpecificity = left.matchedMarkers.reduce((sum, marker) => sum + marker.length, 0);
+      return rightSpecificity - leftSpecificity;
+    });
+
+  return matches[0] || null;
 }
 
 
@@ -351,13 +359,14 @@ function scoreHit(hit, data = {}, query = '') {
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
 
   if (profile.intent) {
-    if (intentMatches.length) {
+    const minIntentMatches = Math.max(1, Number(profile.intent.minMatches || 1));
+    if (intentMatches.length >= minIntentMatches) {
       const points = Math.min(42, intentMatches.length * 14);
       score += points;
       reasons.push(`+${points} visual intent (${profile.intent.key}): ${intentMatches.slice(0, 4).join(', ')}`);
     } else {
       score -= 35;
-      reasons.push(`-35 visual intent mismatch: ${profile.intent.key}`);
+      reasons.push(`-35 visual intent mismatch: ${profile.intent.key} (${intentMatches.length}/${minIntentMatches})`);
     }
 
     if (intentAvoidMatches.length) {
@@ -429,7 +438,9 @@ function scoreHit(hit, data = {}, query = '') {
     intentKey: profile.intent?.key || '',
     intentMatches,
     intentAvoidMatches,
-    semanticMismatch: Boolean(profile.intent && intentMatches.length === 0)
+    semanticMismatch: Boolean(
+      profile.intent && intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
+    )
   };
 }
 
