@@ -13,6 +13,7 @@ describe('cover review markdown', () => {
     visualIntent: 'writing-proofreading',
     visualIntentEvidence: 22,
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     semanticModel: 'Xenova/multilingual-e5-small',
     semanticWeight: 0.90,
     semanticPrototype: 'writing-proofreading',
@@ -88,6 +89,7 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('**Bildidee:** `writing-proofreading`');
     expect(markdown).toContain('**Intent-Evidenz:** 22');
     expect(markdown).toContain('**Pixabay-Kategorie:** `computer`');
+    expect(markdown).toContain('**Pixabay-Bildtyp:** `all`');
     expect(markdown).toContain('**Semantisches Ranking:** `Xenova/multilingual-e5-small` · E5 90%');
     expect(markdown).toContain('**Konzept-Prototyp:** `writing-proofreading`');
     expect(markdown).toContain('E5 Artikel: 0.8732');
