@@ -521,35 +521,39 @@ async function main() {
     );
 
     const articleHero = page.locator('.article-hero');
-    const heroSeam = page.locator('[data-article-seam]');
     const terminalContent = page.locator('.terminal-content');
-    await heroSeam.waitFor({ state: 'visible' });
+    const articleExcerpt = page.locator('.article-hero__excerpt');
     const heroBox = await articleHero.boundingBox();
-    const seamBox = await heroSeam.boundingBox();
     const contentBox = await terminalContent.boundingBox();
-    const seamPaint = await heroSeam.evaluate((element) => {
-      const style = element.ownerDocument.defaultView.getComputedStyle(element);
-      return {
-        backgroundImage: style.backgroundImage,
-        backgroundColor: style.backgroundColor,
-        boxShadow: style.boxShadow
-      };
-    });
     assert.ok(
       heroBox
-      && seamBox
       && contentBox
-      && seamBox.height > 0
-      && Math.abs((seamBox.y + seamBox.height) - contentBox.y) <= 2
-      && seamBox.y < heroBox.y + heroBox.height,
-      'Article hero seam must overlap the hero and meet the article body without a layout gap'
+      && Math.abs((heroBox.y + heroBox.height) - contentBox.y) <= 1,
+      'Article hero and terminal body must meet directly without an inserted seam layer or layout gap'
     );
-    assert.ok(
-      seamPaint.backgroundImage !== 'none'
-      || seamPaint.boxShadow !== 'none'
-      || !/rgba?\(0, 0, 0(?:, 0)?\)/.test(seamPaint.backgroundColor),
-      'Article hero seam must paint a visible blend instead of being a transparent spacer'
+    assert.equal(
+      await page.locator('.article-hero-transition, [data-article-seam]').count(),
+      0,
+      'Article transition must not use an overlay element that can obscure hero copy'
     );
+    if (await articleExcerpt.count()) {
+      const excerptOpacity = await articleExcerpt.evaluate((element) =>
+        Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).opacity)
+      );
+      assert.ok(excerptOpacity >= 0.99, 'Article excerpt must remain fully opaque through the hero/body transition');
+    }
+    const transitionPaint = await page.locator('.terminal-post--article').evaluate((terminal) => {
+      const view = terminal.ownerDocument.defaultView;
+      const hero = terminal.querySelector('.article-hero');
+      const content = terminal.querySelector('.terminal-content');
+      return {
+        heroBackground: view.getComputedStyle(hero, '::after').backgroundImage,
+        contentBackground: view.getComputedStyle(content).backgroundImage
+      };
+    });
+    assert.notEqual(transitionPaint.heroBackground, 'none', 'Hero must blend its own background into the terminal surface');
+    assert.notEqual(transitionPaint.contentBackground, 'none', 'Terminal body must continue the background blend after the hero');
+
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');

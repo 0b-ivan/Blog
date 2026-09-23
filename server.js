@@ -630,11 +630,11 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260922-4" />
+    <link rel="stylesheet" href="/styles.css?v=20260923-1" />
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260922-4" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-1" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -714,8 +714,6 @@ function renderPostPage(post, relatedPosts = []) {
             ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
             ${coverCreditHtml}
           </header>
-          <div class="article-hero-transition" data-article-seam aria-hidden="true"></div>
-
           <div class="post-content terminal-content">${post.html}</div>
         </section>
 

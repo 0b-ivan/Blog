@@ -524,6 +524,7 @@ h1 {
 
 .terminal-post {
   --article-shell-radius: 20px;
+  --terminal-surface: #0c121b;
   position: relative;
   margin-top: 0;
   max-width: none;
@@ -531,7 +532,7 @@ h1 {
   border: 1px solid rgba(33, 77, 82, 0.9);
   border-radius: var(--article-shell-radius);
   overflow: hidden;
-  background: #0c121b;
+  background: var(--terminal-surface);
   backdrop-filter: blur(1.5px);
   box-shadow:
     0 18px 42px rgba(9, 16, 24, 0.2),
@@ -556,7 +557,8 @@ h1 {
 }
 
 .terminal-chrome {
-  min-height: var(--window-chrome-height);
+  height: var(--window-chrome-height);
+  min-height: 0;
   display: flex;
   align-items: center;
   padding: 0 var(--window-chrome-padding);
@@ -570,7 +572,7 @@ h1 {
   flex: 0 0 calc(var(--window-chrome-dot-size) + var(--window-chrome-dot-gap));
   display: grid;
   width: calc(var(--window-chrome-dot-size) + var(--window-chrome-dot-gap));
-  height: var(--window-chrome-height);
+  height: 100%;
   min-width: 0;
   min-height: 0;
   place-items: center start;
@@ -638,8 +640,16 @@ h1 {
   margin-top: 0;
   max-width: none;
   padding: 1.35rem 1.3rem 1.55rem;
-  background: radial-gradient(circle at 84% 0%, rgba(70, 140, 255, 0.08), transparent 34%),
-    rgba(12, 18, 27, 0.94);
+  background:
+    linear-gradient(
+      180deg,
+      var(--terminal-surface) 0,
+      rgba(12, 18, 27, 0.9) 24px,
+      rgba(12, 18, 27, 0.35) 72px,
+      rgba(12, 18, 27, 0) 112px
+    ),
+    radial-gradient(circle at 84% 14%, rgba(70, 140, 255, 0.08), transparent 34%),
+    var(--terminal-surface);
   color: #eaf2ff;
   font-family: "IBM Plex Mono", monospace;
   font-size: 1.06rem;
@@ -903,12 +913,13 @@ h1 {
   }
 
   .terminal-chrome {
-    min-height: var(--window-chrome-height-mobile);
+    height: var(--window-chrome-height-mobile);
+    min-height: 0;
     padding-inline: var(--window-chrome-padding-mobile);
   }
 
   .terminal-dot {
-    height: var(--window-chrome-height-mobile);
+    height: 100%;
   }
 
   .terminal-title {
