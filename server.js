@@ -647,11 +647,11 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260923-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260923-2" />
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-4" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-5" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -686,7 +686,7 @@ function renderPostPage(post, relatedPosts = []) {
             <span class="reading-progress__label"><strong data-reading-progress-value>0</strong><span>% gelesen</span></span>
           </button>
         </div>
-        <section class="terminal-post terminal-post--article" aria-label="Artikel im Terminal">
+        <section class="terminal-post terminal-post--article${coverStyle ? ' terminal-post--has-cover' : ''}" aria-label="Artikel im Terminal"${coverStyle ? ` style="${coverStyle}"` : ''}>
           <div class="terminal-chrome">
             <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="overview" aria-label="Zurück zur Übersicht"></button>
             <button class="terminal-dot terminal-dot-yellow" type="button" data-terminal-action="restore" aria-label="Terminal wiederherstellen"></button>
@@ -694,7 +694,7 @@ function renderPostPage(post, relatedPosts = []) {
             <p class="terminal-title">live-terminal://kernel-notes/${md.utils.escapeHtml(String(post.title || ''))}</p>
           </div>
 
-          <header class="article-hero${coverStyle ? ' article-hero--has-cover' : ''}" data-article-hero${coverStyle ? ` style="${coverStyle}"` : ''}>
+          <header class="article-hero${coverStyle ? ' article-hero--has-cover' : ''}" data-article-hero>
             <div class="article-hero__chrome" aria-hidden="true">
               <span class="article-hero__path">${md.utils.escapeHtml(heroPath)}</span>
               <span class="article-hero__topic"># ${md.utils.escapeHtml(String(heroTopic).toLowerCase())}</span>
