@@ -44,5 +44,8 @@ describe('article hero cover readability', () => {
     expect(articleCss).not.toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover\s*\{[\s\S]*?var\(--article-cover-image\)/);
     expect(articleCss).toMatch(/\.article-hero__credit\s*\{[\s\S]*?position:\s*static;[\s\S]*?text-align:\s*right;/);
     expect(articleCss).toContain('font-size: clamp(1.55rem, 7vw, 2.05rem);');
+    expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?opacity:\s*1;/);
+    expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?-webkit-mask-image:\s*linear-gradient\(/);
+    expect(articleCss).toContain('rgba(225, 244, 239, 0.92)');
   });
 });
