@@ -102,6 +102,54 @@ describe('series-aware cover diversity', () => {
     expect(second.diversityPenalty).toBe(0);
   });
 
+  it('keeps diversity inside a topical relevance window', () => {
+    const reports = [
+      {
+        postPath: 'posts/first.md',
+        title: 'First article',
+        series: '',
+        candidates: [
+          { ...candidate(1, 50, 92, 'server, rack, datacenter'), semanticMismatch: false }
+        ]
+      },
+      {
+        postPath: 'posts/second.md',
+        title: 'Second article',
+        series: '',
+        candidates: [
+          { ...candidate(1, 50, 90, 'server, rack, datacenter'), semanticMismatch: false },
+          { ...candidate(2, 51, 58, 'security, firewall, padlock'), semanticMismatch: false },
+          { ...candidate(3, 52, 95, 'office, meeting, business'), semanticMismatch: true }
+        ]
+      }
+    ];
+
+    const selections = chooseDiverseCovers(reports);
+    const second = selections.find((selection) => selection.postPath === 'posts/second.md');
+
+    expect(second.id).toBe('50');
+    expect(second.forcedDuplicate).toBe(true);
+    expect(second.relevanceFloor).toBe(72);
+  });
+
+  it('does not choose a semantic mismatch merely to gain diversity', () => {
+    const reports = [
+      {
+        postPath: 'posts/article.md',
+        title: 'Writing pipeline',
+        series: '',
+        candidates: [
+          { ...candidate(1, 1, 82, 'writing, keyboard, document'), semanticMismatch: false },
+          { ...candidate(2, 2, 99, 'secretary, office, automation'), semanticMismatch: true }
+        ]
+      }
+    ];
+
+    const [selection] = chooseDiverseCovers(reports);
+    expect(selection.id).toBe('1');
+    expect(selection.semanticFallback).toBe(false);
+  });
+
   it('records motif and photographer penalties deterministically', () => {
     const state = {
       ids: new Map(),
