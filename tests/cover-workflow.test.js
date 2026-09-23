@@ -12,6 +12,8 @@ describe('cover review workflows', () => {
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--report /tmp/cover-report.json');
     expect(workflow).toContain('--commit "$cover_commit"');
+    expect(workflow).toContain('--compact > "$body_file"');
+    expect(workflow).toContain("<<'EOF'");
     expect(workflow).toContain('Candidate previews are shown only for editorial review');
   });
 
@@ -26,7 +28,7 @@ describe('cover review workflows', () => {
     expect(workflow).toContain('scripts/select-diverse-cover-candidates.js');
     expect(workflow).toContain('--output /tmp/cover-selection.json');
     expect(workflow).toContain('--selection-list /tmp/cover-selection.list');
-    expect(workflow).toContain("--select \"$rank\"");
+    expect(workflow).toContain('--select-id "$image_id"');
     expect(workflow).toContain('--selection-manifest /tmp/cover-selection.json');
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--reports-dir /tmp/cover-reports');
