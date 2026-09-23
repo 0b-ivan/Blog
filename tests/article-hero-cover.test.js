@@ -27,4 +27,21 @@ describe('article hero cover readability', () => {
     expect(articleCss).not.toContain('rgba(4, 13, 20, 0.48)');
     expect(articleCss).not.toContain('rgba(4, 13, 20, 0.76)');
   });
+
+  it('keeps the mobile cover inside the hero and gives credits their own line', () => {
+    const articleCss = fs.readFileSync(
+      path.join(__dirname, '..', 'assets', 'css', 'article-metrics.css'),
+      'utf8'
+    );
+    const shellCss = fs.readFileSync(
+      path.join(__dirname, '..', 'assets', 'css', 'styles.css'),
+      'utf8'
+    );
+
+    expect(shellCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.terminal-post--article::before\s*\{[\s\S]*?display:\s*none;/);
+    expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover\s*\{[\s\S]*?var\(--article-cover-image\)/);
+    expect(articleCss).toMatch(/\.article-hero__credit\s*\{[\s\S]*?position:\s*static;[\s\S]*?text-align:\s*right;/);
+    expect(articleCss).toContain('font-size: clamp(1.55rem, 7vw, 2.05rem);');
+    expect(articleCss).toContain('var(--terminal-surface) 100%');
+  });
 });
