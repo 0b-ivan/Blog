@@ -10,9 +10,9 @@ RUN if [ -f package-lock.json ]; then \
 		fi
 
 # Browser-only dependencies are pinned and installed into the image so visitors
-# load them from blog.obivan.org instead of third-party CDNs. EPUB/PDF export
-# dependencies are pinned here as runtime-only packages because the server loads
-# them lazily only when a download is requested.
+# load them from blog.obivan.org instead of third-party CDNs. EPUB export
+# dependencies remain local to the blog image; PDF rendering runs in the
+# dedicated LuaLaTeX service.
 RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		force-graph@1.51.4 \
 		mermaid@11.17.0 \
@@ -21,9 +21,6 @@ RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		@highlightjs/cdn-assets@11.11.1 \
 		epub-gen-memory@1.1.2 \
 		jszip@3.10.2 \
-		pdfkit@0.20.2 \
-		htmlparser2@12.0.0 \
-		svg-to-pdfkit@0.1.8 \
 	&& npm cache clean --force
 
 ARG BUILD_VERSION
@@ -56,6 +53,7 @@ COPY post-history /content/post-history
 ENV ARCHIVE_DIR=/content/archive
 ENV POST_HISTORY_DIR=/content/post-history
 ENV SEARCH_SERVICE_URL=http://search:8090/search
+ENV PDF_SERVICE_URL=http://pdf:8092
 
 EXPOSE 8080
 CMD ["seo-server.js"]

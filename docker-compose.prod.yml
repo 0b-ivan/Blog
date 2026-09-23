@@ -24,6 +24,29 @@ services:
       retries: 30
       start_period: 10s
 
+  pdf:
+    image: ${PDF_IMAGE:?PDF_IMAGE must be set}
+    container_name: kernel-notes-pdf
+    volumes:
+      - blog-posts:/app/posts:ro
+      - blog-snippets:/app/snippets:ro
+      - blog-post-assets:/app/assets/posts:ro
+    environment:
+      SITE_URL: https://blog.obivan.org
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8092/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 8s
+      retries: 5
+      start_period: 15s
+
   blog:
     image: ${BLOG_IMAGE:?BLOG_IMAGE must be set}
     container_name: kernel-notes-blog
@@ -39,9 +62,12 @@ services:
       ARCHIVE_DIR: /content/archive
       POST_HISTORY_DIR: /content/post-history
       SEARCH_SERVICE_URL: http://search:8090/search
+      PDF_SERVICE_URL: http://pdf:8092
     depends_on:
       search:
         condition: service_started
+      pdf:
+        condition: service_healthy
     logging:
       driver: local
       options:

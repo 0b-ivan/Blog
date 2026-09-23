@@ -16,6 +16,8 @@ on:
       - 'rag/**'
       - 'Dockerfile'
       - 'Dockerfile.search'
+      - 'Dockerfile.pdf'
+      - 'templates/**'
       - 'docker-compose.prod.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -45,11 +47,12 @@ env:
   REGISTRY: ghcr.io
   BLOG_IMAGE_NAME: kernel-notes-blog
   SEARCH_IMAGE_NAME: kernel-notes-search
+  PDF_IMAGE_NAME: kernel-notes-pdf
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     environment: production
 
     steps:
@@ -149,6 +152,7 @@ jobs:
           echo "blog_version=${BLOG_VERSION}" >> "$GITHUB_OUTPUT"
           echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}-hetzner" >> "$GITHUB_OUTPUT"
           echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}-hetzner" >> "$GITHUB_OUTPUT"
+          echo "pdf_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.PDF_IMAGE_NAME }}:${{ github.sha }}-hetzner" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         if: steps.deploy_mode.outputs.mode == 'full'
@@ -191,6 +195,20 @@ jobs:
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.SEARCH_IMAGE_NAME }}:latest
           cache-from: type=gha,scope=deploy-search
           cache-to: type=gha,mode=max,scope=deploy-search
+
+      - name: Build and push LaTeX PDF image
+        if: steps.deploy_mode.outputs.mode == 'full'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.pdf
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.pdf_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.PDF_IMAGE_NAME }}:${{ steps.meta.outputs.blog_version }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.PDF_IMAGE_NAME }}:latest
+          cache-from: type=gha,scope=deploy-pdf
+          cache-to: type=gha,mode=max,scope=deploy-pdf
 
       - name: Validate Hetzner deployment secrets
         env:
@@ -332,23 +350,26 @@ jobs:
           HETZNER_PORT: ${{ secrets.HETZNER_PORT }}
           BLOG_IMAGE: ${{ steps.meta.outputs.blog_image }}
           SEARCH_IMAGE: ${{ steps.meta.outputs.search_image }}
+          PDF_IMAGE: ${{ steps.meta.outputs.pdf_image }}
           CONTENT_CHANGED: ${{ steps.deploy_mode.outputs.content_changed }}
           COMMIT_SHA: ${{ github.sha }}
         run: |
           PORT="${HETZNER_PORT:-22}"
           ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
             "${HETZNER_USER}@${HETZNER_HOST}" \
-            bash -s -- "$BLOG_IMAGE" "$SEARCH_IMAGE" "$CONTENT_CHANGED" "$COMMIT_SHA" <<'REMOTE'
+            bash -s -- "$BLOG_IMAGE" "$SEARCH_IMAGE" "$PDF_IMAGE" "$CONTENT_CHANGED" "$COMMIT_SHA" <<'REMOTE'
           set -euo pipefail
           BLOG_IMAGE="$1"
           SEARCH_IMAGE="$2"
-          CONTENT_CHANGED="$3"
-          COMMIT_SHA="$4"
+          PDF_IMAGE="$3"
+          CONTENT_CHANGED="$4"
+          COMMIT_SHA="$5"
           DEPLOY_DIR="/opt/Blog"
           COMPOSE_FILE="${DEPLOY_DIR}/docker-compose.prod.yml"
           ENV_FILE="${DEPLOY_DIR}/.env.production"
           BLOG_CONTAINER="kernel-notes-blog"
           SEARCH_CONTAINER="kernel-notes-search"
+          PDF_CONTAINER="kernel-notes-pdf"
           EXPECTED_HOST_PORT="1888"
 
           wait_for_health() {
@@ -398,8 +419,9 @@ jobs:
 
           PREVIOUS_BLOG_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$BLOG_CONTAINER" 2>/dev/null || true)"
           PREVIOUS_SEARCH_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$SEARCH_CONTAINER" 2>/dev/null || true)"
-          printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "$BLOG_IMAGE" "$SEARCH_IMAGE" > "$ENV_FILE"
-          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog search
+          PREVIOUS_PDF_IMAGE="$(docker inspect -f '{{.Config.Image}}' "$PDF_CONTAINER" 2>/dev/null || true)"
+          printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\nPDF_IMAGE=%s\n' "$BLOG_IMAGE" "$SEARCH_IMAGE" "$PDF_IMAGE" > "$ENV_FILE"
+          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" pull blog search pdf
 
           rollback_deployment() {
             reason="$1"
@@ -407,8 +429,8 @@ jobs:
             echo 'Container status:'
             docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" ps || true
             echo 'Recent container logs:'
-            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=120 blog search || true
-            printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\n' "${PREVIOUS_BLOG_IMAGE:-$BLOG_IMAGE}" "${PREVIOUS_SEARCH_IMAGE:-$SEARCH_IMAGE}" > "$ENV_FILE"
+            docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" logs --tail=120 blog search pdf || true
+            printf 'BLOG_IMAGE=%s\nSEARCH_IMAGE=%s\nPDF_IMAGE=%s\n' "${PREVIOUS_BLOG_IMAGE:-$BLOG_IMAGE}" "${PREVIOUS_SEARCH_IMAGE:-$SEARCH_IMAGE}" "${PREVIOUS_PDF_IMAGE:-$PDF_IMAGE}" > "$ENV_FILE"
             docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans || true
           }
 
@@ -462,6 +484,11 @@ jobs:
 
           if ! wait_for_health "$SEARCH_CONTAINER" 180; then
             rollback_deployment 'search container did not become healthy'
+            exit 1
+          fi
+
+          if ! wait_for_health "$PDF_CONTAINER" 90; then
+            rollback_deployment 'pdf container did not become healthy'
             exit 1
           fi
 

@@ -1,8 +1,11 @@
+const fs = require('node:fs/promises');
+const os = require('node:os');
 const path = require('node:path');
 const {
   buildColophon,
   buildCoverSvg,
   buildPhotoCoverSvg,
+  createEpubCover,
   displayAuthor,
   ensureCoverImageProperty,
   normalizeEpubDate,
@@ -71,7 +74,7 @@ describe('article ebook export helpers', () => {
     expect(html).not.toContain('Pixabay Content License');
   });
 
-  it('creates a typewriter-style book cover around the selected article photo', () => {
+  it('keeps the photo-backed deckblatt free of decorative monkey artwork', () => {
     const svg = buildPhotoCoverSvg({
       slug: 'chaos-engineering-chaos-monkey-kubernetes',
       title: 'Chaos Monkey ist kein Zufall',
@@ -87,7 +90,29 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('Image by Example from Pixabay');
     expect(svg).toContain('Ivan Babayev');
     expect(svg).toContain('Courier New');
-    expect(svg).toContain('class="cover-monkey"');
+    expect(svg).not.toContain('cover-monkey');
+  });
+
+  it('uses the existing raster article image as the pragmatic EPUB library cover', async () => {
+    const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-cover-'));
+    try {
+      const coverDir = path.join(assetRoot, 'assets', 'covers');
+      await fs.mkdir(coverDir, { recursive: true });
+      const image = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+      await fs.writeFile(path.join(coverDir, 'demo.jpg'), image);
+
+      const cover = await createEpubCover({
+        slug: 'demo',
+        title: 'Demo',
+        coverImage: '/assets/covers/demo.jpg'
+      }, assetRoot);
+
+      expect(cover.name).toBe('demo-cover.jpg');
+      expect(cover.type).toBe('image/jpeg');
+      expect(Buffer.from(await cover.arrayBuffer())).toEqual(image);
+    } finally {
+      await fs.rm(assetRoot, { recursive: true, force: true });
+    }
   });
 
   it('marks the manifest image as the EPUB 3 cover image without dropping other properties', () => {

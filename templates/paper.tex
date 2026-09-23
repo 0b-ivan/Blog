@@ -1,0 +1,173 @@
+\documentclass[11pt,a4paper,parskip=half]{scrartcl}
+
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{Latin Modern Mono}
+
+\usepackage[ngerman]{babel}
+\usepackage[a4paper,top=25mm,bottom=28mm,left=28mm,right=25mm]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{bookmark}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{eso-pic}
+\usepackage{ragged2e}
+
+\definecolor{KernelGreen}{HTML}{0B5B50}
+\definecolor{KernelDark}{HTML}{101820}
+\definecolor{KernelMuted}{HTML}{59646B}
+\definecolor{KernelCode}{HTML}{F4F6F7}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=KernelGreen,
+  urlcolor=KernelGreen,
+  citecolor=KernelGreen,
+  pdftitle={$title$},
+  pdfauthor={$author$}
+}
+
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\KOMAoptions{headsepline=true}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily Kernel Notes}
+\fancyhead[R]{\small\sffamily $category$}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{15pt}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{KernelCode},
+  frame=single,
+  rulecolor=\color{black!12},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=0.4em,
+  xrightmargin=0.4em,
+  aboveskip=0.9em,
+  belowskip=0.9em
+}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\pandocbounded}[1]{#1}
+
+% Pandoc citeproc emits CSLReferences for bibliography blocks. The stock
+% Pandoc LaTeX template defines these helpers; our custom KOMA template must
+% provide them as well.
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2]
+ {%
+  \setlength{\parindent}{0pt}%
+  \ifodd #1%
+    \let\oldpar\par%
+    \def\par{\hangindent=\cslhangindent\oldpar}%
+  \fi%
+  \setlength{\parskip}{#2\baselineskip}%
+ }{}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+\begin{document}
+
+$if(coverImage)$
+\begin{titlepage}
+  \thispagestyle{empty}
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=center,inner sep=0] at (current page.center) {
+      \includegraphics[width=\paperwidth,height=\paperheight]{\detokenize{$coverImage$}}
+    };
+    \fill[black,opacity=0.58] (current page.south west) rectangle (current page.north east);
+    \node[
+      anchor=north west,
+      text=white,
+      font=\sffamily\bfseries\Large
+    ] at ([xshift=18mm,yshift=-18mm]current page.north west) {KERNEL NOTES};
+    \node[
+      anchor=north west,
+      text=white,
+      text width=165mm,
+      align=left,
+      font=\ttfamily\bfseries\fontsize{28}{34}\selectfont
+    ] at ([xshift=18mm,yshift=-58mm]current page.north west) {$title$};
+    \node[
+      anchor=south west,
+      text=white,
+      font=\sffamily\bfseries\Large
+    ] at ([xshift=18mm,yshift=34mm]current page.south west) {$author$};
+    \node[
+      anchor=south west,
+      text=white!82,
+      font=\ttfamily\small
+    ] at ([xshift=18mm,yshift=19mm]current page.south west) {$date$};
+  \end{tikzpicture}
+  \null\vfill
+\end{titlepage}
+$else$
+\begin{titlepage}
+  \thispagestyle{empty}
+  \vspace*{25mm}
+  {\sffamily\bfseries\Large KERNEL NOTES\par}
+  \vspace{22mm}
+  {\ttfamily\bfseries\fontsize{28}{34}\selectfont $title$\par}
+  \vfill
+  {\sffamily\bfseries\Large $author$\par}
+  \vspace{8mm}
+  {\ttfamily $date$\par}
+\end{titlepage}
+$endif$
+
+\clearpage
+\thispagestyle{plain}
+{\sffamily\small\bfseries\color{KernelGreen} KERNEL NOTES · $category$\par}
+\vspace{5mm}
+{\sffamily\bfseries\LARGE $title$\par}
+\vspace{5mm}
+{\large $author$\par}
+\vspace{8mm}
+
+\begin{abstract}
+$abstract$
+\end{abstract}
+
+$if(keywords)$
+\noindent\textbf{Schlüsselwörter:} $keywords$
+\par
+$endif$
+
+\vspace{4mm}
+\noindent\textbf{Lesezeit:} ca. $readingTime$ Min.\\
+\textbf{Quelle:} \url{$sourceUrl$}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+$body$
+
+\end{document}

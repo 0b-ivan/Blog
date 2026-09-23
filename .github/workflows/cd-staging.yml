@@ -18,6 +18,8 @@ on:
       - 'Dockerfile.search'
       - 'Dockerfile.status'
       - 'Dockerfile.chaos'
+      - 'Dockerfile.pdf'
+      - 'templates/**'
       - 'status-monitor/**'
       - 'chaos-monkey/**'
       - 'package.json'
@@ -48,13 +50,14 @@ env:
   SEARCH_IMAGE_NAME: kernel-notes-search
   STATUS_IMAGE_NAME: kernel-notes-status
   CHAOS_IMAGE_NAME: kernel-notes-chaos
+  PDF_IMAGE_NAME: kernel-notes-pdf
   PROMOTION_BRANCH: promotion/staging-verified
   COVER_BACKFILL_LIMIT: "20"
 
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout staging
@@ -290,6 +293,7 @@ jobs:
           echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
           echo "status_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.STATUS_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
           echo "chaos_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.CHAOS_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
+          echo "pdf_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.PDF_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         if: steps.deploy_mode.outputs.build_images == 'true'
@@ -357,6 +361,19 @@ jobs:
           cache-from: type=gha,scope=staging-chaos
           cache-to: type=gha,mode=max,scope=staging-chaos
 
+      - name: Build and push staging LaTeX PDF image
+        if: steps.deploy_mode.outputs.build_images == 'true'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.pdf
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.pdf_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.PDF_IMAGE_NAME }}:staging
+          cache-from: type=gha,scope=staging-pdf
+          cache-to: type=gha,mode=max,scope=staging-pdf
+
       - name: Pin staging GitOps state to built images
         if: steps.deploy_mode.outputs.build_images == 'true'
         env:
@@ -374,7 +391,7 @@ jobs:
           sha = os.environ['DEPLOY_SHA']
           owner = os.environ['OWNER_LOWER']
 
-          for image in ('kernel-notes-blog', 'kernel-notes-search', 'kernel-notes-status', 'kernel-notes-chaos'):
+          for image in ('kernel-notes-blog', 'kernel-notes-search', 'kernel-notes-status', 'kernel-notes-chaos', 'kernel-notes-pdf'):
               pattern = (
                   rf'(  - name: ghcr\.io/{re.escape(owner)}/{image}\n'
                   rf'    newTag: )[A-Za-z0-9._-]+'
@@ -463,6 +480,21 @@ jobs:
 
           echo "Timed out waiting for ${EXPECTED_VERSION} to be published on staging." >&2
           exit 1
+
+      - name: Verify public LaTeX PDF export
+        if: steps.deploy_mode.outputs.build_images == 'true'
+        env:
+          STAGING_URL: https://staging-blog.obivan.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=/tmp/staging-chaos-engineering.pdf
+          curl -fsS --max-time 90 \
+            "${STAGING_URL}/download/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.pdf?deploy=${GITHUB_SHA}" \
+            -o "$output"
+          test "$(head -c 5 "$output")" = '%PDF-'
+          test "$(wc -c < "$output")" -gt 10000
+          echo 'Public staging LaTeX PDF export is healthy.'
 
       - name: Check public staging after GitOps-only change
         if: steps.deploy_mode.outputs.gitops_only == 'true'
