@@ -268,6 +268,7 @@ describe('blog server', () => {
     expect(html).toContain('Node · 03.03.2026 · 3 Min. Lesezeit');
     expect(html).toContain('terminal-post terminal-post--article');
     expect(html).toContain('article-hero__chrome');
+    expect(html).not.toContain('article-hero--has-cover');
     expect(html).toContain('/blog/node');
     expect(html).toContain('# linux');
     expect(html).not.toContain('article-hero__lights');
@@ -321,10 +322,11 @@ describe('blog server', () => {
       html: '<p>Rendered</p>'
     });
 
+    expect(html).toContain('class="article-hero article-hero--has-cover"');
     expect(html).toContain('data-article-hero style="--article-cover-image: url(/assets/covers/covered-post.jpg)');
     expect(html).toContain('--article-cover-focus: top');
     expect(html).toContain('--article-cover-overlay: linear-gradient(180deg');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-2');
+    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-3');
   });
 
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {
