@@ -51,6 +51,7 @@ async function compileArticlePdf(post) {
       '--pdf-engine=lualatex',
       `--template=${template}`,
       '--number-sections',
+      '--shift-heading-level-by=-1',
       '--listings',
       `--resource-path=${[root, path.join(root, 'assets'), path.join(root, 'snippets')].join(':')}`,
       '--pdf-engine-opt=-interaction=nonstopmode',
@@ -65,10 +66,7 @@ async function compileArticlePdf(post) {
       cwd: tempDir,
       timeout: compileTimeoutMs,
       maxBuffer: 8 * 1024 * 1024,
-      env: {
-        ...process.env,
-        SOURCE_DATE_EPOCH: process.env.SOURCE_DATE_EPOCH || '0'
-      }
+      env: process.env
     });
 
     const pdf = await fs.readFile(outputFile);
