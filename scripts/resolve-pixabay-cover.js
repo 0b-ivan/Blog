@@ -246,7 +246,7 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch) {
 }
 
 function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay')) {
-  const digest = crypto.createHash('sha256').update(String(query)).digest('hex').slice(0, 24);
+  const digest = crypto.createHash('sha256').update(`v2:${String(query)}`).digest('hex').slice(0, 24);
   return path.join(cacheDir, `${digest}.json`);
 }
 
