@@ -170,7 +170,7 @@ Body
     expect(notFound.status).toBe(404);
   });
 
-  it('download routes return EPUB and EPUB-derived PDF with attachment headers', async () => {
+  it('download routes return EPUB and LaTeX-rendered PDF with attachment headers', async () => {
     await writePost(
       tmpDir,
       'download-me.md',
