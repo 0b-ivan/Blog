@@ -14,6 +14,7 @@
     "covers:resolve": "node scripts/resolve-pixabay-cover.js",
     "covers:missing": "node scripts/list-missing-cover-posts.js",
     "covers:review": "node scripts/render-cover-review.js",
+    "covers:select-diverse": "node scripts/select-diverse-cover-candidates.js",
     "post:archive": "node scripts/archive-post.js archive",
     "post:restore": "node scripts/archive-post.js restore",
     "posts:build-history": "node scripts/build-post-history.js",
