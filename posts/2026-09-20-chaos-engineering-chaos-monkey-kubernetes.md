@@ -31,24 +31,23 @@ search_queries:
       Wie plane ich sichere Chaos Experimente mit Steady State und Stop
       Conditions?
     maxRank: 1
-cover_query: server datacenter infrastructure network cloud container cluster deployment
+cover_query: server monitoring alert outage incident failure reliability
 cover_provider: pixabay
-cover_provider_id: '1235959'
+cover_provider_id: '102075'
 cover_image: /assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg
 cover_alt: >-
-  server, cloud, development, business, network, connection, technology,
-  internet, web, database, analysis, application, colors, design, management,
-  designer, developer, gray business, gray technology, gray clouds, gray
-  network, gray internet, gray design, gray company, gray web, gray color, gray
-  server, gray management, server, server, server, server, server, database,
-  database
+  error, www, internet, computer, server, crash, problem, failure, false, hoax,
+  faux pas, misconception, careless mistakes, memory, incorrect, mistake,
+  misunderstanding, patzer, schnitzer, fallacy, forgetfulness, oversight,
+  confusion, error, error, error, error, error, failure, failure, mistake,
+  mistake
 cover_focus: center
-cover_credit: by ColossusCloud via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
-cover_source_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_credit: by geralt via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/error-www-internet-computer-server-102075/'
+cover_source_url: 'https://pixabay.com/illustrations/error-www-internet-computer-server-102075/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 86
 ---
 
 Ein Chaos Monkey klingt zunächst nach einem schlechten Betriebsmodell:

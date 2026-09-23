@@ -30,24 +30,24 @@ search_queries:
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
-cover_query: Testing Regressionstest CI Development
+cover_query: software testing quality assurance bug code
 cover_provider: pixabay
-cover_provider_id: '1076536'
+cover_provider_id: '3963099'
 cover_image: /assets/covers/2026-08-25-Regresions-test.jpg
 cover_alt: >-
-  code, html, digital, coding, web, programming, computer, technology, internet,
-  design, development, website, web developer, web development, programming
-  code, data, page, computer programming, software, site, css, script, web page,
-  website development, www, information, java, screen, code, code, code, html,
-  coding, coding, coding, coding, coding, web, programming, programming,
-  computer, technology, website, website, web development, software
+  scan, system, bug, virus, malware, search, error, code, script, laptop, alert,
+  application, debug, hacker, magnifying, notification, phishing, programmer,
+  ransomware, scam, software, technology, warning, security, antivirus, blue
+  virus, blue laptop, blue zoom, blue security, blue code, blue coding, blue
+  software, malware, malware, malware, malware, malware, debug, debug, debug,
+  debug, phishing, ransomware, ransomware, scam, antivirus, antivirus, antivirus
 cover_focus: center
-cover_credit: by jamesmarkosborne via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
-cover_source_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
+cover_credit: by Mohamed_hassan via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/scan-system-bug-virus-malware-3963099/'
+cover_source_url: 'https://pixabay.com/illustrations/scan-system-bug-virus-malware-3963099/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 70
+cover_score: 85
 ---
 
 Bei Tests denkt man schnell an die Frage:
