@@ -59,6 +59,9 @@ function candidateTable(candidates) {
     const details = [
       markdownText(candidate.tags),
       candidate.user ? `by ${markdownText(candidate.user)}` : '',
+      candidate.searchQueries?.length
+        ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
+        : (candidate.searchQuery ? `Suchpfad: ${markdownText(candidate.searchQuery)}` : ''),
       source,
       reasons
     ].filter(Boolean).join('<br>');
@@ -76,12 +79,17 @@ function candidateTable(candidates) {
 function renderReport(report, options = {}) {
   const title = markdownText(report.title || report.postPath || 'Artikel');
   const query = markdownText(report.query || '');
+  const queries = Array.isArray(report.queries)
+    ? report.queries.map(markdownText).filter(Boolean)
+    : [];
   const selected = report.selected || null;
   const lines = [
     `## ${title}`,
     '',
     `**Artikel:** \`${markdownText(report.postPath || '')}\``,
-    query ? `**Pixabay-Query:** \`${query}\`` : ''
+    queries.length
+      ? `**Pixabay-Suchpfade:** ${queries.map((value) => `\`${value}\``).join(' → ')}`
+      : (query ? `**Pixabay-Query:** \`${query}\`` : '')
   ].filter(Boolean);
 
   if (selected) {
