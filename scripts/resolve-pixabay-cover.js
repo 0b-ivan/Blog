@@ -63,7 +63,7 @@ const VISUAL_INTENTS = [
     query: 'linux server administration monitoring service logs daemon',
     positive: ['linux', 'server', 'service', 'logs', 'administration', 'monitoring', 'daemon', 'process'],
     requiredGroups: [
-      ['linux', 'server', 'service', 'logs', 'monitoring', 'daemon', 'process']
+      ['service', 'logs', 'monitoring', 'daemon', 'process']
     ],
     avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
   },
@@ -96,6 +96,7 @@ const VISUAL_INTENTS = [
   },
   {
     key: 'chaos-monkey',
+    priority: 20,
     pixabayCategory: 'animals',
     pixabayImageType: 'all',
     markers: ['chaos monkey'],
@@ -289,6 +290,9 @@ function visualIntent(data = {}) {
     }))
     .filter((intent) => intent.evidenceScore >= Number(intent.minEvidence || 6))
     .sort((left, right) => {
+      if (Number(right.priority || 0) !== Number(left.priority || 0)) {
+        return Number(right.priority || 0) - Number(left.priority || 0);
+      }
       if (right.evidenceScore !== left.evidenceScore) {
         return right.evidenceScore - left.evidenceScore;
       }
