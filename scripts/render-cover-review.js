@@ -106,6 +106,7 @@ function renderReport(report, options = {}) {
     `**Artikel:** \`${markdownText(report.postPath || '')}\``,
     report.series ? `**Serie:** \`${markdownText(report.series)}\`` : '**Serie:** keine',
     report.visualIntent ? `**Bildidee:** \`${markdownText(report.visualIntent)}\`` : '**Bildidee:** generisch',
+    report.visualIntent ? `**Intent-Evidenz:** ${Number(report.visualIntentEvidence || 0)}` : '',
     options.compact
       ? ''
       : (queries.length

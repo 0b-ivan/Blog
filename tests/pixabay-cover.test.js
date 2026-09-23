@@ -4,6 +4,7 @@ const path = require('node:path');
 const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
+  VISUAL_INTENTS,
   choosePhoto,
   collectCandidates,
   defaultQuery,
@@ -14,6 +15,7 @@ const {
   parseArgs,
   queryCandidates,
   visualIntent,
+  visualIntentEvidence,
   visualQuery,
   rankCandidates,
   renderCandidates,
@@ -335,6 +337,116 @@ describe('Pixabay cover resolver', () => {
     }, chaos);
     expect(resilience.score).toBeGreaterThan(laboratory.score);
     expect(laboratory.semanticMismatch).toBe(true);
+  });
+
+  it('weights the article main topic above incidental examples', () => {
+    const regression = {
+      title: 'Regressionstests – was sie sind und wie ich sie nutze',
+      category: 'Development',
+      excerpt: 'Regressionstests prüfe ich unter anderem an meiner semantischen Suche Kernel Grep.',
+      tags: ['Testing', 'Regressionstest', 'CI', 'Semantic-Search', 'Kernel-Grep'],
+      search_queries: [
+        { query: 'Wie teste ich eine semantische Suche automatisch?' }
+      ]
+    };
+
+    expect(visualIntent(regression).key).toBe('regression-testing');
+
+    const semanticEvidence = visualIntentEvidence(
+      regression,
+      VISUAL_INTENTS.find((intent) => intent.key === 'semantic-search')
+    );
+    const regressionEvidence = visualIntentEvidence(
+      regression,
+      VISUAL_INTENTS.find((intent) => intent.key === 'regression-testing')
+    );
+    expect(regressionEvidence.evidenceScore).toBeGreaterThan(semanticEvidence.evidenceScore);
+
+    const k3sHardening = {
+      title: 'K3s auf Proxmox – Teil III: Feste Versionen und verschlüsselte Secrets',
+      category: 'DevOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox', 'Hardening', 'Observability'],
+      excerpt: 'Feste Versionen, verschlüsselte Secrets und Backups.'
+    };
+    expect(visualIntent(k3sHardening)).toBeNull();
+
+    const logger = {
+      title: 'logger.info() – wird schon nichts kosten',
+      category: 'AWS',
+      tags: ['CloudWatch', 'Observability', 'Logging']
+    };
+    expect(visualIntent(logger).key).toBe('logging-observability');
+  });
+
+  it('rejects remaining console, monitoring and physical-storage stock collisions', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations']
+    };
+    const linuxShell = scoreHit({
+      tags: 'linux, shell, command, daemon, service, code, logs',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    const gameConsole = scoreHit({
+      tags: 'playstation, computer, console, controller, game, gamer, gaming, sony',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    expect(linuxShell.score).toBeGreaterThan(gameConsole.score);
+    expect(gameConsole.semanticMismatch).toBe(true);
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability']
+    };
+    const monitoring = scoreHit({
+      tags: 'server, monitoring, dashboard, alert, outage, infrastructure, reliability',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    const cloudTouch = scoreHit({
+      tags: 'cloud, finger, touch, cloud computing, data store, network, server',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    expect(monitoring.score).toBeGreaterThan(cloudTouch.score);
+    expect(cloudTouch.semanticMismatch).toBe(true);
+
+    const photos = {
+      title: 'Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone', 'Self-Hosting']
+    };
+    const photoSync = scoreHit({
+      tags: 'photo, gallery, digital, images, files, cloud, sync',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    const miniStorage = scoreHit({
+      tags: 'mini storage, music library, mini warehouse, self storage',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    expect(photoSync.score).toBeGreaterThan(miniStorage.score);
+    expect(miniStorage.semanticMismatch).toBe(true);
+
+    const logging = {
+      title: 'logger.info() – wird schon nichts kosten',
+      tags: ['AWS', 'CloudWatch', 'Observability', 'Logging']
+    };
+    expect(
+      scoreHit({
+        tags: 'logs, monitoring, dashboard, metrics, observability, alerts',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, logging).score
+    ).toBeGreaterThan(
+      scoreHit({
+        tags: 'binary, smartphone, photography, software, code',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, logging).score
+    );
   });
 
   it('uses focused fallback queries when an article query returns no result', () => {

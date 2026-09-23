@@ -55,9 +55,9 @@ const VISUAL_INTENTS = [
   {
     key: 'systemd-service',
     markers: ['systemd', 'journalctl'],
-    query: 'linux shell console service logs command daemon',
-    positive: ['linux', 'service', 'logs', 'console', 'administration', 'shell', 'command', 'daemon'],
-    avoid: ['train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
+    query: 'linux command line shell service logs daemon code',
+    positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'code'],
+    avoid: ['game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
   },
   {
     key: 'docker-compose',
@@ -69,10 +69,10 @@ const VISUAL_INTENTS = [
   {
     key: 'semantic-search',
     markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
-    query: 'search data artificial intelligence code magnifying glass',
-    positive: ['search', 'data', 'artificial', 'intelligence', 'code', 'magnifying', 'analytics', 'ai'],
+    query: 'search data code analytics magnifying glass',
+    positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
     minMatches: 2,
-    avoid: ['google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar']
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar']
   },
   {
     key: 'vpc-networking',
@@ -85,10 +85,10 @@ const VISUAL_INTENTS = [
   {
     key: 'chaos-engineering',
     markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
-    query: 'resilience reliability monitoring outage failure infrastructure incident',
-    positive: ['resilience', 'reliability', 'monitoring', 'outage', 'failure', 'infrastructure', 'incident', 'observability'],
+    query: 'server monitoring dashboard alert outage infrastructure reliability',
+    positive: ['server', 'monitoring', 'dashboard', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'observability'],
     minMatches: 2,
-    avoid: ['school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
+    avoid: ['touch', 'finger', 'school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
   },
   {
     key: 'regression-testing',
@@ -100,16 +100,17 @@ const VISUAL_INTENTS = [
   {
     key: 'logging-observability',
     markers: ['logger.info', 'logging', 'logger', 'observability'],
-    query: 'terminal logs monitoring observability software',
-    positive: ['terminal', 'logs', 'logging', 'monitoring', 'observability', 'software', 'code'],
-    avoid: ['business', 'meeting', 'office']
+    query: 'server logs monitoring dashboard metrics observability cloudwatch',
+    positive: ['logs', 'logging', 'monitoring', 'dashboard', 'metrics', 'observability', 'cloudwatch', 'alerts'],
+    avoid: ['smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office']
   },
   {
     key: 'photo-storage-sync',
     markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
-    query: 'photo library cloud storage files sync gallery',
-    positive: ['photo', 'library', 'storage', 'files', 'sync', 'gallery', 'cloud', 'image'],
-    avoid: ['business', 'meeting', 'office']
+    query: 'photo gallery cloud files sync digital images',
+    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'digital'],
+    minMatches: 2,
+    avoid: ['warehouse', 'mini storage', 'self storage', 'music', 'business', 'meeting', 'office']
   }
 ];
 
@@ -196,32 +197,54 @@ function listFrom(value) {
   return String(value || '').split(/[,;]+/).flatMap((item) => tokensFrom(item));
 }
 
-function searchQueryText(data = {}) {
-  const queries = Array.isArray(data.search_queries)
-    ? data.search_queries.map((entry) => typeof entry === 'string' ? entry : entry?.query)
+function markerMatches(value, markers) {
+  const haystack = normalizeText(value);
+  if (!haystack) return [];
+
+  return markers.filter((marker) => haystack.includes(normalizeText(marker)));
+}
+
+function visualIntentEvidence(data, intent) {
+  const searchQueries = Array.isArray(data.search_queries)
+    ? data.search_queries.map((entry) => typeof entry === 'string' ? entry : entry?.query).filter(Boolean)
     : [];
 
-  return [
-    data.title,
-    data.category,
-    data.excerpt,
-    data.cover_subject,
-    ...normalizedTags(data),
-    ...queries
-  ].filter(Boolean).join(' ');
+  const sources = [
+    { value: data.cover_subject, weight: 12 },
+    { value: data.title, weight: 10 },
+    { value: normalizedTags(data).join(' '), weight: 4 },
+    { value: data.category, weight: 3 },
+    { value: data.excerpt, weight: 2 },
+    { value: searchQueries.join(' '), weight: 1 }
+  ];
+
+  let evidenceScore = 0;
+  const matchedMarkers = new Set();
+
+  for (const source of sources) {
+    for (const marker of markerMatches(source.value, intent.markers)) {
+      evidenceScore += source.weight;
+      matchedMarkers.add(marker);
+    }
+  }
+
+  return {
+    evidenceScore,
+    matchedMarkers: [...matchedMarkers]
+  };
 }
 
 function visualIntent(data = {}) {
-  const haystack = normalizeText(searchQueryText(data));
   const matches = VISUAL_INTENTS
     .map((intent) => ({
       ...intent,
-      matchedMarkers: intent.markers.filter((marker) =>
-        haystack.includes(normalizeText(marker))
-      )
+      ...visualIntentEvidence(data, intent)
     }))
-    .filter((intent) => intent.matchedMarkers.length > 0)
+    .filter((intent) => intent.evidenceScore >= Number(intent.minEvidence || 6))
     .sort((left, right) => {
+      if (right.evidenceScore !== left.evidenceScore) {
+        return right.evidenceScore - left.evidenceScore;
+      }
       if (right.matchedMarkers.length !== left.matchedMarkers.length) {
         return right.matchedMarkers.length - left.matchedMarkers.length;
       }
@@ -717,6 +740,7 @@ async function main() {
     title: parsed.data.title || path.basename(target, '.md'),
     series: detectSeries(parsed.data),
     visualIntent: visualIntent(parsed.data)?.key || '',
+    visualIntentEvidence: visualIntent(parsed.data)?.evidenceScore || 0,
     query: rankingQuery,
     queries,
     candidates: ranked.slice(0, 5).map(reportCandidate)
@@ -805,6 +829,7 @@ module.exports = {
   parseArgs,
   queryCandidates,
   visualIntent,
+  visualIntentEvidence,
   visualQuery,
   rankCandidates,
   renderCandidates,
