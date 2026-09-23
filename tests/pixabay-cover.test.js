@@ -10,6 +10,9 @@ const {
   fileExtension,
   parseArgs,
   queryCandidates,
+  rankHits,
+  renderCandidates,
+  scoreHit,
   searchPixabay,
   searchPixabayCached
 } = require('../scripts/resolve-pixabay-cover');
@@ -20,7 +23,7 @@ describe('Pixabay cover resolver', () => {
       title: 'Chaos Monkey gegen meinen Blog',
       category: 'DevOps',
       tags: ['Kubernetes', 'Chaos Engineering', 'K3s', 'Cloudflare']
-    })).toBe('Kubernetes Chaos Engineering K3s DevOps');
+    })).toContain('kubernetes');
     expect(defaultQuery({ title: 'Test', tags: [] }).length).toBeLessThanOrEqual(100);
   });
 
@@ -53,6 +56,7 @@ describe('Pixabay cover resolver', () => {
       expect(parsed.searchParams.get('orientation')).toBe('horizontal');
       expect(parsed.searchParams.get('safesearch')).toBe('true');
       expect(parsed.searchParams.get('key')).toBe('test-key');
+      expect(parsed.searchParams.get('per_page')).toBe('12');
       return {
         ok: true,
         json: async () => ({
@@ -68,15 +72,83 @@ describe('Pixabay cover resolver', () => {
   });
 
   it('uses focused fallback queries when an article query returns no result', () => {
-    expect(queryCandidates({
+    const queries = queryCandidates({
       title: 'Ein deutscher Titel',
       category: 'DevOps',
       tags: ['Kubernetes', 'Cloudflare']
-    }, 'specific query')).toEqual([
-      'specific query',
-      'DevOps Kubernetes Cloudflare',
-      'Ein deutscher Titel'
-    ]);
+    }, 'specific query');
+
+    expect(queries[0]).toBe('specific query');
+    expect(queries[1]).toContain('kubernetes');
+    expect(queries[1]).toContain('server');
+    expect(queries[2]).toBe('Ein deutscher Titel');
+  });
+
+  it('ranks technically relevant landscape images above generic stock photos', () => {
+    const data = {
+      title: 'Warum ich Immich nicht synchronisiere',
+      category: 'Self-Hosting',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone']
+    };
+
+    const ranked = rankHits([
+      {
+        id: 1,
+        tags: 'business, people, meeting, office',
+        imageWidth: 1920,
+        imageHeight: 1080,
+        likes: 500,
+        downloads: 20000
+      },
+      {
+        id: 2,
+        tags: 'photo, storage, cloud, server, files',
+        imageWidth: 2400,
+        imageHeight: 1350,
+        likes: 30,
+        downloads: 1000
+      }
+    ], data);
+
+    expect(ranked[0].hit.id).toBe(2);
+    expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
+    expect(ranked[0].matched).toEqual(expect.arrayContaining(['photo', 'storage', 'cloud', 'server']));
+    expect(ranked[1].avoided).toEqual(expect.arrayContaining(['people', 'meeting']));
+  });
+
+  it('supports article-specific cover_avoid terms', () => {
+    const result = scoreHit({
+      tags: 'server, neon, network',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      positive: ['server', 'network'],
+      avoid: ['neon']
+    });
+
+    expect(result.matched).toEqual(expect.arrayContaining(['server', 'network']));
+    expect(result.avoided).toEqual(['neon']);
+  });
+
+  it('renders scored candidate previews as markdown images', () => {
+    const markdown = renderCandidates([{
+      hit: {
+        id: 42,
+        user: 'Example',
+        tags: 'server, cloud',
+        pageURL: 'https://pixabay.com/photos/example-42/',
+        webformatURL: 'https://cdn.example.test/example_640.jpg',
+        __coverQuery: 'server cloud'
+      },
+      score: 78,
+      matched: ['server', 'cloud'],
+      avoided: []
+    }]);
+
+    expect(markdown).toContain('78/100');
+    expect(markdown).toContain('sehr passend');
+    expect(markdown).toContain('![Pixabay Kandidat 1](https://cdn.example.test/example_640.jpg)');
+    expect(markdown).toContain('Themen-Matches: server, cloud');
   });
 
   it('caches Pixabay API responses for 24 hours without storing the API key', async () => {
