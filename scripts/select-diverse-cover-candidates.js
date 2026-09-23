@@ -18,7 +18,7 @@ function parseArgs(args) {
   const options = {
     reportsDir: '',
     output: '',
-    tsv: ''
+    selectionList: ''
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -31,8 +31,8 @@ function parseArgs(args) {
     } else if (arg === '--output' && next) {
       options.output = next;
       index += 1;
-    } else if (arg === '--tsv' && next) {
-      options.tsv = next;
+    } else if (arg === '--selection-list' && next) {
+      options.selectionList = next;
       index += 1;
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -220,8 +220,8 @@ function chooseDiverseCovers(reports) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  if (!options.reportsDir || !options.output || !options.tsv) {
-    throw new Error('--reports-dir, --output and --tsv are required');
+  if (!options.reportsDir || !options.output || !options.selectionList) {
+    throw new Error('--reports-dir, --output and --selection-list are required');
   }
 
   const reports = await loadReports(options.reportsDir);
@@ -235,8 +235,8 @@ async function main() {
 
   await fs.writeFile(options.output, JSON.stringify(manifest, null, 2), 'utf8');
   await fs.writeFile(
-    options.tsv,
-    selections.map((selection) => `${selection.postPath}\t${selection.rank}\n`).join(''),
+    options.selectionList,
+    selections.map((selection) => `${selection.postPath}|${selection.rank}\n`).join(''),
     'utf8'
   );
 
