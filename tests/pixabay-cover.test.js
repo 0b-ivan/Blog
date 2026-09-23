@@ -4,6 +4,7 @@ const path = require('node:path');
 const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
+  choosePhoto,
   defaultQuery,
   downloadPhoto,
   fileExtension,
@@ -106,6 +107,12 @@ describe('Pixabay cover resolver', () => {
     } finally {
       await fs.rm(cacheDir, { recursive: true, force: true });
     }
+  });
+
+  it('rejects a selected candidate that Pixabay did not return', async () => {
+    await expect(choosePhoto([{ id: 1 }], 2)).rejects.toThrow(
+      'Selected Pixabay candidate 2 is unavailable'
+    );
   });
 
   it('downloads the selected image without exposing the API key', async () => {
