@@ -21,7 +21,13 @@ describe('cover review workflows', () => {
       'utf8'
     );
 
+    expect(workflow).toContain('/tmp/cover-candidates/${slug}.json');
     expect(workflow).toContain('/tmp/cover-reports/${slug}.json');
+    expect(workflow).toContain('scripts/select-diverse-cover-candidates.js');
+    expect(workflow).toContain('--output /tmp/cover-selection.json');
+    expect(workflow).toContain('--tsv /tmp/cover-selection.tsv');
+    expect(workflow).toContain("--select \"$rank\"");
+    expect(workflow).toContain('--selection-manifest /tmp/cover-selection.json');
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--reports-dir /tmp/cover-reports');
     expect(workflow).toContain('--commit "$cover_commit"');
