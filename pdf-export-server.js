@@ -6,7 +6,8 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const legacy = require('./server');
 const {
-  buildPdfHtml,
+  buildBibTeX,
+  buildPdfPublication,
   pandocMetadataArgs,
   pdfMetadata
 } = require('./lib/latex-export');
@@ -36,8 +37,13 @@ async function compileArticlePdf(post) {
   const outputFile = path.join(tempDir, 'article.pdf');
 
   try {
-    const html = await buildPdfHtml(post, { assetRoot: root });
-    await fs.writeFile(inputFile, html, 'utf8');
+    const publication = await buildPdfPublication(post, { assetRoot: root });
+    await fs.writeFile(inputFile, publication.html, 'utf8');
+
+    const bibliographyFile = path.join(tempDir, 'references.bib');
+    if (publication.sources.length) {
+      await fs.writeFile(bibliographyFile, buildBibTeX(publication.sources), 'utf8');
+    }
 
     const metadata = pdfMetadata(post, {
       assetRoot: root,
@@ -52,6 +58,14 @@ async function compileArticlePdf(post) {
       `--template=${template}`,
       '--number-sections',
       '--listings',
+      ...(publication.sources.length ? [
+        '--citeproc',
+        `--bibliography=${bibliographyFile}`,
+        '-M',
+        'nocite=@*',
+        '-M',
+        'reference-section-title=Literatur- und Quellenverzeichnis'
+      ] : []),
       `--resource-path=${[root, path.join(root, 'assets'), path.join(root, 'snippets')].join(':')}`,
       '--pdf-engine-opt=-interaction=nonstopmode',
       '--pdf-engine-opt=-halt-on-error',
