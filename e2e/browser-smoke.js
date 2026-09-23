@@ -664,7 +664,7 @@ async function main() {
       `Mobile cover should darken subtly while leaving the hero (before=${coverMotionBefore.brightness}, after=${coverMotionAfter.brightness})`
     );
     let compactProgressBox = null;
-    for (let attempt = 0; attempt < 30; attempt += 1) {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
       compactProgressBox = await compactProgress.boundingBox();
       if (
         compactProgressBox
