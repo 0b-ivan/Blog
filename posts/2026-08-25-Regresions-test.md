@@ -30,24 +30,20 @@ search_queries:
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
-cover_query: Testing Regressionstest CI Development
+cover_query: search data artificial intelligence code magnifying glass
 cover_provider: pixabay
-cover_provider_id: '1076536'
-cover_image: /assets/covers/2026-08-25-Regresions-test.jpg
+cover_provider_id: '2697683'
+cover_image: /assets/covers/2026-08-25-Regresions-test.png
 cover_alt: >-
-  code, html, digital, coding, web, programming, computer, technology, internet,
-  design, development, website, web developer, web development, programming
-  code, data, page, computer programming, software, site, css, script, web page,
-  website development, www, information, java, screen, code, code, code, html,
-  coding, coding, coding, coding, coding, web, programming, programming,
-  computer, technology, website, website, web development, software
+  robot, isolated, artificial intelligence, robot, robot, robot, robot, robot,
+  artificial intelligence
 cover_focus: center
-cover_credit: by jamesmarkosborne via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
-cover_source_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
+cover_credit: by Janson_G via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/robot-isolated-2697683/'
+cover_source_url: 'https://pixabay.com/photos/robot-isolated-2697683/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 70
+cover_score: 100
 ---
 
 Bei Tests denkt man schnell an die Frage:

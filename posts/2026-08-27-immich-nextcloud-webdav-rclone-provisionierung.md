@@ -31,21 +31,20 @@ search_queries:
     maxRank: 1
   - query: Wie provisioniere ich Immich Benutzer mit eigenen Nextcloud Fotoordnern?
     maxRank: 1
-cover_query: photo storage server cloud gallery files sync homelab
+cover_query: photo library cloud storage files sync gallery
 cover_provider: pixabay
-cover_provider_id: '2402637'
+cover_provider_id: '2449794'
 cover_image: /assets/covers/2026-08-27-immich-nextcloud-webdav-rclone-provisionierung.jpg
 cover_alt: >-
-  network, server, system, infrastructure, managed services, connection,
-  computer, cloud, gray computer, gray laptop, network, network, server, server,
-  server, server, server
+  mini storage, music stored music library mini warehouse, self-small warehouse,
+  mini storage, mini storage, mini storage, mini storage, mini storage
 cover_focus: center
-cover_credit: by bsdrouin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
-cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_credit: by SarlaWu via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/mini-storage-2449794/'
+cover_source_url: 'https://pixabay.com/photos/mini-storage-2449794/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 82
+cover_score: 99
 ---
 
 Meine Fotos liegen bereits in **Nextcloud**. Für die eigentliche Verwaltung gefällt mir **Immich** aber deutlich besser.

@@ -31,21 +31,24 @@ snippets:
     description: Definiert FreshRSS mit Volumes für Daten und Erweiterungen.
     type: Compose-Beispiel
     language: yaml
-cover_query: feed news reader web server homelab storage network
+cover_query: rss feed news articles newspaper website subscription
 cover_provider: pixabay
-cover_provider_id: '4393370'
+cover_provider_id: '1015988'
 cover_image: >-
   /assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.jpg
 cover_alt: >-
-  server, drive bay, hard drives, storage, network, edp, hardware, data,
-  internet, web, server, server, server, server, server
+  press, journalist, photographer, news, headlines, journalism, magazine,
+  newspapers, figure, information, magazines, newspaper, funny, broadcast, fun,
+  article, communication, tagesschau, press, press, press, journalist,
+  journalist, journalist, journalist, journalist, journalism, journalism,
+  journalism, newspaper, newspaper, newspaper, funny, article
 cover_focus: center
-cover_credit: by Bru-nO via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/server-drive-bay-hard-drives-4393370/'
-cover_source_url: 'https://pixabay.com/photos/server-drive-bay-hard-drives-4393370/'
+cover_credit: by Alexas_Fotos via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/press-journalist-photographer-news-1015988/'
+cover_source_url: 'https://pixabay.com/photos/press-journalist-photographer-news-1015988/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 100
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.

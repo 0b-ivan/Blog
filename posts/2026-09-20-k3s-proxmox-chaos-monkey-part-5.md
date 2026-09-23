@@ -38,21 +38,19 @@ search_queries:
     maxRank: 1
 cover_query: server datacenter infrastructure network cloud container cluster kubernetes
 cover_provider: pixabay
-cover_provider_id: '8598424'
+cover_provider_id: '2402637'
 cover_image: /assets/covers/2026-09-20-k3s-proxmox-chaos-monkey-part-5.jpg
 cover_alt: >-
-  cloud, server, cloud computing, secure, digital, network, business,
-  application, connect, modernization, global, privacy, hardware,
-  infrastructure, database, security, cloudscape, smart, computer, design,
-  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
-  cloud computing, cloud computing, cloud computing, cloud computing
+  network, server, system, infrastructure, managed services, connection,
+  computer, cloud, gray computer, gray laptop, network, network, server, server,
+  server, server, server
 cover_focus: center
-cover_credit: by kumar111aakashin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
-cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_credit: by bsdrouin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 88
+cover_score: 49
 ---
 
 Teil IV endete mit einer einfachen Frage:

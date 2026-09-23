@@ -28,23 +28,21 @@ snippets:
     description: Startet die Kernel Notes API und konfiguriert automatische Neustarts.
     type: systemd-Unit
     language: ini
-cover_query: terminal server code computer linux service
+cover_query: linux shell console service logs command daemon
 cover_provider: pixabay
-cover_provider_id: '3637299'
+cover_provider_id: '1845880'
 cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
 cover_alt: >-
-  code, html, technology, programming, computer, coding, digital, development,
-  internet, web, it, programmer, css, developer, www, software, website, data,
-  script, computer programming, computer science, server, binary code, byte,
-  code, html, programming, coding, coding, programmer, software, software,
-  computer science, computer science, server, server, server, server, server
+  playstation, computer, console, controller, game, gamer, gaming, hand,
+  indoors, playing, sony, television, tv, computer game, game, gaming, gaming,
+  gaming, gaming, gaming
 cover_focus: center
-cover_credit: by markusspiske via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
-cover_source_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_credit: by Pexels via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/playstation-computer-console-1845880/'
+cover_source_url: 'https://pixabay.com/photos/playstation-computer-console-1845880/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 86
 ---
 
 `systemd` ist mehr als nur `systemctl start`.
