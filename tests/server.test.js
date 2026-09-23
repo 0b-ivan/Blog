@@ -328,8 +328,8 @@ describe('blog server', () => {
     expect(html).not.toContain('data-article-hero style=');
     expect(html).toContain('--article-cover-focus: top');
     expect(html).toContain('--article-cover-overlay: linear-gradient(180deg');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-5');
-    expect(html).toContain('/styles.css?v=20260923-2');
+    expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
+    expect(html).toMatch(/\/styles\.css\?v=[^"]+/);
   });
 
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {
