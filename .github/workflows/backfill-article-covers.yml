@@ -93,7 +93,7 @@ jobs:
           if [ "$COVER_SCOPE" = "all" ]; then
             args+=(--include-covered)
           fi
-          npm run covers:missing -- "${args[@]}" > /tmp/pixabay-cover-posts.txt
+          node scripts/list-missing-cover-posts.js "${args[@]}" > /tmp/pixabay-cover-posts.txt
 
           if [ -s /tmp/pixabay-cover-posts.txt ]; then
             echo "needed=true" >> "$GITHUB_OUTPUT"
@@ -118,6 +118,7 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/cover-reports
           while IFS= read -r post; do
+            [ -n "$post" ] || continue
             echo "Resolving local cover for $post"
             slug="$(basename "$post" .md)"
             npm run covers:resolve -- "$post" --select 1 --report "/tmp/cover-reports/${slug}.json"
@@ -147,6 +148,7 @@ jobs:
           git switch -c "$branch"
 
           while IFS= read -r post; do
+            [ -n "$post" ] || continue
             git add "$post"
           done < /tmp/pixabay-cover-posts.txt
           git add assets/covers assets/css/article-covers.css
