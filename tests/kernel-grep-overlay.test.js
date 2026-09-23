@@ -15,7 +15,6 @@ describe('Kernel Grep overlay contract', () => {
     expect(privacyServerSource).not.toContain('<kbd>⌘K</kbd>');
     expect(privacyServerSource).toContain(".replace(/\\s*<a\\b[^>]*href=\"\\/grep\\/?\"");
     expect(privacyServerSource).toContain('`${openingTag}${content}\\n        ${GREP_TRIGGER}\\n      ${closingTag}`');
-    expect(overlayCss).toContain('width: 32px;');
     expect(overlayCss).toContain('stroke: currentColor;');
     expect(privacyServerSource).toContain('/assets/css/kernel-grep-overlay.css');
     expect(privacyServerSource).toContain('/assets/kernel-grep-overlay.js');

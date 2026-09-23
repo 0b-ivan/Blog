@@ -3,23 +3,42 @@ id: 2026-08-19-wie-dieser-blog-gebaut-ist
 version: 1
 title: Wie dieser Blog gebaut ist
 status: publish
-date: 2026-08-19
-created_at: 2026-08-19
-updated_at: 2026-08-19
+date: 2026-08-19T00:00:00.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-08-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Engineering
-excerpt: Architektur, Stack und Entscheidungen hinter diesem IT-Blog. Welche Technologien genutzt werden und warum sie für diesen Use Case sinnvoll sind.
-tags: 
-- Blog
-- Architecture
-- DevOps
-- Node
+excerpt: >-
+  Architektur, Stack und Entscheidungen hinter diesem IT-Blog. Welche
+  Technologien genutzt werden und warum sie für diesen Use Case sinnvoll sind.
+tags:
+  - Blog
+  - Architecture
+  - DevOps
+  - Node
 search_queries:
   - query: Warum braucht dieser Blog keine Datenbank?
     maxRank: 1
   - query: Wie ist die Architektur dieses Blogs aufgebaut?
     maxRank: 1
+cover_query: website code server publishing deployment automation infrastructure cloud
+cover_provider: pixabay
+cover_provider_id: '2784907'
+cover_image: /assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.jpg
+cover_alt: >-
+  cyberspace, data, wire, electronic, electric, ethernet, infrastructure, cable,
+  computer, communication, panel, connection, to combine, the industry, router,
+  server, network, equipment, system, broadband, technology, telecommunication,
+  service provider, plug, node, dam, connector, link, lan, server, server,
+  server, server, server, network, broadband
+cover_focus: center
+cover_credit: by jarmoluk via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
+cover_source_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 84
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.

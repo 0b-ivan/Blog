@@ -2,7 +2,7 @@ FROM node:26-alpine AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* VERSION ./
+COPY package.json package-lock.json* VERSION RELEASE_NAME ./
 RUN if [ -f package-lock.json ]; then \
 			npm ci --omit=dev --no-audit --no-fund; \
 		else \
@@ -10,20 +10,28 @@ RUN if [ -f package-lock.json ]; then \
 		fi
 
 # Browser-only dependencies are pinned and installed into the image so visitors
-# load them from blog.obivan.org instead of third-party CDNs.
+# load them from blog.obivan.org instead of third-party CDNs. EPUB/PDF export
+# dependencies are pinned here as runtime-only packages because the server loads
+# them lazily only when a download is requested.
 RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		force-graph@1.51.4 \
 		mermaid@11.17.0 \
 		medium-zoom@1.1.0 \
 		@rive-app/canvas@2.42.2 \
 		@highlightjs/cdn-assets@11.11.1 \
+		epub-gen-memory@1.1.2 \
+		jszip@3.10.2 \
+		pdfkit@0.20.2 \
+		htmlparser2@12.0.0 \
+		svg-to-pdfkit@0.1.8 \
 	&& npm cache clean --force
 
 ARG BUILD_VERSION
 RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
 		VERSION="${BUILD_VERSION:-$FILE_VERSION}" && \
+		RELEASE_NAME="$(tr -d '\r\n' < RELEASE_NAME)" && \
 		RELEASE_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
-		printf '{"version":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_DATE" > /app/build-info.json
+		printf '{"version":"%s","name":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_NAME" "$RELEASE_DATE" > /app/build-info.json
 
 FROM gcr.io/distroless/nodejs22-debian13:nonroot
 

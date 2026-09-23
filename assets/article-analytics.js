@@ -4,13 +4,11 @@
 
   const slug = article.dataset.postSlug;
   const content = article.querySelector('.terminal-content');
+  const terminal = content?.closest('.terminal-post');
   const metricNodes = (name) => [...document.querySelectorAll(`[data-article-metric="${name}"]`)];
   const likeButton = document.querySelector('[data-article-like]');
   const likeIcon = document.querySelector('[data-like-icon]');
   const likeLabel = document.querySelector('[data-like-label]');
-  const favoriteButton = document.querySelector('[data-article-favorite]');
-  const favoriteIcon = document.querySelector('[data-favorite-icon]');
-  const favoriteLabel = document.querySelector('[data-favorite-label]');
   const shareButton = document.querySelector('[data-article-share]');
   const actionStatus = document.querySelector('[data-article-action-status]');
   const engagement = document.querySelector('.article-engagement');
@@ -28,7 +26,6 @@
   if (!slug || !content) return;
 
   const likedKey = `kernel-notes:liked:${slug}`;
-  const favoritesKey = 'kernel-notes:favorites';
   const progressPositionKey = 'kernel-notes:reading-progress-position';
 
   function hasLiked() {
@@ -44,24 +41,6 @@
       window.localStorage.setItem(likedKey, '1');
     } catch (_error) {
       // The like still counts even when browser storage is unavailable.
-    }
-  }
-
-  function readFavorites() {
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(favoritesKey) || '[]');
-      return new Set(Array.isArray(parsed) ? parsed.map((entry) => String(entry)) : []);
-    } catch (_error) {
-      return new Set();
-    }
-  }
-
-  function writeFavorites(favorites) {
-    try {
-      window.localStorage.setItem(favoritesKey, JSON.stringify([...favorites]));
-      return true;
-    } catch (_error) {
-      return false;
     }
   }
 
@@ -442,13 +421,22 @@
     }, reducedMotionMedia.matches ? 120 : 1250);
   }
 
+  function terminalIsMaximized() {
+    return Boolean(terminal?.classList.contains('is-maximized'));
+  }
+
+  function progressScrollOffset() {
+    return terminalIsMaximized() ? terminal.scrollTop : window.scrollY;
+  }
+
   function applyProgressState() {
     const safePercent = Math.max(0, Math.min(100, Number(currentProgressPercent) || 0));
     const visible = safePercent > 2 && safePercent < 100 && !currentArticleEnded;
-    const compactEligible = visible && window.scrollY > progressCollapseScrollY;
+    const scrollOffset = progressScrollOffset();
+    const compactEligible = visible && scrollOffset > progressCollapseScrollY;
     const compact = compactEligible && !progressExpandedByUser;
 
-    if (window.scrollY <= progressCollapseScrollY) {
+    if (scrollOffset <= progressCollapseScrollY) {
       progressExpandedByUser = false;
     }
 
@@ -508,13 +496,26 @@
   }
 
   function checkScroll() {
-    const rect = content.getBoundingClientRect();
     const total = Math.max(1, content.scrollHeight);
-    const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
+    let seen;
+    let articleEnded;
+
+    if (terminalIsMaximized()) {
+      const terminalRect = terminal.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      const contentStart = terminal.scrollTop + (contentRect.top - terminalRect.top);
+      const viewportBottom = terminal.scrollTop + terminal.clientHeight;
+      seen = Math.min(total, Math.max(0, viewportBottom - contentStart));
+      articleEnded = seen >= total - 2;
+    } else {
+      const rect = content.getBoundingClientRect();
+      seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
+      articleEnded = Boolean(
+        engagement && engagement.getBoundingClientRect().top <= window.innerHeight * 0.92
+      );
+    }
+
     const measuredPercent = Math.round((seen / total) * 100);
-    const articleEnded = Boolean(
-      engagement && engagement.getBoundingClientRect().top <= window.innerHeight * 0.92
-    );
     const percent = articleEnded ? 100 : measuredPercent;
     updateProgress(percent, articleEnded);
 
@@ -536,20 +537,23 @@
     if (likeLabel) likeLabel.textContent = liked ? 'Gefällt dir' : 'Gefällt mir';
   }
 
-  function syncFavoriteState() {
-    if (!favoriteButton) return;
-    const saved = readFavorites().has(slug);
-    favoriteButton.setAttribute('aria-pressed', String(saved));
-    favoriteButton.classList.toggle('is-favorite', saved);
-    if (favoriteIcon) favoriteIcon.textContent = saved ? '★' : '☆';
-    if (favoriteLabel) favoriteLabel.textContent = saved ? 'Gespeichert' : 'Für später speichern';
-  }
-
   ['scroll', 'pointerdown', 'keydown', 'touchstart'].forEach((name) => {
     window.addEventListener(name, markActivity, { passive: true });
   });
   window.addEventListener('scroll', checkScroll, { passive: true });
   window.addEventListener('resize', checkScroll, { passive: true });
+
+  if (terminal) {
+    terminal.addEventListener('scroll', () => {
+      markActivity();
+      if (terminalIsMaximized()) checkScroll();
+    }, { passive: true });
+  }
+
+  window.addEventListener('kernel-notes:terminal-mode', () => {
+    progressExpandedByUser = false;
+    window.requestAnimationFrame(checkScroll);
+  });
 
   function canDragProgress() {
     return Boolean(
@@ -633,7 +637,7 @@
       if (
         currentArticleEnded
         || currentProgressPercent <= 2
-        || window.scrollY <= progressCollapseScrollY
+        || progressScrollOffset() <= progressCollapseScrollY
         || progressCelebrated
       ) {
         return;
@@ -673,24 +677,6 @@
       } finally {
         likeButton.disabled = false;
       }
-    });
-  }
-
-  if (favoriteButton) {
-    syncFavoriteState();
-    favoriteButton.addEventListener('click', () => {
-      const favorites = readFavorites();
-      const saved = favorites.has(slug);
-      if (saved) favorites.delete(slug);
-      else favorites.add(slug);
-
-      if (!writeFavorites(favorites)) {
-        setActionStatus('Favorit konnte in diesem Browser nicht gespeichert werden.');
-        return;
-      }
-
-      syncFavoriteState();
-      setActionStatus(saved ? 'Aus den Favoriten entfernt.' : 'Für später in diesem Browser gespeichert.');
     });
   }
 

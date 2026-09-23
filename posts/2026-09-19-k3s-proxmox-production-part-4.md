@@ -1,15 +1,19 @@
 ---
 id: 2026-09-19-k3s-proxmox-production-part-4
 version: 1
-title: "K3s auf Proxmox – Teil IV: Production ist nicht gleich Hochverfügbarkeit"
+title: 'K3s auf Proxmox – Teil IV: Production ist nicht gleich Hochverfügbarkeit'
 status: publish
-date: 2026-09-19
-created_at: 2026-09-19
-updated_at: 2026-09-19
+date: 2026-09-19T00:00:00.000Z
+created_at: 2026-09-19T00:00:00.000Z
+updated_at: 2026-09-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Mein Blog läuft inzwischen produktiv auf K3s mit drei Replicas, Flux und Cloudflare Tunnel. Der Pod-Failover funktioniert – aber ein einzelner Proxmox-Host bleibt trotzdem ein Single Point of Failure."
+excerpt: >-
+  Mein Blog läuft inzwischen produktiv auf K3s mit drei Replicas, Flux und
+  Cloudflare Tunnel. Der Pod-Failover funktioniert – aber ein einzelner
+  Proxmox-Host bleibt trotzdem ein Single Point of Failure.
+cover_query: kubernetes proxmox server datacenter infrastructure
 tags:
   - Kubernetes
   - K3s
@@ -28,6 +32,26 @@ search_queries:
     maxRank: 1
   - query: Wie halte ich Hetzner parallel zu K3s als Rollback Standby aktuell?
     maxRank: 1
+cover_provider: pixabay
+cover_provider_id: '2891812'
+cover_image: /assets/covers/2026-09-19-k3s-proxmox-production-part-4.jpg
+cover_alt: >-
+  server, technology, web, data, internet, network, computer, digital,
+  communication, business, hardware, information, connection, database, cloud,
+  system, computing, storage, security, center, equipment, infrastructure,
+  global, design, hosting, tech, icon, service, rack, line, datacenter, connect,
+  room, 3d, gray business, gray computer, gray technology, gray laptop, gray
+  data, gray clouds, gray network, gray community, gray room, gray internet,
+  gray digital, gray communication, gray tech, gray security, gray company, gray
+  information, gray web, gray global, gray server, gray service, server, server,
+  database, hosting, hosting, hosting, hosting, hosting
+cover_focus: center
+cover_credit: by QuinceCreative via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/server-technology-web-data-2891812/'
+cover_source_url: 'https://pixabay.com/photos/server-technology-web-data-2891812/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 98
 ---
 
 Teil I hat den Blog auf K3s gebracht, Teil II daraus GitOps gemacht und Teil III feste Versionen sowie verschlüsselte Secrets ergänzt.

@@ -1,47 +1,77 @@
 ---
 id: 2026-08-21-docker-vs-docker-compose
 version: 3
-title: "Docker vs. Docker Compose: Was ist der Unterschied?"
-date: 2026-08-21
-published_at: 2026-08-21T07:12:56+02:00
-created_at: 2026-08-21
-updated_at: 2026-09-16
+title: 'Docker vs. Docker Compose: Was ist der Unterschied?'
+date: 2026-08-21T00:00:00.000Z
+published_at: 2026-08-21T05:12:56.000Z
+created_at: 2026-08-21T00:00:00.000Z
+updated_at: 2026-09-16T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: Docker startet Container direkt. Docker Compose beschreibt einen ganzen Stack deklarativ in einer YAML-Datei. Ein praktischer Vergleich mit Befehlen, compose.yaml und Screenshots.
-tags: Docker, DevOps, Operations, Architecture
+excerpt: >-
+  Docker startet Container direkt. Docker Compose beschreibt einen ganzen Stack
+  deklarativ in einer YAML-Datei. Ein praktischer Vergleich mit Befehlen,
+  compose.yaml und Screenshots.
+tags: 'Docker, DevOps, Operations, Architecture'
 search_queries:
   - query: Ich will mir lange docker run Befehle nicht merken
     maxRank: 1
   - query: Nginx und Redis gemeinsam mit Docker Compose verwalten
     maxRank: 1
 snippets:
-  - file: "01-ein-container-direkt-mit-docker.sh"
-    title: "Nginx mit Docker starten"
-    description: "Startet Nginx im Hintergrund und veröffentlicht Port 8080."
-    type: "Shellskript"
-    language: "bash"
-  - file: "02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh"
-    title: "Nginx und Redis im gemeinsamen Docker-Netz starten"
-    description: "Erstellt ein Netzwerk und startet beide Container darin."
-    type: "Shellskript"
-    language: "bash"
-  - file: "03-dasselbe-mit-docker-compose.yml"
-    title: "Nginx und Redis mit Compose starten"
-    description: "Definiert beide Services und ein persistentes Redis-Volume."
-    type: "Compose-Beispiel"
-    language: "yaml"
-  - file: "04-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.Dockerfile"
-    title: "Node.js-Image bauen"
-    description: "Installiert Produktionsabhängigkeiten und startet server.js."
-    type: "Dockerfile"
-    language: "dockerfile"
-  - file: "05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml"
-    title: "Eine Anwendung mit Compose bauen und starten"
-    description: "Baut das lokale Image und veröffentlicht Port 8080."
-    type: "Compose-Beispiel"
-    language: "yaml"
+  - file: 01-ein-container-direkt-mit-docker.sh
+    title: Nginx mit Docker starten
+    description: Startet Nginx im Hintergrund und veröffentlicht Port 8080.
+    type: Shellskript
+    language: bash
+  - file: 02-wo-es-mit-mehreren-containern-unuebersichtlich-wird.sh
+    title: Nginx und Redis im gemeinsamen Docker-Netz starten
+    description: Erstellt ein Netzwerk und startet beide Container darin.
+    type: Shellskript
+    language: bash
+  - file: 03-dasselbe-mit-docker-compose.yml
+    title: Nginx und Redis mit Compose starten
+    description: Definiert beide Services und ein persistentes Redis-Volume.
+    type: Compose-Beispiel
+    language: yaml
+  - file: 04-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.Dockerfile
+    title: Node.js-Image bauen
+    description: Installiert Produktionsabhängigkeiten und startet server.js.
+    type: Dockerfile
+    language: dockerfile
+  - file: 05-dockerfile-und-docker-compose-sind-ebenfalls-nicht-dasselbe.yml
+    title: Eine Anwendung mit Compose bauen und starten
+    description: Baut das lokale Image und veröffentlicht Port 8080.
+    type: Compose-Beispiel
+    language: yaml
+cover_query: DevOps Docker DevOps
+cover_provider: pixabay
+cover_provider_id: '3155972'
+cover_image: /assets/covers/2026-08-21-docker-vs-docker-compose.jpg
+cover_alt: >-
+  devops, business, process improvement, development, mac wallpaper, it,
+  operation, processes, incentives, effectively, wallpaper hd, efficiently,
+  collaboration, quality control, software, speed, free background, delivery,
+  teamwork, art word, plan, to build, continuously, feedback, integration,
+  windows wallpaper, application, apply, control, operate, free wallpaper,
+  laptop wallpaper, endless loop, loop, gear, arrows, representation,
+  information, software development, symbol, symbolic, design, hd wallpaper,
+  full hd wallpaper, automation, background, concept, communication,
+  maintenance, developer, wallpaper 4k, computer, company, tool, infrastructure,
+  organization, agile, agile it, parts, 4k wallpaper 1920x1080, 4k wallpaper, to
+  qualify, desktop backgrounds, platform, program, it standard, code, version
+  management, kpi, performance measure, releases, static, dynamic, binary,
+  formats, beautiful wallpaper, itil, configuration, monitor, index finger, cool
+  backgrounds, hand, customers, into each other, circle, timeline, social media,
+  blue, coloured
+cover_focus: center
+cover_credit: by MR-PANDA via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/devops-business-process-improvement-3155972/'
+cover_source_url: 'https://pixabay.com/photos/devops-business-process-improvement-3155972/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 62
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.

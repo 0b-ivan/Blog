@@ -15,6 +15,7 @@ const {
   withGlossaryDefinitions
 } = require('./lib/glossary');
 const { countWords, calculateReadingTime } = require('./lib/reading-time');
+const { articleCoverStyle } = require('./lib/post-cover');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -124,7 +125,7 @@ function parseMetadataLine(line) {
 
 function recoverMetadata(raw, parsed) {
   const fallbackData = {};
-  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags']);
+  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'series', 'cover_query', 'cover_subject', 'cover_avoid', 'cover_provider', 'cover_provider_id', 'cover_image', 'cover_alt', 'cover_focus', 'cover_score', 'cover_credit', 'cover_credit_url', 'cover_source_url', 'cover_license', 'cover_license_url']);
 
   const hasParsedData = parsed && parsed.data && Object.keys(parsed.data).length > 0;
   if (hasParsedData) {
@@ -302,9 +303,19 @@ async function loadPosts(postsDir) {
       const inferredDate = inferDateFromSlug(slug);
       const date = recovered.data.date || recovered.data.created_at || inferredDate || '1970-01-01';
       const publishedAt = recovered.data.published_at || recovered.data.created_at || date;
+      const updatedAt = recovered.data.updated_at || publishedAt || date;
+      const author = recovered.data.author || 'obivan';
+      const version = recovered.data.version || 1;
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const coverImage = String(recovered.data.cover_image || '').trim();
+      const coverFocus = String(recovered.data.cover_focus || 'center').trim();
+      const coverCredit = String(recovered.data.cover_credit || '').trim();
+      const coverCreditUrl = String(recovered.data.cover_credit_url || '').trim();
+      const coverSourceUrl = String(recovered.data.cover_source_url || '').trim();
+      const coverLicense = String(recovered.data.cover_license || '').trim();
+      const coverLicenseUrl = String(recovered.data.cover_license_url || '').trim();
       const wordCount = countWords(recovered.content);
       const readingTime = calculateReadingTime(recovered.content);
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
@@ -316,9 +327,19 @@ async function loadPosts(postsDir) {
         title,
         date,
         publishedAt,
+        updatedAt,
+        author,
+        version,
         category,
         tags,
         excerpt,
+        coverImage,
+        coverFocus,
+        coverCredit,
+        coverCreditUrl,
+        coverSourceUrl,
+        coverLicense,
+        coverLicenseUrl,
         wordCount,
         readingTime,
         html: md.render(markdownContent, { snippets })
@@ -582,8 +603,14 @@ function getLegalInfo() {
 }
 
 function renderPostPage(post, relatedPosts = []) {
-  const meta = `${md.utils.escapeHtml(String(post.category || 'IT'))} · ${md.utils.escapeHtml(formatPostDate(post.date))} · ${post.readingTime || 1} Min. Lesezeit`;
+  const category = String(post.category || 'IT');
+  const formattedDate = formatPostDate(post.date);
+  const readingTime = Number(post.readingTime) || 1;
   const tags = normalizeTags(post.tags).slice(0, MAX_VISIBLE_TAGS);
+  const heroPath = `/blog/${slugFromWikiName(category) || 'it'}`;
+  const heroTopic = tags[0] || category;
+  const heroExcerpt = String(post.excerpt || '').trim();
+  const meta = `${md.utils.escapeHtml(category)} · ${md.utils.escapeHtml(formattedDate)} · ${readingTime} Min. Lesezeit`;
   const visibleTagCount = 4;
   const hiddenTagCount = Math.max(0, tags.length - visibleTagCount);
   const tagsHtml = tags
@@ -593,6 +620,21 @@ function renderPostPage(post, relatedPosts = []) {
       ? `<button class="tag-chip tag-toggle" type="button" data-tag-toggle data-hidden-count="${hiddenTagCount}" aria-expanded="false" aria-label="${hiddenTagCount} weitere Tags anzeigen">+${hiddenTagCount}</button>`
       : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
+  const coverCreditParts = [];
+  if (post.coverCredit) {
+    coverCreditParts.push(post.coverCreditUrl
+      ? `<a href="${md.utils.escapeHtml(String(post.coverCreditUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverCredit))}</a>`
+      : md.utils.escapeHtml(String(post.coverCredit)));
+  }
+  if (post.coverLicense) {
+    coverCreditParts.push(post.coverLicenseUrl
+      ? `<a href="${md.utils.escapeHtml(String(post.coverLicenseUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverLicense))}</a>`
+      : md.utils.escapeHtml(String(post.coverLicense)));
+  }
+  const coverCreditHtml = coverCreditParts.length
+    ? `<p class="article-hero__credit">${coverCreditParts.join(' · ')}</p>`
+    : '';
+  const coverStyle = articleCoverStyle(post);
 
   return `<!doctype html>
 <html lang="de">
@@ -605,11 +647,11 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260819-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260923-7" />
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260921-7" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-10" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
@@ -644,28 +686,67 @@ function renderPostPage(post, relatedPosts = []) {
             <span class="reading-progress__label"><strong data-reading-progress-value>0</strong><span>% gelesen</span></span>
           </button>
         </div>
-        <p class="meta article-meta">${meta}</p>
-        <h1>${post.title}</h1>
-        <div class="article-metrics" aria-label="Artikelinformationen">
-          <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
-            <span class="article-metric__icon" aria-hidden="true">👁</span>
-            <strong data-article-metric="views">–</strong>
-          </span>
-          <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
-            <span class="article-metric__icon" aria-hidden="true">♡</span>
-            <strong data-article-metric="likes">–</strong>
-          </span>
-        </div>
-        ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
-        <section class="terminal-post" aria-label="Terminal article view">
+        <section class="terminal-post terminal-post--article${coverStyle ? ' terminal-post--has-cover' : ''}" aria-label="Artikel im Terminal"${coverStyle ? ` style="${coverStyle}"` : ''}>
           <div class="terminal-chrome">
             <button class="terminal-dot terminal-dot-red" type="button" data-terminal-action="overview" aria-label="Zurück zur Übersicht"></button>
             <button class="terminal-dot terminal-dot-yellow" type="button" data-terminal-action="restore" aria-label="Terminal wiederherstellen"></button>
             <button class="terminal-dot terminal-dot-green" type="button" data-terminal-action="maximize" aria-label="Terminal maximieren"></button>
-            <p class="terminal-title">live-terminal://kernel-notes/${post.title}</p>
+            <p class="terminal-title">live-terminal://kernel-notes/${md.utils.escapeHtml(String(post.title || ''))}</p>
           </div>
+
+          <header class="article-hero${coverStyle ? ' article-hero--has-cover' : ''}" data-article-hero>
+            <div class="article-hero__chrome" aria-hidden="true">
+              <span class="article-hero__path">${md.utils.escapeHtml(heroPath)}</span>
+              <span class="article-hero__topic"># ${md.utils.escapeHtml(String(heroTopic).toLowerCase())}</span>
+            </div>
+
+            <p class="meta article-meta">
+              <span class="article-meta__item">
+                <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.75 6.75h6l1.5 2.25h9v8.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6.75Z"/><path d="M3.75 9h16.5"/></svg>
+                <span>${md.utils.escapeHtml(category)}</span>
+              </span>
+              <span class="article-meta__separator" aria-hidden="true">·</span>
+              <span class="article-meta__item">
+                <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.75 3v3M17.25 3v3M4.5 8.25h15M5.25 5.25h13.5a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5.25a1.5 1.5 0 0 1-1.5-1.5v-12a1.5 1.5 0 0 1 1.5-1.5Z"/></svg>
+                <span>${md.utils.escapeHtml(formattedDate)}</span>
+              </span>
+              <span class="article-meta__separator" aria-hidden="true">·</span>
+              <span class="article-meta__item">
+                <svg class="article-meta__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.25"/><path d="M12 7.5v5.25l3.5 2"/></svg>
+                <span>${readingTime} Min. Lesezeit</span>
+              </span>
+              <span class="sr-only">${meta}</span>
+            </p>
+
+            <div class="article-hero__body">
+              <h1 class="article-title">${md.utils.escapeHtml(String(post.title || ''))}</h1>
+              <span class="article-hero__prompt" aria-hidden="true">
+                <svg viewBox="0 0 64 48" focusable="false">
+                  <path d="M15 12 31 24 15 36"></path>
+                  <path d="M36 36h14"></path>
+                </svg>
+              </span>
+            </div>
+
+            ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
+            ${coverCreditHtml}
+          </header>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
+
+        <aside class="article-post-meta" aria-label="Artikelinformationen und Tags">
+          <div class="article-metrics" aria-label="Artikelinformationen">
+            <span class="article-metric" tabindex="0" data-tooltip="Aufrufe – wie oft dieser Artikel geöffnet wurde." aria-label="Aufrufe: Anzahl der Seitenaufrufe dieses Artikels.">
+              <span class="article-metric__icon" aria-hidden="true">👁</span>
+              <strong data-article-metric="views">–</strong>
+            </span>
+            <span class="article-metric" tabindex="0" data-tooltip="Likes – wie viele Leser diesen Artikel hilfreich fanden." aria-label="Likes: Anzahl der Likes für diesen Artikel.">
+              <span class="article-metric__icon" aria-hidden="true">♡</span>
+              <strong data-article-metric="likes">–</strong>
+            </span>
+          </div>
+          ${tagsHtml ? `<div class="tag-list" aria-label="Tags">${tagsHtml}</div>` : ''}
+        </aside>
         <section class="article-engagement" aria-labelledby="article-engagement-title">
           <h2 id="article-engagement-title">Hat dir der Artikel geholfen?</h2>
           <p>Deine Rückmeldung hilft dabei, die Inhalte gezielt zu verbessern.</p>
@@ -674,10 +755,22 @@ function renderPostPage(post, relatedPosts = []) {
               <span class="article-action__icon" data-like-icon aria-hidden="true">♡</span>
               <span><span data-like-label>Gefällt mir</span> · <strong data-article-metric="likes">–</strong></span>
             </button>
-            <button class="article-action article-favorite" type="button" data-article-favorite aria-pressed="false">
-              <span class="article-action__icon" data-favorite-icon aria-hidden="true">☆</span>
-              <span data-favorite-label>Für später speichern</span>
-            </button>
+            <details class="article-download">
+              <summary class="article-action article-download__summary">
+                <span class="article-action__icon" aria-hidden="true">↓</span>
+                <span>Herunterladen</span>
+              </summary>
+              <div class="article-download__menu" role="group" aria-label="Artikel herunterladen">
+                <a href="/download/${encodeURIComponent(post.slug)}.epub" download>
+                  <strong>EPUB</strong>
+                  <span>E-Book mit Cover & Metadaten</span>
+                </a>
+                <a href="/download/${encodeURIComponent(post.slug)}.pdf" download>
+                  <strong>PDF</strong>
+                  <span>aus dem EPUB erzeugt</span>
+                </a>
+              </div>
+            </details>
             <button class="article-action article-action--share" type="button" data-article-share>
               <span class="article-action__icon" aria-hidden="true">↗</span>
               <span>Teilen</span>
@@ -705,9 +798,11 @@ function renderPostPage(post, relatedPosts = []) {
         });
       }
     </script>
-    <script src="/script.js?v=20260819-2"></script>
+    <script src="/script.js?v=20260922-1"></script>
+    <script src="/assets/article-hero-motion.js?v=20260923-3" defer></script>
+    <script src="/assets/nav-scroll-cue.js" defer></script>
     <script src="/assets/glossary.js" defer></script>
-    <script src="/assets/article-analytics.js?v=20260921-7" defer></script>
+    <script src="/assets/article-analytics.js?v=20260922-1" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
@@ -729,6 +824,7 @@ function createApp(options = {}) {
   const app = express();
   const postsDir = options.postsDir;
   const siteUrl = options.siteUrl;
+  const ebookExporterLoader = options.ebookExporterLoader || (() => require('./lib/ebook-export'));
 
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.get('/snippets/manifest.json', async (_req, res) => {
@@ -779,6 +875,44 @@ function createApp(options = {}) {
 
   app.get('/glossary', (_req, res) => {
     res.type('html').send(renderGlossaryPage());
+  });
+
+  app.get('/download/:file', async (req, res) => {
+    const match = String(req.params.file || '').match(/^(.+)\.(epub|pdf)$/i);
+    if (!match) {
+      res.status(404).send('Download not found');
+      return;
+    }
+
+    const [, requestedSlug, rawFormat] = match;
+    const format = rawFormat.toLowerCase();
+
+    try {
+      const posts = await readPosts(postsDir);
+      const post = resolvePostBySlug(posts, requestedSlug);
+
+      if (!post) {
+        res.status(404).send('Post not found');
+        return;
+      }
+
+      const exporter = await Promise.resolve(ebookExporterLoader());
+      const exportOptions = {
+        siteUrl: getSiteUrl(siteUrl),
+        assetRoot: root
+      };
+      const content = format === 'epub'
+        ? await exporter.buildArticleEpub(post, exportOptions)
+        : await exporter.buildArticlePdf(post, exportOptions);
+
+      res.set('Content-Type', format === 'epub' ? 'application/epub+zip' : 'application/pdf');
+      res.set('Content-Disposition', `attachment; filename="${post.slug}.${format}"`);
+      res.set('Cache-Control', 'public, max-age=3600');
+      res.status(200).send(content);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Could not generate article download');
+    }
   });
 
   app.get('/posts/:slug', async (req, res) => {

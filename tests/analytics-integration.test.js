@@ -24,7 +24,9 @@ describe('analytics integration', () => {
     expect(html).not.toContain('data-article-metric="completion"');
     expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-article-like');
-    expect(html).toContain('data-article-favorite');
+    expect(html).toContain('article-download');
+    expect(html).toContain('.epub');
+    expect(html).toContain('.pdf');
     expect(html).toContain('data-article-share');
     expect(html).toContain('/assets/article-analytics.js');
   });

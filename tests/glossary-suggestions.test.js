@@ -1,5 +1,6 @@
 const {
   COMMENT_MARKER,
+  canonicalizeCandidateTerm,
   renderMarkdownReport,
   suggestGlossaryTerms
 } = require('../lib/glossary-suggestions');
@@ -16,6 +17,14 @@ describe('glossary suggestions', () => {
     },
     {
       key: 'GraphRAG',
+      aliases: []
+    },
+    {
+      key: 'API',
+      aliases: []
+    },
+    {
+      key: 'IP',
       aliases: []
     }
   ];
@@ -114,6 +123,75 @@ describe('glossary suggestions', () => {
     expect([...terms].some((term) => term.includes('k3s-proxmox-hardening-part-3/'))).toBe(false);
     expect(terms.has('OpenTelemetry')).toBe(true);
     expect(terms.has('NodePortLike')).toBe(true);
+  });
+
+  it('normalizes inflected and compound technical terms before matching', () => {
+    expect(canonicalizeCandidateTerm('APIs')).toBe('API');
+    expect(canonicalizeCandidateTerm('IPs')).toBe('IP');
+    expect(canonicalizeCandidateTerm('AMI-ID')).toBe('AMI');
+    expect(canonicalizeCandidateTerm('Shell-Befehlen')).toBe('Shell');
+    expect(canonicalizeCandidateTerm('Cloudflare. Mit')).toBe('Cloudflare');
+
+    const suggestions = suggestGlossaryTerms(
+      'APIs und IPs sind bereits bekannte Begriffe. PVC bleibt ein neuer Fachbegriff.',
+      { entries, file: 'posts/test.md' }
+    );
+    const terms = new Set(suggestions.map((entry) => entry.term));
+
+    expect(terms.has('APIs')).toBe(false);
+    expect(terms.has('API')).toBe(false);
+    expect(terms.has('IPs')).toBe(false);
+    expect(terms.has('IP')).toBe(false);
+    expect(terms.has('PVC')).toBe(true);
+  });
+
+  it('drops ordinary contextual words even when they repeat', () => {
+    const markdown = [
+      'Wir deployen mit werden.',
+      'Wir deployen mit wird.',
+      'Wir deployen mit einen.',
+      'Wir deployen mit fest.',
+      'Wir deployen mit bekannten Schwachstellen.',
+      'Wir deployen mit Kubernetes.'
+    ].join('\n');
+
+    const terms = new Set(suggestGlossaryTerms(markdown, {
+      entries,
+      file: 'posts/test.md'
+    }).map((entry) => entry.term));
+
+    expect(terms.has('werden')).toBe(false);
+    expect(terms.has('wird')).toBe(false);
+    expect(terms.has('einen')).toBe(false);
+    expect(terms.has('fest')).toBe(false);
+    expect(terms.has('bekannten Schwachstellen')).toBe(false);
+    expect(terms.has('Kubernetes')).toBe(true);
+  });
+
+  it('uses repeated technical usage as a confidence signal', () => {
+    const suggestions = suggestGlossaryTerms([
+      'Wir deployen mit Kubernetes.',
+      'Wir testen mit Kubernetes.',
+      'Wir betreiben mit Kubernetes.'
+    ].join('\n'), {
+      entries,
+      file: 'posts/test.md'
+    });
+
+    const kubernetes = suggestions.find((entry) => entry.term === 'Kubernetes');
+    expect(kubernetes?.occurrences).toHaveLength(3);
+    expect(kubernetes?.confidence).toBe('high');
+    expect(kubernetes?.reasons).toContain('Mehrfacher technischer Gebrauch erhöht die Wiederverwendbarkeit');
+  });
+
+  it('does not classify ordinary numeric hyphen compounds as technical terms', () => {
+    const terms = new Set(suggestGlossaryTerms(
+      '30-Sekunden- und Debian-13-Cloud- sind keine Glossarbegriffe.',
+      { entries, file: 'posts/test.md' }
+    ).map((entry) => entry.term));
+
+    expect(terms.has('30-Sekunden')).toBe(false);
+    expect(terms.has('Debian-13-Cloud')).toBe(false);
   });
 
   it('honors the persistent ignore list', () => {

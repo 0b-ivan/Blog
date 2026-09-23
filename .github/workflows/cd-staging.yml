@@ -33,6 +33,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
   packages: write
@@ -48,6 +49,7 @@ env:
   STATUS_IMAGE_NAME: kernel-notes-status
   CHAOS_IMAGE_NAME: kernel-notes-chaos
   PROMOTION_BRANCH: promotion/staging-verified
+  COVER_BACKFILL_LIMIT: "20"
 
 jobs:
   deploy-staging:
@@ -82,6 +84,151 @@ jobs:
           done
           echo 'Refusing staging deployment: commit is not associated with a merged PR into staging.'
           exit 1
+
+      - name: Detect changed and existing published posts without covers
+        if: github.event_name == 'push'
+        id: cover_candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/pixabay-cover-posts.txt
+
+          git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- 'posts/*.md' |
+            sort -u |
+            while IFS= read -r post; do
+              [ -f "$post" ] || continue
+
+              status="$(sed -n 's/^[[:space:]]*status:[[:space:]]*//p' "$post" | head -n 1 | tr -d "\r\"'" | xargs || true)"
+              case "${status,,}" in
+                draft|archived)
+                  echo "Skipping $post because status=$status"
+                  continue
+                  ;;
+              esac
+
+              cover_value="$(sed -n 's/^[[:space:]]*cover_image:[[:space:]]*//p' "$post" | head -n 1 | tr -d '\r' | xargs || true)"
+              case "$cover_value" in
+                ""|'""'|"''"|null|~)
+                  echo "$post" >> /tmp/pixabay-cover-posts.txt
+                  ;;
+                *)
+                  echo "Keeping existing cover for $post"
+                  ;;
+              esac
+            done
+
+          node scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT" > /tmp/pixabay-cover-backfill.txt
+          cat /tmp/pixabay-cover-backfill.txt >> /tmp/pixabay-cover-posts.txt
+          sort -u -o /tmp/pixabay-cover-posts.txt /tmp/pixabay-cover-posts.txt
+
+          count="$(wc -l < /tmp/pixabay-cover-posts.txt | tr -d ' ')"
+          if [ "$count" -gt 0 ]; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+            echo "Automatic Pixabay cover resolution required for $count post(s):"
+            cat /tmp/pixabay-cover-posts.txt
+          else
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+            echo 'No changed or existing published post needs a generated cover.'
+          fi
+
+      - name: Setup Node.js for cover generation
+        if: steps.cover_candidates.outputs.needed == 'true'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install cover generation dependencies
+        if: steps.cover_candidates.outputs.needed == 'true'
+        run: npm ci
+
+      - name: Build Pixabay cache key
+        if: steps.cover_candidates.outputs.needed == 'true'
+        id: pixabay_cache_key
+        shell: bash
+        run: echo "key=pixabay-api-${RUNNER_OS}-$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Pixabay API cache
+        if: steps.cover_candidates.outputs.needed == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pixabay
+          key: ${{ steps.pixabay_cache_key.outputs.key }}
+          restore-keys: |
+            pixabay-api-${{ runner.os }}-
+
+      - name: Resolve missing Pixabay covers
+        if: steps.cover_candidates.outputs.needed == 'true'
+        env:
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PIXABAY_API_KEY" || {
+            echo 'PIXABAY_API_KEY is required when a published article needs a generated cover.' >&2
+            exit 1
+          }
+
+          mkdir -p /tmp/cover-reports
+          while IFS= read -r post; do
+            echo "Resolving local cover for $post"
+            slug="$(basename "$post" .md)"
+            npm run covers:resolve -- "$post" --select 1 --report "/tmp/cover-reports/${slug}.json"
+          done < /tmp/pixabay-cover-posts.txt
+
+          git diff --check
+          npm run posts:validate-meta
+          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
+
+      - name: Finalize staging source
+        id: source
+        env:
+          GENERATED_COVERS: ${{ steps.cover_candidates.outputs.needed }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "$GENERATED_COVERS" = "true" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+            while IFS= read -r post; do
+              git add "$post"
+            done < /tmp/pixabay-cover-posts.txt
+            git add assets/covers assets/css/article-covers.css
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(covers): resolve Pixabay covers for ${GITHUB_SHA::12} [skip ci]"
+
+              pushed=false
+              for attempt in 1 2 3; do
+                git fetch origin staging
+
+                if ! git rebase origin/staging; then
+                  git rebase --abort || true
+                  echo 'Refusing to overwrite newer staging content after a cover-generation conflict.' >&2
+                  exit 1
+                fi
+
+                if git push origin HEAD:staging; then
+                  pushed=true
+                  break
+                fi
+
+                echo "Staging advanced during cover push (attempt ${attempt}/3); retrying."
+                sleep "$((attempt * 2))"
+              done
+
+              if [ "$pushed" != true ]; then
+                echo 'Failed to persist generated Pixabay covers after 3 attempts.' >&2
+                exit 1
+              fi
+            fi
+          fi
+
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Staging source SHA: $(git rev-parse HEAD)"
 
       - name: Classify staging deployment
         id: deploy_mode
@@ -139,10 +286,10 @@ jobs:
 
           echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
           echo "build_version=${BLOG_VERSION}-staging.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
-          echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          echo "status_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.STATUS_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          echo "chaos_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.CHAOS_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
+          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
+          echo "status_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.STATUS_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
+          echo "chaos_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.CHAOS_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         if: steps.deploy_mode.outputs.build_images == 'true'
@@ -213,7 +360,7 @@ jobs:
       - name: Pin staging GitOps state to built images
         if: steps.deploy_mode.outputs.build_images == 'true'
         env:
-          DEPLOY_SHA: ${{ github.sha }}
+          DEPLOY_SHA: ${{ steps.source.outputs.sha }}
           OWNER_LOWER: ${{ steps.meta.outputs.owner_lower }}
         run: |
           set -euo pipefail
@@ -245,7 +392,7 @@ jobs:
       - name: Commit desired staging state
         id: desired-state
         env:
-          DEPLOY_SHA: ${{ github.sha }}
+          DEPLOY_SHA: ${{ steps.source.outputs.sha }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
@@ -358,16 +505,14 @@ jobs:
             exit 1
           fi
 
-          git fetch origin "refs/heads/${PROMOTION_BRANCH}:refs/remotes/origin/${PROMOTION_BRANCH}" || true
-          current_promotion_sha="$(git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}" 2>/dev/null || true)"
+          current_promotion_sha="$(
+            git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}" |
+              awk 'NR == 1 { print $1 }'
+          )"
 
-          if [ -n "$current_promotion_sha" ]; then
-            git push \
-              --force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}" \
-              origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
-          else
-            git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
-          fi
+          git push \
+            --force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}" \
+            origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
 
           echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
 
@@ -386,6 +531,15 @@ jobs:
             "Verified GitOps commit: \`${VERIFIED_SHA}\`" \
             "Promotion branch: \`${PROMOTION_BRANCH}\`" \
             'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
+
+          if [ -d /tmp/cover-reports ] && find /tmp/cover-reports -maxdepth 1 -name '*.json' -print -quit | grep -q .; then
+            cover_review_file="$(mktemp)"
+            node scripts/render-cover-review.js \
+              --reports-dir /tmp/cover-reports \
+              --repository "$REPOSITORY" \
+              --commit "$VERIFIED_SHA" > "$cover_review_file"
+            body="$(printf '%s\n\n%s' "$body" "$(cat "$cover_review_file")")"
+          fi
 
           existing="$(gh pr list \
             --repo "$REPOSITORY" \
@@ -410,6 +564,45 @@ jobs:
             --head "$PROMOTION_BRANCH" \
             --title 'promote: verified staging to production' \
             --body "$body"
+
+      - name: Trigger required checks for production promotion
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          promotion_sha="$(
+            git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}" |
+              awk 'NR == 1 { print $1 }'
+          )"
+
+          if [ -z "$promotion_sha" ]; then
+            echo 'No promotion branch exists yet; nothing to validate.'
+            exit 0
+          fi
+
+          promotion_pr="$(
+            gh pr list \
+              --repo "$REPOSITORY" \
+              --state open \
+              --base main \
+              --head "$PROMOTION_BRANCH" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [ -z "$promotion_pr" ]; then
+            echo 'No open production promotion PR exists; nothing to validate.'
+            exit 0
+          fi
+
+          gh workflow run ci.yml \
+            --repo "$REPOSITORY" \
+            --ref "$PROMOTION_BRANCH"
+
+          echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
 
       - name: Deployment handoff
         env:

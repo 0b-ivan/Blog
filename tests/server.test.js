@@ -141,6 +141,46 @@ describe('blog server', () => {
     expect(notFound.status).toBe(404);
   });
 
+  it('download routes return EPUB and EPUB-derived PDF with attachment headers', async () => {
+    await writePost(
+      tmpDir,
+      'download-me.md',
+      '---\ntitle: Download Me\ndate: 2026-05-02\ncategory: Docs\n---\nBody'
+    );
+
+    const buildArticleEpub = globalThis.vi.fn(async () => Buffer.from('epub-bytes'));
+    const buildArticlePdf = globalThis.vi.fn(async () => Buffer.from('%PDF-fake'));
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({ buildArticleEpub, buildArticlePdf })
+    });
+
+    const epub = await request(app).get('/download/download-me.epub');
+    expect(epub.status).toBe(200);
+    expect(epub.headers['content-type']).toMatch(/application\/epub\+zip/);
+    expect(epub.headers['content-disposition']).toContain('download-me.epub');
+    expect(buildArticleEpub).toHaveBeenCalledOnce();
+
+    const pdf = await request(app).get('/download/download-me.pdf');
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers['content-type']).toMatch(/application\/pdf/);
+    expect(pdf.headers['content-disposition']).toContain('download-me.pdf');
+    expect(buildArticlePdf).toHaveBeenCalledOnce();
+  });
+
+  it('download route returns 404 for unknown articles and formats', async () => {
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub: globalThis.vi.fn(),
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    expect((await request(app).get('/download/missing.epub')).status).toBe(404);
+    expect((await request(app).get('/download/missing.txt')).status).toBe(404);
+  });
+
   it('post detail route resolves slug without date prefix', async () => {
     await writePost(
       tmpDir,
@@ -216,12 +256,38 @@ describe('blog server', () => {
       category: 'Node',
       tags: ['Linux'],
       excerpt: 'Excerpt',
+      coverCredit: 'by Example via Pixabay',
+      coverCreditUrl: 'https://pixabay.com/photos/example-42/',
+      coverLicense: 'Pixabay Content License',
+      coverLicenseUrl: 'https://pixabay.com/service/license-summary/',
       readingTime: 3,
       html: '<p>Rendered</p>'
     });
 
     expect(html).toContain('Meta Test | Kernel Notes');
     expect(html).toContain('Node · 03.03.2026 · 3 Min. Lesezeit');
+    expect(html).toContain('terminal-post terminal-post--article');
+    expect(html).toContain('article-hero__chrome');
+    expect(html).not.toContain('article-hero--has-cover');
+    expect(html).toContain('/blog/node');
+    expect(html).toContain('# linux');
+    expect(html).not.toContain('article-hero__lights');
+    expect(html).toContain('data-terminal-action="overview"');
+    expect(html).toContain('data-terminal-action="restore"');
+    expect(html).toContain('data-terminal-action="maximize"');
+    expect(html).toContain('article-hero__prompt');
+    expect(html).toContain('<svg viewBox="0 0 64 48" focusable="false">');
+    expect(html).toContain('article-hero__excerpt');
+    expect(html).toContain('>Excerpt<');
+    expect(html).toContain('by Example via Pixabay');
+    expect(html).toContain('https://pixabay.com/photos/example-42/');
+    expect(html).toContain('Pixabay Content License');
+    expect(html).toContain('https://pixabay.com/service/license-summary/');
+    expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*terminal-content[\s\S]*<\/section>[\s\S]*article-post-meta/);
+    expect(html).not.toContain('article-terminal__meta-strip');
+    expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
+    expect(html).toMatch(/\/styles\.css\?v=[^"]+/);
+    expect(html).not.toContain('article-hero-transition');
     expect(html).not.toContain('GMT');
     expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-reading-progress-toggle');
@@ -230,13 +296,41 @@ describe('blog server', () => {
     expect(html).toContain('reading-progress__bubble-fill');
     expect(html).toContain('data-reading-progress-rive');
     expect(html).not.toContain('<script src="/vendor/rive/rive.js"');
-    expect(html).toContain('/assets/article-analytics.js?v=20260921-7');
+    expect(html).toMatch(/\/assets\/article-analytics\.js\?v=[^"]+/);
+    expect(html).toMatch(/\/assets\/article-hero-motion\.js\?v=[^"]+/);
+    expect(html).toMatch(/\/script\.js\?v=[^"]+/);
     expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');
-    expect(html).toContain('Für später speichern');
+    expect(html).toContain('Herunterladen');
+    expect(html).toContain('/download/meta-test.epub');
+    expect(html).toContain('/download/meta-test.pdf');
     expect(html).toContain('data-article-share');
     expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');
+  });
+
+  it('renders a local article cover on the shared terminal surface', () => {
+    const html = renderPostPage({
+      slug: 'covered-post',
+      title: 'Covered Post',
+      date: '2026-09-23',
+      category: 'DevOps',
+      tags: ['Kubernetes'],
+      excerpt: 'Covered excerpt',
+      coverImage: '/assets/covers/covered-post.jpg',
+      coverFocus: 'top',
+      readingTime: 4,
+      html: '<p>Rendered</p>'
+    });
+
+    expect(html).toContain('class="terminal-post terminal-post--article terminal-post--has-cover"');
+    expect(html).toContain('aria-label="Artikel im Terminal" style="--article-cover-image: url(/assets/covers/covered-post.jpg)');
+    expect(html).toContain('class="article-hero article-hero--has-cover" data-article-hero>');
+    expect(html).not.toContain('data-article-hero style=');
+    expect(html).toContain('--article-cover-focus: top');
+    expect(html).toContain('--article-cover-overlay: linear-gradient(180deg');
+    expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
+    expect(html).toMatch(/\/styles\.css\?v=[^"]+/);
   });
 
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {

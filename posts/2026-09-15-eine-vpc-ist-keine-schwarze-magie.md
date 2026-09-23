@@ -1,15 +1,18 @@
 ---
 id: 2026-09-15-eine-vpc-ist-keine-schwarze-magie
 version: 1
-title: "Eine VPC ist keine schwarze Magie"
+title: Eine VPC ist keine schwarze Magie
 status: publish
-date: 2026-09-15
-created_at: 2026-09-15
-updated_at: 2026-09-15
+date: 2026-09-15T00:00:00.000Z
+created_at: 2026-09-15T00:00:00.000Z
+updated_at: 2026-09-15T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: AWS
-excerpt: "VPC, Subnet, Route Table, Internet Gateway und NAT wirken schnell nach schwarzer Magie. Dabei geht es am Ende fast immer um eine Frage: Welchen Weg nimmt mein Traffic?"
+excerpt: >-
+  VPC, Subnet, Route Table, Internet Gateway und NAT wirken schnell nach
+  schwarzer Magie. Dabei geht es am Ende fast immer um eine Frage: Welchen Weg
+  nimmt mein Traffic?
 tags:
   - AWS
   - VPC
@@ -26,6 +29,24 @@ search_queries:
     maxRank: 1
   - query: Wie troubleshootet man AWS VPC Netzwerkprobleme?
     maxRank: 1
+cover_query: cloud server network datacenter infrastructure
+cover_provider: pixabay
+cover_provider_id: '1235959'
+cover_image: /assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg
+cover_alt: >-
+  server, cloud, development, business, network, connection, technology,
+  internet, web, database, analysis, application, colors, design, management,
+  designer, developer, gray business, gray technology, gray clouds, gray
+  network, gray internet, gray design, gray company, gray web, gray color, gray
+  server, gray management, server, server, server, server, server, database,
+  database
+cover_focus: center
+cover_credit: by ColossusCloud via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_source_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 84
 ---
 
 VPC, Subnet, Route Table, Internet Gateway, NAT Gateway, Security Group, NACL …

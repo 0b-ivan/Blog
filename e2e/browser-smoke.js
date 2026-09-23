@@ -57,6 +57,15 @@ async function assertMetaLinksInFooter(page) {
   assert.equal(await footer.locator('a[href="/impressum"]').count(), 1, 'Impressum must appear once in the footer');
 }
 
+function assertClose(actual, expected, message, tolerance = 0.75) {
+  assert.ok(
+    Number.isFinite(actual)
+    && Number.isFinite(expected)
+    && Math.abs(actual - expected) <= tolerance,
+    `${message} (actual=${actual}, expected=${expected})`
+  );
+}
+
 async function assertKernelGrepTrigger(page) {
   const trigger = page.locator('.main-nav > [data-kernel-grep-trigger]');
   await trigger.waitFor({ state: 'visible' });
@@ -131,6 +140,17 @@ async function main() {
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
     await page.locator('#posts-list .post-card').first().waitFor({ state: 'visible' });
+    const strayHomeBodyText = await page.locator('body').evaluate((body) =>
+      [...body.childNodes]
+        .filter((node) => node.nodeType === globalThis.Node.TEXT_NODE)
+        .map((node) => node.textContent?.trim() || '')
+        .filter(Boolean)
+    );
+    assert.deepEqual(
+      strayHomeBodyText,
+      [],
+      `Home page must not leak literal text nodes around the shell: ${strayHomeBodyText.join(', ')}`
+    );
     await assertMetaLinksInFooter(page);
     assert.equal(await page.locator('.main-nav a[href="#newsletter"]').count(), 0, 'Abo must not appear in the main navigation');
     assert.equal(await page.locator('#about').count(), 0, 'About content must live on its own page');
@@ -159,6 +179,10 @@ async function main() {
       cards.map((card) => card.dataset.href).filter(Boolean)
     );
     assert.ok(postHrefs.length > 0, 'No post cards found on the start page');
+    let downloadExportVerified = false;
+    let terminalControlsVerified = false;
+    let terminalProgressVerified = false;
+    let desktopTerminalChromeMetrics = null;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -181,15 +205,73 @@ async function main() {
         card.click()
       ]);
 
-      const pageTitle = page.locator('.post-page > h1');
+      const pageTitle = page.locator('.article-hero .article-title');
       await pageTitle.waitFor({ state: 'visible' });
       assert.ok((await pageTitle.innerText()).trim().length > 0, `Missing title for ${href}`);
-      const postMeta = await page.locator('.post-page > .meta').innerText();
+      assert.equal(
+        await page.locator('.article-hero .article-hero__chrome').count(),
+        1,
+        `Terminal hero chrome missing for ${href}`
+      );
+      assert.equal(
+        await page.locator('.article-hero .article-hero__prompt').count(),
+        1,
+        `Terminal hero prompt missing for ${href}`
+      );
+      const terminal = page.locator('.terminal-post--article');
+      assert.equal(await terminal.count(), 1, `Integrated article terminal missing for ${href}`);
+      assert.equal(await terminal.locator('.article-hero').count(), 1, `Hero must live inside article terminal for ${href}`);
+      assert.equal(await terminal.locator('.article-hero__lights').count(), 0, `Decorative hero lights must be removed for ${href}`);
+      assert.equal(await terminal.locator('[data-terminal-action]').count(), 3, `Functional terminal controls incomplete for ${href}`);
+
+      if (!terminalControlsVerified) {
+        desktopTerminalChromeMetrics = await terminal.locator('.terminal-chrome').evaluate((chrome) => {
+          const view = chrome.ownerDocument.defaultView;
+          const chromeRect = chrome.getBoundingClientRect();
+          const buttons = [...chrome.querySelectorAll('[data-terminal-action]')];
+          const dots = buttons.map((button) => {
+            const rect = button.getBoundingClientRect();
+            const dot = view.globalThis.getComputedStyle(button, '::before');
+            return {
+              x: rect.x,
+              hitHeight: rect.height,
+              width: Number.parseFloat(dot.width),
+              height: Number.parseFloat(dot.height)
+            };
+          });
+          return {
+            chromeHeight: chromeRect.height,
+            paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+            dotWidth: dots[0]?.width || 0,
+            dotHeight: dots[0]?.height || 0,
+            gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0,
+            hitHeights: dots.map((dot) => dot.hitHeight)
+          };
+        });
+
+        assert.ok(
+          Math.abs(desktopTerminalChromeMetrics.dotWidth - desktopTerminalChromeMetrics.dotHeight) < 0.5,
+          'Visible terminal dots must stay round'
+        );
+        assert.ok(
+          desktopTerminalChromeMetrics.hitHeights.every((height) => height >= desktopTerminalChromeMetrics.dotHeight),
+          'Terminal controls must keep an interaction lane at least as tall as the visible dot'
+        );
+
+        await terminal.locator('[data-terminal-action="maximize"]').click();
+        await page.locator('.terminal-post--article.is-maximized').waitFor({ state: 'attached' });
+        await terminal.locator('[data-terminal-action="restore"]').click();
+        assert.equal(await terminal.evaluate((element) => element.classList.contains('is-maximized')), false, 'Restore control must leave maximized mode');
+
+        terminalControlsVerified = true;
+      }
+
+      const postMeta = await page.locator('.article-hero .article-meta').innerText();
       assert.doesNotMatch(postMeta, /GMT|Coordinated Universal Time/, `Raw JavaScript date leaked for ${href}`);
       const readingProgress = page.locator('[data-reading-progress]');
       await readingProgress.waitFor({ state: 'attached' });
       assert.equal(
-        await readingProgress.evaluate((element) => element.ownerDocument.defaultView.getComputedStyle(element).position),
+        await readingProgress.evaluate((element) => element.ownerDocument.defaultView.globalThis.getComputedStyle(element).position),
         'fixed',
         `Reading progress should be a subtle bottom overlay for ${href}`
       );
@@ -198,17 +280,111 @@ async function main() {
         1,
         `Reading progress toggle missing for ${href}`
       );
+
+      if (!terminalProgressVerified) {
+        await page.evaluate(() => {
+          const contentElement = globalThis.document.querySelector('.terminal-content');
+          if (!contentElement) return;
+          const target = globalThis.window.scrollY + contentElement.getBoundingClientRect().top - globalThis.window.innerHeight * 0.55;
+          globalThis.window.scrollTo(0, Math.max(160, target));
+        });
+
+        await page.waitForFunction(() => {
+          const progressElement = globalThis.document.querySelector('[data-reading-progress]');
+          const meter = globalThis.document.querySelector('[data-reading-progress-meter]');
+          return Boolean(
+            progressElement?.classList.contains('is-visible')
+            && Number(meter?.getAttribute('aria-valuenow') || 0) > 2
+          );
+        });
+
+        await terminal.locator('[data-terminal-action="maximize"]').click();
+        await page.locator('.terminal-post--article.is-maximized').waitFor({ state: 'attached' });
+
+        await page.waitForFunction(() => {
+          const progressElement = globalThis.document.querySelector('[data-reading-progress]');
+          const terminalElement = globalThis.document.querySelector('.terminal-post--article.is-maximized');
+          if (!progressElement || !terminalElement) return false;
+          const progressStyle = globalThis.getComputedStyle(progressElement);
+          const terminalStyle = globalThis.getComputedStyle(terminalElement);
+          return (
+            progressStyle.display !== 'none'
+            && progressStyle.visibility !== 'hidden'
+            && Number.parseInt(progressStyle.zIndex || '0', 10) > Number.parseInt(terminalStyle.zIndex || '0', 10)
+          );
+        });
+
+        await terminal.evaluate((element) => {
+          const contentElement = element.querySelector('.terminal-content');
+          if (!contentElement) return;
+          const maximum = Math.max(0, element.scrollHeight - element.clientHeight);
+          element.scrollTop = Math.min(maximum, contentElement.offsetTop + 220);
+          element.dispatchEvent(new globalThis.Event('scroll'));
+        });
+
+        await page.waitForFunction(() => {
+          const meter = globalThis.document.querySelector('[data-reading-progress-meter]');
+          const value = Number(meter?.getAttribute('aria-valuenow') || 0);
+          return value > 2 && value < 100;
+        });
+
+        await terminal.locator('[data-terminal-action="restore"]').click();
+        await page.waitForFunction(() => {
+          const terminalElement = globalThis.document.querySelector('.terminal-post--article');
+          const progressElement = globalThis.document.querySelector('[data-reading-progress]');
+          return Boolean(
+            terminalElement
+            && !terminalElement.classList.contains('is-maximized')
+            && progressElement?.classList.contains('is-visible')
+            && globalThis.getComputedStyle(progressElement).display !== 'none'
+            && globalThis.window.scrollY > 0
+          );
+        });
+
+        assert.ok(
+          await page.evaluate(() => globalThis.window.scrollY > 0),
+          'Restoring the terminal should preserve the reader position'
+        );
+
+        terminalProgressVerified = true;
+      }
       assert.equal(await page.locator('.article-metric[data-tooltip]').count(), 2, `Article metric chips incomplete for ${href}`);
+      assert.equal(
+        await terminal.locator('.article-post-meta').count(),
+        0,
+        `Metrics and tags must not interrupt the terminal article surface for ${href}`
+      );
+      assert.equal(
+        await page.locator('.terminal-post--article + .article-post-meta').count(),
+        1,
+        `Article metadata should sit below the terminal for ${href}`
+      );
       const engagement = page.locator('.article-engagement');
       await engagement.waitFor({ state: 'attached' });
       assert.equal(await engagement.locator('[data-article-like]').count(), 1, `Like action missing for ${href}`);
-      assert.equal(await engagement.locator('[data-article-favorite]').count(), 1, `Favorite action missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download').count(), 1, `Download action missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download a[href$=".epub"]').count(), 1, `EPUB download missing for ${href}`);
+      assert.equal(await engagement.locator('.article-download a[href$=".pdf"]').count(), 1, `PDF download missing for ${href}`);
       assert.equal(await engagement.locator('[data-article-share]').count(), 1, `Share action missing for ${href}`);
-      const favoriteButton = engagement.locator('[data-article-favorite]');
-      await favoriteButton.click();
-      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'true', `Favorite state did not persist for ${href}`);
-      await favoriteButton.click();
-      assert.equal(await favoriteButton.getAttribute('aria-pressed'), 'false', `Favorite state did not toggle off for ${href}`);
+
+      if (!downloadExportVerified) {
+        const epubHref = await engagement.locator('.article-download a[href$=".epub"]').getAttribute('href');
+        const epubResponse = await page.request.get(new URL(epubHref, baseUrl).toString());
+        assert.equal(epubResponse.status(), 200, `EPUB generation failed for ${href}: HTTP ${epubResponse.status()} ${await epubResponse.text()}`);
+        assert.match(epubResponse.headers()['content-type'] || '', /application\/epub\+zip/i);
+        const epubBody = await epubResponse.body();
+        assert.equal(epubBody.subarray(0, 2).toString('ascii'), 'PK', 'EPUB must be a ZIP package');
+
+        const pdfHref = await engagement.locator('.article-download a[href$=".pdf"]').getAttribute('href');
+        const pdfResponse = await page.request.get(new URL(pdfHref, baseUrl).toString());
+        assert.equal(pdfResponse.status(), 200, `PDF generation failed for ${href}: HTTP ${pdfResponse.status()} ${await pdfResponse.text()}`);
+        assert.match(pdfResponse.headers()['content-type'] || '', /application\/pdf/i);
+        const pdfBody = await pdfResponse.body();
+        assert.equal(pdfBody.subarray(0, 5).toString('ascii'), '%PDF-', 'PDF must have a valid PDF signature');
+
+        downloadExportVerified = true;
+      }
+
       await assertMetaLinksInFooter(page);
       await assertKernelGrepTrigger(page);
 
@@ -235,6 +411,27 @@ async function main() {
         `Graph chrome title missing for ${href}`
       );
       assert.equal(await graphSection.locator('.knowledge-graph__chrome-dot').count(), 3, `Graph chrome controls incomplete for ${href}`);
+      if (desktopTerminalChromeMetrics) {
+        const graphChromeMetrics = await graphSection.locator('.knowledge-graph__chrome').evaluate((chrome) => {
+          const chromeRect = chrome.getBoundingClientRect();
+          const dots = [...chrome.querySelectorAll('.knowledge-graph__chrome-dot')].map((dot) => dot.getBoundingClientRect());
+          return {
+            chromeHeight: chromeRect.height,
+            paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+            dotWidth: dots[0]?.width || 0,
+            dotHeight: dots[0]?.height || 0,
+            gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0
+          };
+        });
+
+        assertClose(desktopTerminalChromeMetrics.dotWidth, graphChromeMetrics.dotWidth, 'Terminal and knowledge graph dots should share the same size');
+        assertClose(desktopTerminalChromeMetrics.dotHeight, graphChromeMetrics.dotHeight, 'Terminal and knowledge graph dots should share the same shape');
+        assertClose(desktopTerminalChromeMetrics.gap, graphChromeMetrics.gap, 'Terminal and knowledge graph dots should share the same spacing');
+        assertClose(desktopTerminalChromeMetrics.chromeHeight, graphChromeMetrics.chromeHeight, 'Terminal and knowledge graph chrome should share the same height');
+        assertClose(desktopTerminalChromeMetrics.paddingLeft, graphChromeMetrics.paddingLeft, 'Terminal and knowledge graph chrome should share the same left inset');
+
+        desktopTerminalChromeMetrics = null;
+      }
       await graphSection.locator('.knowledge-graph__canvas canvas').waitFor({ state: 'visible', timeout: 15_000 });
       assert.equal(await graphSection.locator('.knowledge-graph__legend span').count(), 4, `Graph legend incomplete for ${href}`);
 
@@ -259,10 +456,180 @@ async function main() {
       }
     }
 
+    const downloadSlug = postHrefs[0].split('/').filter(Boolean).pop();
+    for (const format of ['epub', 'pdf']) {
+      const response = await page.request.get(`${baseUrl}/download/${encodeURIComponent(downloadSlug)}.${format}`);
+      assert.equal(
+        response.status(),
+        200,
+        `${format.toUpperCase()} article download failed with HTTP ${response.status()}`
+      );
+
+      const contentType = response.headers()['content-type'] || '';
+      assert.match(
+        contentType,
+        format === 'epub' ? /application\/epub\+zip/i : /application\/pdf/i,
+        `Unexpected ${format.toUpperCase()} content type: ${contentType}`
+      );
+
+      const disposition = response.headers()['content-disposition'] || '';
+      assert.match(
+        disposition,
+        new RegExp(`filename="[^"]+\\.${format}"`, 'i'),
+        `Unexpected ${format.toUpperCase()} filename: ${disposition}`
+      );
+
+      const body = await response.body();
+      if (format === 'epub') {
+        assert.equal(body.subarray(0, 2).toString('ascii'), 'PK', 'EPUB download must be a ZIP archive');
+      } else {
+        assert.equal(body.subarray(0, 5).toString('ascii'), '%PDF-', 'PDF download must start with the PDF signature');
+      }
+    }
+
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+    const mobileHomeHeader = page.locator('.site-header');
+    const mobileHomeHero = page.locator('.hero');
+    await mobileHomeHeader.waitFor({ state: 'visible' });
+    await mobileHomeHero.waitFor({ state: 'visible' });
+    const mobileHomeHeaderBox = await mobileHomeHeader.boundingBox();
+    const mobileHomeHeroBox = await mobileHomeHero.boundingBox();
+    const mobileHeaderRadius = await mobileHomeHeader.evaluate((element) =>
+      Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).borderTopLeftRadius)
+    );
+    assert.ok(mobileHeaderRadius >= 16, 'Mobile header should keep a rounded card shape');
+    assert.ok(
+      mobileHomeHeaderBox
+      && mobileHomeHeroBox
+      && mobileHomeHeroBox.y - (mobileHomeHeaderBox.y + mobileHomeHeaderBox.height) <= 48,
+      'Mobile home content should visually continue from the header without a large dead gap'
+    );
+
     await page.goto(`${baseUrl}${postHrefs[0]}`, { waitUntil: 'domcontentloaded' });
+    const mobilePostHeader = page.locator('.site-header');
+    const mobileTerminal = page.locator('.terminal-post--article');
+    await mobilePostHeader.waitFor({ state: 'visible' });
+    await mobileTerminal.waitFor({ state: 'visible' });
+    const mobilePostHeaderBox = await mobilePostHeader.boundingBox();
+    const mobileTerminalBox = await mobileTerminal.boundingBox();
+    assert.ok(
+      mobilePostHeaderBox
+      && mobileTerminalBox
+      && mobileTerminalBox.y - (mobilePostHeaderBox.y + mobilePostHeaderBox.height) <= 48,
+      'Mobile article terminal should connect closely to the header'
+    );
+
+    const articleHero = page.locator('.article-hero');
+    const terminalContent = page.locator('.terminal-content');
+    const articleExcerpt = page.locator('.article-hero__excerpt');
+    const heroBox = await articleHero.boundingBox();
+    const contentBox = await terminalContent.boundingBox();
+    assert.ok(
+      heroBox
+      && contentBox
+      && Math.abs((heroBox.y + heroBox.height) - contentBox.y) <= 1,
+      'Article hero and terminal body must meet directly without an inserted seam layer or layout gap'
+    );
+    assert.equal(
+      await page.locator('.article-hero-transition, [data-article-seam]').count(),
+      0,
+      'Article transition must not use an overlay element that can obscure hero copy'
+    );
+    if (await articleExcerpt.count()) {
+      const excerptLayout = await articleExcerpt.evaluate((element) => {
+        const view = element.ownerDocument.defaultView;
+        const style = view.getComputedStyle(element);
+        return {
+          opacity: Number.parseFloat(style.opacity),
+          clientHeight: element.clientHeight,
+          scrollHeight: element.scrollHeight,
+          lineClamp: style.webkitLineClamp,
+          maskImage: style.webkitMaskImage || style.maskImage
+        };
+      });
+      assert.ok(excerptLayout.opacity >= 0.99, 'Article excerpt must remain fully opaque through the hero/body transition');
+      assert.ok(
+        excerptLayout.scrollHeight <= excerptLayout.clientHeight + 1,
+        `Mobile article excerpt must not be clipped (client=${excerptLayout.clientHeight}, scroll=${excerptLayout.scrollHeight})`
+      );
+      assert.ok(
+        excerptLayout.lineClamp === 'none' || excerptLayout.lineClamp === 'unset',
+        `Mobile article excerpt must not use a line clamp (actual=${excerptLayout.lineClamp})`
+      );
+      assert.equal(
+        excerptLayout.maskImage,
+        'none',
+        'Mobile article excerpt must not fade its own text'
+      );
+    }
+
+    const heroReadability = await articleHero.evaluate((hero) => {
+      const view = hero.ownerDocument.defaultView;
+      const overlay = view.getComputedStyle(hero, '::after');
+      return {
+        background: overlay.backgroundImage,
+        backdropFilter: overlay.webkitBackdropFilter || overlay.backdropFilter
+      };
+    });
+    assert.notEqual(
+      heroReadability.background,
+      'none',
+      'Mobile cover hero should have a soft readability scrim behind copy'
+    );
+    assert.match(
+      heroReadability.backdropFilter,
+      /blur\(/,
+      'Mobile readability scrim should blur only the cover behind copy'
+    );
+    const transitionPaint = await page.locator('.terminal-post--article').evaluate((terminal) => {
+      const view = terminal.ownerDocument.defaultView;
+      const hero = terminal.querySelector('.article-hero');
+      const content = terminal.querySelector('.terminal-content');
+      const coverLayer = view.getComputedStyle(terminal, '::before');
+      return {
+        shellCoverBackground: coverLayer.backgroundImage,
+        shellCoverMask: coverLayer.webkitMaskImage || coverLayer.maskImage,
+        heroBackground: view.getComputedStyle(hero).backgroundImage,
+        contentBackground: view.getComputedStyle(content).backgroundImage
+      };
+    });
+    assert.notEqual(
+      transitionPaint.shellCoverBackground,
+      'none',
+      'Article terminal must own the shared cover/background layer'
+    );
+    assert.notEqual(
+      transitionPaint.shellCoverMask,
+      'none',
+      'Shared cover layer must fade into the terminal surface'
+    );
+    assert.equal(
+      transitionPaint.heroBackground,
+      'none',
+      'Hero must not paint a separate card background over the shared terminal surface'
+    );
+    assert.equal(
+      transitionPaint.contentBackground,
+      'none',
+      'Terminal body must stay transparent so the shared cover fade can continue into the article'
+    );
+
+    const coverMotionBefore = await mobileTerminal.evaluate((terminal) => {
+      const style = terminal.ownerDocument.defaultView.getComputedStyle(terminal);
+      return {
+        y: Number.parseFloat(style.getPropertyValue('--article-cover-motion-y')) || 0,
+        blur: Number.parseFloat(style.getPropertyValue('--article-cover-motion-blur')) || 0,
+        brightness: Number.parseFloat(style.getPropertyValue('--article-cover-motion-brightness')) || 1
+      };
+    });
+
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
+    assert.ok(
+      (await page.request.get(`${baseUrl}/assets/article-hero-motion.js`)).ok(),
+      'Article hero motion asset should be available'
+    );
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.wasm`)).ok(), 'Self-hosted Rive WASM should be available');
     assert.ok((await page.request.get(`${baseUrl}/assets/rive/liquid_download.riv`)).ok(), 'Local Rive liquid asset should be available');
@@ -274,6 +641,28 @@ async function main() {
     await page.mouse.wheel(0, 650);
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
+    await page.waitForTimeout(80);
+
+    const coverMotionAfter = await mobileTerminal.evaluate((terminal) => {
+      const style = terminal.ownerDocument.defaultView.getComputedStyle(terminal);
+      return {
+        y: Number.parseFloat(style.getPropertyValue('--article-cover-motion-y')) || 0,
+        blur: Number.parseFloat(style.getPropertyValue('--article-cover-motion-blur')) || 0,
+        brightness: Number.parseFloat(style.getPropertyValue('--article-cover-motion-brightness')) || 1
+      };
+    });
+    assert.ok(
+      coverMotionAfter.y > coverMotionBefore.y + 2,
+      `Mobile cover should move more slowly than article copy while scrolling (before=${coverMotionBefore.y}, after=${coverMotionAfter.y})`
+    );
+    assert.ok(
+      coverMotionAfter.blur > coverMotionBefore.blur,
+      `Mobile cover should blur subtly while leaving the hero (before=${coverMotionBefore.blur}, after=${coverMotionAfter.blur})`
+    );
+    assert.ok(
+      coverMotionAfter.brightness < coverMotionBefore.brightness,
+      `Mobile cover should darken subtly while leaving the hero (before=${coverMotionBefore.brightness}, after=${coverMotionAfter.brightness})`
+    );
     let compactProgressBox = null;
     for (let attempt = 0; attempt < 100; attempt += 1) {
       compactProgressBox = await compactProgress.boundingBox();
@@ -290,7 +679,7 @@ async function main() {
       compactProgressBox
       && compactProgressBox.width <= 50
       && compactProgressBox.height <= 50,
-      `Reading progress should collapse into a compact bubble on mobile after its size transition (actual: ${compactProgressBox?.width ?? 'missing'}x${compactProgressBox?.height ?? 'missing'})`
+      `Reading progress should collapse into a compact bubble on mobile after its size transition (actual=${compactProgressBox ? `${compactProgressBox.width}x${compactProgressBox.height}` : 'missing'})`
     );
     assert.ok(
       compactProgressBox.x + compactProgressBox.width >= 390 - 24,
@@ -302,18 +691,18 @@ async function main() {
       'Compact reading progress should expose an inner bubble fill'
     );
     const fillHeightBefore = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).height)
     );
     const hueBefore = await compactProgress.evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
     await page.mouse.wheel(0, 700);
     await page.waitForTimeout(250);
     const fillHeightAfter = await compactProgress.locator('.reading-progress__bubble-fill').evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).height)
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).height)
     );
     const hueAfter = await compactProgress.evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
     assert.ok(
       fillHeightAfter >= fillHeightBefore,
@@ -325,7 +714,7 @@ async function main() {
     );
 
     await page.evaluate(() => {
-      const contentNode = globalThis.document.querySelector('.terminal-content');
+      const contentNode = globalThis.globalThis.document.querySelector('.terminal-content');
       if (!contentNode) return;
       const rect = contentNode.getBoundingClientRect();
       const absoluteTop = globalThis.scrollY + rect.top;
@@ -415,7 +804,7 @@ async function main() {
     assert.ok(completionEmoji.includes('❓'), 'Completion burst should include a question mark');
     assert.ok(completionEmoji.some((emoji) => emoji.startsWith('👍')), 'Completion burst should include thumbs');
     const completionHue = await mobileProgress.evaluate(
-      (element) => Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).getPropertyValue('--progress-hue'))
+      (element) => Number.parseFloat(element.ownerDocument.defaultView.globalThis.getComputedStyle(element).getPropertyValue('--progress-hue'))
     );
     assert.equal(completionHue, 120, 'Completed reading progress bubble should end green');
     await page.locator('[data-reading-progress].is-complete').waitFor({ state: 'attached', timeout: 5_000 });
@@ -430,6 +819,37 @@ async function main() {
     );
     const mobileCanvasBox = await mobileGraph.locator('.knowledge-graph__canvas').boundingBox();
     assert.ok(mobileCanvasBox && mobileCanvasBox.height <= 340, 'Compact article graph should stay visually bounded on mobile');
+
+    const mobileTerminalChrome = await page.locator('.terminal-chrome').evaluate((chrome) => {
+      const view = chrome.ownerDocument.defaultView;
+      const chromeRect = chrome.getBoundingClientRect();
+      const buttons = [...chrome.querySelectorAll('[data-terminal-action]')];
+      const dots = buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        const dot = view.globalThis.getComputedStyle(button, '::before');
+        return { x: rect.x, width: Number.parseFloat(dot.width) };
+      });
+      return {
+        chromeHeight: chromeRect.height,
+        paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+        dotWidth: dots[0]?.width || 0,
+        gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0
+      };
+    });
+    const mobileGraphChrome = await mobileGraph.locator('.knowledge-graph__chrome').evaluate((chrome) => {
+      const chromeRect = chrome.getBoundingClientRect();
+      const dots = [...chrome.querySelectorAll('.knowledge-graph__chrome-dot')].map((dot) => dot.getBoundingClientRect());
+      return {
+        chromeHeight: chromeRect.height,
+        paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+        dotWidth: dots[0]?.width || 0,
+        gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0
+      };
+    });
+    assertClose(mobileTerminalChrome.dotWidth, mobileGraphChrome.dotWidth, 'Mobile terminal and knowledge graph dots should share the same size');
+    assertClose(mobileTerminalChrome.gap, mobileGraphChrome.gap, 'Mobile terminal and knowledge graph dots should share the same spacing');
+    assertClose(mobileTerminalChrome.chromeHeight, mobileGraphChrome.chromeHeight, 'Mobile terminal and knowledge graph chrome should share the same height');
+    assertClose(mobileTerminalChrome.paddingLeft, mobileGraphChrome.paddingLeft, 'Mobile terminal and knowledge graph chrome should share the same left inset');
     await page.setViewportSize({ width: 1280, height: 720 });
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });

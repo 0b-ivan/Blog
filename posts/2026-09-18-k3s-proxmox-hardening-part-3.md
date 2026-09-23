@@ -1,15 +1,18 @@
 ---
 id: 2026-09-18-k3s-proxmox-hardening-part-3
 version: 8
-title: "K3s auf Proxmox – Teil III: Feste Versionen und verschlüsselte Secrets"
+title: 'K3s auf Proxmox – Teil III: Feste Versionen und verschlüsselte Secrets'
 status: publish
-date: 2026-09-18
-created_at: 2026-09-18
-updated_at: 2026-09-19
+date: 2026-09-18T00:00:00.000Z
+created_at: 2026-09-18T00:00:00.000Z
+updated_at: 2026-09-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil III macht den bestehenden K3s-Aufbau reproduzierbarer: feste Versionen, verschlüsselte Secrets in Git und als nächster Schritt ein Backup, das auch wirklich zurückgespielt wird."
+excerpt: >-
+  Teil III macht den bestehenden K3s-Aufbau reproduzierbarer: feste Versionen,
+  verschlüsselte Secrets in Git und als nächster Schritt ein Backup, das auch
+  wirklich zurückgespielt wird.
 tags:
   - Kubernetes
   - K3s
@@ -24,36 +27,67 @@ tags:
 search_queries:
   - query: Wie pinne ich eine K3s Version reproduzierbar mit Ansible?
     maxRank: 1
-  - query: Wie härte ich einen K3s Homelab Cluster mit Secrets Backups und Monitoring?
+  - query: >-
+      Wie härte ich einen K3s Homelab Cluster mit Secrets Backups und
+      Monitoring?
     maxRank: 1
-  - query: Wie upgrade ich K3s kontrolliert statt immer den stable Channel zu installieren?
+  - query: >-
+      Wie upgrade ich K3s kontrolliert statt immer den stable Channel zu
+      installieren?
     maxRank: 1
 snippets:
-  - file: "01-k3s-version-pin.yml"
-    title: "K3s-Version mit Ansible fest pinnen"
-    description: "Installiert nur bei Versionsabweichung und prüft den auf einen konkreten Upstream-Commit gepinnten Installer per SHA-256."
-    type: "Ansible-Playbook"
-    language: "yaml"
-  - file: "02-bootstrap-sops-age.sh"
-    title: "SOPS-age-Key für Flux vorbereiten"
-    description: "Erzeugt oder verwendet einen lokalen age-Key und legt daraus flux-system/sops-age an, ohne den privaten Key auszugeben."
-    type: "Shellskript"
-    language: "bash"
-  - file: "03-export-encrypt-staging-secrets.sh"
-    title: "Bestehende Cluster-Secrets mit SOPS verschlüsseln"
-    description: "Exportiert GHCR- und Cloudflare-Secrets nur temporär und schreibt ausschließlich SOPS-verschlüsselte Manifeste ins Repository."
-    type: "Shellskript"
-    language: "bash"
-  - file: "04-activate-flux-sops.sh"
-    title: "Flux-SOPS-Git-Zustand vorbereiten"
-    description: "Prüft Key und verschlüsselte Manifeste und bereitet Decryption sowie Secret-Ressourcen im Git-Sollzustand vor."
-    type: "Shellskript"
-    language: "bash"
-  - file: "05-bootstrap-live-flux-sops.sh"
-    title: "Live-Flux einmalig für SOPS bootstrappen"
-    description: "Prüft zuerst den bereits gemergten staging-Sollzustand, aktiviert dann einmalig SOPS in der laufenden Flux-Kustomization und wartet auf Ready."
-    type: "Shellskript"
-    language: "bash"
+  - file: 01-k3s-version-pin.yml
+    title: K3s-Version mit Ansible fest pinnen
+    description: >-
+      Installiert nur bei Versionsabweichung und prüft den auf einen konkreten
+      Upstream-Commit gepinnten Installer per SHA-256.
+    type: Ansible-Playbook
+    language: yaml
+  - file: 02-bootstrap-sops-age.sh
+    title: SOPS-age-Key für Flux vorbereiten
+    description: >-
+      Erzeugt oder verwendet einen lokalen age-Key und legt daraus
+      flux-system/sops-age an, ohne den privaten Key auszugeben.
+    type: Shellskript
+    language: bash
+  - file: 03-export-encrypt-staging-secrets.sh
+    title: Bestehende Cluster-Secrets mit SOPS verschlüsseln
+    description: >-
+      Exportiert GHCR- und Cloudflare-Secrets nur temporär und schreibt
+      ausschließlich SOPS-verschlüsselte Manifeste ins Repository.
+    type: Shellskript
+    language: bash
+  - file: 04-activate-flux-sops.sh
+    title: Flux-SOPS-Git-Zustand vorbereiten
+    description: >-
+      Prüft Key und verschlüsselte Manifeste und bereitet Decryption sowie
+      Secret-Ressourcen im Git-Sollzustand vor.
+    type: Shellskript
+    language: bash
+  - file: 05-bootstrap-live-flux-sops.sh
+    title: Live-Flux einmalig für SOPS bootstrappen
+    description: >-
+      Prüft zuerst den bereits gemergten staging-Sollzustand, aktiviert dann
+      einmalig SOPS in der laufenden Flux-Kustomization und wartet auf Ready.
+    type: Shellskript
+    language: bash
+cover_query: server datacenter infrastructure network cloud container cluster kubernetes
+cover_provider: pixabay
+cover_provider_id: '8598424'
+cover_image: /assets/covers/2026-09-18-k3s-proxmox-hardening-part-3.jpg
+cover_alt: >-
+  cloud, server, cloud computing, secure, digital, network, business,
+  application, connect, modernization, global, privacy, hardware,
+  infrastructure, database, security, cloudscape, smart, computer, design,
+  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
+  cloud computing, cloud computing, cloud computing, cloud computing
+cover_focus: center
+cover_credit: by kumar111aakashin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 93
 ---
 Teil I: Der Blog läuft auf K3s.
 

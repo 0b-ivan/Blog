@@ -1,15 +1,17 @@
 ---
 id: 2026-09-20-k3s-proxmox-chaos-monkey-part-5
 version: 6
-title: "K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog"
+title: 'K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog'
 status: publish
-date: 2026-09-20
-created_at: 2026-09-20
-updated_at: 2026-09-20
+date: 2026-09-20T00:00:00.000Z
+created_at: 2026-09-20T00:00:00.000Z
+updated_at: 2026-09-20T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Kubernetes Pod Failover mit Chaos Engineering: Recovery-Zeit, HTTP-Fehler und ein gemessener 500-ms-NetworkChaos in meinem K3s-Staging."
+excerpt: >-
+  Kubernetes Pod Failover mit Chaos Engineering: Recovery-Zeit, HTTP-Fehler und
+  ein gemessener 500-ms-NetworkChaos in meinem K3s-Staging.
 tags:
   - Kubernetes
   - K3s
@@ -22,14 +24,35 @@ tags:
   - Self-Hosting
   - DevOps
 search_queries:
-  - query: Wie teste ich Kubernetes Pod Failover mit einem Chaos Monkey in K3s Staging?
+  - query: >-
+      Wie teste ich Kubernetes Pod Failover mit einem Chaos Monkey in K3s
+      Staging?
     maxRank: 1
   - query: Wie begrenze ich den Blast Radius eines Chaos Monkey in K3s?
     maxRank: 1
-  - query: Wie messe ich Recovery Zeit und HTTP Fehler bei einem Kubernetes Pod Ausfall?
+  - query: >-
+      Wie messe ich Recovery Zeit und HTTP Fehler bei einem Kubernetes Pod
+      Ausfall?
     maxRank: 1
   - query: Wie teste ich 500 ms Latenz von Blog zu Search mit Chaos Mesh?
     maxRank: 1
+cover_query: server datacenter infrastructure network cloud container cluster kubernetes
+cover_provider: pixabay
+cover_provider_id: '8598424'
+cover_image: /assets/covers/2026-09-20-k3s-proxmox-chaos-monkey-part-5.jpg
+cover_alt: >-
+  cloud, server, cloud computing, secure, digital, network, business,
+  application, connect, modernization, global, privacy, hardware,
+  infrastructure, database, security, cloudscape, smart, computer, design,
+  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
+  cloud computing, cloud computing, cloud computing, cloud computing
+cover_focus: center
+cover_credit: by kumar111aakashin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 88
 ---
 
 Teil IV endete mit einer einfachen Frage:

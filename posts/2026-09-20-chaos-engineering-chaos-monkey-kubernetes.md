@@ -1,15 +1,18 @@
 ---
 id: 2026-09-20-chaos-engineering-chaos-monkey-kubernetes
 version: 2
-title: "Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen"
+title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen'
 status: publish
-date: 2026-09-20
-created_at: 2026-09-20
-updated_at: 2026-09-20
+date: 2026-09-20T00:00:00.000Z
+created_at: 2026-09-20T00:00:00.000Z
+updated_at: 2026-09-20T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Chaos Engineering ist kontrolliertes Testen von Resilience: Steady State, Hypothese, Blast Radius, Stop Conditions und messbare PASS-Kriterien statt zufälligem Kaputtmachen."
+excerpt: >-
+  Chaos Engineering ist kontrolliertes Testen von Resilience: Steady State,
+  Hypothese, Blast Radius, Stop Conditions und messbare PASS-Kriterien statt
+  zufälligem Kaputtmachen.
 tags:
   - Chaos-Engineering
   - Kubernetes
@@ -24,8 +27,28 @@ search_queries:
     maxRank: 1
   - query: Welche Chaos Tests sollte ich in Kubernetes durchführen?
     maxRank: 1
-  - query: Wie plane ich sichere Chaos Experimente mit Steady State und Stop Conditions?
+  - query: >-
+      Wie plane ich sichere Chaos Experimente mit Steady State und Stop
+      Conditions?
     maxRank: 1
+cover_query: server datacenter infrastructure network cloud container cluster deployment
+cover_provider: pixabay
+cover_provider_id: '1235959'
+cover_image: /assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg
+cover_alt: >-
+  server, cloud, development, business, network, connection, technology,
+  internet, web, database, analysis, application, colors, design, management,
+  designer, developer, gray business, gray technology, gray clouds, gray
+  network, gray internet, gray design, gray company, gray web, gray color, gray
+  server, gray management, server, server, server, server, server, database,
+  database
+cover_focus: center
+cover_credit: by ColossusCloud via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_source_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 84
 ---
 
 Ein Chaos Monkey klingt zunächst nach einem schlechten Betriebsmodell:

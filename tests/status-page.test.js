@@ -1,8 +1,37 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const request = require('supertest');
+const { createApp, addNavigationCueAssets } = require('../privacy-server');
 const { sanitizedKubernetesStatus } = require('../lib/kubernetes-status');
 
 describe('public Kubernetes status contract', () => {
+  it('keeps Status in the shared navigation, including the home page', async () => {
+    const res = await request(createApp()).get('/');
+
+    expect(res.status).toBe(200);
+    expect(res.text.match(/href="\/status">Status<\/a>/g)).toHaveLength(1);
+    expect(res.text).toContain('/assets/nav-scroll-cue.js');
+
+    const sources = await request(createApp()).get('/sources.html');
+    expect(sources.status).toBe(200);
+    expect(sources.text.match(/href="\/status">Status<\/a>/g)).toHaveLength(1);
+  });
+
+  it('does not render the removed security disclosure', () => {
+    const statusHtml = fs.readFileSync(path.join(__dirname, '..', 'status.html'), 'utf8');
+
+    expect(statusHtml).not.toContain('Sicherheitsgrenze');
+    expect(statusHtml).not.toContain('Was absichtlich nicht öffentlich ist');
+  });
+
+  it('injects the mobile navigation cue only once', () => {
+    const html = '<html><body><header class="site-header"><nav class="main-nav"></nav></header></body></html>';
+    const once = addNavigationCueAssets(html);
+    const twice = addNavigationCueAssets(once);
+
+    expect(twice.match(/\/assets\/nav-scroll-cue\.js/g)).toHaveLength(1);
+  });
+
   it('adds Status to the shared hardened navigation', () => {
     const source = fs.readFileSync(path.join(__dirname, '..', 'privacy-server.js'), 'utf8');
 

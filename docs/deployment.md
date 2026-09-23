@@ -96,6 +96,8 @@ Ein Merge nach `main` bedient zwei getrennte Production-Pfade.
 - Kernel Grep
 - Kubernetes-Status
 
+Die Datei `VERSION` bleibt absichtlich reines SemVer, weil die Deployment-Workflows sie strikt validieren. Größere sichtbare Releases bekommen zusätzlich einen menschenlesbaren Namen in `RELEASE_NAME`; dieser wird über `/build-info.json` und im Footer angezeigt.
+
 Die Build-Version enthält zusätzlich den verkürzten Git-SHA:
 
 ```text

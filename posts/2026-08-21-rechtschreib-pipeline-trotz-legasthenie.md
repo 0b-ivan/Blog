@@ -1,21 +1,40 @@
 ---
 id: 2026-08-21-rechtschreib-pipeline-trotz-legasthenie
 version: 3
-title: "Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline"
-date: 2026-08-21
-published_at: 2026-08-21T09:24:57+02:00
-created_at: 2026-08-21
-updated_at: 2026-08-25
+title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline'
+date: 2026-08-21T00:00:00.000Z
+published_at: 2026-08-21T07:24:57.000Z
+created_at: 2026-08-21T00:00:00.000Z
+updated_at: 2026-08-25T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Automation
-excerpt: "Was als kleine Machbarkeitsfrage angefangen hat, ist inzwischen Teil meines Blog-Workflows: CSpell und LanguageTool prüfen meine Texte automatisch, sichere Autokorrekturen landen zuerst in einem Pull Request."
-tags: GitHub-Actions, Automation, CSpell, LanguageTool, CI/CD
+excerpt: >-
+  Was als kleine Machbarkeitsfrage angefangen hat, ist inzwischen Teil meines
+  Blog-Workflows: CSpell und LanguageTool prüfen meine Texte automatisch,
+  sichere Autokorrekturen landen zuerst in einem Pull Request.
+tags: 'GitHub-Actions, Automation, CSpell, LanguageTool, CI/CD'
 search_queries:
-  - query: Wie verhindere ich dass Autokorrektur meinen technischen Text kaputt macht?
+  - query: >-
+      Wie verhindere ich dass Autokorrektur meinen technischen Text kaputt
+      macht?
     maxRank: 1
   - query: Codeblöcke sollen von der Rechtschreibprüfung ignoriert werden
     maxRank: 1
+cover_query: GitHub-Actions Automation CSpell Automation
+cover_provider: pixabay
+cover_provider_id: '544180'
+cover_image: /assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg
+cover_alt: >-
+  secretary, desk, sales, office automation, telephony, call, screen, telephone,
+  secretary, secretary, secretary, secretary, secretary, call
+cover_focus: center
+cover_credit: by Patrice_Audet via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
+cover_source_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 60
 ---
 
 Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.

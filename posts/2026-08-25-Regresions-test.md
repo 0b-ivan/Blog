@@ -2,14 +2,17 @@
 id: 2026-08-25-regressionstests-was-sie-sind-und-wie-ich-sie-nutze
 version: 1
 title: Regressionstests – was sie sind und wie ich sie nutze
-date: 2026-08-25
-created_at: 2026-08-25
-updated_at: 2026-08-25
+date: 2026-08-25T00:00:00.000Z
+created_at: 2026-08-25T00:00:00.000Z
+updated_at: 2026-08-25T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Development
 status: publish
-excerpt: Regressionstests prüfen, ob Dinge, die gestern funktioniert haben, nach einer Änderung immer noch funktionieren. In meinem Blog nutze ich sie unter anderem für die semantische Suche Kernel Grep.
+excerpt: >-
+  Regressionstests prüfen, ob Dinge, die gestern funktioniert haben, nach einer
+  Änderung immer noch funktionieren. In meinem Blog nutze ich sie unter anderem
+  für die semantische Suche Kernel Grep.
 tags:
   - Testing
   - Regressionstest
@@ -21,10 +24,30 @@ tags:
 search_queries:
   - query: Was ist ein Regressionstest?
     maxRank: 1
-  - query: Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges Verhalten noch funktioniert?
+  - query: >-
+      Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges
+      Verhalten noch funktioniert?
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
+cover_query: Testing Regressionstest CI Development
+cover_provider: pixabay
+cover_provider_id: '1076536'
+cover_image: /assets/covers/2026-08-25-Regresions-test.jpg
+cover_alt: >-
+  code, html, digital, coding, web, programming, computer, technology, internet,
+  design, development, website, web developer, web development, programming
+  code, data, page, computer programming, software, site, css, script, web page,
+  website development, www, information, java, screen, code, code, code, html,
+  coding, coding, coding, coding, coding, web, programming, programming,
+  computer, technology, website, website, web development, software
+cover_focus: center
+cover_credit: by jamesmarkosborne via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
+cover_source_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 70
 ---
 
 Bei Tests denkt man schnell an die Frage:

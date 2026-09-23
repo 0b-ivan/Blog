@@ -3,29 +3,48 @@ id: 2026-08-19-systemd-services-sauber-betreiben
 version: 1
 title: systemd Services sauber betreiben
 status: publish
-date: 2026-08-19
-created_at: 2026-08-19
-updated_at: 2026-08-19
+date: 2026-08-19T00:00:00.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-08-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Linux
-excerpt: Ein praktischer Leitfaden für robuste systemd-Services mit Restart-Strategie, Healthchecks und klaren Logs.
-tags: 
-- Linux
-- systemd
-- Operations
-- Reliability
+excerpt: >-
+  Ein praktischer Leitfaden für robuste systemd-Services mit Restart-Strategie,
+  Healthchecks und klaren Logs.
+tags:
+  - Linux
+  - systemd
+  - Operations
+  - Reliability
 search_queries:
   - query: Mein Linux Dienst soll nach einem Absturz automatisch neu starten
     maxRank: 1
   - query: Wie lese ich Logs eines systemd Dienstes mit journalctl?
     maxRank: 1
 snippets:
-  - file: "01-beispiel-unit.ini"
-    title: "Node.js-Dienst mit systemd betreiben"
-    description: "Startet die Kernel Notes API und konfiguriert automatische Neustarts."
-    type: "systemd-Unit"
-    language: "ini"
+  - file: 01-beispiel-unit.ini
+    title: Node.js-Dienst mit systemd betreiben
+    description: Startet die Kernel Notes API und konfiguriert automatische Neustarts.
+    type: systemd-Unit
+    language: ini
+cover_query: terminal server code computer linux service
+cover_provider: pixabay
+cover_provider_id: '3637299'
+cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
+cover_alt: >-
+  code, html, technology, programming, computer, coding, digital, development,
+  internet, web, it, programmer, css, developer, www, software, website, data,
+  script, computer programming, computer science, server, binary code, byte,
+  code, html, programming, coding, coding, programmer, software, software,
+  computer science, computer science, server, server, server, server, server
+cover_focus: center
+cover_credit: by markusspiske via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_source_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 83
 ---
 
 `systemd` ist mehr als nur `systemctl start`.

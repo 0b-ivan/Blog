@@ -355,6 +355,10 @@ function setupTerminalFocusMode() {
   const setState = (mode) => {
     const isMaximized = mode === 'maximized';
     const isMinimized = mode === 'minimized';
+    const wasMaximized = terminal.classList.contains('is-maximized');
+    const windowScrollBefore = window.scrollY;
+    const terminalPageTopBefore = terminal.getBoundingClientRect().top + windowScrollBefore;
+    const terminalScrollBefore = terminal.scrollTop;
 
     terminal.classList.toggle('is-maximized', isMaximized);
     terminal.classList.toggle('is-minimized', isMinimized);
@@ -368,6 +372,32 @@ function setupTerminalFocusMode() {
           (action === 'restore' && !isMaximized && !isMinimized)
       ));
     });
+
+    const announceState = () => {
+      window.dispatchEvent(new window.CustomEvent('kernel-notes:terminal-mode', {
+        detail: { mode }
+      }));
+    };
+
+    if (isMaximized && !wasMaximized) {
+      const fullscreenScrollTop = Math.max(0, windowScrollBefore - terminalPageTopBefore);
+      window.requestAnimationFrame(() => {
+        terminal.scrollTop = fullscreenScrollTop;
+        announceState();
+      });
+      return;
+    }
+
+    if (!isMaximized && wasMaximized) {
+      window.requestAnimationFrame(() => {
+        const terminalPageTop = terminal.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo(0, Math.max(0, terminalPageTop + terminalScrollBefore));
+        announceState();
+      });
+      return;
+    }
+
+    announceState();
   };
 
   actionButtons.forEach((button) => {
