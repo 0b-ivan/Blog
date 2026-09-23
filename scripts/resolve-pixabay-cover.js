@@ -41,6 +41,7 @@ const VISUAL_INTENTS = [
   {
     key: 'rss-reader',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
     query: 'rss feed reader website subscription aggregator syndication',
     positive: ['rss', 'feed', 'reader', 'subscription', 'website', 'aggregator', 'syndication'],
@@ -57,6 +58,7 @@ const VISUAL_INTENTS = [
   {
     key: 'systemd-service',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['systemd', 'journalctl'],
     query: 'linux command prompt shell daemon service logs',
     positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'prompt'],
@@ -76,6 +78,7 @@ const VISUAL_INTENTS = [
   {
     key: 'semantic-search',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
     query: 'search data code analytics magnifying glass',
     positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
@@ -94,6 +97,7 @@ const VISUAL_INTENTS = [
   {
     key: 'chaos-engineering',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
     query: 'server monitoring alert outage incident failure reliability',
     positive: ['server', 'monitoring', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'observability'],
@@ -106,6 +110,7 @@ const VISUAL_INTENTS = [
   {
     key: 'regression-testing',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['regressionstest', 'regression test', 'regression'],
     query: 'software testing quality assurance bug code',
     positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
@@ -114,6 +119,7 @@ const VISUAL_INTENTS = [
   {
     key: 'logging-observability',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['logger.info', 'logging', 'logger', 'observability'],
     query: 'server logs monitoring metrics observability cloudwatch alerts',
     positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts'],
@@ -536,11 +542,16 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
   const url = new URL('https://pixabay.com/api/');
   url.searchParams.set('key', apiKey);
   url.searchParams.set('q', query);
-  url.searchParams.set('image_type', 'photo');
+
+  const requestedImageType = String(options.imageType || 'photo').trim().toLowerCase();
+  const imageType = ['all', 'photo', 'illustration', 'vector'].includes(requestedImageType)
+    ? requestedImageType
+    : 'photo';
+  url.searchParams.set('image_type', imageType);
   url.searchParams.set('orientation', 'horizontal');
   url.searchParams.set('safesearch', 'true');
   url.searchParams.set('order', 'popular');
-  url.searchParams.set('per_page', '20');
+  url.searchParams.set('per_page', '30');
   url.searchParams.set('min_width', '1280');
   url.searchParams.set('min_height', '720');
 
@@ -553,9 +564,14 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
   return Array.isArray(payload.hits) ? payload.hits : [];
 }
 
-function cacheFileForQuery(query, cacheDir = path.join(root, '.cache', 'pixabay'), category = '') {
+function cacheFileForQuery(
+  query,
+  cacheDir = path.join(root, '.cache', 'pixabay'),
+  category = '',
+  imageType = 'photo'
+) {
   const digest = crypto.createHash('sha256')
-    .update(`v3:${String(category)}:${String(query)}`)
+    .update(`v4:${String(category)}:${String(imageType)}:${String(query)}`)
     .digest('hex')
     .slice(0, 24);
   return path.join(cacheDir, `${digest}.json`);
@@ -566,7 +582,8 @@ async function searchPixabayCached(query, apiKey, options = {}) {
   const cacheDir = options.cacheDir || path.join(root, '.cache', 'pixabay');
   const now = Number.isFinite(options.now) ? options.now : Date.now();
   const category = String(options.category || '').trim().toLowerCase();
-  const cacheFile = cacheFileForQuery(query, cacheDir, category);
+  const imageType = String(options.imageType || 'photo').trim().toLowerCase();
+  const cacheFile = cacheFileForQuery(query, cacheDir, category, imageType);
 
   try {
     const cached = JSON.parse(await fs.readFile(cacheFile, 'utf8'));
@@ -578,11 +595,11 @@ async function searchPixabayCached(query, apiKey, options = {}) {
     if (!error || (error.code !== 'ENOENT' && error.name !== 'SyntaxError')) throw error;
   }
 
-  const hits = await searchPixabay(query, apiKey, fetchImpl, { category });
+  const hits = await searchPixabay(query, apiKey, fetchImpl, { category, imageType });
   await fs.mkdir(cacheDir, { recursive: true });
   await fs.writeFile(
     cacheFile,
-    JSON.stringify({ cachedAt: now, query, category, hits }, null, 2),
+    JSON.stringify({ cachedAt: now, query, category, imageType, hits }, null, 2),
     'utf8'
   );
   return hits;
@@ -798,8 +815,12 @@ async function main() {
 
   const intent = visualIntent(parsed.data);
   const pixabayCategory = String(intent?.pixabayCategory || '').trim();
+  const pixabayImageType = String(intent?.pixabayImageType || 'photo').trim();
   const hits = await collectCandidates(queries, apiKey, {
-    searchOptions: { category: pixabayCategory }
+    searchOptions: {
+      category: pixabayCategory,
+      imageType: pixabayImageType
+    }
   });
   if (!hits.length) throw new Error(`No Pixabay images matched: ${queries.join(' | ')}`);
 
@@ -812,9 +833,10 @@ async function main() {
     visualIntent: intent?.key || '',
     visualIntentEvidence: intent?.evidenceScore || 0,
     pixabayCategory,
+    pixabayImageType,
     query: rankingQuery,
     queries,
-    candidates: ranked.slice(0, 10).map(reportCandidate)
+    candidates: ranked.slice(0, 30).map(reportCandidate)
   };
 
   if (options.preview) {
