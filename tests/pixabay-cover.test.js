@@ -449,6 +449,86 @@ describe('Pixabay cover resolver', () => {
     );
   });
 
+  it('requires unambiguous intent groups for the remaining stock-photo collisions', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations']
+    };
+    const systemdGood = scoreHit({
+      tags: 'linux, shell, command, daemon, service, logs',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    const systemdBinary = scoreHit({
+      tags: 'binary, smartphone, photography, programming, computer, server, code',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, systemd);
+    expect(systemdGood.semanticMismatch).toBe(false);
+    expect(systemdBinary.semanticMismatch).toBe(true);
+    expect(systemdGood.score).toBeGreaterThan(systemdBinary.score);
+
+    const chaos = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience', 'Observability']
+    };
+    const chaosGood = scoreHit({
+      tags: 'server, monitoring, alert, outage, infrastructure, reliability',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    const genericServer = scoreHit({
+      tags: 'network, server, system, infrastructure, managed services, cloud',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, chaos);
+    expect(chaosGood.semanticMismatch).toBe(false);
+    expect(genericServer.semanticMismatch).toBe(true);
+    expect(chaosGood.score).toBeGreaterThan(genericServer.score);
+
+    const logging = {
+      title: 'logger.info() – wird schon nichts kosten',
+      tags: ['AWS', 'CloudWatch', 'Observability', 'Logging']
+    };
+    const loggingGood = scoreHit({
+      tags: 'server, logs, monitoring, metrics, observability, alerts',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, logging);
+    const carDashboard = scoreHit({
+      tags: 'speedometer, dashboard, car, speed, vehicle, automobile',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, logging);
+    expect(loggingGood.semanticMismatch).toBe(false);
+    expect(carDashboard.semanticMismatch).toBe(true);
+    expect(loggingGood.score).toBeGreaterThan(carDashboard.score);
+
+    const photos = {
+      title: 'Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone', 'Self-Hosting']
+    };
+    const photoCloud = scoreHit({
+      tags: 'photo, gallery, cloud, files, sync, backup, image',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    const airplanePhotoArt = scoreHit({
+      tags: 'airplane, jet, fighter, aircraft, military, digital manipulation, photo art',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    const cameraOnly = scoreHit({
+      tags: 'camera, digital, photo, image, photography',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, photos);
+    expect(photoCloud.semanticMismatch).toBe(false);
+    expect(airplanePhotoArt.semanticMismatch).toBe(true);
+    expect(cameraOnly.semanticMismatch).toBe(true);
+    expect(photoCloud.score).toBeGreaterThan(airplanePhotoArt.score);
+  });
+
   it('uses focused fallback queries when an article query returns no result', () => {
     expect(queryCandidates({
       title: 'Ein deutscher Titel',
