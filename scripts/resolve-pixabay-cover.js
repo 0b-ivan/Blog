@@ -157,7 +157,7 @@ const STOP_WORDS = new Set([
 ]);
 
 function parseArgs(args) {
-  const options = { target: '', query: '', select: 0, selectId: '', preview: false, report: '' };
+  const options = { target: '', query: '', select: 0, selectId: '', scoreOverride: null, preview: false, report: '' };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     const next = args[i + 1];
@@ -165,6 +165,12 @@ function parseArgs(args) {
     else if (arg === '--query' && next) { options.query = next.trim(); i += 1; }
     else if (arg === '--select' && next) { options.select = Number.parseInt(next, 10); i += 1; }
     else if (arg === '--select-id' && next) { options.selectId = String(next).trim(); i += 1; }
+    else if (arg === '--score' && next) {
+      const score = Number(next);
+      if (!Number.isFinite(score) || score < 0 || score > 100) throw new Error('--score must be between 0 and 100');
+      options.scoreOverride = Math.round(score);
+      i += 1;
+    }
     else if (arg === '--report' && next) { options.report = next.trim(); i += 1; }
     else if (arg === '--preview') options.preview = true;
     else throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -716,7 +722,7 @@ async function writeReport(reportPath, report) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
-  if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1 | --select-id 123] [--report /tmp/report.json]');
+  if (!options.target) throw new Error('Usage: npm run covers:resolve -- posts/<post>.md [--query "..."] [--select 1 | --select-id 123] [--score 88] [--report /tmp/report.json]');
 
   const apiKey = String(process.env.PIXABAY_API_KEY || '').trim();
   if (!apiKey) throw new Error('PIXABAY_API_KEY is required');
@@ -743,7 +749,7 @@ async function main() {
     visualIntentEvidence: visualIntent(parsed.data)?.evidenceScore || 0,
     query: rankingQuery,
     queries,
-    candidates: ranked.slice(0, 5).map(reportCandidate)
+    candidates: ranked.slice(0, 10).map(reportCandidate)
   };
 
   if (options.preview) {
@@ -780,7 +786,7 @@ async function main() {
     cover_image: coverImage,
     cover_alt: hit.tags || `Cover for ${parsed.data.title || slug}`,
     cover_focus: 'center',
-    cover_score: selectedEntry.score,
+    cover_score: options.scoreOverride ?? selectedEntry.score,
     cover_credit: `by ${hit.user || 'Pixabay contributor'} via Pixabay`,
     cover_credit_url: hit.pageURL || contributorUrl(hit),
     cover_source_url: hit.pageURL || 'https://pixabay.com/',
