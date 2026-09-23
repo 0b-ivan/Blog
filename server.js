@@ -651,7 +651,7 @@ function renderPostPage(post, relatedPosts = []) {
     <link rel="stylesheet" href="/image-viewer.css?v=20260819-3" />
     <link rel="stylesheet" href="/assets/related-posts.css" />
     <link rel="stylesheet" href="/assets/css/glossary.css" />
-    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-1" />
+    <link rel="stylesheet" href="/assets/css/article-metrics.css?v=20260923-2" />
   </head>
   <body class="post-detail">
     <div class="bg-grid" aria-hidden="true"></div>
