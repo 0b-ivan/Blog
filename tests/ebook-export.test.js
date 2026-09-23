@@ -52,7 +52,7 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('DIGITAL EDITION');
   });
 
-  it('keeps Pixabay source and license metadata in the ebook colophon', () => {
+  it('keeps the colophon focused on publication metadata', () => {
     const html = buildColophon({
       slug: 'pixabay-test',
       title: 'Pixabay Test',
@@ -65,10 +65,10 @@ describe('article ebook export helpers', () => {
       coverLicenseUrl: 'https://pixabay.com/service/license-summary/'
     }, 'https://blog.obivan.org');
 
-    expect(html).toContain('by Example via Pixabay');
-    expect(html).toContain('https://pixabay.com/photos/example-42/');
-    expect(html).toContain('Pixabay Content License');
-    expect(html).toContain('https://pixabay.com/service/license-summary/');
+    expect(html).toContain('Pixabay Test');
+    expect(html).toContain('Ivan Babayev');
+    expect(html).not.toContain('by Example via Pixabay');
+    expect(html).not.toContain('Pixabay Content License');
   });
 
   it('creates a typewriter-style book cover around the selected article photo', () => {
@@ -84,7 +84,7 @@ describe('article ebook export helpers', () => {
 
     expect(svg).toContain('data:image/jpeg;base64,ZmFrZQ==');
     expect(svg).toContain('Chaos Monkey ist kein');
-    expect(svg).toContain('Image by Example from Pixabay');
+    expect(svg).not.toContain('Image by Example from Pixabay');
     expect(svg).toContain('Ivan Babayev');
     expect(svg).toContain('Courier New');
     expect(svg).toContain('class="cover-monkey"');
