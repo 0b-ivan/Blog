@@ -10,6 +10,9 @@ const {
   fileExtension,
   parseArgs,
   queryCandidates,
+  rankCandidates,
+  renderCandidates,
+  scoreHit,
   searchPixabay,
   searchPixabayCached
 } = require('../scripts/resolve-pixabay-cover');
@@ -35,12 +38,14 @@ describe('Pixabay cover resolver', () => {
       target: 'posts/test.md',
       query: 'kubernetes datacenter',
       select: 2,
-      preview: false
+      preview: false,
+      report: ''
     });
 
-    expect(parseArgs(['posts/test.md', '--preview'])).toMatchObject({
+    expect(parseArgs(['posts/test.md', '--preview', '--report', '/tmp/report.json'])).toMatchObject({
       target: 'posts/test.md',
-      preview: true
+      preview: true,
+      report: '/tmp/report.json'
     });
   });
 
@@ -52,6 +57,7 @@ describe('Pixabay cover resolver', () => {
       expect(parsed.searchParams.get('image_type')).toBe('photo');
       expect(parsed.searchParams.get('orientation')).toBe('horizontal');
       expect(parsed.searchParams.get('safesearch')).toBe('true');
+      expect(parsed.searchParams.get('per_page')).toBe('20');
       expect(parsed.searchParams.get('key')).toBe('test-key');
       return {
         ok: true,
@@ -77,6 +83,58 @@ describe('Pixabay cover resolver', () => {
       'DevOps Kubernetes Cloudflare',
       'Ein deutscher Titel'
     ]);
+  });
+
+  it('ranks technically relevant images above generic people stock photos', () => {
+    const article = {
+      title: 'Warum ich Immich nicht synchronisiere',
+      category: 'Self-Hosting',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone']
+    };
+    const technical = {
+      id: 1,
+      tags: 'server, storage, cloud, files, network',
+      imageWidth: 1920,
+      imageHeight: 1080,
+      downloads: 5000,
+      likes: 120
+    };
+    const generic = {
+      id: 2,
+      tags: 'people, meeting, office, teamwork, portrait',
+      imageWidth: 1920,
+      imageHeight: 1080,
+      downloads: 50000,
+      likes: 2000
+    };
+
+    expect(scoreHit(technical, article, 'self hosted photo storage').score)
+      .toBeGreaterThan(scoreHit(generic, article, 'self hosted photo storage').score);
+
+    const ranked = rankCandidates([generic, technical], article, 'self hosted photo storage');
+    expect(ranked[0].hit.id).toBe(1);
+  });
+
+  it('renders ranked candidate previews with scores for editorial review', () => {
+    const ranked = rankCandidates([
+      {
+        id: 42,
+        tags: 'server, storage, cloud',
+        user: 'Example',
+        pageURL: 'https://pixabay.com/photos/example-42/',
+        previewURL: 'https://cdn.example.test/preview.jpg',
+        imageWidth: 1920,
+        imageHeight: 1080
+      }
+    ], {
+      category: 'Self-Hosting',
+      tags: ['Nextcloud', 'WebDAV']
+    }, 'storage server');
+
+    const markdown = renderCandidates(ranked, 3);
+    expect(markdown).toContain('Score');
+    expect(markdown).toContain('![Kandidat 1](https://cdn.example.test/preview.jpg)');
+    expect(markdown).toContain('Pixabay');
   });
 
   it('caches Pixabay API responses for 24 hours without storing the API key', async () => {
