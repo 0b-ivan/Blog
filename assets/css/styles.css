@@ -962,7 +962,42 @@ h1 {
   }
 
   .terminal-post--article::before {
-    display: none;
+    display: block;
+    height: clamp(24rem, 112vw, 30rem);
+    background:
+      linear-gradient(
+        180deg,
+        rgba(3, 13, 18, 0.54) 0%,
+        rgba(3, 13, 18, 0.38) 18%,
+        rgba(3, 13, 18, 0.14) 40%,
+        rgba(8, 17, 25, 0.34) 64%,
+        rgba(12, 18, 27, 0.82) 82%,
+        var(--terminal-surface) 100%
+      ),
+      var(--article-cover-image);
+    background-position:
+      center,
+      var(--article-cover-focus);
+    background-size:
+      cover,
+      cover;
+    background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 72%,
+      rgba(0, 0, 0, 0.9) 82%,
+      rgba(0, 0, 0, 0.45) 92%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #000 0%,
+      #000 72%,
+      rgba(0, 0, 0, 0.9) 82%,
+      rgba(0, 0, 0, 0.45) 92%,
+      transparent 100%
+    );
   }
 
   .terminal-chrome {
