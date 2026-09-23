@@ -43,9 +43,9 @@ const VISUAL_INTENTS = [
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
-    query: 'rss feed reader website subscription aggregator syndication',
-    positive: ['rss', 'feed', 'reader', 'subscription', 'website', 'aggregator', 'syndication'],
-    avoid: ['journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    query: 'rss feed reader dashboard news aggregator browser website',
+    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'website', 'subscription', 'syndication'],
+    avoid: ['icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',
@@ -60,12 +60,12 @@ const VISUAL_INTENTS = [
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
     markers: ['systemd', 'journalctl'],
-    query: 'linux command prompt shell daemon service logs',
-    positive: ['linux', 'service', 'logs', 'administration', 'shell', 'command', 'daemon', 'prompt'],
+    query: 'linux server administration monitoring service logs daemon',
+    positive: ['linux', 'server', 'service', 'logs', 'administration', 'monitoring', 'daemon', 'process'],
     requiredGroups: [
-      ['linux', 'service', 'logs', 'shell', 'command', 'daemon', 'prompt']
+      ['linux', 'server', 'service', 'logs', 'monitoring', 'daemon', 'process']
     ],
-    avoid: ['smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
+    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
   },
   {
     key: 'docker-compose',
@@ -95,17 +95,29 @@ const VISUAL_INTENTS = [
     avoid: ['social media', 'icons', 'online', 'smartphone', 'database', 'storage', 'rack', 'datacenter']
   },
   {
+    key: 'chaos-monkey',
+    pixabayCategory: 'animals',
+    pixabayImageType: 'all',
+    markers: ['chaos monkey'],
+    query: 'monkey ape primate chimpanzee macaque',
+    positive: ['monkey', 'ape', 'primate', 'chimpanzee', 'macaque', 'baboon'],
+    requiredGroups: [
+      ['monkey', 'ape', 'primate', 'chimpanzee', 'macaque', 'baboon']
+    ],
+    avoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button', 'interface', 'gui']
+  },
+  {
     key: 'chaos-engineering',
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
-    markers: ['chaos-engineering', 'chaos engineering', 'chaos monkey', 'blast radius', 'steady state', 'resilience'],
-    query: 'server monitoring alert outage incident failure reliability',
-    positive: ['server', 'monitoring', 'alert', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'observability'],
+    markers: ['chaos-engineering', 'chaos engineering', 'blast radius', 'steady state', 'resilience'],
+    query: 'server monitoring outage incident failure resilience reliability',
+    positive: ['server', 'monitoring', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'resilience', 'observability'],
     minMatches: 2,
     requiredGroups: [
-      ['monitoring', 'alert', 'outage', 'incident', 'failure', 'reliability', 'observability']
+      ['monitoring', 'outage', 'incident', 'failure', 'reliability', 'resilience', 'observability']
     ],
-    avoid: ['touch', 'finger', 'school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
+    avoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button', 'touch', 'finger', 'school', 'university', 'exam', 'examination', 'chemistry', 'chemical', 'laboratory', 'medical', 'business', 'management', 'sales', 'marketing']
   },
   {
     key: 'regression-testing',
