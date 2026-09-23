@@ -525,7 +525,12 @@ h1 {
 .terminal-post {
   --article-shell-radius: 20px;
   --terminal-surface: #0c121b;
+  --article-cover-focus: center;
+  --article-cover-image: linear-gradient(135deg, #0a3935 0%, #082a2b 48%, #081b25 100%);
+  --article-cover-overlay:
+    linear-gradient(180deg, rgba(4, 25, 27, 0.2) 0%, rgba(3, 25, 28, 0.42) 48%, rgba(8, 17, 25, 0.72) 76%, var(--terminal-surface) 100%);
   position: relative;
+  isolation: isolate;
   margin-top: 0;
   max-width: none;
   width: 100%;
@@ -543,6 +548,7 @@ h1 {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 3;
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
@@ -554,6 +560,54 @@ h1 {
   mix-blend-mode: screen;
   opacity: 0.08;
   animation: scanlineShift 9s linear infinite;
+}
+
+.terminal-post--article::before {
+  position: absolute;
+  top: var(--window-chrome-height);
+  right: 0;
+  left: 0;
+  z-index: 0;
+  height: clamp(38rem, 78vw, 54rem);
+  background:
+    var(--article-cover-overlay),
+    var(--article-cover-image);
+  background-position:
+    center,
+    var(--article-cover-focus);
+  background-size:
+    cover,
+    cover;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 56%,
+    rgba(0, 0, 0, 0.94) 68%,
+    rgba(0, 0, 0, 0.62) 80%,
+    rgba(0, 0, 0, 0.24) 91%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 56%,
+    rgba(0, 0, 0, 0.94) 68%,
+    rgba(0, 0, 0, 0.62) 80%,
+    rgba(0, 0, 0, 0.24) 91%,
+    transparent 100%
+  );
+  content: "";
+  pointer-events: none;
+}
+
+.terminal-post--article > * {
+  position: relative;
+  z-index: 1;
+}
+
+.terminal-post--article > .terminal-chrome {
+  z-index: 5;
 }
 
 .terminal-chrome {
@@ -640,20 +694,15 @@ h1 {
   margin-top: 0;
   max-width: none;
   padding: 1.35rem 1.3rem 1.55rem;
-  background:
-    linear-gradient(
-      180deg,
-      var(--terminal-surface) 0,
-      rgba(12, 18, 27, 0.9) 24px,
-      rgba(12, 18, 27, 0.35) 72px,
-      rgba(12, 18, 27, 0) 112px
-    ),
-    radial-gradient(circle at 84% 14%, rgba(70, 140, 255, 0.08), transparent 34%),
-    var(--terminal-surface);
+  background: transparent;
   color: #eaf2ff;
   font-family: "IBM Plex Mono", monospace;
   font-size: 1.06rem;
   line-height: 1.78;
+}
+
+.terminal-post--article .terminal-content {
+  padding-top: clamp(2rem, 4vw, 3.25rem);
 }
 
 .terminal-content h2,

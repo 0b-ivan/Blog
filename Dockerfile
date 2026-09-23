@@ -2,7 +2,7 @@ FROM node:26-alpine AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* VERSION ./
+COPY package.json package-lock.json* VERSION RELEASE_NAME ./
 RUN if [ -f package-lock.json ]; then \
 			npm ci --omit=dev --no-audit --no-fund; \
 		else \
@@ -29,8 +29,9 @@ RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 ARG BUILD_VERSION
 RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
 		VERSION="${BUILD_VERSION:-$FILE_VERSION}" && \
+		RELEASE_NAME="$(tr -d '\r\n' < RELEASE_NAME)" && \
 		RELEASE_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" && \
-		printf '{"version":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_DATE" > /app/build-info.json
+		printf '{"version":"%s","name":"%s","release":"%s"}\n' "$VERSION" "$RELEASE_NAME" "$RELEASE_DATE" > /app/build-info.json
 
 FROM gcr.io/distroless/nodejs22-debian13:nonroot
 

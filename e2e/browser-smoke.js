@@ -546,13 +546,34 @@ async function main() {
       const view = terminal.ownerDocument.defaultView;
       const hero = terminal.querySelector('.article-hero');
       const content = terminal.querySelector('.terminal-content');
+      const coverLayer = view.getComputedStyle(terminal, '::before');
       return {
-        heroBackground: view.getComputedStyle(hero, '::after').backgroundImage,
+        shellCoverBackground: coverLayer.backgroundImage,
+        shellCoverMask: coverLayer.webkitMaskImage || coverLayer.maskImage,
+        heroBackground: view.getComputedStyle(hero).backgroundImage,
         contentBackground: view.getComputedStyle(content).backgroundImage
       };
     });
-    assert.notEqual(transitionPaint.heroBackground, 'none', 'Hero must blend its own background into the terminal surface');
-    assert.notEqual(transitionPaint.contentBackground, 'none', 'Terminal body must continue the background blend after the hero');
+    assert.notEqual(
+      transitionPaint.shellCoverBackground,
+      'none',
+      'Article terminal must own the shared cover/background layer'
+    );
+    assert.notEqual(
+      transitionPaint.shellCoverMask,
+      'none',
+      'Shared cover layer must fade into the terminal surface'
+    );
+    assert.equal(
+      transitionPaint.heroBackground,
+      'none',
+      'Hero must not paint a separate card background over the shared terminal surface'
+    );
+    assert.equal(
+      transitionPaint.contentBackground,
+      'none',
+      'Terminal body must stay transparent so the shared cover fade can continue into the article'
+    );
 
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
