@@ -76,21 +76,23 @@ snippets:
     language: bash
 cover_query: server datacenter infrastructure network cloud container cluster kubernetes
 cover_provider: pixabay
-cover_provider_id: '8598424'
+cover_provider_id: '4605834'
 cover_image: /assets/covers/2026-09-15-k3s-proxmox-cloudflare-part-1.jpg
 cover_alt: >-
-  cloud, server, cloud computing, secure, digital, network, business,
-  application, connect, modernization, global, privacy, hardware,
-  infrastructure, database, security, cloudscape, smart, computer, design,
-  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
-  cloud computing, cloud computing, cloud computing, cloud computing
+  proxy, proxy server, free proxy, online proxy, proxy site, proxy list, web
+  proxy, web scraping, scraping, data scraping, instagram proxy, sneaker proxy,
+  twitter proxy, facebook proxy, supreme bot proxy, residential proxy,
+  residential ip, datacenter ip, web crawler, ip rotation, laptop, computer,
+  internet, notebook, network, gray data, gray facebook, gray online, gray
+  network, gray internet, gray web, gray social, gray media, gray server, proxy,
+  proxy, proxy, proxy, proxy
 cover_focus: center
-cover_credit: by kumar111aakashin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
-cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_credit: by kevinandthepup via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/proxy-proxy-server-free-proxy-4605834/'
+cover_source_url: 'https://pixabay.com/photos/proxy-proxy-server-free-proxy-4605834/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 93
+cover_score: 97
 ---
 
 Mein produktiver Blog bleibt vorerst auf Hetzner und Docker Compose. In diesem Teil geht es deshalb nicht darum, Produktion möglichst schnell auf Kubernetes umzuziehen, sondern um einen reproduzierbaren Weg von **einer normalen Container-Anwendung zu einem funktionierenden K3s-Staging auf Proxmox**.

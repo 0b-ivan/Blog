@@ -30,21 +30,19 @@ snippets:
     language: ini
 cover_query: terminal server code computer linux service
 cover_provider: pixabay
-cover_provider_id: '3637299'
+cover_provider_id: '428540'
 cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
 cover_alt: >-
-  code, html, technology, programming, computer, coding, digital, development,
-  internet, web, it, programmer, css, developer, www, software, website, data,
-  script, computer programming, computer science, server, binary code, byte,
-  code, html, programming, coding, coding, programmer, software, software,
-  computer science, computer science, server, server, server, server, server
+  service, computers, repair, electronics, computer, hardware, computer
+  specialist, components, technology, equipment, repair, repair, hardware,
+  hardware, hardware, hardware, hardware
 cover_focus: center
-cover_credit: by markusspiske via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
-cover_source_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_credit: by jarmoluk via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/service-computers-repair-428540/'
+cover_source_url: 'https://pixabay.com/photos/service-computers-repair-428540/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 93
 ---
 
 `systemd` ist mehr als nur `systemctl start`.

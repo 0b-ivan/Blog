@@ -25,21 +25,25 @@ snippets:
     description: Vereinfachtes Beispiel für wöchentliche Dependency-Updates.
     type: Dependabot-Konfiguration
     language: yaml
-cover_query: security lock shield firewall protection code software dependency
+cover_query: software dependency package update code github vulnerability
 cover_provider: pixabay
-cover_provider_id: '1044168'
+cover_provider_id: '820275'
 cover_image: /assets/covers/2026-08-19-dependabot-im-einsatz.jpg
 cover_alt: >-
-  wall safe, digital safe, secure, security, safety, privacy, crime, guardian,
-  safe, protection, protect, safeguard, protection concept, access, insurance,
-  pin number, lock, key, guard, password, code, safe, safe, safe, safe, safe
+  code, programming, hacking, html, web, data, design, development, program,
+  website, information, business, software, digital, process, computer,
+  application, binary, optimization, script, internet, coding, technology, code,
+  code, code, programming, programming, programming, programming, hacking,
+  hacking, web, data, data, website, website, website, business, software,
+  software, software, process, application, internet, coding, coding, coding,
+  coding, coding, technology
 cover_focus: center
-cover_credit: by stevepb via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/wall-safe-digital-safe-secure-1044168/'
-cover_source_url: 'https://pixabay.com/photos/wall-safe-digital-safe-secure-1044168/'
+cover_credit: by fancycrave1 via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/code-programming-hacking-html-web-820275/'
+cover_source_url: 'https://pixabay.com/photos/code-programming-hacking-html-web-820275/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 89
+cover_score: 93
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.

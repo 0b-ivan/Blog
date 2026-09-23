@@ -24,21 +24,25 @@ search_queries:
     maxRank: 1
 cover_query: website code server publishing deployment automation infrastructure cloud
 cover_provider: pixabay
-cover_provider_id: '2784907'
-cover_image: /assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.jpg
+cover_provider_id: '1873854'
+cover_image: /assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.png
 cover_alt: >-
-  cyberspace, data, wire, electronic, electric, ethernet, infrastructure, cable,
-  computer, communication, panel, connection, to combine, the industry, router,
-  server, network, equipment, system, broadband, technology, telecommunication,
-  service provider, plug, node, dam, connector, link, lan, server, server,
-  server, server, server, network, broadband
+  programming, html, css, javascript, php, website development, code, html code,
+  computer code, coding, digital, computer programming, pc, www, cyberspace,
+  programmer, web development, computer, technology, developer, computer
+  programmer, internet, ide, lines of code, hacker, hacking, gray computer, gray
+  technology, gray laptop, gray website, gray internet, gray digital, gray web,
+  gray code, gray coding, gray programming, programming, programming,
+  programming, javascript, code, code, code, coding, coding, coding, coding,
+  coding, digital, web development, computer, computer, computer, technology,
+  technology, technology, developer, internet, hacker, hacker, hacker, hacking
 cover_focus: center
-cover_credit: by jarmoluk via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
-cover_source_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
+cover_credit: by Boskampi via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/programming-html-css-javascript-1873854/'
+cover_source_url: 'https://pixabay.com/photos/programming-html-css-javascript-1873854/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 95
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.

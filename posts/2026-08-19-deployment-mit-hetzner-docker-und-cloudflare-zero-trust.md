@@ -34,20 +34,24 @@ snippets:
     language: yaml
 cover_query: container server deployment software terminal network cloud security
 cover_provider: pixabay
-cover_provider_id: '6181051'
+cover_provider_id: '1685092'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  cloud, network, finger, cloud computing, internet, server, connection,
-  business, digital, web, hosting, technology, cloud computing, cloud computing,
-  cloud computing, cloud computing, cloud computing, hosting
+  hacking, hacker, computer, internet, security, data, technology, network,
+  password, crime, hack, protection, spyware, spy, privacy, pc, firewall,
+  computer security, cyber, data security, code, black computer, black
+  technology, black laptop, black data, black network, black internet, black
+  security, black code, black coding, hacking, hacking, hacking, hacking,
+  hacker, hacker, hacker, hacker, hacker, hack, spyware, spy, firewall, cyber,
+  cyber
 cover_focus: center
-cover_credit: by Tumisu via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
-cover_source_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
+cover_credit: by joffi via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/hacking-hacker-computer-internet-1685092/'
+cover_source_url: 'https://pixabay.com/photos/hacking-hacker-computer-internet-1685092/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 100
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

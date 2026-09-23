@@ -21,20 +21,21 @@ search_queries:
     maxRank: 1
   - query: Codeblöcke sollen von der Rechtschreibprüfung ignoriert werden
     maxRank: 1
-cover_query: GitHub-Actions Automation CSpell Automation
+cover_query: writing proofreading text document keyboard spelling grammar
 cover_provider: pixabay
-cover_provider_id: '544180'
+cover_provider_id: '623167'
 cover_image: /assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg
 cover_alt: >-
-  secretary, desk, sales, office automation, telephony, call, screen, telephone,
-  secretary, secretary, secretary, secretary, secretary, call
+  paper, writing, old, antique, write, letter, text, retro, pages, handwriting,
+  writer, words, documents, macro, parchment, to blog, writing, writing,
+  writing, writing, writing, words
 cover_focus: center
-cover_credit: by Patrice_Audet via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
-cover_source_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
+cover_credit: by Nile via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/paper-writing-old-antique-write-623167/'
+cover_source_url: 'https://pixabay.com/photos/paper-writing-old-antique-write-623167/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 60
+cover_score: 99
 ---
 
 Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.
