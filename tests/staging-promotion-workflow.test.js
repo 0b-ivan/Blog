@@ -25,7 +25,11 @@ describe('staging promotion workflow', () => {
     expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
     expect(workflow).toContain('actions: write');
     expect(workflow).toContain('Trigger required checks for production promotion');
+    expect(workflow).toContain('refs/pull/${promotion_pr}/merge');
+    expect(workflow).toContain("check_branch=\"promotion/merge-check\"");
+    expect(workflow).toContain('git push --force origin "${merge_sha}:refs/heads/${check_branch}"');
     expect(workflow).toContain('gh workflow run ci.yml');
-    expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');
+    expect(workflow).toContain('--ref "$check_branch"');
+    expect(workflow).not.toContain('--ref "$PROMOTION_BRANCH"');
   });
 });
