@@ -1,15 +1,18 @@
 ---
 id: 2026-09-19-k3s-proxmox-production-part-4
 version: 1
-title: "K3s auf Proxmox – Teil IV: Production ist nicht gleich Hochverfügbarkeit"
+title: 'K3s auf Proxmox – Teil IV: Production ist nicht gleich Hochverfügbarkeit'
 status: publish
-date: 2026-09-19
-created_at: 2026-09-19
-updated_at: 2026-09-19
+date: 2026-09-19T00:00:00.000Z
+created_at: 2026-09-19T00:00:00.000Z
+updated_at: 2026-09-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Mein Blog läuft inzwischen produktiv auf K3s mit drei Replicas, Flux und Cloudflare Tunnel. Der Pod-Failover funktioniert – aber ein einzelner Proxmox-Host bleibt trotzdem ein Single Point of Failure."
+excerpt: >-
+  Mein Blog läuft inzwischen produktiv auf K3s mit drei Replicas, Flux und
+  Cloudflare Tunnel. Der Pod-Failover funktioniert – aber ein einzelner
+  Proxmox-Host bleibt trotzdem ein Single Point of Failure.
 cover_query: kubernetes proxmox server datacenter infrastructure
 tags:
   - Kubernetes
@@ -29,6 +32,19 @@ search_queries:
     maxRank: 1
   - query: Wie halte ich Hetzner parallel zu K3s als Rollback Standby aktuell?
     maxRank: 1
+cover_provider: pixabay
+cover_provider_id: '2402637'
+cover_image: /assets/covers/2026-09-19-k3s-proxmox-production-part-4.jpg
+cover_alt: >-
+  network, server, system, infrastructure, managed services, connection,
+  computer, cloud, gray computer, gray laptop, network, network, server, server,
+  server, server, server
+cover_focus: center
+cover_credit: by bsdrouin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Teil I hat den Blog auf K3s gebracht, Teil II daraus GitOps gemacht und Teil III feste Versionen sowie verschlüsselte Secrets ergänzt.

@@ -1,1 +1,8 @@
 /* Generated per-article cover rules. Updated by scripts/resolve-pixabay-cover.js. */
+
+/* cover:2026-09-19-k3s-proxmox-production-part-4:start */
+.post-page[data-post-slug="2026-09-19-k3s-proxmox-production-part-4"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-19-k3s-proxmox-production-part-4.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-19-k3s-proxmox-production-part-4:end */
