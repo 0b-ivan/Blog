@@ -45,21 +45,33 @@ snippets:
     description: Baut das lokale Image und veröffentlicht Port 8080.
     type: Compose-Beispiel
     language: yaml
-cover_query: container server deployment software terminal automation infrastructure cloud
+cover_query: DevOps Docker DevOps
 cover_provider: pixabay
-cover_provider_id: '2402637'
+cover_provider_id: '3155972'
 cover_image: /assets/covers/2026-08-21-docker-vs-docker-compose.jpg
 cover_alt: >-
-  network, server, system, infrastructure, managed services, connection,
-  computer, cloud, gray computer, gray laptop, network, network, server, server,
-  server, server, server
+  devops, business, process improvement, development, mac wallpaper, it,
+  operation, processes, incentives, effectively, wallpaper hd, efficiently,
+  collaboration, quality control, software, speed, free background, delivery,
+  teamwork, art word, plan, to build, continuously, feedback, integration,
+  windows wallpaper, application, apply, control, operate, free wallpaper,
+  laptop wallpaper, endless loop, loop, gear, arrows, representation,
+  information, software development, symbol, symbolic, design, hd wallpaper,
+  full hd wallpaper, automation, background, concept, communication,
+  maintenance, developer, wallpaper 4k, computer, company, tool, infrastructure,
+  organization, agile, agile it, parts, 4k wallpaper 1920x1080, 4k wallpaper, to
+  qualify, desktop backgrounds, platform, program, it standard, code, version
+  management, kpi, performance measure, releases, static, dynamic, binary,
+  formats, beautiful wallpaper, itil, configuration, monitor, index finger, cool
+  backgrounds, hand, customers, into each other, circle, timeline, social media,
+  blue, coloured
 cover_focus: center
-cover_credit: by bsdrouin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
-cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_credit: by MR-PANDA via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/devops-business-process-improvement-3155972/'
+cover_source_url: 'https://pixabay.com/photos/devops-business-process-improvement-3155972/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 63
+cover_score: 62
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.

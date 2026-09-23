@@ -45,7 +45,7 @@ cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 68
+cover_score: 82
 ---
 
 Meine Fotos liegen bereits in **Nextcloud**. Für die eigentliche Verwaltung gefällt mir **Immich** aber deutlich besser.
