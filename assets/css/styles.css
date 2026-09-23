@@ -965,9 +965,9 @@ h1 {
   .terminal-post {
     --article-shell-radius: 18px;
     --article-cover-motion-y: 0px;
-    --article-cover-motion-scale: 1.018;
+    --article-cover-motion-scale: 1.022;
     --article-cover-motion-tilt: 0deg;
-    --article-cover-motion-blur: 0.2px;
+    --article-cover-motion-blur: 0.25px;
     --article-cover-motion-brightness: 0.97;
   }
 
