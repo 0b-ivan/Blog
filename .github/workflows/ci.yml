@@ -274,11 +274,21 @@ jobs:
         run: |
           set -euo pipefail
           output=/tmp/kernel-notes-smoke.pdf
-          curl -fsS --max-time 90 \
+          if ! curl -fsS --max-time 90 \
             http://127.0.0.1:8080/download/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.pdf \
-            -o "$output"
-          test "$(head -c 5 "$output")" = '%PDF-'
-          test "$(wc -c < "$output")" -gt 10000
+            -o "$output"; then
+            echo 'LaTeX PDF smoke test failed; renderer logs follow:' >&2
+            docker compose logs --no-color --tail=250 pdf blog || true
+            exit 1
+          fi
+          test "$(head -c 5 "$output")" = '%PDF-' || {
+            docker compose logs --no-color --tail=250 pdf blog || true
+            exit 1
+          }
+          test "$(wc -c < "$output")" -gt 10000 || {
+            docker compose logs --no-color --tail=250 pdf blog || true
+            exit 1
+          }
 
       - name: Browser click smoke test
         if: steps.changes.outputs.heavy == 'true'
