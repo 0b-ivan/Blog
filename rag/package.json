@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@duckdb/node-api": "1.5.5-r.5",
-    "@huggingface/transformers": "4.2.0",
+    "@huggingface/transformers": "4.3.0",
     "gray-matter": "4.0.3"
   }
 }
