@@ -28,19 +28,21 @@ search_queries:
     maxRank: 1
   - query: Was sollte ich in Java und GraphQL auf INFO loggen?
     maxRank: 1
-cover_query: AWS CloudWatch Observability AWS
+cover_query: cloud server network datacenter infrastructure terminal monitoring software
 cover_provider: pixabay
-cover_provider_id: '6614312'
+cover_provider_id: '2402637'
 cover_image: /assets/covers/2026-09-11-logger-info-wird-schon-nichts-kosten.jpg
 cover_alt: >-
-  agustawestland aw189, helicopter, aircraft, helicopter, helicopter,
-  helicopter, helicopter, helicopter
+  network, server, system, infrastructure, managed services, connection,
+  computer, cloud, gray computer, gray laptop, network, network, server, server,
+  server, server, server
 cover_focus: center
-cover_credit: by onkelglocke via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
-cover_source_url: 'https://pixabay.com/photos/agustawestland-aw189-helicopter-6614312/'
+cover_credit: by bsdrouin via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 68
 ---
 
 Logs fühlen sich erstmal kostenlos an.
