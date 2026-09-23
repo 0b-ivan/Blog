@@ -57,6 +57,7 @@ describe('Pixabay cover resolver', () => {
       expect(parsed.searchParams.get('image_type')).toBe('photo');
       expect(parsed.searchParams.get('orientation')).toBe('horizontal');
       expect(parsed.searchParams.get('safesearch')).toBe('true');
+      expect(parsed.searchParams.get('per_page')).toBe('20');
       expect(parsed.searchParams.get('key')).toBe('test-key');
       return {
         ok: true,
