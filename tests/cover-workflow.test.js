@@ -12,6 +12,9 @@ describe('cover review workflows', () => {
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--report /tmp/cover-report.json');
     expect(workflow).toContain('--commit "$cover_commit"');
+    expect(workflow).toContain('scope:');
+    expect(workflow).toContain('--include-covered');
+    expect(workflow).toContain("pr_title='feat: review existing article covers'");
     expect(workflow).toContain('Candidate previews are shown only for editorial review');
   });
 
