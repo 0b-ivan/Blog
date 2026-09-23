@@ -20,7 +20,7 @@ on:
         required: false
         type: string
       selection:
-        description: Candidate number 1-6, used only in apply mode
+        description: Ranked candidate number 1-6, used only in apply mode
         required: false
         default: "1"
         type: string
@@ -128,10 +128,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          report="/tmp/cover-report.json"
           if [ -n "$QUERY" ]; then
-            npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --select "$SELECTION"
+            npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --select "$SELECTION" --report "$report"
           else
-            npm run covers:resolve -- "$POST_PATH" --select "$SELECTION"
+            npm run covers:resolve -- "$POST_PATH" --select "$SELECTION" --report "$report"
           fi
 
       - name: Validate generated changes
@@ -142,7 +143,7 @@ jobs:
           git diff --check
           npm run posts:validate-meta
           npm run lint
-          npx vitest run tests/pixabay-cover.test.js tests/ebook-export.test.js
+          npx vitest run tests/pixabay-cover.test.js tests/cover-review.test.js tests/ebook-export.test.js
 
       - name: Create cover pull request
         if: inputs.mode == 'apply'
@@ -169,15 +170,17 @@ jobs:
           git commit -m "feat: add Pixabay cover for ${slug}"
           git push origin "HEAD:refs/heads/${branch}"
 
+          cover_commit="$(git rev-parse HEAD)"
           body_file="$(mktemp)"
-          cat > "$body_file" <<EOF
-          Generated from Pixabay using the repository cover workflow.
+          node scripts/render-cover-review.js \
+            --report /tmp/cover-report.json \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$cover_commit" > "$body_file"
 
-          Post: $POST_PATH
-          Candidate: $SELECTION
-          Query: ${QUERY:-derived from article metadata}
+          cat >> "$body_file" <<EOF
 
-          The image is stored locally under assets/covers/. The Pixabay API key is never committed.
+          ---
+          The selected image is stored locally under `assets/covers/`. Candidate previews are shown only for editorial review. The Pixabay API key is never committed.
           EOF
 
           pr_url="$(gh pr create \
