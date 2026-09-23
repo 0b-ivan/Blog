@@ -120,7 +120,12 @@ function renderCandidates(hits) {
 
 async function choosePhoto(hits, selectedIndex) {
   if (!hits.length) throw new Error('No Pixabay images matched the query');
-  if (selectedIndex > 0) return hits[selectedIndex - 1];
+  if (selectedIndex > 0) {
+    if (selectedIndex > hits.length) {
+      throw new Error(`Selected Pixabay candidate ${selectedIndex} is unavailable; received ${hits.length} result(s)`);
+    }
+    return hits[selectedIndex - 1];
+  }
 
   const rl = readline.createInterface({ input, output });
   try {
