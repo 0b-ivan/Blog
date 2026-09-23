@@ -3,13 +3,16 @@ id: 2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung
 version: 2
 title: RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung
 status: publish
-date: 2026-08-19
-created_at: 2026-08-19
-updated_at: 2026-09-16
+date: 2026-08-19T00:00:00.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-09-16T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Self-Hosting
-excerpt: RSS gibt mir die Kontrolle über meine Feeds zurück. Warum ich für ein selbst gehostetes Setup FreshRSS empfehle und Miniflux eine interessante Alternative ist.
+excerpt: >-
+  RSS gibt mir die Kontrolle über meine Feeds zurück. Warum ich für ein selbst
+  gehostetes Setup FreshRSS empfehle und Miniflux eine interessante Alternative
+  ist.
 tags:
   - RSS
   - FreshRSS
@@ -18,14 +21,32 @@ tags:
 search_queries:
   - query: Wie lese ich Blogartikel und News über RSS statt über einen Algorithmus?
     maxRank: 1
-  - query: Wie lese ich Artikel verschiedener Webseiten gesammelt mit RSS und FreshRSS?
+  - query: >-
+      Wie lese ich Artikel verschiedener Webseiten gesammelt mit RSS und
+      FreshRSS?
     maxRank: 1
 snippets:
-  - file: "01-docker-macht-das-setup-einfach.yml"
-    title: "FreshRSS mit persistenten Daten betreiben"
-    description: "Definiert FreshRSS mit Volumes für Daten und Erweiterungen."
-    type: "Compose-Beispiel"
-    language: "yaml"
+  - file: 01-docker-macht-das-setup-einfach.yml
+    title: FreshRSS mit persistenten Daten betreiben
+    description: Definiert FreshRSS mit Volumes für Daten und Erweiterungen.
+    type: Compose-Beispiel
+    language: yaml
+cover_query: RSS FreshRSS Miniflux Self-Hosting
+cover_provider: pixabay
+cover_provider_id: '5235089'
+cover_image: >-
+  /assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.jpg
+cover_alt: >-
+  podcast, audio, podcaster, microphone, radio, volume, music, technology,
+  recording, digital, mp3, headphones, voice, mic, studio, listen, broadcast,
+  programs, media, social media, rss, app, listener, list, laptop, podcast,
+  podcast, podcast, podcast, podcast
+cover_focus: center
+cover_credit: by viarami via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/podcast-audio-podcaster-microphone-5235089/'
+cover_source_url: 'https://pixabay.com/photos/podcast-audio-podcaster-microphone-5235089/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.

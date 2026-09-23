@@ -1,32 +1,51 @@
 ---
 id: 2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust
 version: 2
-title: Deployment mit Hetzner, Docker und Cloudflare Zero Trust
-date: 2026-08-19
-published_at: 2026-08-19T23:57:52+02:00
-created_at: 2026-08-19
-updated_at: 2026-08-24
+title: 'Deployment mit Hetzner, Docker und Cloudflare Zero Trust'
+date: 2026-08-19T00:00:00.000Z
+published_at: 2026-08-19T21:57:52.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-08-24T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: Ein schlankes Deployment-Setup mit Hetzner Cloud, Docker Compose und Cloudflare Zero Trust – inklusive Tunnel, Zugriffsschutz und automatischem Deployment.
-tags: Hetzner, Docker, Cloudflare, Zero-Trust, DevOps
+excerpt: >-
+  Ein schlankes Deployment-Setup mit Hetzner Cloud, Docker Compose und
+  Cloudflare Zero Trust – inklusive Tunnel, Zugriffsschutz und automatischem
+  Deployment.
+tags: 'Hetzner, Docker, Cloudflare, Zero-Trust, DevOps'
 search_queries:
-  - query: Wie sichere ich einen internen Admin-Dienst mit Cloudflare Zero Trust ab, ohne Server-Ports öffentlich zu öffnen?
+  - query: >-
+      Wie sichere ich einen internen Admin-Dienst mit Cloudflare Zero Trust ab,
+      ohne Server-Ports öffentlich zu öffnen?
     maxRank: 1
   - query: Wie veröffentliche ich einen Container ohne Ports am Server zu öffnen?
     maxRank: 1
 snippets:
-  - file: "01-deployment.sh"
-    title: "Compose-Images laden und Services aktualisieren"
-    description: "Lädt die Images und aktualisiert die Services mit Docker Compose."
-    type: "Shellskript"
-    language: "bash"
-  - file: "02-updates-und-rollbacks.yml"
-    title: "Blog-Image auf einen festen Stand setzen"
-    description: "Zeigt einen festen Image-Tag für den Blog-Service."
-    type: "Compose-Ausschnitt"
-    language: "yaml"
+  - file: 01-deployment.sh
+    title: Compose-Images laden und Services aktualisieren
+    description: Lädt die Images und aktualisiert die Services mit Docker Compose.
+    type: Shellskript
+    language: bash
+  - file: 02-updates-und-rollbacks.yml
+    title: Blog-Image auf einen festen Stand setzen
+    description: Zeigt einen festen Image-Tag für den Blog-Service.
+    type: Compose-Ausschnitt
+    language: yaml
+cover_query: Hetzner Docker Cloudflare DevOps
+cover_provider: pixabay
+cover_provider_id: '7707507'
+cover_image: >-
+  /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
+cover_alt: >-
+  statue, sculpture, iron, steel, docker, finland, hamina, docker, docker,
+  docker, docker, docker, finland
+cover_focus: center
+cover_credit: by Olga_Fil via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/statue-sculpture-iron-steel-docker-7707507/'
+cover_source_url: 'https://pixabay.com/photos/statue-sculpture-iron-steel-docker-7707507/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

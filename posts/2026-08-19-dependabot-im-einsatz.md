@@ -1,27 +1,45 @@
 ---
 id: 2026-08-19-dependabot-im-einsatz
 version: 4
-title: "Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?"
-date: 2026-08-19
-published_at: 2026-08-19T18:10:45+02:00
-created_at: 2026-08-19
-updated_at: 2026-08-24
+title: 'Dependabot im Einsatz: Wofür ist er da und wie nutze ich ihn?'
+date: 2026-08-19T00:00:00.000Z
+published_at: 2026-08-19T16:10:45.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-08-24T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Security
-excerpt: Dependabot hält Abhängigkeiten im Blick, meldet bekannte Schwachstellen und kann Update-PRs erzeugen. Ein praktischer Überblick mit GitHub Dependency Graph, Alerts und Pull Requests.
-tags: GitHub, Dependabot, Security, Supply-Chain, DevOps
+excerpt: >-
+  Dependabot hält Abhängigkeiten im Blick, meldet bekannte Schwachstellen und
+  kann Update-PRs erzeugen. Ein praktischer Überblick mit GitHub Dependency
+  Graph, Alerts und Pull Requests.
+tags: 'GitHub, Dependabot, Security, Supply-Chain, DevOps'
 search_queries:
   - query: Wie finde ich verwundbare Dependencies in GitHub?
     maxRank: 1
   - query: Wie kann ich Dependency Updates automatisch als Pull Request bekommen?
     maxRank: 1
 snippets:
-  - file: "01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml"
-    title: "Dependabot für Actions, npm und Docker"
-    description: "Vereinfachtes Beispiel für wöchentliche Dependency-Updates."
-    type: "Dependabot-Konfiguration"
-    language: "yaml"
+  - file: 01-so-ist-dependabot-in-diesem-blog-konfiguriert.yml
+    title: 'Dependabot für Actions, npm und Docker'
+    description: Vereinfachtes Beispiel für wöchentliche Dependency-Updates.
+    type: Dependabot-Konfiguration
+    language: yaml
+cover_query: GitHub Dependabot Security Security
+cover_provider: pixabay
+cover_provider_id: '5839836'
+cover_image: /assets/covers/2026-08-19-dependabot-im-einsatz.jpg
+cover_alt: >-
+  lifebuoy, fishing supplies, security, fishing port, fishnet, fishing,
+  seafaring, overfishing, maritime, lifebuoy, fishing supplies, security,
+  fishing, fishing, fishing, overfishing, overfishing, overfishing, overfishing,
+  overfishing, maritime
+cover_focus: center
+cover_credit: by fotoblend via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/lifebuoy-fishing-supplies-security-5839836/'
+cover_source_url: 'https://pixabay.com/photos/lifebuoy-fishing-supplies-security-5839836/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.

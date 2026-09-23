@@ -3,29 +3,44 @@ id: 2026-08-19-systemd-services-sauber-betreiben
 version: 1
 title: systemd Services sauber betreiben
 status: publish
-date: 2026-08-19
-created_at: 2026-08-19
-updated_at: 2026-08-19
+date: 2026-08-19T00:00:00.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-08-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Linux
-excerpt: Ein praktischer Leitfaden für robuste systemd-Services mit Restart-Strategie, Healthchecks und klaren Logs.
-tags: 
-- Linux
-- systemd
-- Operations
-- Reliability
+excerpt: >-
+  Ein praktischer Leitfaden für robuste systemd-Services mit Restart-Strategie,
+  Healthchecks und klaren Logs.
+tags:
+  - Linux
+  - systemd
+  - Operations
+  - Reliability
 search_queries:
   - query: Mein Linux Dienst soll nach einem Absturz automatisch neu starten
     maxRank: 1
   - query: Wie lese ich Logs eines systemd Dienstes mit journalctl?
     maxRank: 1
 snippets:
-  - file: "01-beispiel-unit.ini"
-    title: "Node.js-Dienst mit systemd betreiben"
-    description: "Startet die Kernel Notes API und konfiguriert automatische Neustarts."
-    type: "systemd-Unit"
-    language: "ini"
+  - file: 01-beispiel-unit.ini
+    title: Node.js-Dienst mit systemd betreiben
+    description: Startet die Kernel Notes API und konfiguriert automatische Neustarts.
+    type: systemd-Unit
+    language: ini
+cover_query: Linux systemd Operations Linux
+cover_provider: pixabay
+cover_provider_id: '994910'
+cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
+cover_alt: >-
+  android, linux, marshmallow, smartphone, upgrade, android 6, google, android,
+  android, android, android, android
+cover_focus: center
+cover_credit: by mammela via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/android-linux-marshmallow-994910/'
+cover_source_url: 'https://pixabay.com/photos/android-linux-marshmallow-994910/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 `systemd` ist mehr als nur `systemctl start`.

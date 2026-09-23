@@ -2,14 +2,17 @@
 id: 2026-08-25-regressionstests-was-sie-sind-und-wie-ich-sie-nutze
 version: 1
 title: Regressionstests – was sie sind und wie ich sie nutze
-date: 2026-08-25
-created_at: 2026-08-25
-updated_at: 2026-08-25
+date: 2026-08-25T00:00:00.000Z
+created_at: 2026-08-25T00:00:00.000Z
+updated_at: 2026-08-25T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Development
 status: publish
-excerpt: Regressionstests prüfen, ob Dinge, die gestern funktioniert haben, nach einer Änderung immer noch funktionieren. In meinem Blog nutze ich sie unter anderem für die semantische Suche Kernel Grep.
+excerpt: >-
+  Regressionstests prüfen, ob Dinge, die gestern funktioniert haben, nach einer
+  Änderung immer noch funktionieren. In meinem Blog nutze ich sie unter anderem
+  für die semantische Suche Kernel Grep.
 tags:
   - Testing
   - Regressionstest
@@ -21,10 +24,26 @@ tags:
 search_queries:
   - query: Was ist ein Regressionstest?
     maxRank: 1
-  - query: Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges Verhalten noch funktioniert?
+  - query: >-
+      Wie prüfe ich mit Regressionstests ob nach einer Änderung bisheriges
+      Verhalten noch funktioniert?
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
+cover_query: Testing Regressionstest CI Development
+cover_provider: pixabay
+cover_provider_id: '6517476'
+cover_image: /assets/covers/2026-08-25-Regresions-test.jpg
+cover_alt: >-
+  covid, testing, corona test, covid-19, corona, coronavirus, sars-cov-2,
+  concept, quick test, pcr, pcr-test, covid test, covid, covid, covid, covid,
+  covid, corona, corona, covid test, covid test, covid test
+cover_focus: center
+cover_credit: by analogicus via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/covid-testing-corona-test-covid-19-6517476/'
+cover_source_url: 'https://pixabay.com/photos/covid-testing-corona-test-covid-19-6517476/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Bei Tests denkt man schnell an die Frage:

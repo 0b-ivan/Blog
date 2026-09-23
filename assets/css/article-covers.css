@@ -62,3 +62,73 @@
   --article-cover-focus: center;
 }
 /* cover:2026-09-15-k3s-proxmox-cloudflare-part-1:end */
+
+/* cover:2026-08-19-dependabot-im-einsatz:start */
+.post-page[data-post-slug="2026-08-19-dependabot-im-einsatz"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-19-dependabot-im-einsatz.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-19-dependabot-im-einsatz:end */
+
+/* cover:2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust:start */
+.post-page[data-post-slug="2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust:end */
+
+/* cover:2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung:start */
+.post-page[data-post-slug="2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung:end */
+
+/* cover:2026-08-19-systemd-services-sauber-betreiben:start */
+.post-page[data-post-slug="2026-08-19-systemd-services-sauber-betreiben"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-19-systemd-services-sauber-betreiben:end */
+
+/* cover:2026-08-19-wie-dieser-blog-gebaut-ist:start */
+.post-page[data-post-slug="2026-08-19-wie-dieser-blog-gebaut-ist"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-19-wie-dieser-blog-gebaut-ist:end */
+
+/* cover:2026-08-21-docker-vs-docker-compose:start */
+.post-page[data-post-slug="2026-08-21-docker-vs-docker-compose"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-21-docker-vs-docker-compose.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-21-docker-vs-docker-compose:end */
+
+/* cover:2026-08-21-rechtschreib-pipeline-trotz-legasthenie:start */
+.post-page[data-post-slug="2026-08-21-rechtschreib-pipeline-trotz-legasthenie"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-21-rechtschreib-pipeline-trotz-legasthenie:end */
+
+/* cover:2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog:start */
+.post-page[data-post-slug="2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog:end */
+
+/* cover:2026-08-25-Regresions-test:start */
+.post-page[data-post-slug="2026-08-25-Regresions-test"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-25-Regresions-test.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-25-Regresions-test:end */
+
+/* cover:2026-08-27-immich-nextcloud-webdav-rclone-provisionierung:start */
+.post-page[data-post-slug="2026-08-27-immich-nextcloud-webdav-rclone-provisionierung"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-27-immich-nextcloud-webdav-rclone-provisionierung.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-27-immich-nextcloud-webdav-rclone-provisionierung:end */

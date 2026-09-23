@@ -1,15 +1,20 @@
 ---
 id: 2026-08-27-immich-nextcloud-webdav-rclone-provisionierung
 version: 1
-title: "Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien"
+title: >-
+  Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung
+  statt Dateikopien
 status: publish
-date: 2026-08-27
-created_at: 2026-08-27
-updated_at: 2026-08-27
+date: 2026-08-27T00:00:00.000Z
+created_at: 2026-08-27T00:00:00.000Z
+updated_at: 2026-08-27T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Self-Hosting
-excerpt: Meine Fotos liegen in Nextcloud, verwaltet werden sie mit Immich. Statt sie zu kopieren, mounte ich sie per WebDAV und rclone – inklusive Benutzer-Provisionierung.
+excerpt: >-
+  Meine Fotos liegen in Nextcloud, verwaltet werden sie mit Immich. Statt sie zu
+  kopieren, mounte ich sie per WebDAV und rclone – inklusive
+  Benutzer-Provisionierung.
 tags:
   - Immich
   - Nextcloud
@@ -26,6 +31,24 @@ search_queries:
     maxRank: 1
   - query: Wie provisioniere ich Immich Benutzer mit eigenen Nextcloud Fotoordnern?
     maxRank: 1
+cover_query: Immich Nextcloud WebDAV Self-Hosting
+cover_provider: pixabay
+cover_provider_id: '2433978'
+cover_image: /assets/covers/2026-08-27-immich-nextcloud-webdav-rclone-provisionierung.jpg
+cover_alt: >-
+  board, school, self confidence, believe, self worth, trust, personality,
+  slate, teaching, chalk, to learn, training, writing board, smeared, black,
+  college, study, self-esteem, self-liberation, self-reflection, security,
+  sovereignty, self-assurance, self-consciousness, assertion, self,
+  self-control, self-humiliation, self-restraint, self-confessions, think,
+  psychology, behave, self-love, ego, feel, self-image, myself, positive, self
+  acceptance, i, conscious life, believe, believe, believe, believe, believe
+cover_focus: center
+cover_credit: by geralt via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/board-school-self-confidence-2433978/'
+cover_source_url: 'https://pixabay.com/photos/board-school-self-confidence-2433978/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Meine Fotos liegen bereits in **Nextcloud**. Für die eigentliche Verwaltung gefällt mir **Immich** aber deutlich besser.

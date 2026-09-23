@@ -1,16 +1,19 @@
 ---
 id: 2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog
 version: 6
-title: "Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe"
+title: 'Kernel Grep: Wie ich meinem Blog eine semantische Suche gebaut habe'
 status: publish
-date: 2026-08-22
-published_at: 2026-08-22T19:51:00+02:00
-created_at: 2026-08-22
-updated_at: 2026-08-24
+date: 2026-08-22T00:00:00.000Z
+published_at: 2026-08-22T17:51:00.000Z
+created_at: 2026-08-22T00:00:00.000Z
+updated_at: 2026-08-24T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Engineering
-excerpt: Kernel Grep durchsucht meine Blogartikel lokal mit E5, DuckDB und einem hybriden Ranking. Entscheidend war weniger das Embedding selbst als die Frage, wann ein Treffer wirklich relevant ist.
+excerpt: >-
+  Kernel Grep durchsucht meine Blogartikel lokal mit E5, DuckDB und einem
+  hybriden Ranking. Entscheidend war weniger das Embedding selbst als die Frage,
+  wann ein Treffer wirklich relevant ist.
 tags:
   - Semantic-Search
   - DuckDB
@@ -26,6 +29,23 @@ search_queries:
     maxRank: 1
   - query: Wie kann eine Suche ähnliche Inhalte statt nur gleiche Wörter finden?
     maxRank: 1
+cover_query: Semantic-Search DuckDB Embeddings Engineering
+cover_provider: pixabay
+cover_provider_id: '1236578'
+cover_image: /assets/covers/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.jpg
+cover_alt: >-
+  gears, cogs, machine, machinery, mechanical, gears and cogs, technology,
+  industry, industrial, engineering, cogwheels, metals, monochrome, black and
+  white, gears, gears, gears, cogs, machine, machine, machine, machine, machine,
+  machinery, machinery, mechanical, technology, technology, technology,
+  technology, industry, industry, industry, industrial, engineering,
+  engineering, engineering, engineering
+cover_focus: center
+cover_credit: by MustangJoe via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/gears-cogs-machine-machinery-1236578/'
+cover_source_url: 'https://pixabay.com/photos/gears-cogs-machine-machinery-1236578/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Eine normale Volltextsuche ist gut darin, Wörter wiederzufinden. Ich tippe `Docker` ein und bekomme Artikel zurück, in denen `Docker` steht.
