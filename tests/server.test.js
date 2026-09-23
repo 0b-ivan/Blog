@@ -307,6 +307,26 @@ describe('blog server', () => {
     expect(html).toContain('<p>Rendered</p>');
   });
 
+  it('renders a local article cover directly on the hero with a photo overlay', () => {
+    const html = renderPostPage({
+      slug: 'covered-post',
+      title: 'Covered Post',
+      date: '2026-09-23',
+      category: 'DevOps',
+      tags: ['Kubernetes'],
+      excerpt: 'Covered excerpt',
+      coverImage: '/assets/covers/covered-post.jpg',
+      coverFocus: 'top',
+      readingTime: 4,
+      html: '<p>Rendered</p>'
+    });
+
+    expect(html).toContain('data-article-hero style="--article-cover-image: url(/assets/covers/covered-post.jpg)');
+    expect(html).toContain('--article-cover-focus: top');
+    expect(html).toContain('--article-cover-overlay: linear-gradient(180deg');
+    expect(html).toContain('/assets/css/article-metrics.css?v=20260923-2');
+  });
+
   it('markdown renderer supports wiki-links, footnotes, admonitions and mermaid fences', async () => {
     await writePost(
       tmpDir,
