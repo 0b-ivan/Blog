@@ -7,6 +7,7 @@ const MAX_LIMIT = 20;
 
 function parseArgs(args) {
   let limit = DEFAULT_LIMIT;
+  let includeExisting = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -20,10 +21,15 @@ function parseArgs(args) {
       continue;
     }
 
+    if (arg === '--include-existing') {
+      includeExisting = true;
+      continue;
+    }
+
     throw new Error(`Unknown or incomplete option: ${arg}`);
   }
 
-  return { limit };
+  return { limit, includeExisting };
 }
 
 function frontmatterBlock(raw) {
@@ -44,9 +50,13 @@ function metadataValue(raw, key) {
     .trim();
 }
 
-function isPublishedWithoutCover(raw) {
+function isPublished(raw) {
   const status = metadataValue(raw, 'status').toLowerCase();
-  if (status === 'draft' || status === 'archived') return false;
+  return status !== 'draft' && status !== 'archived';
+}
+
+function isPublishedWithoutCover(raw) {
+  if (!isPublished(raw)) return false;
 
   const cover = metadataValue(raw, 'cover_image').toLowerCase();
   return !cover || cover === 'null' || cover === '~';
@@ -65,7 +75,10 @@ async function listMissingCoverPosts(options = {}) {
   for (const filename of markdownFiles) {
     const absolute = path.join(postsDir, filename);
     const raw = await fs.readFile(absolute, 'utf8');
-    if (!isPublishedWithoutCover(raw)) continue;
+    const eligible = options.includeExisting
+      ? isPublished(raw)
+      : isPublishedWithoutCover(raw);
+    if (!eligible) continue;
 
     missing.push(`posts/${filename}`);
     if (missing.length >= limit) break;
@@ -91,6 +104,7 @@ module.exports = {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   frontmatterBlock,
+  isPublished,
   isPublishedWithoutCover,
   listMissingCoverPosts,
   metadataValue,
