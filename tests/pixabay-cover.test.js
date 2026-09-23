@@ -60,6 +60,7 @@ describe('Pixabay cover resolver', () => {
       query: 'kubernetes datacenter',
       select: 2,
       selectId: '',
+      scoreOverride: null,
       preview: false,
       report: ''
     });
@@ -73,6 +74,12 @@ describe('Pixabay cover resolver', () => {
     expect(parseArgs(['posts/test.md', '--select-id', '2402637'])).toMatchObject({
       target: 'posts/test.md',
       selectId: '2402637'
+    });
+
+    expect(parseArgs(['posts/test.md', '--select-id', '2402637', '--score', '91.4'])).toMatchObject({
+      target: 'posts/test.md',
+      selectId: '2402637',
+      scoreOverride: 91
     });
   });
 
