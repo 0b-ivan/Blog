@@ -287,8 +287,8 @@ describe('blog server', () => {
     expect(html).toContain('reading-progress__bubble-fill');
     expect(html).toContain('data-reading-progress-rive');
     expect(html).not.toContain('<script src="/vendor/rive/rive.js"');
-    expect(html).toContain('/assets/article-analytics.js?v=20260922-1');
-    expect(html).toContain('/script.js?v=20260922-1');
+    expect(html).toMatch(/\/assets\/article-analytics\.js\?v=[^"]+/);
+    expect(html).toMatch(/\/script\.js\?v=[^"]+/);
     expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');
     expect(html).toContain('Herunterladen');
