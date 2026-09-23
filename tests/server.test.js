@@ -88,6 +88,35 @@ describe('blog server', () => {
     expect(posts[0].readingTime).toBe(1);
   });
 
+  it('moves cover attribution into the article sources section', async () => {
+    await writePost(
+      tmpDir,
+      'cover-source.md',
+      `---
+title: Cover Source
+date: 2026-09-23
+category: DevOps
+cover_image: /assets/covers/cover-source.jpg
+cover_credit: by Example via Pixabay
+cover_credit_url: https://pixabay.com/photos/example-42/
+cover_source_url: https://pixabay.com/photos/example-42/
+cover_license: Pixabay Content License
+cover_license_url: https://pixabay.com/service/license-summary/
+---
+Body
+
+## Quellen
+
+- [Docker Docs](/sources.html#docker-compose)
+`
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts[0].html).toContain('/sources.html#cover-cover-source');
+    expect(posts[0].html).toContain('Coverbild: by Example via Pixabay');
+    expect(posts[0].html).not.toContain('https://pixabay.com/photos/example-42/');
+  });
+
   it('api returns post list dto', async () => {
     await writePost(
       tmpDir,
@@ -279,10 +308,9 @@ describe('blog server', () => {
     expect(html).toContain('<svg viewBox="0 0 64 48" focusable="false">');
     expect(html).toContain('article-hero__excerpt');
     expect(html).toContain('>Excerpt<');
-    expect(html).toContain('by Example via Pixabay');
-    expect(html).toContain('https://pixabay.com/photos/example-42/');
-    expect(html).toContain('Pixabay Content License');
-    expect(html).toContain('https://pixabay.com/service/license-summary/');
+    expect(html).not.toContain('article-hero__credit');
+    expect(html).not.toContain('by Example via Pixabay');
+    expect(html).not.toContain('Pixabay Content License');
     expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*terminal-content[\s\S]*<\/section>[\s\S]*article-post-meta/);
     expect(html).not.toContain('article-terminal__meta-strip');
     expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
