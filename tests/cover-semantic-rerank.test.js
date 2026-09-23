@@ -2,6 +2,9 @@ const {
   articleSemanticText,
   blendScore,
   candidateSemanticText,
+  combinedSemanticScore,
+  conceptPrototype,
+  prototypeMarginScore,
   rerankReport,
   semanticRelativeScore
 } = require('../scripts/rerank-cover-candidates-e5');
@@ -91,6 +94,74 @@ systemctl status example
     expect(train.heuristicScore).toBe(95);
     expect(train.semanticMismatch).toBe(true);
     expect(reranked.candidates[0].score).toBeGreaterThan(train.score);
+  });
+
+  it('uses positive and negative concept prototypes to reject adjacent RSS concepts', async () => {
+    const report = {
+      postPath: 'posts/rss.md',
+      title: 'RSS ist nicht tot',
+      visualIntent: 'rss-reader',
+      candidates: [
+        {
+          rank: 1,
+          id: 'press',
+          score: 95,
+          tags: 'press, journalist, photographer, news, newspaper, reporter',
+          reasons: ['old semantic neighbor']
+        },
+        {
+          rank: 2,
+          id: 'feed',
+          score: 50,
+          tags: 'rss, feed, reader, subscription, aggregator, website',
+          reasons: ['actual feed concept']
+        }
+      ]
+    };
+
+    const embedder = {
+      embedQuery: async (text) => {
+        if (text.includes('journalist press photographer')) return [1, 0];
+        if (text.includes('RSS feed reader')) return [0, 1];
+        return [0.8, 0.6];
+      },
+      embedDocuments: async (texts) => texts.map((text) =>
+        text.includes('journalist')
+          ? [0.9, 0.43589]
+          : [0.5, 0.86603]
+      )
+    };
+
+    const reranked = await rerankReport(
+      report,
+      'FreshRSS web feed reader subscriptions and feed aggregation',
+      embedder,
+      {
+        embeddingModel: 'Xenova/multilingual-e5-small',
+        semanticWeight: 0.9,
+        mismatchDelta: 0.07
+      }
+    );
+
+    expect(conceptPrototype(report).key).toBe('rss-reader');
+    expect(reranked.semanticPrototype).toBe('rss-reader');
+    expect(reranked.candidates[0].id).toBe('feed');
+    expect(reranked.candidates[0].prototypeMargin).toBeGreaterThan(0);
+    expect(reranked.candidates[0].prototypeMismatch).toBe(false);
+
+    const press = reranked.candidates.find((candidate) => candidate.id === 'press');
+    expect(press.prototypeMargin).toBeLessThan(0);
+    expect(press.prototypeMismatch).toBe(true);
+    expect(press.semanticMismatch).toBe(true);
+  });
+
+  it('maps concept margin into a strong text-semantic preference', () => {
+    expect(prototypeMarginScore(0.1)).toBe(100);
+    expect(prototypeMarginScore(0)).toBe(50);
+    expect(prototypeMarginScore(-0.1)).toBe(0);
+    expect(combinedSemanticScore(100, 0, true)).toBe(65);
+    expect(combinedSemanticScore(60, 100, true)).toBe(74);
+    expect(combinedSemanticScore(77, null, false)).toBe(77);
   });
 
   it('normalizes semantic relevance relative to the best candidate', () => {
