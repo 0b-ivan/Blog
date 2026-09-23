@@ -13,13 +13,13 @@ images:
   - name: cloudflare/cloudflared
     newTag: 2026.9.1
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 0ef2eac55fa7b7f8a66ada914907a484d5f4366a
+    newTag: e945956578d165aafc7099e77a32de548b020a82
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 0ef2eac55fa7b7f8a66ada914907a484d5f4366a
+    newTag: e945956578d165aafc7099e77a32de548b020a82
   - name: ghcr.io/0b-ivan/kernel-notes-status
-    newTag: 0ef2eac55fa7b7f8a66ada914907a484d5f4366a
+    newTag: e945956578d165aafc7099e77a32de548b020a82
   - name: ghcr.io/0b-ivan/kernel-notes-chaos
-    newTag: 0ef2eac55fa7b7f8a66ada914907a484d5f4366a
+    newTag: e945956578d165aafc7099e77a32de548b020a82
 patches:
   - target:
       group: apps
