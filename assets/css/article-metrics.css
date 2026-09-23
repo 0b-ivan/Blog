@@ -273,31 +273,31 @@
     z-index: 0;
     background:
       radial-gradient(
-        ellipse 105% 76% at 42% 43%,
-        rgba(3, 10, 16, 0.5) 0%,
-        rgba(3, 10, 16, 0.4) 48%,
-        rgba(3, 10, 16, 0.22) 72%,
-        rgba(3, 10, 16, 0.06) 90%,
+        ellipse 108% 78% at 42% 43%,
+        rgba(3, 10, 16, 0.62) 0%,
+        rgba(3, 10, 16, 0.52) 42%,
+        rgba(3, 10, 16, 0.34) 68%,
+        rgba(3, 10, 16, 0.14) 88%,
         transparent 100%
       );
-    -webkit-backdrop-filter: blur(2.4px) saturate(0.92);
-    backdrop-filter: blur(2.4px) saturate(0.92);
+    -webkit-backdrop-filter: blur(3.2px) saturate(0.9);
+    backdrop-filter: blur(3.2px) saturate(0.9);
     -webkit-mask-image: linear-gradient(
       to bottom,
       transparent 0%,
-      rgba(0, 0, 0, 0.78) 9%,
-      #000 24%,
-      #000 76%,
-      rgba(0, 0, 0, 0.7) 90%,
+      rgba(0, 0, 0, 0.82) 9%,
+      #000 22%,
+      #000 79%,
+      rgba(0, 0, 0, 0.72) 91%,
       transparent 100%
     );
     mask-image: linear-gradient(
       to bottom,
       transparent 0%,
-      rgba(0, 0, 0, 0.78) 9%,
-      #000 24%,
-      #000 76%,
-      rgba(0, 0, 0, 0.7) 90%,
+      rgba(0, 0, 0, 0.82) 9%,
+      #000 22%,
+      #000 79%,
+      rgba(0, 0, 0, 0.72) 91%,
       transparent 100%
     );
   }
