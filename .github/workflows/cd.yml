@@ -147,8 +147,8 @@ jobs:
 
           echo "owner_lower=${OWNER_LOWER}" >> "$GITHUB_OUTPUT"
           echo "blog_version=${BLOG_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
-          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "blog_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.BLOG_IMAGE_NAME }}:${{ github.sha }}-hetzner" >> "$GITHUB_OUTPUT"
+          echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ github.sha }}-hetzner" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         if: steps.deploy_mode.outputs.mode == 'full'
