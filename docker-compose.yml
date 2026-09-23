@@ -52,6 +52,33 @@ services:
       retries: 60
       start_period: 5s
 
+  pdf:
+    image: ${PDF_IMAGE:-kernel-notes-pdf:local}
+    build:
+      context: .
+      dockerfile: Dockerfile.pdf
+    container_name: kernel-notes-pdf
+    volumes:
+      - ./posts:/app/posts:ro
+      - ./snippets:/app/snippets:ro
+      - ./assets:/app/assets:ro
+      - ./config:/app/config:ro
+    environment:
+      SITE_URL: http://blog:8080
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8092/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 8s
+      retries: 5
+      start_period: 15s
+
   blog:
     image: ${BLOG_IMAGE:-kernel-notes-blog:local}
     build:
@@ -70,6 +97,7 @@ services:
       ARCHIVE_DIR: /content/archive
       POST_HISTORY_DIR: /content/post-history
       SEARCH_SERVICE_URL: http://search:8090/search
+      PDF_SERVICE_URL: http://pdf:8092
       ANALYTICS_SERVICE_URL: http://analytics:8080
       LEGAL_OPERATOR_NAME: ${LEGAL_OPERATOR_NAME:-Ivan Babayev}
       LEGAL_OPERATOR_ROLE: ${LEGAL_OPERATOR_ROLE:-Cloud Infrastructure Engineer}
@@ -85,6 +113,8 @@ services:
       analytics:
         condition: service_healthy
       search:
+        condition: service_healthy
+      pdf:
         condition: service_healthy
     logging:
       driver: local
