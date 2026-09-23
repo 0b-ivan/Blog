@@ -28,5 +28,8 @@ describe('cover review workflows', () => {
     expect(workflow).toContain('scope:');
     expect(workflow).toContain('--include-covered');
     expect(workflow).toContain("pr_title='feat: review existing article covers'");
+    expect(workflow).toContain("'.github/cover-backfill-request.txt'");
+    expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.scope || 'all'");
+    expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.batch_size || '20'");
   });
 });
