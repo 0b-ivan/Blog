@@ -23,5 +23,9 @@ describe('staging promotion workflow', () => {
     expect(workflow).toContain('--force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}"');
     expect(workflow).not.toContain('git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}"');
     expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
+    expect(workflow).toContain('actions: write');
+    expect(workflow).toContain('Trigger required checks for production promotion');
+    expect(workflow).toContain('gh workflow run ci.yml');
+    expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');
   });
 });
