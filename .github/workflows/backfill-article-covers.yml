@@ -130,15 +130,15 @@ jobs:
             --output /tmp/cover-selection.json \
             --selection-list /tmp/cover-selection.list
 
-          while IFS='|' read -r post rank; do
+          while IFS='|' read -r post image_id; do
             [ -n "$post" ] || continue
-            [ -n "$rank" ] || {
-              echo "Missing selected rank for $post" >&2
+            [ -n "$image_id" ] || {
+              echo "Missing selected Pixabay image id for $post" >&2
               exit 1
             }
-            echo "Applying diversified candidate #$rank for $post"
+            echo "Applying diversified Pixabay image $image_id for $post"
             slug="$(basename "$post" .md)"
-            npm run covers:resolve -- "$post" --select "$rank" --report "/tmp/cover-reports/${slug}.json"
+            npm run covers:resolve -- "$post" --select-id "$image_id" --report "/tmp/cover-reports/${slug}.json"
           done < /tmp/cover-selection.list
 
       - name: Validate generated changes
@@ -184,9 +184,10 @@ jobs:
             --reports-dir /tmp/cover-reports \
             --selection-manifest /tmp/cover-selection.json \
             --repository "$GITHUB_REPOSITORY" \
-            --commit "$cover_commit" > "$body_file"
+            --commit "$cover_commit" \
+            --compact > "$body_file"
 
-          cat >> "$body_file" <<EOF
+          cat >> "$body_file" <<'EOF'
 
           ---
           Each selected image is stored locally under `assets/covers/` and keeps provider, source, credit, score and license metadata in the article frontmatter.
