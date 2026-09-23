@@ -8,7 +8,6 @@ const legacy = require('./server');
 const {
   buildBibTeX,
   buildPdfPublication,
-  pandocMetadataArgs,
   pdfMetadata
 } = require('./lib/latex-export');
 
@@ -49,6 +48,8 @@ async function compileArticlePdf(post) {
       assetRoot: root,
       siteUrl: process.env.SITE_URL || 'https://blog.obivan.org'
     });
+    const metadataFile = path.join(tempDir, 'metadata.json');
+    await fs.writeFile(metadataFile, JSON.stringify(metadata, null, 2), 'utf8');
 
     const args = [
       inputFile,
@@ -67,10 +68,10 @@ async function compileArticlePdf(post) {
         'reference-section-title=Literatur- und Quellenverzeichnis'
       ] : []),
       `--resource-path=${[root, path.join(root, 'assets'), path.join(root, 'snippets')].join(':')}`,
+      `--metadata-file=${metadataFile}`,
       '--pdf-engine-opt=-interaction=nonstopmode',
       '--pdf-engine-opt=-halt-on-error',
       '--pdf-engine-opt=-file-line-error',
-      ...pandocMetadataArgs(metadata),
       '--output',
       outputFile
     ];
@@ -79,7 +80,11 @@ async function compileArticlePdf(post) {
       cwd: tempDir,
       timeout: compileTimeoutMs,
       maxBuffer: 8 * 1024 * 1024,
-      env: process.env
+      env: {
+        ...process.env,
+        LANG: process.env.LANG || 'C.UTF-8',
+        LC_ALL: process.env.LC_ALL || 'C.UTF-8'
+      }
     });
 
     const pdf = await fs.readFile(outputFile);
