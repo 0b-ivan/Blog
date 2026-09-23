@@ -31,19 +31,25 @@ search_queries:
     maxRank: 1
 cover_query: cloud server network datacenter infrastructure deployment automation terminal
 cover_provider: pixabay
-cover_provider_id: '2402637'
+cover_provider_id: '2891812'
 cover_image: /assets/covers/2026-09-04-gold-glaenzt-nicht-immer-golden-images.jpg
 cover_alt: >-
-  network, server, system, infrastructure, managed services, connection,
-  computer, cloud, gray computer, gray laptop, network, network, server, server,
-  server, server, server
+  server, technology, web, data, internet, network, computer, digital,
+  communication, business, hardware, information, connection, database, cloud,
+  system, computing, storage, security, center, equipment, infrastructure,
+  global, design, hosting, tech, icon, service, rack, line, datacenter, connect,
+  room, 3d, gray business, gray computer, gray technology, gray laptop, gray
+  data, gray clouds, gray network, gray community, gray room, gray internet,
+  gray digital, gray communication, gray tech, gray security, gray company, gray
+  information, gray web, gray global, gray server, gray service, server, server,
+  database, hosting, hosting, hosting, hosting, hosting
 cover_focus: center
-cover_credit: by bsdrouin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
-cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_credit: by QuinceCreative via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/server-technology-web-data-2891812/'
+cover_source_url: 'https://pixabay.com/photos/server-technology-web-data-2891812/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 91
 ---
 
 Server von Hand aufzusetzen funktioniert erstaunlich lange.

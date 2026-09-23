@@ -28,23 +28,20 @@ search_queries:
     maxRank: 1
   - query: Was sollte ich in Java und GraphQL auf INFO loggen?
     maxRank: 1
-cover_query: cloud server network datacenter infrastructure terminal monitoring software
+cover_query: server logs monitoring metrics observability cloudwatch alerts
 cover_provider: pixabay
-cover_provider_id: '3725329'
+cover_provider_id: '4828390'
 cover_image: /assets/covers/2026-09-11-logger-info-wird-schon-nichts-kosten.jpg
 cover_alt: >-
-  binary, binary code, smartphone, photography, digitization, globe,
-  presentation, thought, idea, world, watch world, binary system, byte, network,
-  programming, computer, server, script, software, code, developer, software
-  development, program, server, software development, software development,
-  software development, software development, software development
+  cloud, setting, computing, internet, server, programming, java, blue
+  programming, blue server, server, java, java, java, java, java
 cover_focus: center
-cover_credit: by geralt via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/binary-binary-code-smartphone-3725329/'
-cover_source_url: 'https://pixabay.com/photos/binary-binary-code-smartphone-3725329/'
+cover_credit: by kreatikar via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/cloud-setting-computing-internet-4828390/'
+cover_source_url: 'https://pixabay.com/illustrations/cloud-setting-computing-internet-4828390/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 88
+cover_score: 82
 ---
 
 Logs fühlen sich erstmal kostenlos an.

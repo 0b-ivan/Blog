@@ -28,23 +28,22 @@ snippets:
     description: Startet die Kernel Notes API und konfiguriert automatische Neustarts.
     type: systemd-Unit
     language: ini
-cover_query: terminal server code computer linux service
+cover_query: linux server administration monitoring service logs daemon
 cover_provider: pixabay
-cover_provider_id: '3637299'
+cover_provider_id: '8211245'
 cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
 cover_alt: >-
-  code, html, technology, programming, computer, coding, digital, development,
-  internet, web, it, programmer, css, developer, www, software, website, data,
-  script, computer programming, computer science, server, binary code, byte,
-  code, html, programming, coding, coding, programmer, software, software,
-  computer science, computer science, server, server, server, server, server
+  ai generated, systems analyst, consultant, advisor, it-specialist, server,
+  space, server room, hardware, computer, data, to process, server cabinets,
+  information, technology, server, server, server, server, server, server room,
+  server room, server room, server room
 cover_focus: center
-cover_credit: by markusspiske via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
-cover_source_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_credit: by geralt via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/ai-generated-systems-analyst-8211245/'
+cover_source_url: 'https://pixabay.com/illustrations/ai-generated-systems-analyst-8211245/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 81
 ---
 
 `systemd` ist mehr als nur `systemctl start`.

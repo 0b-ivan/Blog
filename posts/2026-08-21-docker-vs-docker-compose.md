@@ -71,7 +71,7 @@ cover_credit_url: 'https://pixabay.com/photos/devops-business-process-improvemen
 cover_source_url: 'https://pixabay.com/photos/devops-business-process-improvement-3155972/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 62
+cover_score: 77
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.

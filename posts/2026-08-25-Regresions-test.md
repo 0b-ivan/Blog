@@ -30,24 +30,29 @@ search_queries:
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
-cover_query: Testing Regressionstest CI Development
+cover_query: testing software code automation quality
 cover_provider: pixabay
-cover_provider_id: '1076536'
+cover_provider_id: '3088958'
 cover_image: /assets/covers/2026-08-25-Regresions-test.jpg
 cover_alt: >-
-  code, html, digital, coding, web, programming, computer, technology, internet,
-  design, development, website, web developer, web development, programming
-  code, data, page, computer programming, software, site, css, script, web page,
-  website development, www, information, java, screen, code, code, code, html,
-  coding, coding, coding, coding, coding, web, programming, programming,
-  computer, technology, website, website, web development, software
+  analytics, information, innovation, communication, big data, data, cyber
+  security, cyber, space, technology, internet, cryptocurrency, code, source
+  code, programming, application, electronic, blockchain, digital, network,
+  virtual, crypto, currency, mining, cryptography, logs, crypto currency,
+  automation, javascript, text, string, tech, technical, bits, bytes, matrix,
+  transfer, tube, analyze, blue technology, blue data, blue network, blue
+  community, blue internet, blue digital, blue communication, blue tech, blue
+  security, blue information, blue code, blue coding, blue programming, blue
+  innovation, blue technical, big data, big data, big data, data, data, data,
+  data, data, cyber security, cyber security, cyber, code, blockchain,
+  blockchain, crypto, crypto, automation, tech, tech
 cover_focus: center
-cover_credit: by jamesmarkosborne via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
-cover_source_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
+cover_credit: by xresch via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/analytics-information-innovation-3088958/'
+cover_source_url: 'https://pixabay.com/illustrations/analytics-information-innovation-3088958/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 70
+cover_score: 83
 ---
 
 Bei Tests denkt man schnell an die Frage:

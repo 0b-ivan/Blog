@@ -34,20 +34,23 @@ snippets:
     language: yaml
 cover_query: container server deployment software terminal network cloud security
 cover_provider: pixabay
-cover_provider_id: '6181051'
+cover_provider_id: '1235959'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  cloud, network, finger, cloud computing, internet, server, connection,
-  business, digital, web, hosting, technology, cloud computing, cloud computing,
-  cloud computing, cloud computing, cloud computing, hosting
+  server, cloud, development, business, network, connection, technology,
+  internet, web, database, analysis, application, colors, design, management,
+  designer, developer, gray business, gray technology, gray clouds, gray
+  network, gray internet, gray design, gray company, gray web, gray color, gray
+  server, gray management, server, server, server, server, server, database,
+  database
 cover_focus: center
-cover_credit: by Tumisu via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
-cover_source_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
+cover_credit: by ColossusCloud via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_source_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 77
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

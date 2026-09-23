@@ -36,23 +36,18 @@ search_queries:
     maxRank: 1
   - query: Wie teste ich 500 ms Latenz von Blog zu Search mit Chaos Mesh?
     maxRank: 1
-cover_query: server datacenter infrastructure network cloud container cluster kubernetes
+cover_query: monkey ape primate chimpanzee macaque
 cover_provider: pixabay
-cover_provider_id: '8598424'
+cover_provider_id: '6952630'
 cover_image: /assets/covers/2026-09-20-k3s-proxmox-chaos-monkey-part-5.jpg
-cover_alt: >-
-  cloud, server, cloud computing, secure, digital, network, business,
-  application, connect, modernization, global, privacy, hardware,
-  infrastructure, database, security, cloudscape, smart, computer, design,
-  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
-  cloud computing, cloud computing, cloud computing, cloud computing
+cover_alt: 'monkey, primate, ape, animal, nature, fauna'
 cover_focus: center
-cover_credit: by kumar111aakashin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
-cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_credit: by PavanPrasad_IND via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/monkey-primate-ape-animal-fauna-6952630/'
+cover_source_url: 'https://pixabay.com/photos/monkey-primate-ape-animal-fauna-6952630/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 88
+cover_score: 99
 ---
 
 Teil IV endete mit einer einfachen Frage:
