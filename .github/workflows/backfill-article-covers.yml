@@ -184,9 +184,10 @@ jobs:
             --reports-dir /tmp/cover-reports \
             --selection-manifest /tmp/cover-selection.json \
             --repository "$GITHUB_REPOSITORY" \
-            --commit "$cover_commit" > "$body_file"
+            --commit "$cover_commit" \
+            --compact > "$body_file"
 
-          cat >> "$body_file" <<EOF
+          cat >> "$body_file" <<'EOF'
 
           ---
           Each selected image is stored locally under `assets/covers/` and keeps provider, source, credit, score and license metadata in the article frontmatter.
