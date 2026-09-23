@@ -8,6 +8,7 @@ describe('cover review markdown', () => {
   const report = {
     postPath: 'posts/example.md',
     title: 'Example Article',
+    series: 'example-series',
     query: 'server storage cloud',
     queries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV', 'Example Article'],
     selected: {
@@ -54,12 +55,29 @@ describe('cover review markdown', () => {
   it('renders the selected local cover and ranked candidates in the PR body', () => {
     const markdown = renderReport(report, {
       repository: '0b-ivan/Blog',
-      commit: 'abc123'
+      commit: 'abc123',
+      selectionByPost: new Map([[
+        'posts/example.md',
+        {
+          postPath: 'posts/example.md',
+          motif: 'storage',
+          baseScore: 88,
+          adjustedScore: 76,
+          diversityPenalty: 12,
+          sameSeriesReuse: false,
+          forcedDuplicate: false,
+          reasons: ['-12 motif diversity: storage already used by 1 unrelated article(s)']
+        }
+      ]])
     });
 
     expect(markdown).toContain('![Cover-Vorschau: Example Article]');
     expect(markdown).toContain('raw.githubusercontent.com/0b-ivan/Blog/abc123/assets/covers/example.jpg');
     expect(markdown).toContain('88/100');
+    expect(markdown).toContain('**Serie:** `example-series`');
+    expect(markdown).toContain('**Vielfalt:** Motiv `storage` · Score 88 → 76');
+    expect(markdown).toContain('außerhalb von Serien eindeutig');
+    expect(markdown).toContain('motif diversity');
     expect(markdown).toContain('Pixabay-Suchpfade');
     expect(markdown).toContain('Self-Hosting Nextcloud WebDAV');
     expect(markdown).toContain('Suchpfad: server storage cloud · Self-Hosting Nextcloud WebDAV');
