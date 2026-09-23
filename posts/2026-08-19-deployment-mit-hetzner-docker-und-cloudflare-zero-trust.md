@@ -32,22 +32,24 @@ snippets:
     description: Zeigt einen festen Image-Tag für den Blog-Service.
     type: Compose-Ausschnitt
     language: yaml
-cover_query: container server deployment software terminal network cloud security
+cover_query: devops software code terminal deployment programming
 cover_provider: pixabay
-cover_provider_id: '6181051'
+cover_provider_id: '1853305'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  cloud, network, finger, cloud computing, internet, server, connection,
-  business, digital, web, hosting, technology, cloud computing, cloud computing,
-  cloud computing, cloud computing, cloud computing, hosting
+  coding, programming, css, software development, computer, close up, laptop,
+  data, display, electronics, keyboard, screen, technology, app, program,
+  software, computer engineering, coding, coding, coding, programming,
+  programming, software development, computer, data, software, software,
+  software, software, software
 cover_focus: center
-cover_credit: by Tumisu via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
-cover_source_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
+cover_credit: by Pexels via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/coding-programming-css-1853305/'
+cover_source_url: 'https://pixabay.com/photos/coding-programming-css-1853305/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 100
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.
