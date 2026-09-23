@@ -7,6 +7,7 @@ const MAX_LIMIT = 20;
 
 function parseArgs(args) {
   let limit = DEFAULT_LIMIT;
+  let includeCovered = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -20,10 +21,15 @@ function parseArgs(args) {
       continue;
     }
 
+    if (arg === '--include-covered') {
+      includeCovered = true;
+      continue;
+    }
+
     throw new Error(`Unknown or incomplete option: ${arg}`);
   }
 
-  return { limit };
+  return { limit, includeCovered };
 }
 
 function frontmatterBlock(raw) {
@@ -44,9 +50,13 @@ function metadataValue(raw, key) {
     .trim();
 }
 
-function isPublishedWithoutCover(raw) {
+function isPublishedPost(raw) {
   const status = metadataValue(raw, 'status').toLowerCase();
-  if (status === 'draft' || status === 'archived') return false;
+  return status !== 'draft' && status !== 'archived';
+}
+
+function isPublishedWithoutCover(raw) {
+  if (!isPublishedPost(raw)) return false;
 
   const cover = metadataValue(raw, 'cover_image').toLowerCase();
   return !cover || cover === 'null' || cover === '~';
@@ -55,6 +65,7 @@ function isPublishedWithoutCover(raw) {
 async function listMissingCoverPosts(options = {}) {
   const postsDir = options.postsDir || path.join(root, 'posts');
   const limit = options.limit ?? DEFAULT_LIMIT;
+  const includeCovered = options.includeCovered === true;
   const entries = await fs.readdir(postsDir, { withFileTypes: true });
   const markdownFiles = entries
     .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && !entry.name.startsWith('_'))
@@ -65,7 +76,7 @@ async function listMissingCoverPosts(options = {}) {
   for (const filename of markdownFiles) {
     const absolute = path.join(postsDir, filename);
     const raw = await fs.readFile(absolute, 'utf8');
-    if (!isPublishedWithoutCover(raw)) continue;
+    if (includeCovered ? !isPublishedPost(raw) : !isPublishedWithoutCover(raw)) continue;
 
     missing.push(`posts/${filename}`);
     if (missing.length >= limit) break;
@@ -91,6 +102,7 @@ module.exports = {
   DEFAULT_LIMIT,
   MAX_LIMIT,
   frontmatterBlock,
+  isPublishedPost,
   isPublishedWithoutCover,
   listMissingCoverPosts,
   metadataValue,
