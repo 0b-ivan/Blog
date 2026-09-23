@@ -64,7 +64,7 @@ jobs:
       - name: Build Pixabay cache key
         id: pixabay_cache_key
         shell: bash
-        run: echo "key=pixabay-api-${RUNNER_OS}-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: echo "key=pixabay-api-${RUNNER_OS}-$(date -u +%Y-%m-%d)-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       - name: Restore Pixabay API cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
