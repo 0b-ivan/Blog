@@ -1,7 +1,8 @@
 const {
   candidateTable,
   rawGithubUrl,
-  renderReport
+  renderReport,
+  selectedFromPost
 } = require('../scripts/render-cover-review');
 
 describe('cover review markdown', () => {
@@ -12,6 +13,8 @@ describe('cover review markdown', () => {
     visualIntent: 'writing-proofreading',
     visualIntentEvidence: 22,
     pixabayCategory: 'computer',
+    semanticModel: 'Xenova/multilingual-e5-small',
+    semanticWeight: 0.82,
     query: 'server storage cloud',
     queries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV', 'Example Article'],
     selected: {
@@ -26,6 +29,8 @@ describe('cover review markdown', () => {
       {
         rank: 1,
         score: 88,
+        heuristicScore: 61,
+        semanticSimilarity: 0.87321,
         tags: 'server, storage, cloud',
         user: 'Example',
         pageURL: 'https://pixabay.com/photos/example-42/',
@@ -81,6 +86,9 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('**Bildidee:** `writing-proofreading`');
     expect(markdown).toContain('**Intent-Evidenz:** 22');
     expect(markdown).toContain('**Pixabay-Kategorie:** `computer`');
+    expect(markdown).toContain('**Semantisches Ranking:** `Xenova/multilingual-e5-small` · E5 82%');
+    expect(markdown).toContain('E5: 0.8732');
+    expect(markdown).toContain('Heuristik: 61/100');
     expect(markdown).toContain('**Vielfalt:** Motiv `storage` · Score 88 → 76');
     expect(markdown).toContain('außerhalb von Serien eindeutig');
     expect(markdown).toContain('motif diversity');
@@ -90,6 +98,40 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('Top-3-Kandidaten');
     expect(markdown).toContain('https://cdn.example.test/preview-1.jpg');
     expect(markdown).toContain('https://pixabay.com/photos/example-42/');
+  });
+
+  it('recovers the selected semantic candidate from updated post frontmatter', () => {
+    const candidateReport = {
+      ...report,
+      selected: undefined,
+      candidates: [
+        {
+          rank: 1,
+          id: '42',
+          score: 93,
+          heuristicScore: 61,
+          semanticSimilarity: 0.90123,
+          tags: 'writing, text, document',
+          pageURL: 'https://pixabay.com/photos/example-42/'
+        }
+      ]
+    };
+    const raw = `---
+title: Example Article
+cover_provider: pixabay
+cover_provider_id: "42"
+cover_image: /assets/covers/example.jpg
+cover_score: 93
+---
+
+Body
+`;
+
+    const selected = selectedFromPost(candidateReport, raw);
+    expect(selected.id).toBe('42');
+    expect(selected.coverImage).toBe('/assets/covers/example.jpg');
+    expect(selected.score).toBe(93);
+    expect(selected.semanticSimilarity).toBe(0.90123);
   });
 
   it('renders a compact candidate comparison table', () => {
