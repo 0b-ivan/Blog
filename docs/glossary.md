@@ -125,10 +125,13 @@ Renderer ohne diese Erweiterung koennen den verwalteten Definitionsblock weiterh
 
 Neue oder geaenderte Artikel werden in Pull Requests zusaetzlich auf moegliche noch unbekannte Fachbegriffe geprueft. Die Pruefung ist absichtlich heuristisch und nicht blockierend: Sie erstellt nur Vorschlaege und veraendert weder den Artikel noch die Glossar-Dateien.
 
-Die Erkennung entfernt zuerst bereits bekannte Glossar-Schluessel und Aliase. Frontmatter, Code-Bloecke, Inline-Code, URLs und der verwaltete Glossar-Block werden ebenfalls ignoriert. Danach werden vor allem zwei Klassen gesucht:
+Die Erkennung entfernt zuerst bereits bekannte Glossar-Schluessel und Aliase. Frontmatter, Code-Bloecke, Inline-Code, URLs und der verwaltete Glossar-Block werden ebenfalls ignoriert. Kandidaten werden vor der Bewertung konservativ normalisiert, damit beispielsweise `APIs` als `API`, `IPs` als `IP` und `Shell-Befehlen` als `Shell` geprüft werden.
 
-- hohe Konfidenz: Akronyme, technische Grossschreibung und Mixed-Case-/Produktnamen wie `RRF` oder `OpenTelemetry`
-- mittlere Konfidenz: noch unbekannte Begriffe in einem technischen Verwendungskontext, beispielsweise `mit Kubernetes`
+Die Bewertung folgt vier Signalen: technische Terminologie, Wiederverwendbarkeit, Erklaerungsbedarf und Normalisierbarkeit. Dadurch bleibt ein eindeutiger Fachbegriff wie `PVC` auch bei nur einem Vorkommen relevant, waehrend gewoehnliche Satzwoerter trotz haeufiger Wiederholung verworfen werden.
+
+- hohe Konfidenz: eindeutige Akronyme, technische Grossschreibung, Mixed-Case-/Produktnamen oder mehrfach wiederverwendete technische Kandidaten
+- mittlere Konfidenz: noch unbekannte, technisch geformte Begriffe in einem technischen Verwendungskontext, beispielsweise `mit Kubernetes`
+- dauerhaft unbrauchbare Projektbegriffe, Marken ohne Erklaerungswert und bekannte Fehlklassifikationen stehen in `config/glossary-suggestion-ignore.json`
 
 Lokal kann die gleiche Pruefung ausgefuehrt werden:
 
