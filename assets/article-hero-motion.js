@@ -13,11 +13,11 @@
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
   function setMotion(progress) {
-    const y = 10 * progress;
-    const scale = 1.018 + (0.022 * progress);
-    const tilt = 0.3 * progress;
-    const blur = 0.2 + (0.9 * progress);
-    const brightness = 0.97 - (0.06 * progress);
+    const y = 18 * progress;
+    const scale = 1.022 + (0.038 * progress);
+    const tilt = 0.55 * progress;
+    const blur = 0.25 + (1.1 * progress);
+    const brightness = 0.97 - (0.12 * progress);
 
     terminal.style.setProperty('--article-cover-motion-y', `${y.toFixed(2)}px`);
     terminal.style.setProperty('--article-cover-motion-scale', scale.toFixed(4));
