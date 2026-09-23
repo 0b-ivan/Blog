@@ -16,6 +16,8 @@ images:
     newTag: 8322b5f1723407e44115ea948464f00e8c11c3ed
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 8322b5f1723407e44115ea948464f00e8c11c3ed
+  - name: ghcr.io/0b-ivan/kernel-notes-pdf
+    newTag: 8322b5f1723407e44115ea948464f00e8c11c3ed
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: 8322b5f1723407e44115ea948464f00e8c11c3ed
   - name: ghcr.io/0b-ivan/kernel-notes-chaos
