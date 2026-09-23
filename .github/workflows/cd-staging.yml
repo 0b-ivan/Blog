@@ -481,6 +481,21 @@ jobs:
           echo "Timed out waiting for ${EXPECTED_VERSION} to be published on staging." >&2
           exit 1
 
+      - name: Verify public LaTeX PDF export
+        if: steps.deploy_mode.outputs.build_images == 'true'
+        env:
+          STAGING_URL: https://staging-blog.obivan.org
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=/tmp/staging-chaos-engineering.pdf
+          curl -fsS --max-time 90 \
+            "${STAGING_URL}/download/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.pdf?deploy=${GITHUB_SHA}" \
+            -o "$output"
+          test "$(head -c 5 "$output")" = '%PDF-'
+          test "$(wc -c < "$output")" -gt 10000
+          echo 'Public staging LaTeX PDF export is healthy.'
+
       - name: Check public staging after GitOps-only change
         if: steps.deploy_mode.outputs.gitops_only == 'true'
         env:
