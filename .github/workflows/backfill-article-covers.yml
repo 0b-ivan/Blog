@@ -94,9 +94,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p /tmp/cover-reports
           while IFS= read -r post; do
             echo "Resolving local cover for $post"
-            npm run covers:resolve -- "$post" --select 1
+            slug="$(basename "$post" .md)"
+            npm run covers:resolve -- "$post" --select 1 --report "/tmp/cover-reports/${slug}.json"
           done < /tmp/pixabay-cover-posts.txt
 
       - name: Validate generated changes
@@ -107,7 +109,7 @@ jobs:
           git diff --check
           npm run posts:validate-meta
           npm run lint
-          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/ebook-export.test.js tests/server.test.js
+          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
 
       - name: Create backfill pull request
         if: steps.candidates.outputs.needed == 'true'
@@ -135,15 +137,18 @@ jobs:
           git commit -m "feat: backfill Pixabay article covers"
           git push origin "HEAD:refs/heads/${branch}"
 
+          cover_commit="$(git rev-parse HEAD)"
           body_file="$(mktemp)"
-          {
-            echo 'Backfills local Pixabay covers for existing published articles without `cover_image`.'
-            echo
-            echo 'Articles:'
-            sed 's/^/- `/; s/$/`/' /tmp/pixabay-cover-posts.txt
-            echo
-            echo 'Each image is stored locally under `assets/covers/` and keeps provider, source, credit and license metadata in the article frontmatter.'
-          } > "$body_file"
+          node scripts/render-cover-review.js \
+            --reports-dir /tmp/cover-reports \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$cover_commit" > "$body_file"
+
+          cat >> "$body_file" <<EOF
+
+          ---
+          Each selected image is stored locally under `assets/covers/` and keeps provider, source, credit, score and license metadata in the article frontmatter.
+          EOF
 
           gh pr create \
             --repo "$GITHUB_REPOSITORY" \
