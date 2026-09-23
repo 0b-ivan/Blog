@@ -29,21 +29,21 @@ search_queries:
     maxRank: 1
   - query: Wie kann eine Suche ähnliche Inhalte statt nur gleiche Wörter finden?
     maxRank: 1
-cover_query: Engineering Semantic-Search DuckDB
+cover_query: container server deployment software terminal homelab storage network
 cover_provider: pixabay
-cover_provider_id: '1868708'
+cover_provider_id: '1995679'
 cover_image: /assets/covers/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.jpg
 cover_alt: >-
-  electronics, mobile phone, screen, smartphone, google, search engine, mobile,
-  website, internet, analytics, google, google, google, google, google, search
-  engine, website, website, website
+  can, lid, metal box, storage, container, store, decorative, tea caddy, art,
+  template, urn, vessel, clay jug, old, historical, antique, template, urn, urn,
+  urn, urn, urn
 cover_focus: center
-cover_credit: by Pexels via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/electronics-mobile-phone-screen-1868708/'
-cover_source_url: 'https://pixabay.com/photos/electronics-mobile-phone-screen-1868708/'
+cover_credit: by webandi via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/can-lid-metal-box-storage-1995679/'
+cover_source_url: 'https://pixabay.com/photos/can-lid-metal-box-storage-1995679/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 53
+cover_score: 79
 ---
 
 Eine normale Volltextsuche ist gut darin, Wörter wiederzufinden. Ich tippe `Docker` ein und bekomme Artikel zurück, in denen `Docker` steht.

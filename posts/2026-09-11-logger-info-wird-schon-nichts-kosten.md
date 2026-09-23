@@ -44,7 +44,7 @@ cover_credit_url: 'https://pixabay.com/photos/binary-binary-code-smartphone-3725
 cover_source_url: 'https://pixabay.com/photos/binary-binary-code-smartphone-3725329/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 88
+cover_score: 100
 ---
 
 Logs fühlen sich erstmal kostenlos an.

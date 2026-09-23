@@ -25,21 +25,23 @@ snippets:
     description: Vereinfachtes Beispiel für wöchentliche Dependency-Updates.
     type: Dependabot-Konfiguration
     language: yaml
-cover_query: security lock shield firewall protection code software dependency
+cover_query: software dependency package update code github vulnerability
 cover_provider: pixabay
-cover_provider_id: '1044168'
+cover_provider_id: '1839406'
 cover_image: /assets/covers/2026-08-19-dependabot-im-einsatz.jpg
 cover_alt: >-
-  wall safe, digital safe, secure, security, safety, privacy, crime, guardian,
-  safe, protection, protect, safeguard, protection concept, access, insurance,
-  pin number, lock, key, guard, password, code, safe, safe, safe, safe, safe
+  code, coding, computer, data, developing, development, ethernet, html,
+  programmer, programming, screen, software, technology, work, code, code,
+  coding, coding, coding, coding, coding, computer, computer, computer,
+  computer, data, programming, programming, programming, software, software,
+  technology, technology, technology, technology
 cover_focus: center
-cover_credit: by stevepb via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/wall-safe-digital-safe-secure-1044168/'
-cover_source_url: 'https://pixabay.com/photos/wall-safe-digital-safe-secure-1044168/'
+cover_credit: by Pexels via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/code-coding-computer-data-1839406/'
+cover_source_url: 'https://pixabay.com/photos/code-coding-computer-data-1839406/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 89
+cover_score: 100
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.

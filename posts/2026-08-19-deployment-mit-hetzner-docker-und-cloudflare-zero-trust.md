@@ -32,22 +32,22 @@ snippets:
     description: Zeigt einen festen Image-Tag für den Blog-Service.
     type: Compose-Ausschnitt
     language: yaml
-cover_query: container server deployment software terminal network cloud security
+cover_query: security lock shield firewall protection container server deployment
 cover_provider: pixabay
-cover_provider_id: '6181051'
+cover_provider_id: '1044168'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  cloud, network, finger, cloud computing, internet, server, connection,
-  business, digital, web, hosting, technology, cloud computing, cloud computing,
-  cloud computing, cloud computing, cloud computing, hosting
+  wall safe, digital safe, secure, security, safety, privacy, crime, guardian,
+  safe, protection, protect, safeguard, protection concept, access, insurance,
+  pin number, lock, key, guard, password, code, safe, safe, safe, safe, safe
 cover_focus: center
-cover_credit: by Tumisu via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
-cover_source_url: 'https://pixabay.com/photos/cloud-network-finger-6181051/'
+cover_credit: by stevepb via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/wall-safe-digital-safe-secure-1044168/'
+cover_source_url: 'https://pixabay.com/photos/wall-safe-digital-safe-secure-1044168/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 96
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

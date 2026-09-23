@@ -29,24 +29,21 @@ search_queries:
     maxRank: 1
   - query: Wie troubleshootet man AWS VPC Netzwerkprobleme?
     maxRank: 1
-cover_query: cloud server network datacenter infrastructure
+cover_query: network topology router routing cloud subnet
 cover_provider: pixabay
-cover_provider_id: '1235959'
+cover_provider_id: '292988'
 cover_image: /assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg
 cover_alt: >-
-  server, cloud, development, business, network, connection, technology,
-  internet, web, database, analysis, application, colors, design, management,
-  designer, developer, gray business, gray technology, gray clouds, gray
-  network, gray internet, gray design, gray company, gray web, gray color, gray
-  server, gray management, server, server, server, server, server, database,
-  database
+  social media, connection, icons, internet, online, communication, concept,
+  network, networking, social media, social media, social media, social media,
+  social media, online
 cover_focus: center
-cover_credit: by ColossusCloud via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
-cover_source_url: 'https://pixabay.com/photos/server-cloud-development-business-1235959/'
+cover_credit: by LoboStudioHamburg via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/social-media-connection-icons-292988/'
+cover_source_url: 'https://pixabay.com/photos/social-media-connection-icons-292988/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 100
 ---
 
 VPC, Subnet, Route Table, Internet Gateway, NAT Gateway, Security Group, NACL …
