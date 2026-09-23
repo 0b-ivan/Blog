@@ -31,21 +31,29 @@ snippets:
     description: Definiert FreshRSS mit Volumes für Daten und Erweiterungen.
     type: Compose-Beispiel
     language: yaml
-cover_query: feed news reader web server homelab storage network
+cover_query: rss feed reader website subscription aggregator syndication
 cover_provider: pixabay
-cover_provider_id: '4393370'
+cover_provider_id: '2819608'
 cover_image: >-
   /assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.jpg
 cover_alt: >-
-  server, drive bay, hard drives, storage, network, edp, hardware, data,
-  internet, web, server, server, server, server, server
+  register, sign up, password, username, welcome, application, app, online, web,
+  technology, button, subscribing, communication, modern, website, internet,
+  subscribe, member, membership, registration, account, sign-up, enter, user,
+  digital, subscription, smart phone, phone, mobile, device, computer, gray
+  computer, gray technology, gray laptop, gray phone, gray mobile, gray online,
+  gray website, gray community, gray internet, gray digital, gray communication,
+  gray welcome, gray web, gray smartphone, gray telephone, gray accounting,
+  register, register, register, sign up, sign up, sign up, subscribe, subscribe,
+  membership, membership, membership, membership, membership, registration,
+  registration, subscription, subscription
 cover_focus: center
-cover_credit: by Bru-nO via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/server-drive-bay-hard-drives-4393370/'
-cover_source_url: 'https://pixabay.com/photos/server-drive-bay-hard-drives-4393370/'
+cover_credit: by BiljaST via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/register-sign-up-password-username-2819608/'
+cover_source_url: 'https://pixabay.com/photos/register-sign-up-password-username-2819608/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 92
 ---
 
 Fast jede Plattform entscheidet heute mit einem Algorithmus, welche Inhalte wir sehen.
