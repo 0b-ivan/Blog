@@ -11,6 +11,7 @@ const {
   fileExtension,
   parseArgs,
   queryCandidates,
+  visualQuery,
   rankCandidates,
   renderCandidates,
   scoreHit,
@@ -81,9 +82,84 @@ describe('Pixabay cover resolver', () => {
       tags: ['Kubernetes', 'Cloudflare']
     }, 'specific query')).toEqual([
       'specific query',
-      'DevOps Kubernetes Cloudflare',
-      'Ein deutscher Titel'
+      'server datacenter infrastructure network cloud container cluster security',
+      'DevOps Kubernetes Cloudflare'
     ]);
+  });
+
+  it('builds visual search terms for niche infrastructure topics', () => {
+    expect(visualQuery({
+      title: 'K3s auf Proxmox',
+      category: 'DevOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox']
+    })).toContain('server');
+    expect(visualQuery({
+      title: 'K3s auf Proxmox',
+      category: 'DevOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox']
+    })).toContain('datacenter');
+  });
+
+  it('penalizes military deployment and K3 train false positives', () => {
+    const deploymentArticle = {
+      title: 'Deployment mit Hetzner, Docker und Cloudflare Zero Trust',
+      category: 'DevOps',
+      tags: ['Hetzner', 'Docker', 'Cloudflare']
+    };
+    const military = {
+      tags: 'afghanistan, soldier, weapon, patrol, deployment, security',
+      imageWidth: 1920,
+      imageHeight: 1080
+    };
+    const infrastructure = {
+      tags: 'server, datacenter, cloud, network, infrastructure, security',
+      imageWidth: 1920,
+      imageHeight: 1080
+    };
+
+    expect(scoreHit(infrastructure, deploymentArticle).score)
+      .toBeGreaterThan(scoreHit(military, deploymentArticle).score);
+
+    const k3sArticle = {
+      title: 'K3s auf Proxmox',
+      category: 'DevOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox']
+    };
+    const train = {
+      tags: 'train, mist, k3, mongolia, railway',
+      imageWidth: 1920,
+      imageHeight: 1080
+    };
+    const server = {
+      tags: 'server, datacenter, infrastructure, network, cloud',
+      imageWidth: 1920,
+      imageHeight: 1080
+    };
+
+    expect(scoreHit(server, k3sArticle).score)
+      .toBeGreaterThan(scoreHit(train, k3sArticle).score);
+    expect(scoreHit(train, k3sArticle).score).toBeLessThan(30);
+  });
+
+  it('penalizes literal shipping imagery for Docker articles', () => {
+    const article = {
+      title: 'Docker vs Docker Compose',
+      category: 'DevOps',
+      tags: ['Docker', 'Compose']
+    };
+    const ship = {
+      tags: 'ship, cargo, port, docker, shipping, freight',
+      imageWidth: 1920,
+      imageHeight: 1080
+    };
+    const software = {
+      tags: 'server, software, terminal, cloud, technology',
+      imageWidth: 1920,
+      imageHeight: 1080
+    };
+
+    expect(scoreHit(software, article).score)
+      .toBeGreaterThan(scoreHit(ship, article).score);
   });
 
   it('combines and de-duplicates candidates from all article search paths', async () => {
