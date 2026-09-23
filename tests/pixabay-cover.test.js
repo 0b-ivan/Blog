@@ -5,6 +5,7 @@ const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
   choosePhoto,
+  collectCandidates,
   defaultQuery,
   downloadPhoto,
   fileExtension,
@@ -83,6 +84,35 @@ describe('Pixabay cover resolver', () => {
       'DevOps Kubernetes Cloudflare',
       'Ein deutscher Titel'
     ]);
+  });
+
+  it('combines and de-duplicates candidates from all article search paths', async () => {
+    const searchImpl = globalThis.vi.fn(async (query) => {
+      if (query === 'primary') {
+        return [
+          { id: 1, tags: 'server, cloud' },
+          { id: 2, tags: 'network, infrastructure' }
+        ];
+      }
+      if (query === 'fallback') {
+        return [
+          { id: 2, tags: 'network, infrastructure' },
+          { id: 3, tags: 'storage, server' }
+        ];
+      }
+      return [{ id: 4, tags: 'terminal, linux' }];
+    });
+
+    const hits = await collectCandidates(
+      ['primary', 'fallback', 'title'],
+      'secret',
+      { searchImpl }
+    );
+
+    expect(searchImpl).toHaveBeenCalledTimes(3);
+    expect(hits.map((hit) => hit.id)).toEqual([1, 2, 3, 4]);
+    expect(hits[1].__coverQueries).toEqual(['primary', 'fallback']);
+    expect(hits[2].__coverQuery).toBe('fallback');
   });
 
   it('ranks technically relevant images above generic people stock photos', () => {
