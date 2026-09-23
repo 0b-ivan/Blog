@@ -276,8 +276,9 @@ describe('blog server', () => {
     expect(html).toContain('>Excerpt<');
     expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*terminal-content[\s\S]*<\/section>[\s\S]*article-post-meta/);
     expect(html).not.toContain('article-terminal__meta-strip');
-    expect(html).toContain('/assets/css/article-metrics.css?v=20260922-3');
-    expect(html).toContain('/styles.css?v=20260922-3');
+    expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
+    expect(html).toMatch(/\/styles\.css\?v=[^"]+/);
+    expect(html).toContain('data-article-seam');
     expect(html).not.toContain('GMT');
     expect(html).toContain('data-reading-progress');
     expect(html).toContain('data-reading-progress-toggle');
@@ -286,8 +287,8 @@ describe('blog server', () => {
     expect(html).toContain('reading-progress__bubble-fill');
     expect(html).toContain('data-reading-progress-rive');
     expect(html).not.toContain('<script src="/vendor/rive/rive.js"');
-    expect(html).toContain('/assets/article-analytics.js?v=20260922-1');
-    expect(html).toContain('/script.js?v=20260922-1');
+    expect(html).toMatch(/\/assets\/article-analytics\.js\?v=[^"]+/);
+    expect(html).toMatch(/\/script\.js\?v=[^"]+/);
     expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');
     expect(html).toContain('Herunterladen');

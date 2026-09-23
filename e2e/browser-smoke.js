@@ -57,6 +57,15 @@ async function assertMetaLinksInFooter(page) {
   assert.equal(await footer.locator('a[href="/impressum"]').count(), 1, 'Impressum must appear once in the footer');
 }
 
+function assertClose(actual, expected, message, tolerance = 0.75) {
+  assert.ok(
+    Number.isFinite(actual)
+    && Number.isFinite(expected)
+    && Math.abs(actual - expected) <= tolerance,
+    `${message} (actual=${actual}, expected=${expected})`
+  );
+}
+
 async function assertKernelGrepTrigger(page) {
   const trigger = page.locator('.main-nav > [data-kernel-grep-trigger]');
   await trigger.waitFor({ state: 'visible' });
@@ -173,6 +182,7 @@ async function main() {
     let downloadExportVerified = false;
     let terminalControlsVerified = false;
     let terminalProgressVerified = false;
+    let desktopTerminalChromeMetrics = null;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -215,22 +225,38 @@ async function main() {
       assert.equal(await terminal.locator('[data-terminal-action]').count(), 3, `Functional terminal controls incomplete for ${href}`);
 
       if (!terminalControlsVerified) {
-        const controlGeometry = await terminal.locator('[data-terminal-action]').evaluateAll((buttons) =>
-          buttons.map((button) => {
+        desktopTerminalChromeMetrics = await terminal.locator('.terminal-chrome').evaluate((chrome) => {
+          const view = chrome.ownerDocument.defaultView;
+          const chromeRect = chrome.getBoundingClientRect();
+          const buttons = [...chrome.querySelectorAll('[data-terminal-action]')];
+          const dots = buttons.map((button) => {
             const rect = button.getBoundingClientRect();
-            const dot = button.ownerDocument.defaultView.globalThis.getComputedStyle(button, '::before');
+            const dot = view.globalThis.getComputedStyle(button, '::before');
             return {
-              width: rect.width,
-              height: rect.height,
-              dotWidth: Number.parseFloat(dot.width),
-              dotHeight: Number.parseFloat(dot.height)
+              x: rect.x,
+              hitHeight: rect.height,
+              width: Number.parseFloat(dot.width),
+              height: Number.parseFloat(dot.height)
             };
-          })
+          });
+          return {
+            chromeHeight: chromeRect.height,
+            paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+            dotWidth: dots[0]?.width || 0,
+            dotHeight: dots[0]?.height || 0,
+            gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0,
+            hitHeights: dots.map((dot) => dot.hitHeight)
+          };
+        });
+
+        assert.ok(
+          Math.abs(desktopTerminalChromeMetrics.dotWidth - desktopTerminalChromeMetrics.dotHeight) < 0.5,
+          'Visible terminal dots must stay round'
         );
-        for (const geometry of controlGeometry) {
-          assert.ok(Math.abs(geometry.width - geometry.height) < 0.5, 'Terminal control touch target must stay round');
-          assert.ok(Math.abs(geometry.dotWidth - geometry.dotHeight) < 0.5, 'Visible terminal dot must stay round');
-        }
+        assert.ok(
+          desktopTerminalChromeMetrics.hitHeights.every((height) => height >= desktopTerminalChromeMetrics.dotHeight),
+          'Terminal controls must keep an interaction lane at least as tall as the visible dot'
+        );
 
         await terminal.locator('[data-terminal-action="maximize"]').click();
         await page.locator('.terminal-post--article.is-maximized').waitFor({ state: 'attached' });
@@ -385,6 +411,27 @@ async function main() {
         `Graph chrome title missing for ${href}`
       );
       assert.equal(await graphSection.locator('.knowledge-graph__chrome-dot').count(), 3, `Graph chrome controls incomplete for ${href}`);
+      if (desktopTerminalChromeMetrics) {
+        const graphChromeMetrics = await graphSection.locator('.knowledge-graph__chrome').evaluate((chrome) => {
+          const chromeRect = chrome.getBoundingClientRect();
+          const dots = [...chrome.querySelectorAll('.knowledge-graph__chrome-dot')].map((dot) => dot.getBoundingClientRect());
+          return {
+            chromeHeight: chromeRect.height,
+            paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+            dotWidth: dots[0]?.width || 0,
+            dotHeight: dots[0]?.height || 0,
+            gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0
+          };
+        });
+
+        assertClose(desktopTerminalChromeMetrics.dotWidth, graphChromeMetrics.dotWidth, 'Terminal and knowledge graph dots should share the same size');
+        assertClose(desktopTerminalChromeMetrics.dotHeight, graphChromeMetrics.dotHeight, 'Terminal and knowledge graph dots should share the same shape');
+        assertClose(desktopTerminalChromeMetrics.gap, graphChromeMetrics.gap, 'Terminal and knowledge graph dots should share the same spacing');
+        assertClose(desktopTerminalChromeMetrics.chromeHeight, graphChromeMetrics.chromeHeight, 'Terminal and knowledge graph chrome should share the same height');
+        assertClose(desktopTerminalChromeMetrics.paddingLeft, graphChromeMetrics.paddingLeft, 'Terminal and knowledge graph chrome should share the same left inset');
+
+        desktopTerminalChromeMetrics = null;
+      }
       await graphSection.locator('.knowledge-graph__canvas canvas').waitFor({ state: 'visible', timeout: 15_000 });
       assert.equal(await graphSection.locator('.knowledge-graph__legend span').count(), 4, `Graph legend incomplete for ${href}`);
 
@@ -451,23 +498,7 @@ async function main() {
     const mobileHeaderRadius = await mobileHomeHeader.evaluate((element) =>
       Number.parseFloat(element.ownerDocument.defaultView.getComputedStyle(element).borderTopLeftRadius)
     );
-    const mobileHeaderTransition = await mobileHomeHeader.evaluate((element) => {
-      const style = element.ownerDocument.defaultView.getComputedStyle(element, '::before');
-      return {
-        content: style.content,
-        height: Number.parseFloat(style.height),
-        zIndex: style.zIndex,
-        backgroundImage: style.backgroundImage
-      };
-    });
     assert.ok(mobileHeaderRadius >= 16, 'Mobile header should keep a rounded card shape');
-    assert.ok(
-      mobileHeaderTransition.content !== 'none'
-      && mobileHeaderTransition.height >= 36
-      && mobileHeaderTransition.zIndex !== '-1'
-      && mobileHeaderTransition.backgroundImage !== 'none',
-      'Mobile header transition must remain visibly layered over the following content'
-    );
     assert.ok(
       mobileHomeHeaderBox
       && mobileHomeHeroBox
@@ -487,6 +518,37 @@ async function main() {
       && mobileTerminalBox
       && mobileTerminalBox.y - (mobilePostHeaderBox.y + mobilePostHeaderBox.height) <= 48,
       'Mobile article terminal should connect closely to the header'
+    );
+
+    const articleHero = page.locator('.article-hero');
+    const heroSeam = page.locator('[data-article-seam]');
+    const terminalContent = page.locator('.terminal-content');
+    await heroSeam.waitFor({ state: 'visible' });
+    const heroBox = await articleHero.boundingBox();
+    const seamBox = await heroSeam.boundingBox();
+    const contentBox = await terminalContent.boundingBox();
+    const seamPaint = await heroSeam.evaluate((element) => {
+      const style = element.ownerDocument.defaultView.getComputedStyle(element);
+      return {
+        backgroundImage: style.backgroundImage,
+        backgroundColor: style.backgroundColor,
+        boxShadow: style.boxShadow
+      };
+    });
+    assert.ok(
+      heroBox
+      && seamBox
+      && contentBox
+      && seamBox.height > 0
+      && Math.abs((seamBox.y + seamBox.height) - contentBox.y) <= 2
+      && seamBox.y < heroBox.y + heroBox.height,
+      'Article hero seam must overlap the hero and meet the article body without a layout gap'
+    );
+    assert.ok(
+      seamPaint.backgroundImage !== 'none'
+      || seamPaint.boxShadow !== 'none'
+      || !/rgba?\(0, 0, 0(?:, 0)?\)/.test(seamPaint.backgroundColor),
+      'Article hero seam must paint a visible blend instead of being a transparent spacer'
     );
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
@@ -657,6 +719,37 @@ async function main() {
     );
     const mobileCanvasBox = await mobileGraph.locator('.knowledge-graph__canvas').boundingBox();
     assert.ok(mobileCanvasBox && mobileCanvasBox.height <= 340, 'Compact article graph should stay visually bounded on mobile');
+
+    const mobileTerminalChrome = await page.locator('.terminal-chrome').evaluate((chrome) => {
+      const view = chrome.ownerDocument.defaultView;
+      const chromeRect = chrome.getBoundingClientRect();
+      const buttons = [...chrome.querySelectorAll('[data-terminal-action]')];
+      const dots = buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        const dot = view.globalThis.getComputedStyle(button, '::before');
+        return { x: rect.x, width: Number.parseFloat(dot.width) };
+      });
+      return {
+        chromeHeight: chromeRect.height,
+        paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+        dotWidth: dots[0]?.width || 0,
+        gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0
+      };
+    });
+    const mobileGraphChrome = await mobileGraph.locator('.knowledge-graph__chrome').evaluate((chrome) => {
+      const chromeRect = chrome.getBoundingClientRect();
+      const dots = [...chrome.querySelectorAll('.knowledge-graph__chrome-dot')].map((dot) => dot.getBoundingClientRect());
+      return {
+        chromeHeight: chromeRect.height,
+        paddingLeft: dots.length ? dots[0].x - chromeRect.x : 0,
+        dotWidth: dots[0]?.width || 0,
+        gap: dots.length > 1 ? dots[1].x - dots[0].x - dots[0].width : 0
+      };
+    });
+    assertClose(mobileTerminalChrome.dotWidth, mobileGraphChrome.dotWidth, 'Mobile terminal and knowledge graph dots should share the same size');
+    assertClose(mobileTerminalChrome.gap, mobileGraphChrome.gap, 'Mobile terminal and knowledge graph dots should share the same spacing');
+    assertClose(mobileTerminalChrome.chromeHeight, mobileGraphChrome.chromeHeight, 'Mobile terminal and knowledge graph chrome should share the same height');
+    assertClose(mobileTerminalChrome.paddingLeft, mobileGraphChrome.paddingLeft, 'Mobile terminal and knowledge graph chrome should share the same left inset');
     await page.setViewportSize({ width: 1280, height: 720 });
 
     await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });

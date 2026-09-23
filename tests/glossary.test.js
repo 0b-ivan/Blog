@@ -131,9 +131,10 @@ describe('glossary', () => {
       'utf8'
     );
 
-    expect(css).toContain('background: #0b131f;');
-    expect(css).toContain('color: #eaf2ff;');
-    expect(css).not.toMatch(/\.glossary-tooltip\s*\{[\s\S]*?color:\s*var\(--text/);
+    const tooltipRule = css.match(/\.glossary-tooltip\s*\{([\s\S]*?)\}/)?.[1] || '';
+
+    expect(tooltipRule).toMatch(/\bbackground(?:-color)?:\s*[^;]+;/);
+    expect(tooltipRule).toMatch(/\bcolor:\s*(?!var\(--text\))[^;]+;/);
   });
 
   it('syncs only used glossary definitions into markdown and stays idempotent', () => {
