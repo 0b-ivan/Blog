@@ -20,7 +20,7 @@ on:
         required: false
         type: string
       selection:
-        description: Candidate number 1-6, used only in apply mode
+        description: Ranked candidate number 1-12, used only in apply mode
         required: false
         default: "1"
         type: string
@@ -98,9 +98,9 @@ jobs:
 
           if [ "${{ inputs.mode }}" = "apply" ]; then
             case "$SELECTION" in
-              1|2|3|4|5|6) ;;
+              1|2|3|4|5|6|7|8|9|10|11|12) ;;
               *)
-                echo 'selection must be a number from 1 to 6.' >&2
+                echo 'selection must be a ranked candidate from 1 to 12.' >&2
                 exit 1
                 ;;
             esac
@@ -132,6 +132,19 @@ jobs:
             npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --select "$SELECTION"
           else
             npm run covers:resolve -- "$POST_PATH" --select "$SELECTION"
+          fi
+
+      - name: Build ranked candidate report
+        if: inputs.mode == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$QUERY" ]; then
+            node scripts/resolve-pixabay-cover.js "$POST_PATH" --query "$QUERY" --preview |
+              awk '/^### 4\./ { exit } { print }' > /tmp/cover-candidates.md
+          else
+            node scripts/resolve-pixabay-cover.js "$POST_PATH" --preview |
+              awk '/^### 4\./ { exit } { print }' > /tmp/cover-candidates.md
           fi
 
       - name: Validate generated changes
@@ -170,15 +183,40 @@ jobs:
           git push origin "HEAD:refs/heads/${branch}"
 
           body_file="$(mktemp)"
-          cat > "$body_file" <<EOF
-          Generated from Pixabay using the repository cover workflow.
+          preview_sha="$(git rev-parse HEAD)"
+          cover_path="$(node - "$POST_PATH" <<'NODE'
+          const fs = require('node:fs');
+          const matter = require('gray-matter');
+          const post = process.argv[2];
+          const data = matter(fs.readFileSync(post, 'utf8')).data;
+          process.stdout.write(String(data.cover_image || ''));
+          NODE
+          )"
+          cover_score="$(node - "$POST_PATH" <<'NODE'
+          const fs = require('node:fs');
+          const matter = require('gray-matter');
+          const post = process.argv[2];
+          const data = matter(fs.readFileSync(post, 'utf8')).data;
+          process.stdout.write(String(data.cover_score || 'n/a'));
+          NODE
+          )"
 
-          Post: $POST_PATH
-          Candidate: $SELECTION
-          Query: ${QUERY:-derived from article metadata}
-
-          The image is stored locally under assets/covers/. The Pixabay API key is never committed.
-          EOF
+          {
+            echo 'Generated from Pixabay using the repository cover workflow.'
+            echo
+            printf 'Post: `%s`\n\n' "$POST_PATH"
+            printf 'Selected ranked candidate: **%s**\n\n' "$SELECTION"
+            printf 'Topic score: **%s/100**\n\n' "$cover_score"
+            printf 'Query override: `%s`\n\n' "${QUERY:-derived from article metadata}"
+            echo '## Selected cover'
+            echo
+            printf '![Selected article cover](https://raw.githubusercontent.com/%s/%s%s)\n\n' "$GITHUB_REPOSITORY" "$preview_sha" "$cover_path"
+            echo '## Top ranked candidates'
+            echo
+            cat /tmp/cover-candidates.md
+            echo
+            echo 'The selected image is stored locally under `assets/covers/`. The Pixabay API key is never committed.'
+          } > "$body_file"
 
           pr_url="$(gh pr create \
             --repo "$GITHUB_REPOSITORY" \
