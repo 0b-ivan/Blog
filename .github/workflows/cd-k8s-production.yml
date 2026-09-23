@@ -432,3 +432,16 @@ jobs:
 
           echo "::error title=Production rollout timeout::Production did not reach a stable healthy state within 360 seconds."
           exit 1
+
+      - name: Verify production LaTeX PDF export
+        if: steps.changes.outputs.pdf == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=/tmp/production-chaos-engineering.pdf
+          curl -fsS --max-time 90 \
+            "${K8S_PRODUCTION_URL}/download/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.pdf?deploy=${GITHUB_SHA}" \
+            -o "$output"
+          test "$(head -c 5 "$output")" = '%PDF-'
+          test "$(wc -c < "$output")" -gt 10000
+          echo 'Production LaTeX PDF export is healthy.'
