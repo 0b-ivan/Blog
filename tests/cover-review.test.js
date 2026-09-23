@@ -11,6 +11,7 @@ describe('cover review markdown', () => {
     series: 'example-series',
     visualIntent: 'writing-proofreading',
     visualIntentEvidence: 22,
+    pixabayCategory: 'computer',
     query: 'server storage cloud',
     queries: ['server storage cloud', 'Self-Hosting Nextcloud WebDAV', 'Example Article'],
     selected: {
@@ -79,6 +80,7 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('**Serie:** `example-series`');
     expect(markdown).toContain('**Bildidee:** `writing-proofreading`');
     expect(markdown).toContain('**Intent-Evidenz:** 22');
+    expect(markdown).toContain('**Pixabay-Kategorie:** `computer`');
     expect(markdown).toContain('**Vielfalt:** Motiv `storage` · Score 88 → 76');
     expect(markdown).toContain('außerhalb von Serien eindeutig');
     expect(markdown).toContain('motif diversity');
