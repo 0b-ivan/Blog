@@ -12,8 +12,11 @@ category: IT
 excerpt:
 tags: []
 cover_query:
+cover_subject:
+cover_avoid: []
 cover_provider:
 cover_provider_id:
+cover_score:
 cover_image:
 cover_alt:
 cover_focus: center
