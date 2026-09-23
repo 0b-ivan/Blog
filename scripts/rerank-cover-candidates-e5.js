@@ -5,10 +5,16 @@ const { createEmbedder } = require('../rag/lib/embedder-factory');
 const { cosineSimilarity } = require('../rag/lib/ranking');
 
 const root = path.join(__dirname, '..');
-const DEFAULT_SEMANTIC_WEIGHT = 0.90;
+const DEFAULT_SEMANTIC_WEIGHT = 0.80;
 const DEFAULT_MISMATCH_DELTA = 0.07;
 const ARTICLE_SEMANTIC_SHARE = 0.65;
 const PROTOTYPE_SEMANTIC_SHARE = 0.35;
+const HERO_QUALITY_WEIGHT = 0.15;
+const HEURISTIC_WEIGHT = 0.05;
+
+const GENERIC_ICON_TERMS = ['icon', 'logo', 'symbol', 'button', 'sign', 'isolated'];
+const GENERIC_ERROR_TERMS = ['error', 'cross', 'warning', 'wrong', 'false', 'mistake', 'failure sign'];
+const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'];
 
 const COVER_CONCEPT_PROTOTYPES = {
   'writing-proofreading': {
@@ -16,32 +22,48 @@ const COVER_CONCEPT_PROTOTYPES = {
     negative: 'secretary office sales telephone call center business meeting portrait person'
   },
   'rss-reader': {
-    positive: 'RSS feed reader web feed subscription aggregator syndication feed list unread articles RSS icon feed application',
-    negative: 'journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account'
+    positive: 'RSS feed reader dashboard web feed subscription aggregator syndication browser website feed list unread articles feed application',
+    negative: 'RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account',
+    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'website', 'subscription', 'feed'],
+    heroAvoid: ['icon', 'logo', 'symbol', 'button', 'isolated']
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
     negative: 'physical lock safe vault key insurance house security'
   },
   'systemd-service': {
-    positive: 'Linux systemd service daemon command line shell journalctl service logs process server administration unit file',
-    negative: 'train station airport terminal transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper'
+    positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
+    negative: 'empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
+    heroPreferred: ['server', 'service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
+    heroAvoid: ['screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize']
   },
   'docker-compose': {
-    positive: 'software deployment DevOps application services orchestration compose configuration code terminal',
-    negative: 'shipping cargo port freight metal container box jar can storage vessel'
+    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow',
+    negative: 'generic code screen terminal screenshot programming laptop shipping cargo port freight metal container box jar can storage vessel',
+    heroPreferred: ['deployment', 'services', 'orchestration', 'configuration', 'architecture', 'workflow'],
+    heroAvoid: ['screen', 'terminal', 'screenshot', 'laptop']
   },
   'semantic-search': {
-    positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results',
-    negative: 'generic programmer software engineer coding laptop source code social media search engine smartphone robot portrait human'
+    positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
+    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media search engine smartphone robot portrait human',
+    heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval'],
+    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot']
   },
   'vpc-networking': {
     positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
     negative: 'social media network people icons smartphone generic server rack database storage'
   },
+  'chaos-monkey': {
+    positive: 'monkey ape primate chimpanzee macaque baboon playful chaos resilience technology infrastructure',
+    negative: 'red cross error icon warning sign button GUI interface generic failure symbol',
+    heroPreferred: ['monkey', 'ape', 'primate', 'chimpanzee', 'macaque', 'baboon'],
+    heroAvoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button', 'interface', 'gui']
+  },
   'chaos-engineering': {
     positive: 'site reliability engineering resilience failure injection outage monitoring incident recovery infrastructure reliability experiment',
-    negative: 'school exam chemistry laboratory medical experiment business management sales'
+    negative: 'red cross error icon warning sign button school exam chemistry laboratory medical experiment business management sales',
+    heroPreferred: ['resilience', 'monitoring', 'outage', 'incident', 'infrastructure', 'recovery', 'failure'],
+    heroAvoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button']
   },
   'regression-testing': {
     positive: 'software regression testing automated tests bug quality assurance test suite continuous integration code failure',
@@ -190,6 +212,70 @@ function blendScore(semanticScore, heuristicScore, semanticWeight = DEFAULT_SEMA
   )));
 }
 
+function matchTerms(tags, terms = []) {
+  const haystack = String(tags || '').toLowerCase();
+  return [...new Set(terms.filter((term) => haystack.includes(String(term).toLowerCase())))];
+}
+
+function heroQuality(candidate = {}, prototype = null) {
+  const tags = String(candidate.tags || '');
+  let score = 70;
+  const reasons = [];
+
+  const iconMatches = matchTerms(tags, GENERIC_ICON_TERMS);
+  if (iconMatches.length) {
+    const penalty = Math.min(36, 12 + ((iconMatches.length - 1) * 8));
+    score -= penalty;
+    reasons.push(`-${penalty} generic icon/logo: ${iconMatches.slice(0, 4).join(', ')}`);
+  }
+
+  const errorMatches = matchTerms(tags, GENERIC_ERROR_TERMS);
+  if (errorMatches.length) {
+    const penalty = Math.min(32, 10 + ((errorMatches.length - 1) * 7));
+    score -= penalty;
+    reasons.push(`-${penalty} generic error motif: ${errorMatches.slice(0, 4).join(', ')}`);
+  }
+
+  const screenMatches = matchTerms(tags, GENERIC_SCREEN_TERMS);
+  if (screenMatches.length >= 2) {
+    const penalty = Math.min(28, 8 + ((screenMatches.length - 2) * 5));
+    score -= penalty;
+    reasons.push(`-${penalty} generic screen/terminal: ${screenMatches.slice(0, 5).join(', ')}`);
+  }
+
+  const preferred = matchTerms(tags, prototype?.heroPreferred || []);
+  if (preferred.length) {
+    const bonus = Math.min(30, preferred.length * 8);
+    score += bonus;
+    reasons.push(`+${bonus} hero motif: ${preferred.slice(0, 4).join(', ')}`);
+  }
+
+  const avoided = matchTerms(tags, prototype?.heroAvoid || []);
+  if (avoided.length) {
+    const penalty = Math.min(42, avoided.length * 12);
+    score -= penalty;
+    reasons.push(`-${penalty} intent hero avoid: ${avoided.slice(0, 4).join(', ')}`);
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    reasons,
+    preferred,
+    avoided,
+    iconMatches,
+    errorMatches,
+    screenMatches
+  };
+}
+
+function blendCoverScore(semanticScore, heroScore, heuristicScore, semanticWeight = DEFAULT_SEMANTIC_WEIGHT) {
+  const semantic = Number(semanticScore || 0) * semanticWeight;
+  const hero = Number(heroScore || 0) * HERO_QUALITY_WEIGHT;
+  const heuristic = Number(heuristicScore || 0) * HEURISTIC_WEIGHT;
+  return Math.max(0, Math.min(100, Math.round(semantic + hero + heuristic)));
+}
+
+
 async function rerankReport(report, articleText, embedder, options = {}) {
   const semanticWeight = options.semanticWeight ?? DEFAULT_SEMANTIC_WEIGHT;
   const mismatchDelta = options.mismatchDelta ?? DEFAULT_MISMATCH_DELTA;
@@ -235,7 +321,8 @@ async function rerankReport(report, articleText, embedder, options = {}) {
       prototypeScore,
       Boolean(prototype)
     );
-    const score = blendScore(semanticScore, heuristicScore, semanticWeight);
+    const hero = heroQuality(candidate, prototype);
+    const score = blendCoverScore(semanticScore, hero.score, heuristicScore, semanticWeight);
     const articleMismatch = similarity < (bestSimilarity - mismatchDelta);
     const prototypeMismatch = Boolean(
       prototype && Number(positiveSimilarity) <= Number(negativeSimilarity)
@@ -254,6 +341,10 @@ async function rerankReport(report, articleText, embedder, options = {}) {
       prototypeMargin: prototype ? round(prototypeMargin, 5) : null,
       prototypeScore,
       semanticScore,
+      heroQualityScore: hero.score,
+      heroQualityReasons: hero.reasons,
+      heroPreferredMatches: hero.preferred,
+      heroAvoidMatches: hero.avoided,
       score,
       semanticMismatch,
       prototypeMismatch,
@@ -265,7 +356,8 @@ async function rerankReport(report, articleText, embedder, options = {}) {
         prototype
           ? `semantic mix ${Math.round(ARTICLE_SEMANTIC_SHARE * 100)}/${Math.round(PROTOTYPE_SEMANTIC_SHARE * 100)} article/concept`
           : '',
-        `semantic/heuristic blend ${Math.round(semanticWeight * 100)}/${Math.round((1 - semanticWeight) * 100)}`,
+        `final blend ${Math.round(semanticWeight * 100)}/${Math.round(HERO_QUALITY_WEIGHT * 100)}/${Math.round(HEURISTIC_WEIGHT * 100)} semantic/hero/heuristic`,
+        ...hero.reasons,
         ...(Array.isArray(candidate.reasons) ? candidate.reasons : [])
       ].filter(Boolean)
     };
@@ -363,12 +455,20 @@ module.exports = {
   COVER_CONCEPT_PROTOTYPES,
   DEFAULT_MISMATCH_DELTA,
   DEFAULT_SEMANTIC_WEIGHT,
+  GENERIC_ERROR_TERMS,
+  GENERIC_ICON_TERMS,
+  GENERIC_SCREEN_TERMS,
+  HERO_QUALITY_WEIGHT,
+  HEURISTIC_WEIGHT,
   PROTOTYPE_SEMANTIC_SHARE,
   articleSemanticText,
+  blendCoverScore,
   blendScore,
   candidateSemanticText,
   combinedSemanticScore,
   conceptPrototype,
+  heroQuality,
+  matchTerms,
   parseArgs,
   prototypeMarginScore,
   rerankReport,

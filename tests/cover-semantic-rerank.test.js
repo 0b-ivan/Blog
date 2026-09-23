@@ -1,9 +1,11 @@
 const {
   articleSemanticText,
+  blendCoverScore,
   blendScore,
   candidateSemanticText,
   combinedSemanticScore,
   conceptPrototype,
+  heroQuality,
   prototypeMarginScore,
   rerankReport,
   semanticRelativeScore
@@ -162,6 +164,49 @@ systemctl status example
     expect(combinedSemanticScore(100, 0, true)).toBe(65);
     expect(combinedSemanticScore(60, 100, true)).toBe(74);
     expect(combinedSemanticScore(77, null, false)).toBe(77);
+  });
+
+  it('penalizes generic icons and terminal screenshots as weak hero covers', () => {
+    const rssPrototype = conceptPrototype({ visualIntent: 'rss-reader' });
+    const rssLogo = heroQuality({
+      tags: 'rss, feed, icon, logo, symbol, isolated'
+    }, rssPrototype);
+    const rssDashboard = heroQuality({
+      tags: 'rss, feed, reader, dashboard, browser, website'
+    }, rssPrototype);
+
+    expect(rssDashboard.score).toBeGreaterThan(rssLogo.score);
+    expect(rssLogo.avoided).toContain('icon');
+
+    const systemdPrototype = conceptPrototype({ visualIntent: 'systemd-service' });
+    const emptyTerminal = heroQuality({
+      tags: 'linux, window, terminal, cmd, console, scroll, minimize'
+    }, systemdPrototype);
+    const operations = heroQuality({
+      tags: 'linux, server, service, monitoring, logs, daemon, administration'
+    }, systemdPrototype);
+
+    expect(operations.score).toBeGreaterThan(emptyTerminal.score);
+    expect(emptyTerminal.screenMatches.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('makes a monkey motif outrank a generic red error symbol for Chaos Monkey', () => {
+    const prototype = conceptPrototype({ visualIntent: 'chaos-monkey' });
+    const monkey = heroQuality({
+      tags: 'monkey, ape, primate, chimpanzee'
+    }, prototype);
+    const error = heroQuality({
+      tags: 'false, error, red, cross, icon, symbol, sign'
+    }, prototype);
+
+    expect(monkey.score).toBeGreaterThan(error.score);
+    expect(monkey.preferred.length).toBeGreaterThan(0);
+    expect(error.avoided.length).toBeGreaterThan(0);
+  });
+
+  it('blends semantic relevance with hero quality before heuristics', () => {
+    expect(blendCoverScore(90, 100, 20, 0.8)).toBe(88);
+    expect(blendCoverScore(90, 20, 100, 0.8)).toBe(80);
   });
 
   it('normalizes semantic relevance relative to the best candidate', () => {

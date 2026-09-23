@@ -113,6 +113,9 @@ function candidateTable(candidates, options = {}) {
     const prototype = Number.isFinite(Number(candidate.prototypeMargin))
       ? `Konzept: ${Number(candidate.prototypeMargin) >= 0 ? '+' : ''}${Number(candidate.prototypeMargin).toFixed(4)}`
       : '';
+    const heroQuality = Number.isFinite(Number(candidate.heroQualityScore))
+      ? `Hero: ${Math.round(Number(candidate.heroQualityScore))}/100`
+      : '';
     const heuristic = Number.isFinite(Number(candidate.heuristicScore))
       ? `Heuristik: ${Math.round(Number(candidate.heuristicScore))}/100`
       : '';
@@ -122,6 +125,7 @@ function candidateTable(candidates, options = {}) {
           markdownText(candidate.tags).slice(0, 180),
           semantic,
           prototype,
+          heroQuality,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
         ].filter(Boolean).join('<br>')
@@ -129,6 +133,7 @@ function candidateTable(candidates, options = {}) {
           markdownText(candidate.tags),
           semantic,
           prototype,
+          heroQuality,
           heuristic,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
@@ -197,6 +202,9 @@ function renderReport(report, options = {}) {
         : '',
       Number.isFinite(Number(selected.prototypeMargin))
         ? `**E5 Konzept-Marge:** ${Number(selected.prototypeMargin) >= 0 ? '+' : ''}${Number(selected.prototypeMargin).toFixed(5)}`
+        : '',
+      Number.isFinite(Number(selected.heroQualityScore))
+        ? `**Hero-Qualität:** ${Math.round(Number(selected.heroQualityScore))}/100`
         : '',
       selected.pageURL ? `**Quelle:** [Pixabay – ${markdownText(selected.tags || 'Bild')}](${selected.pageURL})` : '',
       '',

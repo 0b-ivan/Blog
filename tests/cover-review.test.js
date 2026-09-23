@@ -34,6 +34,7 @@ describe('cover review markdown', () => {
         heuristicScore: 61,
         semanticSimilarity: 0.87321,
         prototypeMargin: 0.08321,
+        heroQualityScore: 92,
         tags: 'server, storage, cloud',
         user: 'Example',
         pageURL: 'https://pixabay.com/photos/example-42/',
@@ -94,6 +95,7 @@ describe('cover review markdown', () => {
     expect(markdown).toContain('**Konzept-Prototyp:** `writing-proofreading`');
     expect(markdown).toContain('E5 Artikel: 0.8732');
     expect(markdown).toContain('Konzept: +0.0832');
+    expect(markdown).toContain('Hero: 92/100');
     expect(markdown).toContain('Heuristik: 61/100');
     expect(markdown).toContain('**Vielfalt:** Motiv `storage` · Score 88 → 76');
     expect(markdown).toContain('außerhalb von Serien eindeutig');
