@@ -1,5 +1,8 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const matter = require('gray-matter');
+
+const root = path.join(__dirname, '..');
 
 function parseArgs(args) {
   const options = {
@@ -47,6 +50,44 @@ function markdownText(value) {
     .trim();
 }
 
+function selectedFromPost(report, raw) {
+  if (report.selected) return report.selected;
+
+  const parsed = matter(String(raw || ''));
+  const providerId = String(parsed.data.cover_provider_id || '').trim();
+  const coverImage = String(parsed.data.cover_image || '').trim();
+  if (!providerId || !coverImage) return null;
+
+  const candidate = (report.candidates || []).find(
+    (entry) => String(entry.id || '') === providerId
+  );
+  if (!candidate) return null;
+
+  const storedScore = Number(parsed.data.cover_score);
+  return {
+    ...candidate,
+    score: Number.isFinite(storedScore) ? storedScore : candidate.score,
+    coverImage
+  };
+}
+
+async function enrichSelectedFromWorkingTree(report) {
+  if (report.selected || !report.postPath) return report;
+
+  const postsRoot = path.resolve(root, 'posts');
+  const target = path.resolve(root, report.postPath);
+  if (!target.startsWith(`${postsRoot}${path.sep}`)) return report;
+
+  try {
+    const raw = await fs.readFile(target, 'utf8');
+    const selected = selectedFromPost(report, raw);
+    return selected ? { ...report, selected } : report;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return report;
+    throw error;
+  }
+}
+
 function rawGithubUrl(repository, commit, assetPath) {
   const cleanPath = String(assetPath || '').replace(/^\/+/, '');
   if (!repository || !commit || !cleanPath) return '';
@@ -66,14 +107,24 @@ function candidateTable(candidates, options = {}) {
       ? `[Pixabay](${candidate.pageURL})`
       : 'Pixabay';
     const reasons = markdownText((candidate.reasons || []).join(' · ')) || 'keine zusätzlichen Signale';
+    const semantic = Number.isFinite(Number(candidate.semanticSimilarity))
+      ? `E5: ${Number(candidate.semanticSimilarity).toFixed(4)}`
+      : '';
+    const heuristic = Number.isFinite(Number(candidate.heuristicScore))
+      ? `Heuristik: ${Math.round(Number(candidate.heuristicScore))}/100`
+      : '';
+
     const details = compact
       ? [
           markdownText(candidate.tags).slice(0, 180),
+          semantic,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
         ].filter(Boolean).join('<br>')
       : [
           markdownText(candidate.tags),
+          semantic,
+          heuristic,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
             ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
@@ -107,6 +158,7 @@ function renderReport(report, options = {}) {
     report.series ? `**Serie:** \`${markdownText(report.series)}\`` : '**Serie:** keine',
     report.visualIntent ? `**Bildidee:** \`${markdownText(report.visualIntent)}\`` : '**Bildidee:** generisch',
     report.visualIntent ? `**Intent-Evidenz:** ${Number(report.visualIntentEvidence || 0)}` : '',
+    report.semanticModel ? `**Semantisches Ranking:** \`${markdownText(report.semanticModel)}\` · E5 ${Math.round(Number(report.semanticWeight || 0) * 100)}%` : '',
     options.compact
       ? ''
       : (queries.length
@@ -132,6 +184,9 @@ function renderReport(report, options = {}) {
     const imageUrl = rawGithubUrl(options.repository, options.commit, selected.coverImage);
     lines.push(
       `**Ausgewählt:** Rang ${selected.rank} · **${selected.score}/100**`,
+      Number.isFinite(Number(selected.semanticSimilarity))
+        ? `**E5-Ähnlichkeit:** ${Number(selected.semanticSimilarity).toFixed(5)}`
+        : '',
       selected.pageURL ? `**Quelle:** [Pixabay – ${markdownText(selected.tags || 'Bild')}](${selected.pageURL})` : '',
       '',
       '### Ausgewähltes Cover',
@@ -169,7 +224,8 @@ async function loadReports(options) {
   const unique = [...new Set(files)].sort();
   const reports = [];
   for (const file of unique) {
-    reports.push(JSON.parse(await fs.readFile(file, 'utf8')));
+    const report = JSON.parse(await fs.readFile(file, 'utf8'));
+    reports.push(await enrichSelectedFromWorkingTree(report));
   }
   return reports.sort((left, right) =>
     String(left.postPath || '').localeCompare(String(right.postPath || ''), 'en')
@@ -218,9 +274,11 @@ if (require.main === module) {
 
 module.exports = {
   candidateTable,
+  enrichSelectedFromWorkingTree,
   loadReports,
   markdownText,
   parseArgs,
   rawGithubUrl,
-  renderReport
+  renderReport,
+  selectedFromPost
 };
