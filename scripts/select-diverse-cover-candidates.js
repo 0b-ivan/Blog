@@ -2,6 +2,8 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 
 const CLUSTERS = [
+  ['writing-editing', ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'typewriter']],
+  ['search-data', ['search', 'magnifying', 'analytics', 'artificial intelligence', 'embedding']],
   ['security', ['security', 'cyber', 'firewall', 'lock', 'padlock', 'shield', 'privacy', 'hacker']],
   ['photo-media', ['photo', 'camera', 'gallery', 'image', 'photography']],
   ['feed-news', ['rss', 'feed', 'news', 'reader', 'newspaper']],
@@ -150,11 +152,21 @@ function chooseDiverseCovers(reports) {
       adjustment: candidateAdjustment(candidate, report, state)
     }));
 
-    let available = evaluated.filter((entry) => !entry.adjustment.blockedDuplicate);
+    const semanticCandidates = evaluated.filter((entry) => !entry.candidate.semanticMismatch);
+    const semanticFallback = semanticCandidates.length === 0;
+    const semanticPool = semanticFallback ? evaluated : semanticCandidates;
+
+    const bestBaseScore = Math.max(...semanticPool.map((entry) => Number(entry.candidate.score || 0)));
+    const relevanceFloor = Math.max(0, bestBaseScore - 18);
+    const relevantPool = semanticPool.filter(
+      (entry) => Number(entry.candidate.score || 0) >= relevanceFloor
+    );
+
+    let available = relevantPool.filter((entry) => !entry.adjustment.blockedDuplicate);
     let forcedDuplicate = false;
 
     if (!available.length) {
-      available = evaluated;
+      available = relevantPool;
       forcedDuplicate = true;
     }
 
@@ -185,6 +197,8 @@ function chooseDiverseCovers(reports) {
       authorPenalty: adjustment.authorPenalty,
       sameSeriesReuse: adjustment.exactReuseInSeries,
       forcedDuplicate,
+      semanticFallback,
+      relevanceFloor,
       reasons: [
         adjustment.clusterPenalty
           ? `-${adjustment.clusterPenalty} motif diversity: ${adjustment.cluster} already used by ${adjustment.unrelatedCluster} unrelated article(s)`
@@ -196,8 +210,12 @@ function chooseDiverseCovers(reports) {
           ? '+4 same-series consistency: exact image reuse allowed'
           : '',
         forcedDuplicate
-          ? 'forced duplicate: all top candidates were already used outside this series'
-          : ''
+          ? 'forced duplicate: all semantically relevant alternatives were already used outside this series'
+          : '',
+        semanticFallback
+          ? 'semantic fallback: no Top-5 candidate matched the article visual intent'
+          : '',
+        `relevance floor: ${relevanceFloor}/100`
       ].filter(Boolean)
     };
 
