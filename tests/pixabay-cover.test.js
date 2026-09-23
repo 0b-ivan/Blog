@@ -7,6 +7,7 @@ const {
   choosePhoto,
   collectCandidates,
   defaultQuery,
+  detectSeries,
   downloadPhoto,
   fileExtension,
   parseArgs,
@@ -27,6 +28,20 @@ describe('Pixabay cover resolver', () => {
       tags: ['Kubernetes', 'Chaos Engineering', 'K3s', 'Cloudflare']
     })).toBe('Kubernetes Chaos Engineering K3s DevOps');
     expect(defaultQuery({ title: 'Test', tags: [] }).length).toBeLessThanOrEqual(100);
+  });
+
+  it('detects article series explicitly or from Teil/Part titles', () => {
+    expect(detectSeries({
+      series: 'K3s auf Proxmox'
+    })).toBe('k3s-auf-proxmox');
+
+    expect(detectSeries({
+      title: 'K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen Blog'
+    })).toBe('k3s-auf-proxmox');
+
+    expect(detectSeries({
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?'
+    })).toBe('');
   });
 
   it('parses resolver CLI arguments', () => {

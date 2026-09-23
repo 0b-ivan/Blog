@@ -111,18 +111,35 @@ jobs:
             echo 'No published articles matched the selected cover scope.' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Resolve Pixabay covers
+      - name: Rank and diversify Pixabay covers
         if: steps.candidates.outputs.needed == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/cover-reports
+          mkdir -p /tmp/cover-candidates /tmp/cover-reports
+
           while IFS= read -r post; do
             [ -n "$post" ] || continue
-            echo "Resolving local cover for $post"
+            echo "Collecting ranked candidates for $post"
             slug="$(basename "$post" .md)"
-            npm run covers:resolve -- "$post" --select 1 --report "/tmp/cover-reports/${slug}.json"
+            npm run covers:resolve -- "$post" --preview --report "/tmp/cover-candidates/${slug}.json"
           done < /tmp/pixabay-cover-posts.txt
+
+          node scripts/select-diverse-cover-candidates.js \
+            --reports-dir /tmp/cover-candidates \
+            --output /tmp/cover-selection.json \
+            --selection-list /tmp/cover-selection.list
+
+          while IFS='|' read -r post rank; do
+            [ -n "$post" ] || continue
+            [ -n "$rank" ] || {
+              echo "Missing selected rank for $post" >&2
+              exit 1
+            }
+            echo "Applying diversified candidate #$rank for $post"
+            slug="$(basename "$post" .md)"
+            npm run covers:resolve -- "$post" --select "$rank" --report "/tmp/cover-reports/${slug}.json"
+          done < /tmp/cover-selection.list
 
       - name: Validate generated changes
         if: steps.candidates.outputs.needed == 'true'
@@ -132,7 +149,7 @@ jobs:
           git diff --check
           npm run posts:validate-meta
           npm run lint
-          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
+          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-diversity.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
 
       - name: Create backfill pull request
         if: steps.candidates.outputs.needed == 'true'
@@ -165,6 +182,7 @@ jobs:
           body_file="$(mktemp)"
           node scripts/render-cover-review.js \
             --reports-dir /tmp/cover-reports \
+            --selection-manifest /tmp/cover-selection.json \
             --repository "$GITHUB_REPOSITORY" \
             --commit "$cover_commit" > "$body_file"
 

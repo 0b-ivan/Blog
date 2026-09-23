@@ -112,6 +112,22 @@ function listFrom(value) {
   return String(value || '').split(/[,;]+/).flatMap((item) => tokensFrom(item));
 }
 
+function seriesSlug(value) {
+  return normalizeText(value)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
+function detectSeries(data = {}) {
+  const explicit = String(data.series || '').trim();
+  if (explicit) return seriesSlug(explicit);
+
+  const title = String(data.title || '').trim();
+  const match = title.match(/^(.*?)\s+[–—-]\s+(?:teil|part)\s+(?:[ivxlcdm]+|\d+)\b/i);
+  return match ? seriesSlug(match[1]) : '';
+}
+
 function defaultQuery(data) {
   const explicit = String(data.cover_query || '').trim();
   if (explicit) return explicit.slice(0, 100);
@@ -523,9 +539,10 @@ async function main() {
   const reportBase = {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
+    series: detectSeries(parsed.data),
     query: rankingQuery,
     queries,
-    candidates: ranked.slice(0, 3).map(reportCandidate)
+    candidates: ranked.slice(0, 5).map(reportCandidate)
   };
 
   if (options.preview) {
@@ -598,6 +615,7 @@ module.exports = {
   choosePhoto,
   collectCandidates,
   defaultQuery,
+  detectSeries,
   downloadPhoto,
   fileExtension,
   parseArgs,

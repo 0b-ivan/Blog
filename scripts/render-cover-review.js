@@ -6,7 +6,8 @@ function parseArgs(args) {
     reports: [],
     reportsDir: '',
     repository: '',
-    commit: ''
+    commit: '',
+    selectionManifest: ''
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -24,6 +25,9 @@ function parseArgs(args) {
       index += 1;
     } else if (arg === '--commit' && next) {
       options.commit = next;
+      index += 1;
+    } else if (arg === '--selection-manifest' && next) {
+      options.selectionManifest = next;
       index += 1;
     } else {
       throw new Error(`Unknown or incomplete option: ${arg}`);
@@ -78,6 +82,7 @@ function candidateTable(candidates) {
 
 function renderReport(report, options = {}) {
   const title = markdownText(report.title || report.postPath || 'Artikel');
+  const diversity = options.selectionByPost?.get(report.postPath) || null;
   const query = markdownText(report.query || '');
   const queries = Array.isArray(report.queries)
     ? report.queries.map(markdownText).filter(Boolean)
@@ -87,10 +92,25 @@ function renderReport(report, options = {}) {
     `## ${title}`,
     '',
     `**Artikel:** \`${markdownText(report.postPath || '')}\``,
+    report.series ? `**Serie:** \`${markdownText(report.series)}\`` : '**Serie:** keine',
     queries.length
       ? `**Pixabay-Suchpfade:** ${queries.map((value) => `\`${value}\``).join(' → ')}`
       : (query ? `**Pixabay-Query:** \`${query}\`` : '')
   ].filter(Boolean);
+
+  if (diversity) {
+    lines.push(
+      `**Vielfalt:** Motiv \`${markdownText(diversity.motif)}\` · Score ${diversity.baseScore} → ${diversity.adjustedScore}`,
+      diversity.sameSeriesReuse
+        ? '**Wiederverwendung:** erlaubt – identisches Bild innerhalb derselben Serie'
+        : (diversity.forcedDuplicate
+          ? '**Wiederverwendung:** ⚠ erzwungen – alle Top-Kandidaten waren außerhalb der Serie bereits vergeben'
+          : '**Wiederverwendung:** außerhalb von Serien eindeutig'),
+      diversity.reasons?.length
+        ? `**Diversitätsgründe:** ${diversity.reasons.map(markdownText).join(' · ')}`
+        : ''
+    );
+  }
 
   if (selected) {
     const imageUrl = rawGithubUrl(options.repository, options.commit, selected.coverImage);
@@ -151,6 +171,15 @@ async function main() {
 
   const reports = await loadReports(options);
   if (!reports.length) throw new Error('No cover reports found');
+
+  let selectionByPost = new Map();
+  if (options.selectionManifest) {
+    const manifest = JSON.parse(await fs.readFile(options.selectionManifest, 'utf8'));
+    selectionByPost = new Map(
+      (manifest.selections || []).map((selection) => [selection.postPath, selection])
+    );
+  }
+  options.selectionByPost = selectionByPost;
 
   const header = [
     '# Pixabay Cover Review',
