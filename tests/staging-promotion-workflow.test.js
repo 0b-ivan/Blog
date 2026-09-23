@@ -8,7 +8,9 @@ describe('staging promotion workflow', () => {
       'utf8'
     );
 
-    expect(workflow).toContain('Detect changed published posts without covers');
+    expect(workflow).toContain('Detect changed and existing published posts without covers');
+    expect(workflow).toContain('COVER_BACKFILL_LIMIT: "4"');
+    expect(workflow).toContain('scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT"');
     expect(workflow).toContain('Resolve missing Pixabay covers');
     expect(workflow).toContain('PIXABAY_API_KEY');
     expect(workflow).toContain('steps.source.outputs.sha');
