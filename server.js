@@ -81,6 +81,102 @@ function normalizeTags(value) {
   return [];
 }
 
+
+function coverSourceId(post) {
+  const slug = slugFromWikiName(post && post.slug);
+  return slug ? `cover-${slug}` : '';
+}
+
+function coverAuthorFromCredit(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^by\s+/i, '')
+    .replace(/\s+via\s+Pixabay$/i, '')
+    .trim();
+}
+
+function coverSourceRecord(post) {
+  const sourceUrl = String((post && (post.coverSourceUrl || post.coverCreditUrl)) || '').trim();
+  const credit = String((post && post.coverCredit) || '').trim();
+  const license = String((post && post.coverLicense) || '').trim();
+  const licenseUrl = String((post && post.coverLicenseUrl) || '').trim();
+  const author = coverAuthorFromCredit(credit);
+
+  if (!sourceUrl && !credit && !license) {
+    return null;
+  }
+
+  return {
+    title: `Coverbild: ${String((post && (post.title || post.slug)) || 'Kernel Notes')}`,
+    publisher: 'Pixabay',
+    url: sourceUrl || licenseUrl || 'https://pixabay.com/',
+    author,
+    credit,
+    license,
+    license_url: licenseUrl
+  };
+}
+
+function appendCoverSourceReference(html, post) {
+  const record = coverSourceRecord(post);
+  const sourceId = coverSourceId(post);
+  if (!record || !sourceId) return String(html || '');
+
+  const label = record.author
+    ? `Coverbild: ${record.author} via Pixabay`
+    : 'Coverbild: Pixabay';
+  const item = `<li class="cover-source-reference"><a href="/sources.html#${sourceId}">${escapeXml(label)}</a></li>`;
+  const sourceHtml = String(html || '');
+  const headingMatch = /<h2[^>]*>Quellen<\/h2>/i.exec(sourceHtml);
+
+  if (!headingMatch) {
+    return `${sourceHtml}\n<h2>Quellen</h2>\n<ul>\n${item}\n</ul>\n`;
+  }
+
+  const sectionStart = headingMatch.index + headingMatch[0].length;
+  const nextHeading = sourceHtml.slice(sectionStart).search(/<h2[^>]*>/i);
+  const sectionEnd = nextHeading >= 0 ? sectionStart + nextHeading : sourceHtml.length;
+  const section = sourceHtml.slice(sectionStart, sectionEnd);
+  const listEnd = section.indexOf('</ul>');
+
+  if (listEnd < 0) {
+    return `${sourceHtml.slice(0, sectionEnd)}\n<ul>\n${item}\n</ul>\n${sourceHtml.slice(sectionEnd)}`;
+  }
+
+  const insertAt = sectionStart + listEnd;
+  return `${sourceHtml.slice(0, insertAt)}${item}\n${sourceHtml.slice(insertAt)}`;
+}
+
+function mergeCoverSources(catalog, posts) {
+  const merged = { ...(catalog || {}) };
+
+  for (const post of posts || []) {
+    const id = coverSourceId(post);
+    const record = coverSourceRecord(post);
+    if (id && record) merged[id] = record;
+  }
+
+  return merged;
+}
+
+async function readSourceCatalog(explicitPostsDir) {
+  const configuredPostsDir = path.resolve(getPostsDir(explicitPostsDir));
+  const candidates = [
+    path.join(configuredPostsDir, '_sources.json'),
+    path.join(root, 'posts', '_sources.json')
+  ];
+
+  for (const candidate of [...new Set(candidates)]) {
+    try {
+      return JSON.parse(await fs.readFile(candidate, 'utf8'));
+    } catch (error) {
+      if (!error || error.code !== 'ENOENT') throw error;
+    }
+  }
+
+  return {};
+}
+
 function slugFromWikiName(name) {
   return String(name || '')
     .trim()
@@ -321,6 +417,18 @@ async function loadPosts(postsDir) {
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
       const snippets = resolveSnippets({ slug, title, data: recovered.data, markdown: recovered.content, legacy });
+      const renderedHtml = appendCoverSourceReference(
+        md.render(markdownContent, { snippets }),
+        {
+          slug,
+          title,
+          coverCredit,
+          coverCreditUrl,
+          coverSourceUrl,
+          coverLicense,
+          coverLicenseUrl
+        }
+      );
       return {
         snippets,
         slug,
@@ -342,7 +450,7 @@ async function loadPosts(postsDir) {
         coverLicenseUrl,
         wordCount,
         readingTime,
-        html: md.render(markdownContent, { snippets })
+        html: renderedHtml
       };
     })
   );
@@ -620,20 +728,6 @@ function renderPostPage(post, relatedPosts = []) {
       ? `<button class="tag-chip tag-toggle" type="button" data-tag-toggle data-hidden-count="${hiddenTagCount}" aria-expanded="false" aria-label="${hiddenTagCount} weitere Tags anzeigen">+${hiddenTagCount}</button>`
       : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
-  const coverCreditParts = [];
-  if (post.coverCredit) {
-    coverCreditParts.push(post.coverCreditUrl
-      ? `<a href="${md.utils.escapeHtml(String(post.coverCreditUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverCredit))}</a>`
-      : md.utils.escapeHtml(String(post.coverCredit)));
-  }
-  if (post.coverLicense) {
-    coverCreditParts.push(post.coverLicenseUrl
-      ? `<a href="${md.utils.escapeHtml(String(post.coverLicenseUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverLicense))}</a>`
-      : md.utils.escapeHtml(String(post.coverLicense)));
-  }
-  const coverCreditHtml = coverCreditParts.length
-    ? `<p class="article-hero__credit">${coverCreditParts.join(' · ')}</p>`
-    : '';
   const coverStyle = articleCoverStyle(post);
 
   return `<!doctype html>
@@ -729,7 +823,6 @@ function renderPostPage(post, relatedPosts = []) {
             </div>
 
             ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
-            ${coverCreditHtml}
           </header>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
@@ -840,6 +933,19 @@ function createApp(options = {}) {
 
   app.get('/api/legal-info', (_req, res) => {
     res.json(getLegalInfo());
+  });
+
+  app.get('/api/sources', async (_req, res) => {
+    try {
+      const [catalog, posts] = await Promise.all([
+        readSourceCatalog(postsDir),
+        readPosts(postsDir)
+      ]);
+      res.json(mergeCoverSources(catalog, posts));
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Could not load source catalog' });
+    }
   });
 
   app.get('/api/posts', async (_req, res) => {
@@ -961,6 +1067,11 @@ module.exports = {
   startServer,
   getPostsDir,
   getSiteUrl,
+  coverSourceId,
+  coverAuthorFromCredit,
+  coverSourceRecord,
+  appendCoverSourceReference,
+  mergeCoverSources,
   slugify,
   excerptFromBody,
   parseDate,
