@@ -38,10 +38,11 @@ describe('article hero cover readability', () => {
       'utf8'
     );
 
-    expect(shellCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.terminal-post--article::before\s*\{[\s\S]*?display:\s*none;/);
-    expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover\s*\{[\s\S]*?var\(--article-cover-image\)/);
+    expect(shellCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.terminal-post--article::before\s*\{[\s\S]*?display:\s*block;/);
+    expect(shellCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.terminal-post--article::before\s*\{[\s\S]*?var\(--article-cover-image\)/);
+    expect(shellCss).toContain('var(--terminal-surface) 100%');
+    expect(articleCss).not.toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover\s*\{[\s\S]*?var\(--article-cover-image\)/);
     expect(articleCss).toMatch(/\.article-hero__credit\s*\{[\s\S]*?position:\s*static;[\s\S]*?text-align:\s*right;/);
     expect(articleCss).toContain('font-size: clamp(1.55rem, 7vw, 2.05rem);');
-    expect(articleCss).toContain('var(--terminal-surface) 100%');
   });
 });
