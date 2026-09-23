@@ -30,21 +30,21 @@ snippets:
     language: ini
 cover_query: terminal server code computer linux service
 cover_provider: pixabay
-cover_provider_id: '3637299'
+cover_provider_id: '3725329'
 cover_image: /assets/covers/2026-08-19-systemd-services-sauber-betreiben.jpg
 cover_alt: >-
-  code, html, technology, programming, computer, coding, digital, development,
-  internet, web, it, programmer, css, developer, www, software, website, data,
-  script, computer programming, computer science, server, binary code, byte,
-  code, html, programming, coding, coding, programmer, software, software,
-  computer science, computer science, server, server, server, server, server
+  binary, binary code, smartphone, photography, digitization, globe,
+  presentation, thought, idea, world, watch world, binary system, byte, network,
+  programming, computer, server, script, software, code, developer, software
+  development, program, server, software development, software development,
+  software development, software development, software development
 cover_focus: center
-cover_credit: by markusspiske via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
-cover_source_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_credit: by geralt via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/binary-binary-code-smartphone-3725329/'
+cover_source_url: 'https://pixabay.com/photos/binary-binary-code-smartphone-3725329/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 97
 ---
 
 `systemd` ist mehr als nur `systemctl start`.
