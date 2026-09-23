@@ -965,10 +965,10 @@ h1 {
   .terminal-post {
     --article-shell-radius: 18px;
     --article-cover-motion-y: 0px;
-    --article-cover-motion-scale: 1.025;
+    --article-cover-motion-scale: 1.018;
     --article-cover-motion-tilt: 0deg;
-    --article-cover-motion-blur: 0.65px;
-    --article-cover-motion-brightness: 0.95;
+    --article-cover-motion-blur: 0.2px;
+    --article-cover-motion-brightness: 0.97;
   }
 
   .terminal-post--article::before {
@@ -977,11 +977,11 @@ h1 {
     background:
       linear-gradient(
         180deg,
-        rgba(3, 13, 18, 0.54) 0%,
-        rgba(3, 13, 18, 0.38) 18%,
-        rgba(3, 13, 18, 0.14) 40%,
-        rgba(8, 17, 25, 0.34) 64%,
-        rgba(12, 18, 27, 0.82) 82%,
+        rgba(3, 13, 18, 0.5) 0%,
+        rgba(3, 13, 18, 0.34) 18%,
+        rgba(3, 13, 18, 0.12) 40%,
+        rgba(8, 17, 25, 0.3) 64%,
+        rgba(12, 18, 27, 0.8) 82%,
         var(--terminal-surface) 100%
       ),
       var(--article-cover-image);

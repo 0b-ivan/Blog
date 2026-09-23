@@ -268,6 +268,46 @@
     border-radius: 0;
   }
 
+  .article-hero--has-cover::after {
+    inset: 2.85rem 0 0;
+    z-index: 0;
+    background:
+      radial-gradient(
+        ellipse 105% 76% at 42% 43%,
+        rgba(3, 10, 16, 0.5) 0%,
+        rgba(3, 10, 16, 0.4) 48%,
+        rgba(3, 10, 16, 0.22) 72%,
+        rgba(3, 10, 16, 0.06) 90%,
+        transparent 100%
+      );
+    -webkit-backdrop-filter: blur(2.4px) saturate(0.92);
+    backdrop-filter: blur(2.4px) saturate(0.92);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.78) 9%,
+      #000 24%,
+      #000 76%,
+      rgba(0, 0, 0, 0.7) 90%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.78) 9%,
+      #000 24%,
+      #000 76%,
+      rgba(0, 0, 0, 0.7) 90%,
+      transparent 100%
+    );
+  }
+
+  .article-hero__chrome,
+  .article-hero__body {
+    position: relative;
+    z-index: 1;
+  }
+
   .article-hero__chrome {
     min-height: 44px;
     gap: 0.62rem;
@@ -321,41 +361,32 @@
   }
 
   .article-hero__excerpt {
+    display: block;
+    max-width: none;
     margin: 0 0.95rem;
-    padding: 0.1rem 0 0.8rem;
-    color: rgba(225, 244, 239, 0.92);
+    padding: 0.12rem 0 0.55rem;
+    overflow: visible;
+    color: rgba(236, 248, 245, 0.96);
     font-size: 0.72rem;
-    line-height: 1.55;
+    line-height: 1.52;
     text-shadow:
-      0 1px 4px rgba(0, 0, 0, 0.82),
-      0 4px 14px rgba(0, 0, 0, 0.42);
+      0 1px 4px rgba(0, 0, 0, 0.86),
+      0 4px 16px rgba(0, 0, 0, 0.48);
     opacity: 1;
-    -webkit-line-clamp: 3;
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      #000 0%,
-      #000 72%,
-      rgba(0, 0, 0, 0.96) 82%,
-      rgba(0, 0, 0, 0.62) 92%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      #000 0%,
-      #000 72%,
-      rgba(0, 0, 0, 0.96) 82%,
-      rgba(0, 0, 0, 0.62) 92%,
-      transparent 100%
-    );
+    -webkit-box-orient: initial;
+    -webkit-line-clamp: unset;
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 
   .article-hero__credit {
     position: static;
     max-width: none;
-    margin: 0.12rem 0.95rem 0;
-    padding: 0 0 1rem;
+    margin: 0.28rem 0.95rem 0;
+    padding: 0 0 1.05rem;
     overflow: hidden;
-    font-size: 0.48rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.46rem;
     text-align: right;
     text-overflow: ellipsis;
     white-space: nowrap;
