@@ -28,6 +28,29 @@ describe('article hero cover readability', () => {
     expect(articleCss).not.toContain('rgba(4, 13, 20, 0.76)');
   });
 
+  it('applies subtle scroll motion only to the shared mobile cover layer', () => {
+    const shellCss = fs.readFileSync(
+      path.join(__dirname, '..', 'assets', 'css', 'styles.css'),
+      'utf8'
+    );
+    const motionSource = fs.readFileSync(
+      path.join(__dirname, '..', 'assets', 'article-hero-motion.js'),
+      'utf8'
+    );
+
+    expect(shellCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.terminal-post--article::before\s*\{[\s\S]*?perspective\(900px\)/);
+    expect(shellCss).toContain('blur(var(--article-cover-motion-blur))');
+    expect(shellCss).toContain('brightness(var(--article-cover-motion-brightness))');
+    expect(shellCss).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.terminal-post--article::before\s*\{[\s\S]*?transform:\s*none;/);
+
+    expect(motionSource).toContain("matchMedia('(max-width: 620px)')");
+    expect(motionSource).toContain("matchMedia('(prefers-reduced-motion: reduce)')");
+    expect(motionSource).toContain('requestAnimationFrame(update)');
+    expect(motionSource).toContain("'--article-cover-motion-y'");
+    expect(motionSource).toContain("'--article-cover-motion-blur'");
+    expect(motionSource).toContain("'--article-cover-motion-brightness'");
+  });
+
   it('keeps the mobile cover inside the hero and gives credits their own line', () => {
     const articleCss = fs.readFileSync(
       path.join(__dirname, '..', 'assets', 'css', 'article-metrics.css'),

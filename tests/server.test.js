@@ -297,6 +297,7 @@ describe('blog server', () => {
     expect(html).toContain('data-reading-progress-rive');
     expect(html).not.toContain('<script src="/vendor/rive/rive.js"');
     expect(html).toMatch(/\/assets\/article-analytics\.js\?v=[^"]+/);
+    expect(html).toMatch(/\/assets\/article-hero-motion\.js\?v=[^"]+/);
     expect(html).toMatch(/\/script\.js\?v=[^"]+/);
     expect(html).not.toContain('reading-progress__ring');
     expect(html).toContain('data-tooltip="Aufrufe');

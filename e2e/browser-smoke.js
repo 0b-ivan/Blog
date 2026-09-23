@@ -575,8 +575,21 @@ async function main() {
       'Terminal body must stay transparent so the shared cover fade can continue into the article'
     );
 
+    const coverMotionBefore = await mobileTerminal.evaluate((terminal) => {
+      const style = terminal.ownerDocument.defaultView.getComputedStyle(terminal);
+      return {
+        y: Number.parseFloat(style.getPropertyValue('--article-cover-motion-y')) || 0,
+        blur: Number.parseFloat(style.getPropertyValue('--article-cover-motion-blur')) || 0,
+        brightness: Number.parseFloat(style.getPropertyValue('--article-cover-motion-brightness')) || 1
+      };
+    });
+
     const mobileProgress = page.locator('[data-reading-progress]');
     await mobileProgress.waitFor({ state: 'attached' });
+    assert.ok(
+      (await page.request.get(`${baseUrl}/assets/article-hero-motion.js?v=20260923-1`)).ok(),
+      'Article hero motion asset should be available'
+    );
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.js`)).ok(), 'Self-hosted Rive runtime should be available');
     assert.ok((await page.request.get(`${baseUrl}/vendor/rive/rive.wasm`)).ok(), 'Self-hosted Rive WASM should be available');
     assert.ok((await page.request.get(`${baseUrl}/assets/rive/liquid_download.riv`)).ok(), 'Local Rive liquid asset should be available');
@@ -588,6 +601,28 @@ async function main() {
     await page.mouse.wheel(0, 650);
     const compactProgress = page.locator('[data-reading-progress].is-compact');
     await compactProgress.waitFor({ state: 'visible', timeout: 5_000 });
+    await page.waitForTimeout(80);
+
+    const coverMotionAfter = await mobileTerminal.evaluate((terminal) => {
+      const style = terminal.ownerDocument.defaultView.getComputedStyle(terminal);
+      return {
+        y: Number.parseFloat(style.getPropertyValue('--article-cover-motion-y')) || 0,
+        blur: Number.parseFloat(style.getPropertyValue('--article-cover-motion-blur')) || 0,
+        brightness: Number.parseFloat(style.getPropertyValue('--article-cover-motion-brightness')) || 1
+      };
+    });
+    assert.ok(
+      coverMotionAfter.y > coverMotionBefore.y + 2,
+      `Mobile cover should move more slowly than article copy while scrolling (before=${coverMotionBefore.y}, after=${coverMotionAfter.y})`
+    );
+    assert.ok(
+      coverMotionAfter.blur > coverMotionBefore.blur,
+      `Mobile cover should blur subtly while leaving the hero (before=${coverMotionBefore.blur}, after=${coverMotionAfter.blur})`
+    );
+    assert.ok(
+      coverMotionAfter.brightness < coverMotionBefore.brightness,
+      `Mobile cover should darken subtly while leaving the hero (before=${coverMotionBefore.brightness}, after=${coverMotionAfter.brightness})`
+    );
     let compactProgressBox = null;
     for (let attempt = 0; attempt < 30; attempt += 1) {
       compactProgressBox = await compactProgress.boundingBox();

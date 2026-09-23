@@ -878,6 +878,11 @@ h1 {
   .site-header.nav-scroll-cue::after {
     animation: none;
   }
+
+  .terminal-post--article::before {
+    transform: none;
+    will-change: auto;
+  }
 }
 
 .post-content h2,
@@ -959,6 +964,11 @@ h1 {
 @media (max-width: 620px) {
   .terminal-post {
     --article-shell-radius: 18px;
+    --article-cover-motion-y: 0px;
+    --article-cover-motion-scale: 1.025;
+    --article-cover-motion-tilt: 0deg;
+    --article-cover-motion-blur: 0.65px;
+    --article-cover-motion-brightness: 0.95;
   }
 
   .terminal-post--article::before {
@@ -998,6 +1008,17 @@ h1 {
       rgba(0, 0, 0, 0.45) 92%,
       transparent 100%
     );
+    transform:
+      perspective(900px)
+      translate3d(0, var(--article-cover-motion-y), 0)
+      scale(var(--article-cover-motion-scale))
+      rotateX(var(--article-cover-motion-tilt));
+    transform-origin: center top;
+    backface-visibility: hidden;
+    filter:
+      blur(var(--article-cover-motion-blur))
+      brightness(var(--article-cover-motion-brightness));
+    will-change: transform, filter;
   }
 
   .terminal-chrome {
