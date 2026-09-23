@@ -860,7 +860,7 @@ function renderPostPage(post, relatedPosts = []) {
                 </a>
                 <a href="/download/${encodeURIComponent(post.slug)}.pdf" download>
                   <strong>PDF</strong>
-                  <span>aus dem EPUB erzeugt</span>
+                  <span>als LaTeX-Publikation gesetzt</span>
                 </a>
               </div>
             </details>
