@@ -1,5 +1,6 @@
 const path = require('node:path');
 const {
+  buildBibTeX,
   buildPdfDocumentPreview,
   pdfMetadata,
   promoteArticleHeadings,
@@ -50,6 +51,30 @@ describe('LaTeX publication export', () => {
     expect(
       rewriteSourceLinksForPdf('<a href="sources.xhtml#source-docker-compose">[1]</a>')
     ).toBe('<a href="#source-docker-compose">[1]</a>');
+  });
+
+  it('generates bibliography records for the sources used by the paper', () => {
+    const bib = buildBibTeX([{
+      id: 'kubernetes-probes',
+      title: 'Liveness, Readiness, and Startup Probes',
+      publisher: 'Kubernetes Documentation',
+      url: 'https://kubernetes.io/docs/concepts/workloads/pods/probes/',
+      accessed_at: '2026-09-20'
+    }, {
+      id: 'cover-demo',
+      title: 'Coverbild: Demo',
+      publisher: 'Pixabay',
+      author: 'Example',
+      url: 'https://pixabay.com/photos/example-42/',
+      license: 'Pixabay Content License'
+    }]);
+
+    expect(bib).toContain('@misc{kubernetes-probes');
+    expect(bib).toContain('organization = {Kubernetes Documentation}');
+    expect(bib).toContain('urldate = {2026-09-20}');
+    expect(bib).toContain('@misc{cover-demo');
+    expect(bib).toContain('author = {Example}');
+    expect(bib).toContain('note = {Pixabay Content License}');
   });
 
   it('keeps preview metadata independent from the EPUB renderer', () => {
