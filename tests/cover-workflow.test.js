@@ -31,5 +31,7 @@ describe('cover review workflows', () => {
     expect(workflow).toContain("'.github/cover-backfill-request.txt'");
     expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.scope || 'all'");
     expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.batch_size || '20'");
+    expect(workflow).toContain('node scripts/list-missing-cover-posts.js "${args[@]}"');
+    expect(workflow).toContain('[ -n "$post" ] || continue');
   });
 });
