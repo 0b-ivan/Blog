@@ -16,24 +16,24 @@ const COVER_CONCEPT_PROTOTYPES = {
     negative: 'secretary office sales telephone call center business meeting portrait person'
   },
   'rss-reader': {
-    positive: 'RSS feed reader web feed subscription aggregator syndicated website articles unread feed list RSS icon',
-    negative: 'journalist press photographer newspaper reporter television news camera paparazzi'
+    positive: 'RSS feed reader web feed subscription aggregator syndication feed list unread articles RSS icon feed application',
+    negative: 'journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account'
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
     negative: 'physical lock safe vault key insurance house security'
   },
   'systemd-service': {
-    positive: 'Linux system service daemon command line shell logs journal process server administration',
-    negative: 'train station airport terminal transport computer repair electronics hardware'
+    positive: 'Linux systemd service daemon command line shell journalctl service logs process server administration unit file',
+    negative: 'train station airport terminal transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper'
   },
   'docker-compose': {
     positive: 'software deployment DevOps application services orchestration compose configuration code terminal',
     negative: 'shipping cargo port freight metal container box jar can storage vessel'
   },
   'semantic-search': {
-    positive: 'semantic search embeddings vector search similarity ranking data retrieval code search index',
-    negative: 'social media search engine smartphone robot portrait generic artificial intelligence human'
+    positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results',
+    negative: 'generic programmer software engineer coding laptop source code social media search engine smartphone robot portrait human'
   },
   'vpc-networking': {
     positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
