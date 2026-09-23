@@ -6,3 +6,31 @@
   --article-cover-focus: center;
 }
 /* cover:2026-09-19-k3s-proxmox-production-part-4:end */
+
+/* cover:2026-09-16-k3s-proxmox-flux-gitops-part-2:start */
+.post-page[data-post-slug="2026-09-16-k3s-proxmox-flux-gitops-part-2"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-16-k3s-proxmox-flux-gitops-part-2.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-16-k3s-proxmox-flux-gitops-part-2:end */
+
+/* cover:2026-09-18-k3s-proxmox-hardening-part-3:start */
+.post-page[data-post-slug="2026-09-18-k3s-proxmox-hardening-part-3"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-18-k3s-proxmox-hardening-part-3.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-18-k3s-proxmox-hardening-part-3:end */
+
+/* cover:2026-09-20-chaos-engineering-chaos-monkey-kubernetes:start */
+.post-page[data-post-slug="2026-09-20-chaos-engineering-chaos-monkey-kubernetes"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-20-chaos-engineering-chaos-monkey-kubernetes:end */
+
+/* cover:2026-09-20-k3s-proxmox-chaos-monkey-part-5:start */
+.post-page[data-post-slug="2026-09-20-k3s-proxmox-chaos-monkey-part-5"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-20-k3s-proxmox-chaos-monkey-part-5.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-20-k3s-proxmox-chaos-monkey-part-5:end */

@@ -1,15 +1,18 @@
 ---
 id: 2026-09-16-k3s-proxmox-flux-gitops-part-2
 version: 9
-title: "K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging"
+title: 'K3s auf Proxmox – Teil II: GitOps mit Flux und echtem Staging'
 status: publish
-date: 2026-09-16
-created_at: 2026-09-16
-updated_at: 2026-09-19
+date: 2026-09-16T00:00:00.000Z
+created_at: 2026-09-16T00:00:00.000Z
+updated_at: 2026-09-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: DevOps
-excerpt: "Teil II zeigt, wie ich mein K3s-Staging automatisiert habe: GitHub Actions baut die Images, Git hält den gewünschten Stand fest, Flux rollt ihn aus und Production bleibt bewusst manuell."
+excerpt: >-
+  Teil II zeigt, wie ich mein K3s-Staging automatisiert habe: GitHub Actions
+  baut die Images, Git hält den gewünschten Stand fest, Flux rollt ihn aus und
+  Production bleibt bewusst manuell.
 tags:
   - Kubernetes
   - K3s
@@ -28,54 +31,83 @@ search_queries:
     maxRank: 1
   - query: Wie kombiniere ich GitHub Actions GHCR Flux und Kustomize für GitOps?
     maxRank: 1
-  - query: Wie öffne ich nach erfolgreichem Staging Deployment automatisch einen Production Pull Request?
+  - query: >-
+      Wie öffne ich nach erfolgreichem Staging Deployment automatisch einen
+      Production Pull Request?
     maxRank: 1
 snippets:
-  - file: "01-kustomize-image-pins.yml"
-    title: "Git-SHA-Images mit Kustomize pinnen"
-    description: "Zeigt die beiden Image-Einträge, deren Tags der Staging-Workflow auf den gebauten Git-SHA setzt."
-    type: "Kustomize-Ausschnitt"
-    language: "yaml"
-  - file: "02-staging-deployment-guard.sh"
-    title: "Staging-Deployment auf gemergte PRs begrenzen"
-    description: "Prüft über die GitHub API, ob der auslösende Commit zu einem gemergten Pull Request nach staging gehört."
-    type: "Shellskript"
-    language: "bash"
-  - file: "03-flux-precheck.sh"
-    title: "Flux-Version und Voraussetzungen prüfen"
-    description: "Prüft die installierte Flux CLI und die Kubernetes-Voraussetzungen vor dem Bootstrap."
-    type: "Shellskript"
-    language: "bash"
-  - file: "04-flux-bootstrap.sh"
-    title: "Flux gegen den staging-Branch bootstrappen"
-    description: "Bootstrapped Flux für den staging-Branch und den Kubernetes-Staging-Pfad mit SSH Deploy Key."
-    type: "Shellskript"
-    language: "bash"
-  - file: "05-flux-reconcile-check.sh"
-    title: "Flux-Reconcile und Controller prüfen"
-    description: "Zeigt Git Source, Kustomizations und Flux-Controller im Cluster."
-    type: "Shellskript"
-    language: "bash"
-  - file: "06-rollout-image-verification.sh"
-    title: "Staging-Rollout und verwendete Images prüfen"
-    description: "Prüft Pods und Deployments und gibt die tatsächlich referenzierten Blog- und Search-Images aus."
-    type: "Shellskript"
-    language: "bash"
-  - file: "07-public-staging-gate.sh"
-    title: "Öffentlichen Staging-Gate prüfen"
-    description: "Wartet auf Healthcheck, erwartete Build-Version und den Staging-Marker im ausgelieferten HTML."
-    type: "Shellskript"
-    language: "bash"
-  - file: "08-publish-promotion-candidate.sh"
-    title: "Verifizierten Promotion-Candidate veröffentlichen"
-    description: "Prüft den verifizierten GitOps-Commit gegen staging und verschiebt promotion/staging-verified ohne Force-Push."
-    type: "Shellskript"
-    language: "bash"
-  - file: "09-open-promotion-pr.sh"
-    title: "Production-Promotion-PR öffnen oder aktualisieren"
-    description: "Verwendet den verifizierten Candidate-Branch für den manuellen Pull Request nach main."
-    type: "Shellskript"
-    language: "bash"
+  - file: 01-kustomize-image-pins.yml
+    title: Git-SHA-Images mit Kustomize pinnen
+    description: >-
+      Zeigt die beiden Image-Einträge, deren Tags der Staging-Workflow auf den
+      gebauten Git-SHA setzt.
+    type: Kustomize-Ausschnitt
+    language: yaml
+  - file: 02-staging-deployment-guard.sh
+    title: Staging-Deployment auf gemergte PRs begrenzen
+    description: >-
+      Prüft über die GitHub API, ob der auslösende Commit zu einem gemergten
+      Pull Request nach staging gehört.
+    type: Shellskript
+    language: bash
+  - file: 03-flux-precheck.sh
+    title: Flux-Version und Voraussetzungen prüfen
+    description: >-
+      Prüft die installierte Flux CLI und die Kubernetes-Voraussetzungen vor dem
+      Bootstrap.
+    type: Shellskript
+    language: bash
+  - file: 04-flux-bootstrap.sh
+    title: Flux gegen den staging-Branch bootstrappen
+    description: >-
+      Bootstrapped Flux für den staging-Branch und den Kubernetes-Staging-Pfad
+      mit SSH Deploy Key.
+    type: Shellskript
+    language: bash
+  - file: 05-flux-reconcile-check.sh
+    title: Flux-Reconcile und Controller prüfen
+    description: 'Zeigt Git Source, Kustomizations und Flux-Controller im Cluster.'
+    type: Shellskript
+    language: bash
+  - file: 06-rollout-image-verification.sh
+    title: Staging-Rollout und verwendete Images prüfen
+    description: >-
+      Prüft Pods und Deployments und gibt die tatsächlich referenzierten Blog-
+      und Search-Images aus.
+    type: Shellskript
+    language: bash
+  - file: 07-public-staging-gate.sh
+    title: Öffentlichen Staging-Gate prüfen
+    description: >-
+      Wartet auf Healthcheck, erwartete Build-Version und den Staging-Marker im
+      ausgelieferten HTML.
+    type: Shellskript
+    language: bash
+  - file: 08-publish-promotion-candidate.sh
+    title: Verifizierten Promotion-Candidate veröffentlichen
+    description: >-
+      Prüft den verifizierten GitOps-Commit gegen staging und verschiebt
+      promotion/staging-verified ohne Force-Push.
+    type: Shellskript
+    language: bash
+  - file: 09-open-promotion-pr.sh
+    title: Production-Promotion-PR öffnen oder aktualisieren
+    description: >-
+      Verwendet den verifizierten Candidate-Branch für den manuellen Pull
+      Request nach main.
+    type: Shellskript
+    language: bash
+cover_query: Kubernetes K3s Proxmox DevOps
+cover_provider: pixabay
+cover_provider_id: '4745050'
+cover_image: /assets/covers/2026-09-16-k3s-proxmox-flux-gitops-part-2.jpg
+cover_alt: 'train, mist, k3, mongolia, railway, train, train, train, train, train'
+cover_focus: center
+cover_credit: by jeremy888 via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
+cover_source_url: 'https://pixabay.com/photos/train-mist-k3-mongolia-railway-4745050/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 Teil I war der Teil, in dem ich den Blog überhaupt erstmal sauber auf K3s bekommen habe: VM auf Proxmox, K3s, interne Services und der Cloudflare Tunnel bis zum öffentlichen Healthcheck.
 
