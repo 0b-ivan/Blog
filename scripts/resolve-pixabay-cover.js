@@ -16,6 +16,20 @@ const DEFAULT_AVOID_TERMS = [
   'meeting', 'handshake', 'teamwork', 'businessman', 'businesswoman', 'smile', 'smiling'
 ];
 
+const WEAK_DIRECT_TERMS = new Set([
+  'architecture', 'deployment', 'engineering', 'operations'
+]);
+
+const TOPIC_AVOID = {
+  kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
+  k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
+  proxmox: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
+  docker: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
+  compose: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
+  devops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
+  gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan']
+};
+
 const TOPIC_EXPANSIONS = {
   kubernetes: ['server', 'datacenter', 'infrastructure', 'network', 'cloud', 'container', 'cluster'],
   k3s: ['kubernetes', 'server', 'cluster', 'infrastructure', 'datacenter'],
@@ -113,9 +127,29 @@ function defaultQuery(data) {
   return topicQuery || String(data.title || '').trim().slice(0, 100);
 }
 
+function visualQuery(data) {
+  const sourceTokens = new Set([
+    ...tokensFrom(data.cover_subject),
+    ...tokensFrom(data.cover_query),
+    ...normalizedTags(data).flatMap(tokensFrom),
+    ...tokensFrom(data.category),
+    ...tokensFrom(data.title)
+  ]);
+
+  const visualTerms = [];
+  for (const token of sourceTokens) {
+    for (const related of TOPIC_EXPANSIONS[token] || []) {
+      if (!visualTerms.includes(related)) visualTerms.push(related);
+    }
+  }
+
+  return visualTerms.slice(0, 8).join(' ').slice(0, 100);
+}
+
 function queryCandidates(data, explicitQuery = '') {
   const tags = normalizedTags(data);
   const primary = String(explicitQuery || defaultQuery(data)).trim().slice(0, 100);
+  const visual = visualQuery(data);
   const fallback = [data.cover_subject, data.category, ...tags.slice(0, 2)]
     .map((value) => String(value || '').trim())
     .filter(Boolean)
@@ -123,7 +157,10 @@ function queryCandidates(data, explicitQuery = '') {
     .slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
-  return [...new Set([primary, fallback, title].filter(Boolean))].slice(0, 3);
+  const candidates = [primary, visual, fallback].filter(Boolean);
+  if (!visual && title) candidates.push(title);
+
+  return [...new Set(candidates)].slice(0, 3);
 }
 
 function articleProfile(data, query = '') {
@@ -141,8 +178,14 @@ function articleProfile(data, query = '') {
     for (const related of TOPIC_EXPANSIONS[token] || []) expanded.add(related);
   }
 
+  const contextualAvoid = [];
+  for (const token of primary) {
+    contextualAvoid.push(...(TOPIC_AVOID[token] || []));
+  }
+
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
+    ...contextualAvoid,
     ...listFrom(data.cover_avoid)
   ].map((value) => normalizeText(value)));
 
@@ -155,7 +198,9 @@ function scoreHit(hit, data = {}, query = '') {
   let score = 28;
   const reasons = [];
 
-  const directMatches = [...hitTokens].filter((token) => profile.primary.has(token));
+  const directMatches = [...hitTokens].filter(
+    (token) => profile.primary.has(token) && !WEAK_DIRECT_TERMS.has(token)
+  );
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
 
@@ -172,9 +217,14 @@ function scoreHit(hit, data = {}, query = '') {
   }
 
   if (avoidMatches.length) {
-    const points = Math.min(45, avoidMatches.length * 18);
+    const points = Math.min(60, avoidMatches.length * 22);
     score -= points;
     reasons.push(`-${points} avoid: ${avoidMatches.slice(0, 3).join(', ')}`);
+  }
+
+  if (!directMatches.length && !expandedMatches.length) {
+    score -= 22;
+    reasons.push('-22 no topical match');
   }
 
   const width = Number(hit.imageWidth || hit.webformatWidth || 0);
@@ -552,6 +602,7 @@ module.exports = {
   fileExtension,
   parseArgs,
   queryCandidates,
+  visualQuery,
   rankCandidates,
   renderCandidates,
   scoreHit,
