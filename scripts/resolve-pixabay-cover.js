@@ -280,4 +280,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { PIXABAY_CACHE_TTL_MS, PIXABAY_LICENSE, PIXABAY_LICENSE_URL, cacheFileForQuery, defaultQuery, downloadPhoto, fileExtension, parseArgs, queryCandidates, renderCandidates, searchPixabay, searchPixabayCached, updateCoverStylesheet };
+module.exports = { PIXABAY_CACHE_TTL_MS, PIXABAY_LICENSE, PIXABAY_LICENSE_URL, cacheFileForQuery, choosePhoto, defaultQuery, downloadPhoto, fileExtension, parseArgs, queryCandidates, renderCandidates, searchPixabay, searchPixabayCached, updateCoverStylesheet };
