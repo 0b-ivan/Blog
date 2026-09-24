@@ -69,10 +69,14 @@ jobs:
           fi
 
           sort -u -o /tmp/photo-manifests.txt /tmp/photo-manifests.txt
-          test -s /tmp/photo-manifests.txt || {
-            echo 'No article-photo manifest selected.' >&2
-            exit 1
-          }
+
+          if [ ! -s /tmp/photo-manifests.txt ]; then
+            echo 'No changed article-photo manifest; nothing to materialize.'
+            echo 'has_manifests=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'has_manifests=true' >> "$GITHUB_OUTPUT"
 
           while IFS= read -r manifest; do
             test -f "$manifest" || {
@@ -85,6 +89,7 @@ jobs:
           cat /tmp/photo-manifests.txt
 
       - name: Download and validate licensed photos
+        if: steps.manifests.outputs.has_manifests == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -92,6 +97,7 @@ jobs:
           npm run photos:ingest -- "${manifests[@]}"
 
       - name: Validate generated article media
+        if: steps.manifests.outputs.has_manifests == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -100,6 +106,7 @@ jobs:
           git diff --check
 
       - name: Commit materialized photos
+        if: steps.manifests.outputs.has_manifests == 'true'
         shell: bash
         run: |
           set -euo pipefail
