@@ -1,21 +1,21 @@
 ---
 id: 2026-09-24-pac-man-puck-man-paku-paku
 version: 1
-title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat'
-cover_title: 'Warum Puck Man zu Pac-Man wurde'
+title: Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat
+cover_title: Warum Puck Man zu Pac-Man wurde
 cover_subtitle: 'パクパク, die ersten Automaten und ein Name, der für den US-Markt geändert wurde'
 status: publish
-date: 2026-09-24
-created_at: 2026-09-24
-updated_at: 2026-09-24
+date: 2026-09-24T00:00:00.000Z
+created_at: 2026-09-24T00:00:00.000Z
+updated_at: 2026-09-24T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Gaming
 excerpt: >-
   Pac-Man hieß in Japan zunächst PUCK MAN. Der Name geht nicht auf einen
-  Eishockey-Puck zurück, sondern auf das japanische パクパク – paku paku:
-  die wiederholte Bewegung eines Mundes beim Essen. Für den US-Markt wurde
-  daraus PAC-MAN.
+  Eishockey-Puck zurück, sondern auf das japanische パクパク – paku paku: die
+  wiederholte Bewegung eines Mundes beim Essen. Für den US-Markt wurde daraus
+  PAC-MAN.
 tags:
   - Pac-Man
   - Puck-Man
@@ -34,17 +34,20 @@ search_queries:
 cover_query: retro arcade cabinet 1980 joystick maze game neon yellow
 cover_subject: 1980 arcade cabinet maze chase game joystick retro gaming
 cover_avoid: logo icon modern console esports screenshot text
-cover_provider:
-cover_provider_id:
-cover_image:
-cover_alt:
+cover_provider: pixabay
+cover_provider_id: '4728778'
+cover_image: /assets/covers/2026-09-24-pac-man-puck-man-paku-paku.png
+cover_alt: >-
+  retro, 8bit, 1980's, computer, space invaders, game, keyboard, joystick, sega,
+  atari, 80s, technology, plastic, eighties, old, obsolete, monitor, automation,
+  space invaders, 80s, 80s, 80s, 80s, 80s, automation
 cover_focus: center
-cover_score:
-cover_credit:
-cover_credit_url:
-cover_source_url:
-cover_license:
-cover_license_url:
+cover_score: 83
+cover_credit: by sergeitokmakov via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/retro-8bit-1980s-computer-4728778/'
+cover_source_url: 'https://pixabay.com/illustrations/retro-8bit-1980s-computer-4728778/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Pac-Man ist heute so selbstverständlich, dass der Name kaum noch auffällt.

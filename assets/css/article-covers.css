@@ -132,3 +132,10 @@
   --article-cover-focus: center;
 }
 /* cover:2026-08-27-immich-nextcloud-webdav-rclone-provisionierung:end */
+
+/* cover:2026-09-24-pac-man-puck-man-paku-paku:start */
+.post-page[data-post-slug="2026-09-24-pac-man-puck-man-paku-paku"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-24-pac-man-puck-man-paku-paku.png");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-24-pac-man-puck-man-paku-paku:end */
