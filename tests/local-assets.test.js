@@ -1,7 +1,8 @@
 const {
   articleImagePolicyViolations,
   cleanTarget,
-  collectMarkdownImages
+  collectMarkdownImages,
+  imageContentViolation
 } = require('../scripts/check-local-assets');
 
 describe('article image policy', () => {
@@ -46,6 +47,30 @@ describe('article image policy', () => {
       alt: 'Real',
       target: '/assets/posts/demo/01-real.png'
     }]);
+  });
+
+  it('rejects empty and malformed raster images', () => {
+    expect(imageContentViolation('/assets/posts/demo/empty.jpg', Buffer.alloc(0))).toBe(
+      'image file is empty'
+    );
+    expect(imageContentViolation('/assets/posts/demo/bad.jpg', Buffer.from('not-a-jpeg'))).toBe(
+      'invalid JPEG signature'
+    );
+    expect(imageContentViolation(
+      '/assets/posts/demo/good.jpg',
+      Buffer.from([0xff, 0xd8, 0xff, 0xdb, 0x00])
+    )).toBeNull();
+  });
+
+  it('validates PNG and SVG signatures', () => {
+    expect(imageContentViolation(
+      '/assets/posts/demo/good.png',
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    )).toBeNull();
+    expect(imageContentViolation(
+      '/assets/posts/demo/good.svg',
+      Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    )).toBeNull();
   });
 
   it('normalizes query strings and fragments before path checks', () => {
