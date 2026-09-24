@@ -183,6 +183,7 @@ async function main() {
     let terminalControlsVerified = false;
     let terminalProgressVerified = false;
     let desktopTerminalChromeMetrics = null;
+    let coveredPostHref = null;
 
     const topics = await page.locator('#topics-list [data-topic]').evaluateAll((buttons) =>
       buttons.map((button) => button.dataset.topic).filter((topic) => topic && topic !== 'all')
@@ -221,6 +222,9 @@ async function main() {
       const terminal = page.locator('.terminal-post--article');
       assert.equal(await terminal.count(), 1, `Integrated article terminal missing for ${href}`);
       assert.equal(await terminal.locator('.article-hero').count(), 1, `Hero must live inside article terminal for ${href}`);
+      if (!coveredPostHref && await terminal.locator('.article-hero--has-cover').count()) {
+        coveredPostHref = href;
+      }
       assert.equal(await terminal.locator('.article-hero__lights').count(), 0, `Decorative hero lights must be removed for ${href}`);
       assert.equal(await terminal.locator('[data-terminal-action]').count(), 3, `Functional terminal controls incomplete for ${href}`);
 
@@ -564,7 +568,14 @@ async function main() {
       );
     }
 
-    const heroReadability = await articleHero.evaluate((hero) => {
+    assert.ok(coveredPostHref, 'At least one published article with a cover is required for mobile cover assertions');
+    if (coveredPostHref !== postHrefs[0]) {
+      await page.goto(`${baseUrl}${coveredPostHref}`, { waitUntil: 'domcontentloaded' });
+      await page.locator('.article-hero--has-cover').waitFor({ state: 'visible' });
+    }
+
+    const coveredArticleHero = page.locator('.article-hero--has-cover');
+    const heroReadability = await coveredArticleHero.evaluate((hero) => {
       const view = hero.ownerDocument.defaultView;
       const overlay = view.getComputedStyle(hero, '::after');
       return {
