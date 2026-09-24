@@ -1,13 +1,17 @@
 ---
 id: 2026-09-24-doom-shareware-internet
 version: 1
-title: "DOOM: Wie Shareware, ein kleines Team und das junge Internet PC-Gaming veränderten"
+title: >-
+  DOOM: Wie Shareware, ein kleines Team und das junge Internet PC-Gaming
+  veränderten
 cover_title: DOOM veränderte mehr als Shooter
-cover_subtitle: Von Commander Keen über Shareware und Deathmatch bis DOOM auf Embedded-Hardware
+cover_subtitle: >-
+  Von Commander Keen über Shareware und Deathmatch bis DOOM auf
+  Embedded-Hardware
 status: publish
-date: 2026-09-24
-created_at: 2026-09-24
-updated_at: 2026-09-24
+date: 2026-09-24T00:00:00.000Z
+created_at: 2026-09-24T00:00:00.000Z
+updated_at: 2026-09-24T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Gaming
@@ -36,6 +40,19 @@ cover_subject: 1990s PC shareware game floppy disks on a dark desk
 cover_intent: doom-shareware-history
 cover_avoid: modern gaming console controller RGB laptop office stock photo
 cover_focus: center
+cover_provider: pixabay
+cover_provider_id: '4925838'
+cover_image: /assets/covers/2026-09-24-doom-shareware-internet.png
+cover_alt: >-
+  disk, memory, drive, floppy disc, retro, magnetic, data, file, information,
+  computer, binary, technology, floppy disks, old, software, formatted, retro,
+  software, software, software, software, software
+cover_score: 83
+cover_credit: by DanXaw via Pixabay
+cover_credit_url: 'https://pixabay.com/vectors/disk-memory-drive-floppy-disc-4925838/'
+cover_source_url: 'https://pixabay.com/vectors/disk-memory-drive-floppy-disc-4925838/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 ![DOOM-Schriftzug](/assets/posts/doom-shareware-internet/01-doom-logo.png)
