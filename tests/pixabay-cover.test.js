@@ -5,6 +5,8 @@ const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
   VISUAL_INTENTS,
+  HERO_MIN_HEIGHT,
+  HERO_MIN_WIDTH,
   articleVisualBrief,
   choosePhoto,
   collectCandidates,
@@ -13,6 +15,7 @@ const {
   downloadPhoto,
   fileExtension,
   findPhotoById,
+  heroHardGate,
   parseArgs,
   queryCandidates,
   visualIntent,
@@ -105,6 +108,8 @@ describe('Pixabay cover resolver', () => {
       expect(parsed.searchParams.get('orientation')).toBe('horizontal');
       expect(parsed.searchParams.get('safesearch')).toBe('true');
       expect(parsed.searchParams.get('per_page')).toBe('30');
+      expect(parsed.searchParams.get('min_width')).toBe(String(HERO_MIN_WIDTH));
+      expect(parsed.searchParams.get('min_height')).toBe(String(HERO_MIN_HEIGHT));
       expect(parsed.searchParams.get('key')).toBe('test-key');
       return {
         ok: true,
@@ -118,6 +123,52 @@ describe('Pixabay cover resolver', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0].id).toBe(42);
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('hard-rejects undersized and logo-like hero candidates', () => {
+    const small = heroHardGate({
+      type: 'photo',
+      tags: 'server, rack, datacenter',
+      imageWidth: 1280,
+      imageHeight: 720
+    });
+    expect(small.rejected).toBe(true);
+    expect(small.reasons.join(' ')).toContain('below 1600x900');
+
+    const logo = heroHardGate({
+      type: 'vector',
+      tags: 'feed, rss, website, internet, rss, rss',
+      imageWidth: 1920,
+      imageHeight: 1080
+    });
+    expect(logo.rejected).toBe(true);
+    expect(logo.logoLike).toBe(true);
+
+    const scene = heroHardGate({
+      type: 'illustration',
+      tags: 'rss, feed, reader, dashboard, browser, subscriptions, interface',
+      imageWidth: 1920,
+      imageHeight: 1080
+    });
+    expect(scene.rejected).toBe(false);
+    expect(scene.logoLike).toBe(false);
+  });
+
+  it('marks hard-gated images as semantic mismatches before E5 reranking', () => {
+    const article = {
+      title: 'RSS ist nicht tot',
+      tags: ['RSS', 'FreshRSS']
+    };
+    const result = scoreHit({
+      type: 'vector',
+      tags: 'feed, rss, website, internet, rss, rss',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(result.heroRejected).toBe(true);
+    expect(result.semanticMismatch).toBe(true);
+    expect(result.reasons.some((reason) => reason.startsWith('HARD REJECT:'))).toBe(true);
   });
 
   it('scopes technical visual intents to the Pixabay computer category', async () => {
