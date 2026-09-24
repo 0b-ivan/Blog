@@ -169,10 +169,10 @@ describe('article ebook export helpers', () => {
         coverImage: '/assets/covers/demo.jpg'
       }, assetRoot, 'https://blog.obivan.org');
 
-      expect(deckblatt.html).toContain('Short cover title');
-      expect(deckblatt.html).toContain('margin: 0 !important');
-      expect(deckblatt.html).toContain('<svg');
-      expect(deckblatt.html).not.toContain('<img src=');
+      expect(deckblatt.html).toContain('book-deckblatt--editorial');
+      expect(deckblatt.html).toContain('<img src="file://');
+      expect(deckblatt.html).toContain('alt="Deckblatt: Short cover title"');
+      expect(deckblatt.html).not.toContain('<svg');
       await deckblatt.cleanup();
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
