@@ -150,17 +150,47 @@ function chooseDiverseCovers(reports) {
   for (const report of ordered) {
     const candidates = (report.candidates || []).slice(0, 5);
     if (!candidates.length) {
-      throw new Error(`No candidates available for ${report.postPath || report.title || 'unknown article'}`);
+      selected.push({
+        postPath: report.postPath,
+        title: report.title,
+        series: String(report.series || ''),
+        skipped: true,
+        skipReason: 'no candidates returned by Pixabay'
+      });
+      continue;
     }
 
-    const evaluated = candidates.map((candidate) => ({
+    const heroCandidates = candidates.filter((candidate) => !candidate.heroRejected);
+    if (!heroCandidates.length) {
+      selected.push({
+        postPath: report.postPath,
+        title: report.title,
+        series: String(report.series || ''),
+        skipped: true,
+        skipReason: 'no candidate passed the hero size/logo hard gates'
+      });
+      continue;
+    }
+
+    const evaluated = heroCandidates.map((candidate) => ({
       candidate,
       adjustment: candidateAdjustment(candidate, report, state)
     }));
 
     const semanticCandidates = evaluated.filter((entry) => !entry.candidate.semanticMismatch);
-    const semanticFallback = semanticCandidates.length === 0;
-    const semanticPool = semanticFallback ? evaluated : semanticCandidates;
+    if (!semanticCandidates.length) {
+      selected.push({
+        postPath: report.postPath,
+        title: report.title,
+        series: String(report.series || ''),
+        skipped: true,
+        skipReason: 'no semantically acceptable hero candidate'
+      });
+      continue;
+    }
+
+    const semanticFallback = false;
+    const semanticPool = semanticCandidates;
 
     const bestBaseScore = Math.max(...semanticPool.map((entry) => Number(entry.candidate.score || 0)));
     const relevanceFloor = Math.max(0, bestBaseScore - 18);
@@ -260,11 +290,18 @@ async function main() {
   await fs.writeFile(options.output, JSON.stringify(manifest, null, 2), 'utf8');
   await fs.writeFile(
     options.selectionList,
-    selections.map((selection) => `${selection.postPath}|${selection.id}|${selection.baseScore}\n`).join(''),
+    selections
+      .filter((selection) => !selection.skipped)
+      .map((selection) => `${selection.postPath}|${selection.id}|${selection.baseScore}\n`)
+      .join(''),
     'utf8'
   );
 
   for (const selection of selections) {
+    if (selection.skipped) {
+      console.log(`${selection.postPath}: skipped — ${selection.skipReason}`);
+      continue;
+    }
     console.log(
       `${selection.postPath}: rank ${selection.rank}, score ${selection.baseScore} -> ${selection.adjustedScore}, motif=${selection.motif}, series=${selection.series || '-'}`
     );

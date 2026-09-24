@@ -119,6 +119,12 @@ function candidateTable(candidates, options = {}) {
     const heuristic = Number.isFinite(Number(candidate.heuristicScore))
       ? `Heuristik: ${Math.round(Number(candidate.heuristicScore))}/100`
       : '';
+    const dimensions = Number(candidate.imageWidth) > 0 && Number(candidate.imageHeight) > 0
+      ? `${Number(candidate.imageWidth)}×${Number(candidate.imageHeight)}`
+      : '';
+    const hardGate = candidate.heroRejected
+      ? `⛔ Hero-Gate: ${markdownText((candidate.heroRejectReasons || []).join(' · '))}`
+      : '';
 
     const details = compact
       ? [
@@ -126,6 +132,8 @@ function candidateTable(candidates, options = {}) {
           semantic,
           prototype,
           heroQuality,
+          dimensions,
+          hardGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
         ].filter(Boolean).join('<br>')
@@ -135,6 +143,8 @@ function candidateTable(candidates, options = {}) {
           prototype,
           heroQuality,
           heuristic,
+          dimensions,
+          hardGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
             ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
@@ -160,7 +170,7 @@ function renderReport(report, options = {}) {
   const queries = Array.isArray(report.queries)
     ? report.queries.map(markdownText).filter(Boolean)
     : [];
-  const selected = report.selected || null;
+  const selected = diversity?.skipped ? null : (report.selected || null);
   const lines = [
     `## ${title}`,
     '',
@@ -184,7 +194,12 @@ function renderReport(report, options = {}) {
         : (query ? `**Pixabay-Query:** \`${query}\`` : ''))
   ].filter(Boolean);
 
-  if (diversity) {
+  if (diversity?.skipped) {
+    lines.push(
+      `**Cover-Auswahl:** ⏭ übersprungen – ${markdownText(diversity.skipReason || 'kein geeigneter Hero-Kandidat')}`,
+      '**Bestehendes Cover:** bleibt unverändert'
+    );
+  } else if (diversity) {
     lines.push(
       `**Vielfalt:** Motiv \`${markdownText(diversity.motif)}\` · Score ${diversity.baseScore} → ${diversity.adjustedScore}`,
       diversity.sameSeriesReuse

@@ -35,6 +35,9 @@ describe('cover review markdown', () => {
         semanticSimilarity: 0.87321,
         prototypeMargin: 0.08321,
         heroQualityScore: 92,
+        imageWidth: 1920,
+        imageHeight: 1080,
+        heroRejected: false,
         tags: 'server, storage, cloud',
         user: 'Example',
         pageURL: 'https://pixabay.com/photos/example-42/',
@@ -140,6 +143,41 @@ Body
     expect(selected.coverImage).toBe('/assets/covers/example.jpg');
     expect(selected.score).toBe(93);
     expect(selected.semanticSimilarity).toBe(0.90123);
+  });
+
+  it('shows rejected hero candidates and skipped article decisions', () => {
+    const rejectedReport = {
+      ...report,
+      selected: undefined,
+      candidates: [{
+        rank: 1,
+        score: 82,
+        tags: 'rss, logo, icon',
+        imageWidth: 1280,
+        imageHeight: 720,
+        heroRejected: true,
+        heroRejectReasons: ['hero size 1280x720 below 1600x900', 'logo/icon artwork: logo, icon']
+      }]
+    };
+
+    const markdown = renderReport(rejectedReport, {
+      repository: '0b-ivan/Blog',
+      commit: 'abc123',
+      selectionByPost: new Map([[
+        'posts/example.md',
+        {
+          postPath: 'posts/example.md',
+          skipped: true,
+          skipReason: 'no candidate passed the hero size/logo hard gates'
+        }
+      ]])
+    });
+
+    expect(markdown).toContain('Cover-Auswahl:** ⏭ übersprungen');
+    expect(markdown).toContain('Bestehendes Cover:** bleibt unverändert');
+    expect(markdown).toContain('1280×720');
+    expect(markdown).toContain('⛔ Hero-Gate');
+    expect(markdown).not.toContain('### Ausgewähltes Cover');
   });
 
   it('renders a compact candidate comparison table', () => {
