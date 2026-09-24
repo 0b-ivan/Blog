@@ -2,6 +2,8 @@
 id: 2026-09-20-chaos-engineering-chaos-monkey-kubernetes
 version: 2
 title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen'
+cover_title: 'Chaos Engineering systematisch testen'
+cover_subtitle: 'Warum Chaos Monkey kein Zufall ist'
 status: publish
 date: 2026-09-20T00:00:00.000Z
 created_at: 2026-09-20T00:00:00.000Z
