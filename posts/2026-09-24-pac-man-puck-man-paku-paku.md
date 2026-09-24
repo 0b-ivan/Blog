@@ -70,10 +70,6 @@ Der 22. Mai 1980 gilt heute als Geburtstag von Pac-Man. An diesem Tag fand in To
 
 ![Zeitleiste von Puck Man in Japan zu Pac-Man in den USA](/assets/posts/pac-man-puck-man/01-timeline.svg)
 
-![Pac-Man-Arcade-Automat mit klassischem Upright-Gehäuse](/assets/posts/pac-man-puck-man/04-arcade-machine.jpg)
-
-*Ein echter Pac-Man-Arcade-Automat. Foto: Peter Handke, CC0, via [Wikimedia Commons](/sources.html#pacman-commons-arcade-machine).*
-
 Die offizielle Pac-Man-Chronik nennt genau diese Stationen: erster Test am **22. Mai 1980**, Veröffentlichung in Japan im **Juli** und US-Start im **Oktober**. Sie bestätigt außerdem ausdrücklich, dass die englische Schreibweise zunächst **PUCK MAN** lautete und später zu **PAC-MAN** geändert wurde.
 
 In einem ausführlichen Rückblick von Bandai Namco beschreibt Tōru Iwatani den ersten Test noch genauer. Der Automat stand im Spielbereich des damaligen Tokyu Bunka Kaikan in Shibuya. Der Ort war bewusst gewählt: Dort kamen nicht nur die typischen Arcade-Spieler vorbei, sondern sehr unterschiedliche Menschen. Iwatani beobachtete insbesondere, dass Frauen und Paare mit dem Spiel Spaß hatten.
@@ -159,6 +155,10 @@ So sollte man es nicht verstehen.
 
 Der erste Location-Test war tatsächlich noch Teil der Entwicklung. Danach wurden Änderungen und Verbesserungen vorgenommen. Aber **Puck Man** und der kurz darauf international etablierte **Pac-Man** bezeichnen im Kern dasselbe Namco-Spiel aus dem Jahr 1980.
 
+![Pac-Man-Cartridge für Atari-8-Bit-Computer aus dem Jahr 1982](/assets/posts/pac-man-puck-man/04-atari-cartridge.jpg)
+
+*Pac-Man als Atari-8-Bit-Cartridge von 1982. Foto: Hedning, CC BY-SA 3.0, via [Wikimedia Commons](/sources.html#pacman-commons-atari-cartridge).*
+
 Für Nordamerika übernahm Midway den Vertrieb. Neben dem Namen wurden auch Präsentation und Vermarktung an den Markt angepasst. Das grundlegende Spielprinzip blieb jedoch dasselbe:
 
 ```text
@@ -232,6 +232,6 @@ Und aus einer japanischen Essbewegung wurde einer der bekanntesten Namen der Vid
 - [Interview mit Tōru Iwatani zum 40. Jubiläum](/sources.html#pacman-iwatani-openers-40th)
 - [Smithsonian: Why Players Around the World Gobbled Up Pac-Man](/sources.html#pacman-smithsonian-history)
 - [The Strong National Museum of Play: Pac-Man](/sources.html#pacman-strong-museum)
-- [Wikimedia Commons: Pac-Man arcade machine](/sources.html#pacman-commons-arcade-machine)
+- [Wikimedia Commons: Pac-Man Atari cartridge (1982)](/sources.html#pacman-commons-atari-cartridge)
 - [Wikimedia Commons: Tōru Iwatani at GDC 2011](/sources.html#pacman-commons-iwatani-gdc)
 - [Wikimedia Commons: TOMY „PUCK MAN“ handheld](/sources.html#pacman-commons-puckman-handheld)

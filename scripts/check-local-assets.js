@@ -85,6 +85,50 @@ function collectHtmlAssets(content) {
   return assets;
 }
 
+function imageContentViolation(target, buffer) {
+  const extension = path.extname(String(target || '')).toLowerCase();
+  const content = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer || '');
+
+  if (content.length === 0) {
+    return 'image file is empty';
+  }
+
+  if (extension === '.jpg' || extension === '.jpeg') {
+    return content.length >= 3
+      && content[0] === 0xff
+      && content[1] === 0xd8
+      && content[2] === 0xff
+      ? null
+      : 'invalid JPEG signature';
+  }
+
+  if (extension === '.png') {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    return content.subarray(0, 8).equals(png) ? null : 'invalid PNG signature';
+  }
+
+  if (extension === '.gif') {
+    const signature = content.subarray(0, 6).toString('ascii');
+    return signature === 'GIF87a' || signature === 'GIF89a'
+      ? null
+      : 'invalid GIF signature';
+  }
+
+  if (extension === '.webp') {
+    return content.subarray(0, 4).toString('ascii') === 'RIFF'
+      && content.subarray(8, 12).toString('ascii') === 'WEBP'
+      ? null
+      : 'invalid WebP signature';
+  }
+
+  if (extension === '.svg') {
+    const text = content.subarray(0, Math.min(content.length, 4096)).toString('utf8');
+    return /<svg\b/i.test(text) ? null : 'invalid SVG content';
+  }
+
+  return null;
+}
+
 function articleImagePolicyViolations(image) {
   const violations = [];
   const alt = String(image?.alt || '').trim();
@@ -147,6 +191,15 @@ function main() {
             target: image.target,
             resolved: path.relative(root, resolved),
           });
+        } else if (target.startsWith(ARTICLE_IMAGE_PREFIX)) {
+          const imageViolation = imageContentViolation(target, fs.readFileSync(resolved));
+          if (imageViolation) {
+            policyViolations.push({
+              file: filePath,
+              target: image.target,
+              reason: imageViolation
+            });
+          }
         }
       }
 
@@ -205,6 +258,7 @@ module.exports = {
   cleanTarget,
   collectHtmlAssets,
   collectMarkdownImages,
+  imageContentViolation,
   isExternal,
   resolveTarget,
   stripFencedCode

@@ -305,14 +305,6 @@
     "url": "https://www.museumofplay.org/games/pac-man/",
     "accessed_at": "2026-09-24"
   },
-  "pacman-commons-arcade-machine": {
-    "title": "Pacman - Arcade Machine.jpg",
-    "publisher": "Wikimedia Commons",
-    "url": "https://commons.wikimedia.org/wiki/File:Pacman_-_Arcade_Machine.jpg",
-    "accessed_at": "2026-09-24",
-    "author": "Peter Handke",
-    "license": "CC0 1.0"
-  },
   "pacman-commons-iwatani-gdc": {
     "title": "Toru Iwatani, creator of Pac-Man, at GDC 2011.jpg",
     "publisher": "Wikimedia Commons",
@@ -328,5 +320,13 @@
     "accessed_at": "2026-09-24",
     "author": "うぃき野郎 / retouch by Pittigrilli",
     "license": "CC BY-SA 4.0"
+  },
+  "pacman-commons-atari-cartridge": {
+    "title": "Pac-man computer game for Atari 8-bit computers 1982.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Pac-man_computer_game_for_Atari_8-bit_computers_1982.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Hedning",
+    "license": "CC BY-SA 3.0"
   }
 }
