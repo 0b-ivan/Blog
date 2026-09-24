@@ -1,0 +1,171 @@
+{
+  "ARM": {
+    "full": "ARM instruction set architecture",
+    "short": "Familie energieeffizienter Prozessorarchitekturen, die besonders in eingebetteten und mobilen Systemen verbreitet ist.",
+    "description": "ARM bezeichnet mehrere Befehlssatzarchitekturen und darauf basierende Prozessorfamilien. Sie kommen unter anderem in Mikrocontrollern, Smartphones, Einplatinenrechnern und Servern zum Einsatz.",
+    "aliases": [
+      "ARM Cortex-M33"
+    ]
+  },
+  "BBS": {
+    "full": "Bulletin Board System",
+    "short": "Einwahlbasierter Online-Dienst für Nachrichten, Dateien und Communities vor dem modernen Web.",
+    "description": "BBS-Systeme wurden typischerweise per Modem angewählt und boten Foren, Dateibereiche und andere Dienste. In der frühen PC-Softwareverteilung spielten sie eine wichtige Rolle.",
+    "aliases": [
+      "BBS-System",
+      "BBS-Systeme"
+    ]
+  },
+  "Deathmatch": {
+    "full": "Deathmatch",
+    "short": "Mehrspielermodus, in dem Spieler direkt gegeneinander antreten und Punkte durch Abschüsse erzielen.",
+    "description": "Der Begriff wurde durch DOOM stark popularisiert und bezeichnet heute allgemein kompetitive Mehrspielerpartien mit direktem Spieler-gegen-Spieler-Kampf.",
+    "aliases": [
+      "Deathmatch-Modus"
+    ]
+  },
+  "DoomWiki": {
+    "full": "DoomWiki",
+    "short": "Community-Wiki zur DOOM-Reihe, ihrer Technik, Modding-Szene und Geschichte.",
+    "description": "DoomWiki dokumentiert Spiele, Engines, WADs, Personen, technische Details und historische Hintergründe rund um DOOM und verwandte Projekte.",
+    "aliases": []
+  },
+  "DOS-PC": {
+    "full": "DOS-PC",
+    "short": "PC, der ein DOS-Betriebssystem wie MS-DOS ausführt.",
+    "description": "DOS-PCs prägten einen großen Teil des IBM-PC-kompatiblen Spielemarkts der späten 1980er- und frühen 1990er-Jahre und hatten oft enge Hardware- und Speichergrenzen.",
+    "aliases": [
+      "DOS-PCs"
+    ]
+  },
+  "EGA": {
+    "full": "Enhanced Graphics Adapter",
+    "short": "IBM-Grafikstandard der 1980er-Jahre mit höheren Auflösungen und mehr Farben als CGA.",
+    "description": "EGA war ein früher PC-Grafikstandard. Spiele wie Commander Keen nutzten seine Speicherorganisation sehr gezielt für flüssigeres Scrolling.",
+    "aliases": [
+      "EGA-Grafik",
+      "EGA-Scrolling",
+      "EGA-Speicher"
+    ]
+  },
+  "Engine-Quellcode": {
+    "full": "Engine Source Code",
+    "short": "Quellcode der technischen Laufzeit eines Spiels oder einer Software-Engine.",
+    "description": "Der Engine-Quellcode enthält zentrale Logik für Rendering, Eingabe, Netzwerk, Datenverarbeitung und weitere Laufzeitfunktionen, aber nicht zwingend die kommerziellen Inhalte eines Spiels.",
+    "aliases": [
+      "Engine Source Code"
+    ]
+  },
+  "Freedoom": {
+    "full": "Freedoom",
+    "short": "Freies Content-Projekt für Doom-kompatible Engines.",
+    "description": "Freedoom stellt frei nutzbare Levels, Grafiken, Sounds und weitere Spieldaten bereit, damit Doom-kompatible Engines ohne die proprietären Originaldaten verwendet werden können.",
+    "aliases": [
+      "Freedoom-Grafiken",
+      "Freedoom-Grafik"
+    ]
+  },
+  "FTP": {
+    "full": "File Transfer Protocol",
+    "short": "Netzwerkprotokoll zum Übertragen von Dateien zwischen Client und Server.",
+    "description": "FTP wurde lange für Softwareverteilung und Dateiaustausch im Internet eingesetzt. Klassisches FTP verschlüsselt seine Verbindung nicht und wurde in vielen Einsatzbereichen durch modernere Verfahren ersetzt.",
+    "aliases": [
+      "FTP-Server"
+    ]
+  },
+  "GDC": {
+    "full": "Game Developers Conference",
+    "short": "Internationale Fachkonferenz für Spieleentwicklung.",
+    "description": "Die GDC bringt Entwicklerinnen, Entwickler und andere Fachleute aus der Spielebranche zu Vorträgen, Panels und Branchenaustausch zusammen.",
+    "aliases": [
+      "Game Developers Conference"
+    ]
+  },
+  "GPL": {
+    "full": "GNU General Public License",
+    "short": "Copyleft-Lizenz für freie Software.",
+    "description": "Die GPL erlaubt Nutzung, Untersuchung, Änderung und Weitergabe von Software. Bei Weitergabe abgeleiteter Werke gelten die Bedingungen der jeweiligen GPL-Version weiter.",
+    "aliases": [
+      "GNU GPL"
+    ]
+  },
+  "IKEA TRÅDFRI": {
+    "full": "IKEA TRÅDFRI",
+    "short": "Produktfamilie von IKEA für smarte Beleuchtung und zugehörige Smart-Home-Komponenten.",
+    "description": "TRÅDFRI umfasst unter anderem vernetzte Leuchtmittel und Zubehör. Die Geräte enthalten eingebettete Hardware und wurden deshalb auch für ungewöhnliche technische Experimente genutzt.",
+    "aliases": [
+      "IKEA-TRÅDFRI",
+      "TRÅDFRI",
+      "TRÅDFRI-Hardware",
+      "IKEA-TRÅDFRI-GU10-Leuchtmittel",
+      "IKEA-TRÅDFRI-GU10-Leuchtmittels"
+    ]
+  },
+  "KB": {
+    "full": "Kilobyte",
+    "short": "Einheit für Datenmengen.",
+    "description": "KB bezeichnet im Dezimalsystem 1.000 Byte. In älterer Computerpraxis wurde KB häufig auch für 1.024 Byte verwendet; dafür ist heute die Bezeichnung KiB präziser.",
+    "aliases": [
+      "Kilobyte"
+    ]
+  },
+  "MB": {
+    "full": "Megabyte",
+    "short": "Einheit für Datenmengen.",
+    "description": "MB bezeichnet im Dezimalsystem 1.000.000 Byte. Für exakt 1.048.576 Byte wird die binäre Einheit MiB verwendet.",
+    "aliases": [
+      "Megabyte"
+    ]
+  },
+  "MHz": {
+    "full": "Megahertz",
+    "short": "Frequenzeinheit für eine Million Hertz.",
+    "description": "MHz wird unter anderem für Taktfrequenzen von Prozessoren, Mikrocontrollern und Funksystemen verwendet. 1 MHz entspricht 1.000.000 Schwingungen pro Sekunde.",
+    "aliases": [
+      "Megahertz"
+    ]
+  },
+  "PC": {
+    "full": "Personal Computer",
+    "short": "Allgemein verwendbarer Computer für eine einzelne Person.",
+    "description": "Im historischen Spielekontext bezeichnet PC meist IBM-PC-kompatible Rechner und deren Nachfolger, auf denen Systeme wie DOS und später Windows liefen.",
+    "aliases": [
+      "PCs",
+      "PC-Gaming"
+    ]
+  },
+  "Shareware": {
+    "full": "Shareware",
+    "short": "Vertriebsmodell, bei dem Software frei kopiert und ausprobiert werden darf, während zusätzliche Inhalte oder die Vollversion verkauft werden.",
+    "description": "Shareware senkte die Hürde zur Verbreitung von Software, weil Nutzer eine funktionsfähige Version weitergeben konnten. Spiele wie Commander Keen und DOOM nutzten dieses Modell besonders erfolgreich.",
+    "aliases": [
+      "Shareware-Modell"
+    ]
+  },
+  "WAD": {
+    "full": "DOOM WAD",
+    "short": "Containerdatei für Levels, Grafiken und andere Ressourcen in DOOM und kompatiblen Engines.",
+    "description": "WAD-Dateien trennen viele Spieldaten von der Engine. Dadurch konnten neue Levels, Grafiken und Modifikationen erstellt werden, ohne den Engine-Code selbst verändern zu müssen.",
+    "aliases": [
+      "WADs",
+      "WAD-Datei",
+      "WAD-Dateien"
+    ]
+  },
+  "Wikimedia Commons": {
+    "full": "Wikimedia Commons",
+    "short": "Zentrales Medienarchiv der Wikimedia-Projekte.",
+    "description": "Wikimedia Commons stellt Bilder, Audio, Video und andere Mediendateien bereit. Jede Datei besitzt eine eigene Beschreibungsseite mit Urheber- und Lizenzangaben.",
+    "aliases": [
+      "Commons"
+    ]
+  },
+  "Wolfenstein 3D": {
+    "full": "Wolfenstein 3D",
+    "short": "1992 veröffentlichtes Ego-Shooter-Spiel von id Software und wichtiger technischer Vorläufer von DOOM.",
+    "description": "Wolfenstein 3D etablierte id Softwares schnelle Ego-Perspektive auf PCs weiter und steht in der Entwicklungslinie zwischen Commander Keen und DOOM.",
+    "aliases": [
+      "Wolfenstein"
+    ]
+  }
+}

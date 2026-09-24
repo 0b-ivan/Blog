@@ -89,7 +89,29 @@ describe('glossary', () => {
       'posts/2026-08-19-wie-dieser-blog-gebaut-ist.md': ['Node.js', 'Docker Compose', 'Audit-Trail'],
       'posts/2026-08-21-docker-vs-docker-compose.md': ['Docker Compose', 'Port-Mapping', 'Cluster-Orchestrator'],
       'posts/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.md': ['CSpell', 'LanguageTool', 'False Positive'],
-      'posts/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.md': ['Kafka', 'Embedding-Modell', 'Vector-Database-Cluster', 'Cosine Similarity', 'GraphRAG']
+      'posts/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.md': ['Kafka', 'Embedding-Modell', 'Vector-Database-Cluster', 'Cosine Similarity', 'GraphRAG'],
+      'posts/2026-09-24-doom-shareware-internet.md': [
+        'Shareware',
+        'WAD',
+        'GPL',
+        'BBS',
+        'EGA',
+        'Deathmatch',
+        'FTP',
+        'PC',
+        'ARM',
+        'KB',
+        'MB',
+        'MHz',
+        'DOS-PC',
+        'Engine-Quellcode',
+        'Wikimedia Commons',
+        'DoomWiki',
+        'GDC',
+        'Wolfenstein 3D',
+        'IKEA TRÅDFRI',
+        'Freedoom'
+      ]
     };
 
     for (const [relativePath, expectedKeys] of Object.entries(expectedByPost)) {
