@@ -304,5 +304,29 @@
     "publisher": "The Strong National Museum of Play",
     "url": "https://www.museumofplay.org/games/pac-man/",
     "accessed_at": "2026-09-24"
+  },
+  "pacman-commons-arcade-machine": {
+    "title": "Pacman - Arcade Machine.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Pacman_-_Arcade_Machine.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Peter Handke",
+    "license": "CC0 1.0"
+  },
+  "pacman-commons-iwatani-gdc": {
+    "title": "Toru Iwatani, creator of Pac-Man, at GDC 2011.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Toru_Iwatani,_creator_of_Pac-Man,_at_GDC_2011.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Official GDC",
+    "license": "CC BY 2.0"
+  },
+  "pacman-commons-puckman-handheld": {
+    "title": "TOMY LSI PACMAN handheld electronic game.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:TOMY_LSI_PACMAN_handheld_electronic_game.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "うぃき野郎 / retouch by Pittigrilli",
+    "license": "CC BY-SA 4.0"
   }
 }
