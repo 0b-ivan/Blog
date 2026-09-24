@@ -191,7 +191,7 @@ function round(value, digits = 4) {
 function conceptPrototype(report = {}) {
   const key = String(report.visualIntent || '').trim();
   const override = key ? COVER_CONCEPT_PROTOTYPES[key] : null;
-  const briefPositive = String(report.visualBriefPositive || report.title || '').trim();
+  const briefPositive = String(report.visualBriefPositive || '').trim();
   const briefNegative = String(report.visualBriefNegative || '').trim();
 
   if (!override && !briefPositive) return null;
