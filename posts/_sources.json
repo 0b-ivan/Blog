@@ -311,15 +311,17 @@
     "url": "https://commons.wikimedia.org/wiki/File:Toru_Iwatani,_creator_of_Pac-Man,_at_GDC_2011.jpg",
     "accessed_at": "2026-09-24",
     "author": "Official GDC",
-    "license": "CC BY 2.0"
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
   },
   "pacman-commons-puckman-handheld": {
     "title": "TOMY LSI PACMAN handheld electronic game.jpg",
     "publisher": "Wikimedia Commons",
     "url": "https://commons.wikimedia.org/wiki/File:TOMY_LSI_PACMAN_handheld_electronic_game.jpg",
     "accessed_at": "2026-09-24",
-    "author": "うぃき野郎 / retouch by Pittigrilli",
-    "license": "CC BY-SA 4.0"
+    "author": "うぃき野郎",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
   },
   "pacman-commons-atari-cartridge": {
     "title": "Pac-man computer game for Atari 8-bit computers 1982.jpg",
@@ -328,5 +330,14 @@
     "accessed_at": "2026-09-24",
     "author": "Hedning",
     "license": "CC BY-SA 3.0"
+  },
+  "pacman-commons-arcade-machine": {
+    "title": "Pac-Man arcade machine, De Notaris Schaijk.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Pac-Man_arcade_machine,_De_Notaris_Schaijk.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "YosemiteYamper",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
   }
 }

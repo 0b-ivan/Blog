@@ -1,0 +1,117 @@
+name: Materialize Article Photos
+
+on:
+  push:
+    branches:
+      - 'photo/**'
+      - 'post/**'
+      - 'obsidian/**'
+      - 'feat/**'
+      - 'fix/**'
+    paths:
+      - 'media/photos/*.json'
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: 'Manifest path, e.g. media/photos/pac-man-puck-man.json'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: article-photos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve manifests
+        id: manifests
+        shell: bash
+        env:
+          MANUAL_MANIFEST: ${{ github.event_name == 'workflow_dispatch' && inputs.manifest || '' }}
+        run: |
+          set -euo pipefail
+          : > /tmp/photo-manifests.txt
+
+          if [ -n "$MANUAL_MANIFEST" ]; then
+            case "$MANUAL_MANIFEST" in
+              media/photos/*.json) ;;
+              *)
+                echo 'manifest must be below media/photos/ and end in .json' >&2
+                exit 1
+                ;;
+            esac
+            printf '%s\n' "$MANUAL_MANIFEST" >> /tmp/photo-manifests.txt
+          else
+            git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- 'media/photos/*.json'               | grep -E '^media/photos/[^/]+\.json$'               >> /tmp/photo-manifests.txt || true
+          fi
+
+          sort -u -o /tmp/photo-manifests.txt /tmp/photo-manifests.txt
+          test -s /tmp/photo-manifests.txt || {
+            echo 'No article-photo manifest selected.' >&2
+            exit 1
+          }
+
+          while IFS= read -r manifest; do
+            test -f "$manifest" || {
+              echo "Manifest not found: $manifest" >&2
+              exit 1
+            }
+          done < /tmp/photo-manifests.txt
+
+          echo 'Photo manifests:'
+          cat /tmp/photo-manifests.txt
+
+      - name: Download and validate licensed photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t manifests < /tmp/photo-manifests.txt
+          npm run photos:ingest -- "${manifests[@]}"
+
+      - name: Validate generated article media
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/check-local-assets.js
+          npm run references:check
+          git diff --check
+
+      - name: Commit materialized photos
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add assets/posts posts/_sources.json
+
+          if git diff --cached --quiet; then
+            echo 'Photo Connection already materialized this manifest.'
+            exit 0
+          fi
+
+          git commit -m 'chore: materialize licensed article photos'
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"

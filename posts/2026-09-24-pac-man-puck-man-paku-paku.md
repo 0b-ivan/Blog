@@ -70,6 +70,10 @@ Der 22. Mai 1980 gilt heute als Geburtstag von Pac-Man. An diesem Tag fand in To
 
 ![Zeitleiste von Puck Man in Japan zu Pac-Man in den USA](/assets/posts/pac-man-puck-man/01-timeline.svg)
 
+![Pac-Man-Arcade-Automat mit klassischem Upright-Gehäuse](/assets/posts/pac-man-puck-man/04-arcade-machine.jpg)
+
+*Ein moderner Arcade1Up-Pac-Man-Automat im klassischen Upright-Format. Foto: YosemiteYamper, CC BY-SA 4.0, via [Wikimedia Commons](/sources.html#pacman-commons-arcade-machine).*
+
 Die offizielle Pac-Man-Chronik nennt genau diese Stationen: erster Test am **22. Mai 1980**, Veröffentlichung in Japan im **Juli** und US-Start im **Oktober**. Sie bestätigt außerdem ausdrücklich, dass die englische Schreibweise zunächst **PUCK MAN** lautete und später zu **PAC-MAN** geändert wurde.
 
 In einem ausführlichen Rückblick von Bandai Namco beschreibt Tōru Iwatani den ersten Test noch genauer. Der Automat stand im Spielbereich des damaligen Tokyu Bunka Kaikan in Shibuya. Der Ort war bewusst gewählt: Dort kamen nicht nur die typischen Arcade-Spieler vorbei, sondern sehr unterschiedliche Menschen. Iwatani beobachtete insbesondere, dass Frauen und Paare mit dem Spiel Spaß hatten.
@@ -119,7 +123,11 @@ Das kleine japanische **ッ** in **パックマン** markiert einen verstärkten
 
 Die frühe Schreibweise **PUCK MAN** war also keine Übersetzung im Sinne von „Eishockey-Puck-Mann“. Sie war eine englische Schreibweise für einen Namen, dessen Ursprung im japanischen **paku paku** lag.
 
-Dass die Schreibweise nicht nur in Textquellen überliefert ist, sieht man auch an erhaltenen Produkten: Ein japanisches TOMY-Handheld von 1981 trägt gut sichtbar den Schriftzug **PUCK MAN**. Das frei lizenzierte Foto davon liegt bei Wikimedia Commons und ist in den Quellen verlinkt.
+Dass die Schreibweise nicht nur in Textquellen überliefert ist, sieht man auch an erhaltenen Produkten: Ein japanisches TOMY-Handheld von 1981 trägt gut sichtbar den Schriftzug **PUCK MAN**.
+
+![TOMY-Handheld von 1981 mit dem Schriftzug PUCK MAN](/assets/posts/pac-man-puck-man/06-puck-man-handheld.jpg)
+
+*Ein TOMY-LSI-Handheld von 1981 mit sichtbar aufgedrucktem „PUCK MAN“. Foto: うぃき野郎, CC BY-SA 4.0, via [Wikimedia Commons](/sources.html#pacman-commons-puckman-handheld).*
 
 ![Vom japanischen paku paku über Pakku Man und Puck Man zu Pac-Man](/assets/posts/pac-man-puck-man/03-name-evolution.svg)
 
@@ -232,6 +240,7 @@ Und aus einer japanischen Essbewegung wurde einer der bekanntesten Namen der Vid
 - [Interview mit Tōru Iwatani zum 40. Jubiläum](/sources.html#pacman-iwatani-openers-40th)
 - [Smithsonian: Why Players Around the World Gobbled Up Pac-Man](/sources.html#pacman-smithsonian-history)
 - [The Strong National Museum of Play: Pac-Man](/sources.html#pacman-strong-museum)
+- [Wikimedia Commons: Pac-Man arcade machine](/sources.html#pacman-commons-arcade-machine)
 - [Wikimedia Commons: Pac-Man Atari cartridge (1982)](/sources.html#pacman-commons-atari-cartridge)
 - [Wikimedia Commons: Tōru Iwatani at GDC 2011](/sources.html#pacman-commons-iwatani-gdc)
 - [Wikimedia Commons: TOMY „PUCK MAN“ handheld](/sources.html#pacman-commons-puckman-handheld)
