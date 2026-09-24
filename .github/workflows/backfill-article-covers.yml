@@ -17,7 +17,7 @@ on:
           - missing
           - all
       batch_size:
-        description: Number of existing published articles to process
+        description: Batch size for missing-cover mode; scope=all processes every published article
         required: true
         type: choice
         default: "8"
@@ -102,9 +102,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          args=(--limit "$BATCH_SIZE")
           if [ "$COVER_SCOPE" = "all" ]; then
-            args+=(--include-covered)
+            args=(--include-covered --all)
+          else
+            args=(--limit "$BATCH_SIZE")
           fi
           node scripts/list-missing-cover-posts.js "${args[@]}" > /tmp/pixabay-cover-posts.txt
 
