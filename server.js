@@ -221,7 +221,7 @@ function parseMetadataLine(line) {
 
 function recoverMetadata(raw, parsed) {
   const fallbackData = {};
-  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'series', 'cover_query', 'cover_subject', 'cover_avoid', 'cover_provider', 'cover_provider_id', 'cover_image', 'cover_alt', 'cover_focus', 'cover_score', 'cover_credit', 'cover_credit_url', 'cover_source_url', 'cover_license', 'cover_license_url']);
+  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'series', 'cover_query', 'cover_subject', 'cover_avoid', 'cover_intent', 'cover_provider', 'cover_provider_id', 'cover_title', 'cover_subtitle', 'cover_image', 'cover_alt', 'cover_focus', 'cover_score', 'cover_credit', 'cover_credit_url', 'cover_source_url', 'cover_license', 'cover_license_url']);
 
   const hasParsedData = parsed && parsed.data && Object.keys(parsed.data).length > 0;
   if (hasParsedData) {
@@ -405,6 +405,8 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const coverTitle = String(recovered.data.cover_title || '').trim();
+      const coverSubtitle = String(recovered.data.cover_subtitle || '').trim();
       const coverImage = String(recovered.data.cover_image || '').trim();
       const coverFocus = String(recovered.data.cover_focus || 'center').trim();
       const coverCredit = String(recovered.data.cover_credit || '').trim();
@@ -441,6 +443,8 @@ async function loadPosts(postsDir) {
         category,
         tags,
         excerpt,
+        coverTitle,
+        coverSubtitle,
         coverImage,
         coverFocus,
         coverCredit,

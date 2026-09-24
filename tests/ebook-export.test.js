@@ -4,10 +4,13 @@ const path = require('node:path');
 const {
   buildColophon,
   buildCoverSvg,
+  buildEditorialCoverSvg,
   buildPhotoCoverSvg,
+  createDeckblatt,
   createEpubCover,
   displayAuthor,
   ensureCoverImageProperty,
+  hasEditorialCoverMetadata,
   normalizeEpubDate,
   prepareChapterHtml,
   wrapCoverTitle
@@ -55,6 +58,32 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('DIGITAL EDITION');
   });
 
+  it('uses editorial cover metadata only when a post opts in', () => {
+    expect(hasEditorialCoverMetadata({
+      title: 'Long title'
+    })).toBe(false);
+    expect(hasEditorialCoverMetadata({
+      title: 'Long title',
+      coverTitle: 'Short title'
+    })).toBe(true);
+
+    const svg = buildEditorialCoverSvg({
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      coverTitle: 'Chaos Engineering systematisch testen',
+      coverSubtitle: 'Warum Chaos Monkey kein Zufall ist',
+      author: 'obivan',
+      category: 'DevOps',
+      tags: ['Chaos-Engineering', 'Kubernetes'],
+      date: '2026-09-20'
+    }, 'data:image/jpeg;base64,ZmFrZQ==');
+
+    expect(svg).toContain('Chaos Engineering');
+    expect(svg).toContain('systematisch testen');
+    expect(svg).toContain('Warum Chaos Monkey kein Zufall ist');
+    expect(svg).toContain('data:image/jpeg;base64,ZmFrZQ==');
+    expect(svg).not.toContain('Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen');
+  });
+
   it('keeps the colophon focused on publication metadata', () => {
     const html = buildColophon({
       slug: 'pixabay-test',
@@ -91,6 +120,63 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('Ivan Babayev');
     expect(svg).toContain('Courier New');
     expect(svg).not.toContain('cover-monkey');
+  });
+
+  it('generates an editorial EPUB cover for an explicitly configured post', async () => {
+    const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-cover-'));
+    try {
+      const coverDir = path.join(assetRoot, 'assets', 'covers');
+      await fs.mkdir(coverDir, { recursive: true });
+      await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+
+      const cover = await createEpubCover({
+        slug: 'demo',
+        title: 'A very long article title',
+        coverTitle: 'Short cover title',
+        coverSubtitle: 'Readable subtitle',
+        author: 'obivan',
+        category: 'DevOps',
+        date: '2026-09-24',
+        coverImage: '/assets/covers/demo.jpg'
+      }, assetRoot);
+
+      expect(cover.name).toBe('demo-cover.svg');
+      expect(cover.type).toBe('image/svg+xml');
+      const content = Buffer.from(await cover.arrayBuffer()).toString('utf8');
+      expect(content).toContain('Short cover title');
+      expect(content).toContain('Readable subtitle');
+      expect(content).toContain('data:image/jpeg;base64,');
+    } finally {
+      await fs.rm(assetRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses a full-page editorial deckblatt only for opted-in posts', async () => {
+    const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-deckblatt-'));
+    try {
+      const coverDir = path.join(assetRoot, 'assets', 'covers');
+      await fs.mkdir(coverDir, { recursive: true });
+      await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+
+      const deckblatt = await createDeckblatt({
+        slug: 'demo',
+        title: 'Long article title',
+        coverTitle: 'Short cover title',
+        coverSubtitle: 'Readable subtitle',
+        author: 'obivan',
+        category: 'DevOps',
+        date: '2026-09-24',
+        coverImage: '/assets/covers/demo.jpg'
+      }, assetRoot, 'https://blog.obivan.org');
+
+      expect(deckblatt.html).toContain('Short cover title');
+      expect(deckblatt.html).toContain('margin: 0 !important');
+      expect(deckblatt.html).toContain('<svg');
+      expect(deckblatt.html).not.toContain('<img src=');
+      await deckblatt.cleanup();
+    } finally {
+      await fs.rm(assetRoot, { recursive: true, force: true });
+    }
   });
 
   it('uses the existing raster article image as the pragmatic EPUB library cover', async () => {
