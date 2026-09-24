@@ -16,7 +16,7 @@
 
 /* cover:2026-09-18-k3s-proxmox-hardening-part-3:start */
 .post-page[data-post-slug="2026-09-18-k3s-proxmox-hardening-part-3"] .article-hero {
-  --article-cover-image: url("/assets/covers/2026-09-18-k3s-proxmox-hardening-part-3.jpg");
+  --article-cover-image: url("/assets/covers/2026-09-18-k3s-proxmox-hardening-part-3.png");
   --article-cover-focus: center;
 }
 /* cover:2026-09-18-k3s-proxmox-hardening-part-3:end */
@@ -79,7 +79,7 @@
 
 /* cover:2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung:start */
 .post-page[data-post-slug="2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung"] .article-hero {
-  --article-cover-image: url("/assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.jpg");
+  --article-cover-image: url("/assets/covers/2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung.png");
   --article-cover-focus: center;
 }
 /* cover:2026-08-19-rss-ist-nicht-tot-freshrss-als-self-hosting-empfehlung:end */
@@ -100,7 +100,7 @@
 
 /* cover:2026-08-21-docker-vs-docker-compose:start */
 .post-page[data-post-slug="2026-08-21-docker-vs-docker-compose"] .article-hero {
-  --article-cover-image: url("/assets/covers/2026-08-21-docker-vs-docker-compose.jpg");
+  --article-cover-image: url("/assets/covers/2026-08-21-docker-vs-docker-compose.png");
   --article-cover-focus: center;
 }
 /* cover:2026-08-21-docker-vs-docker-compose:end */
@@ -128,7 +128,7 @@
 
 /* cover:2026-08-27-immich-nextcloud-webdav-rclone-provisionierung:start */
 .post-page[data-post-slug="2026-08-27-immich-nextcloud-webdav-rclone-provisionierung"] .article-hero {
-  --article-cover-image: url("/assets/covers/2026-08-27-immich-nextcloud-webdav-rclone-provisionierung.jpg");
+  --article-cover-image: url("/assets/covers/2026-08-27-immich-nextcloud-webdav-rclone-provisionierung.png");
   --article-cover-focus: center;
 }
 /* cover:2026-08-27-immich-nextcloud-webdav-rclone-provisionierung:end */

@@ -31,19 +31,21 @@ search_queries:
     maxRank: 1
 cover_query: cloud server network datacenter infrastructure deployment automation terminal
 cover_provider: pixabay
-cover_provider_id: '2402637'
+cover_provider_id: '9088888'
 cover_image: /assets/covers/2026-09-04-gold-glaenzt-nicht-immer-golden-images.jpg
 cover_alt: >-
-  network, server, system, infrastructure, managed services, connection,
-  computer, cloud, gray computer, gray laptop, network, network, server, server,
-  server, server, server
+  ai generated, data center, server room, server, network, data, center,
+  storage, cloud computing, technology, hardware, computer, cloud, system,
+  computer networking, network storage
 cover_focus: center
-cover_credit: by bsdrouin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/network-server-system-2402637/'
-cover_source_url: 'https://pixabay.com/photos/network-server-system-2402637/'
+cover_credit: by Yamu_Jay via Pixabay
+cover_credit_url: >-
+  https://pixabay.com/illustrations/ai-generated-data-center-server-room-9088888/
+cover_source_url: >-
+  https://pixabay.com/illustrations/ai-generated-data-center-server-room-9088888/
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 83
 ---
 
 Server von Hand aufzusetzen funktioniert erstaunlich lange.
