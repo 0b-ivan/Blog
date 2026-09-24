@@ -11,6 +11,13 @@ const PIXABAY_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const PIXABAY_LICENSE = 'Pixabay Content License';
 const PIXABAY_LICENSE_URL = 'https://pixabay.com/service/license-summary/';
 
+const HERO_MIN_WIDTH = 1600;
+const HERO_MIN_HEIGHT = 900;
+const HERO_MIN_ASPECT = 1.25;
+const HERO_MAX_ASPECT = 2.6;
+const HARD_LOGO_TERMS = new Set(['logo', 'logotype', 'pictogram', 'emblem']);
+const SYMBOL_LIKE_TERMS = new Set(['icon', 'symbol', 'button', 'badge', 'sign', 'isolated']);
+
 const DEFAULT_AVOID_TERMS = [
   'people', 'person', 'portrait', 'woman', 'women', 'man', 'men', 'girl', 'boy',
   'meeting', 'handshake', 'teamwork', 'businessman', 'businesswoman', 'smile', 'smiling'
@@ -475,11 +482,63 @@ function articleProfile(data, query = '') {
   };
 }
 
+function exactTagTokens(value) {
+  return String(value || '')
+    .toLowerCase()
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function heroHardGate(hit = {}) {
+  const width = gate.width;
+  const height = gate.height;
+  const ratio = gate.ratio;
+  const tags = exactTagTokens(hit.tags);
+  const uniqueTags = [...new Set(tags)];
+  const imageType = String(hit.type || '').toLowerCase();
+
+  const hardLogoTerms = uniqueTags.filter((tag) => HARD_LOGO_TERMS.has(tag));
+  const symbolTerms = uniqueTags.filter((tag) => SYMBOL_LIKE_TERMS.has(tag));
+  const repeatedTagCount = tags.length - uniqueTags.length;
+  const lowInformationVector = imageType === 'vector'
+    && uniqueTags.length <= 5
+    && (symbolTerms.length > 0 || repeatedTagCount >= 2);
+  const logoLike = hardLogoTerms.length > 0 || symbolTerms.length >= 2 || lowInformationVector;
+
+  const reasons = [];
+  if (width < HERO_MIN_WIDTH || height < HERO_MIN_HEIGHT) {
+    reasons.push(`hero size ${width}x${height} below ${HERO_MIN_WIDTH}x${HERO_MIN_HEIGHT}`);
+  }
+  if (ratio > 0 && (ratio < HERO_MIN_ASPECT || ratio > HERO_MAX_ASPECT)) {
+    reasons.push(`hero aspect ${ratio.toFixed(2)} outside ${HERO_MIN_ASPECT}-${HERO_MAX_ASPECT}`);
+  }
+  if (logoLike) {
+    reasons.push(
+      lowInformationVector
+        ? 'low-information vector/icon artwork'
+        : `logo/icon artwork: ${[...hardLogoTerms, ...symbolTerms].slice(0, 4).join(', ')}`
+    );
+  }
+
+  return {
+    rejected: reasons.length > 0,
+    reasons,
+    width,
+    height,
+    ratio,
+    imageType,
+    uniqueTagCount: uniqueTags.length,
+    logoLike
+  };
+}
+
 function scoreHit(hit, data = {}, query = '') {
   const profile = articleProfile(data, query);
+  const gate = heroHardGate(hit);
   const hitTokens = new Set(tokensFrom(hit.tags));
   let score = 28;
-  const reasons = [];
+  const reasons = gate.reasons.map((reason) => `HARD REJECT: ${reason}`);
 
   const directMatches = [...hitTokens].filter(
     (token) => profile.primary.has(token) && !WEAK_DIRECT_TERMS.has(token)
@@ -580,10 +639,19 @@ function scoreHit(hit, data = {}, query = '') {
     intentMatches,
     intentAvoidMatches,
     requiredGroupMatches,
+    heroRejected: gate.rejected,
+    heroRejectReasons: gate.reasons,
+    heroWidth: gate.width,
+    heroHeight: gate.height,
+    heroAspect: gate.ratio,
+    heroLogoLike: gate.logoLike,
     semanticMismatch: Boolean(
-      profile.intent && (
-        intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
-        || !requiredGroupsMet
+      gate.rejected
+      || (
+        profile.intent && (
+          intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
+          || !requiredGroupsMet
+        )
       )
     )
   };
@@ -614,8 +682,8 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
   url.searchParams.set('safesearch', 'true');
   url.searchParams.set('order', 'popular');
   url.searchParams.set('per_page', '30');
-  url.searchParams.set('min_width', '1280');
-  url.searchParams.set('min_height', '720');
+  url.searchParams.set('min_width', String(HERO_MIN_WIDTH));
+  url.searchParams.set('min_height', String(HERO_MIN_HEIGHT));
 
   const category = String(options.category || '').trim().toLowerCase();
   if (category) url.searchParams.set('category', category);
@@ -843,6 +911,11 @@ function reportCandidate(entry, index) {
     pageURL: hit.pageURL || '',
     previewURL: hit.previewURL || hit.webformatURL || '',
     imageType: hit.type || '',
+    imageWidth: Number(hit.imageWidth || hit.webformatWidth || 0),
+    imageHeight: Number(hit.imageHeight || hit.webformatHeight || 0),
+    heroRejected: Boolean(entry.heroRejected),
+    heroRejectReasons: entry.heroRejectReasons || [],
+    heroLogoLike: Boolean(entry.heroLogoLike),
     searchQuery: hit.__coverQuery || '',
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
@@ -976,6 +1049,10 @@ module.exports = {
   PIXABAY_LICENSE_URL,
   TOPIC_EXPANSIONS,
   VISUAL_INTENTS,
+  HERO_MAX_ASPECT,
+  HERO_MIN_ASPECT,
+  HERO_MIN_HEIGHT,
+  HERO_MIN_WIDTH,
   articleProfile,
   articleVisualBrief,
   cacheFileForQuery,
@@ -986,6 +1063,7 @@ module.exports = {
   downloadPhoto,
   fileExtension,
   findPhotoById,
+  heroHardGate,
   parseArgs,
   queryCandidates,
   visualIntent,
