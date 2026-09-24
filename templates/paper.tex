@@ -114,7 +114,16 @@ $if(coverImage)$
       text width=165mm,
       align=left,
       font=\ttfamily\bfseries\fontsize{28}{34}\selectfont
-    ] at ([xshift=18mm,yshift=-58mm]current page.north west) {$title$};
+    ] at ([xshift=18mm,yshift=-58mm]current page.north west) {$coverTitle$};
+$if(coverSubtitle)$
+    \node[
+      anchor=north west,
+      text=white!82,
+      text width=165mm,
+      align=left,
+      font=\sffamily\fontsize{12}{16}\selectfont
+    ] at ([xshift=18mm,yshift=-112mm]current page.north west) {$coverSubtitle$};
+$endif$
     \node[
       anchor=south west,
       text=white,
@@ -134,7 +143,11 @@ $else$
   \vspace*{25mm}
   {\sffamily\bfseries\Large KERNEL NOTES\par}
   \vspace{22mm}
-  {\ttfamily\bfseries\fontsize{28}{34}\selectfont $title$\par}
+  {\ttfamily\bfseries\fontsize{28}{34}\selectfont $coverTitle$\par}
+$if(coverSubtitle)$
+  \vspace{8mm}
+  {\sffamily\large\color{KernelMuted} $coverSubtitle$\par}
+$endif$
   \vfill
   {\sffamily\bfseries\Large $author$\par}
   \vspace{8mm}
