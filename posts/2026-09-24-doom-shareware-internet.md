@@ -1,7 +1,7 @@
 ---
 id: 2026-09-24-doom-shareware-internet
 version: 1
-title: DOOM: Wie Shareware, ein kleines Team und das junge Internet PC-Gaming veränderten
+title: "DOOM: Wie Shareware, ein kleines Team und das junge Internet PC-Gaming veränderten"
 cover_title: DOOM veränderte mehr als Shooter
 cover_subtitle: Von Commander Keen über Shareware und Deathmatch bis DOOM auf Embedded-Hardware
 status: publish
