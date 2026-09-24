@@ -37,7 +37,7 @@
 
 /* cover:2026-09-04-gold-glaenzt-nicht-immer-golden-images:start */
 .post-page[data-post-slug="2026-09-04-gold-glaenzt-nicht-immer-golden-images"] .article-hero {
-  --article-cover-image: url("/assets/covers/2026-09-04-gold-glaenzt-nicht-immer-golden-images.jpg");
+  --article-cover-image: url("/assets/covers/2026-09-04-gold-glaenzt-nicht-immer-golden-images.png");
   --article-cover-focus: center;
 }
 /* cover:2026-09-04-gold-glaenzt-nicht-immer-golden-images:end */
@@ -100,7 +100,7 @@
 
 /* cover:2026-08-21-docker-vs-docker-compose:start */
 .post-page[data-post-slug="2026-08-21-docker-vs-docker-compose"] .article-hero {
-  --article-cover-image: url("/assets/covers/2026-08-21-docker-vs-docker-compose.jpg");
+  --article-cover-image: url("/assets/covers/2026-08-21-docker-vs-docker-compose.png");
   --article-cover-focus: center;
 }
 /* cover:2026-08-21-docker-vs-docker-compose:end */

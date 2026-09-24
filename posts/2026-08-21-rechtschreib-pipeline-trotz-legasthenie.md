@@ -23,18 +23,27 @@ search_queries:
     maxRank: 1
 cover_query: GitHub-Actions Automation CSpell Automation
 cover_provider: pixabay
-cover_provider_id: '544180'
+cover_provider_id: '3088958'
 cover_image: /assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg
 cover_alt: >-
-  secretary, desk, sales, office automation, telephony, call, screen, telephone,
-  secretary, secretary, secretary, secretary, secretary, call
+  analytics, information, innovation, communication, big data, data, cyber
+  security, cyber, space, technology, internet, cryptocurrency, code, source
+  code, programming, application, electronic, blockchain, digital, network,
+  virtual, crypto, currency, mining, cryptography, logs, crypto currency,
+  automation, javascript, text, string, tech, technical, bits, bytes, matrix,
+  transfer, tube, analyze, blue technology, blue data, blue network, blue
+  community, blue internet, blue digital, blue communication, blue tech, blue
+  security, blue information, blue code, blue coding, blue programming, blue
+  innovation, blue technical, big data, big data, big data, data, data, data,
+  data, data, cyber security, cyber security, cyber, code, blockchain,
+  blockchain, crypto, crypto, automation, tech, tech
 cover_focus: center
-cover_credit: by Patrice_Audet via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
-cover_source_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
+cover_credit: by xresch via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/analytics-information-innovation-3088958/'
+cover_source_url: 'https://pixabay.com/illustrations/analytics-information-innovation-3088958/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 60
+cover_score: 85
 ---
 
 Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.

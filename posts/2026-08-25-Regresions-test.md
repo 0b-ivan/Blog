@@ -30,24 +30,23 @@ search_queries:
     maxRank: 3
   - query: Wie teste ich eine semantische Suche automatisch?
     maxRank: 3
-cover_query: Testing Regressionstest CI Development
+cover_query: software testing quality assurance bug code
 cover_provider: pixabay
-cover_provider_id: '1076536'
+cover_provider_id: '4690505'
 cover_image: /assets/covers/2026-08-25-Regresions-test.jpg
 cover_alt: >-
-  code, html, digital, coding, web, programming, computer, technology, internet,
-  design, development, website, web developer, web development, programming
-  code, data, page, computer programming, software, site, css, script, web page,
-  website development, www, information, java, screen, code, code, code, html,
-  coding, coding, coding, coding, coding, web, programming, programming,
-  computer, technology, website, website, web development, software
+  engineer, code, coding, software, computer, engineering, binary, tech,
+  technology, data, information, science, female, light, web, website,
+  computing, blue computer, blue laptop, blue data, blue science, blue website,
+  blue tech, blue information, blue code, blue coding, blue software, coding,
+  software, software, software, tech, tech, tech, tech, tech
 cover_focus: center
-cover_credit: by jamesmarkosborne via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
-cover_source_url: 'https://pixabay.com/photos/code-html-digital-coding-web-1076536/'
+cover_credit: by This_is_Engineering via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/engineer-code-coding-software-4690505/'
+cover_source_url: 'https://pixabay.com/photos/engineer-code-coding-software-4690505/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 70
+cover_score: 80
 ---
 
 Bei Tests denkt man schnell an die Frage:
