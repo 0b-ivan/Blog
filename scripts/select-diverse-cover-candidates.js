@@ -49,15 +49,7 @@ function normalized(value) {
 }
 
 function containsTerm(haystack, term) {
-  const escaped = String(term || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\function motifCluster(tags) {
-  const haystack = normalized(tags);
-
-  for (const [name, terms] of CLUSTERS) {
-    if (terms.some((term) => haystack.includes(term))) return name;
-  }
-
-  return 'other';
-}');
+  const escaped = String(term || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
   if (!escaped) return false;
   return new RegExp('(^|[^a-z0-9])' + escaped + '($|[^a-z0-9])', 'i').test(haystack);
 }
