@@ -129,6 +129,32 @@ tags: GitHub, Dependabot, Supply Chain, DevOps
     );
   });
 
+  it('preserves cover title metadata from Obsidian unchanged', async () => {
+    const raw = `---
+title: "Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen"
+cover_title: "Chaos Engineering systematisch testen"
+cover_subtitle: "Warum Chaos Monkey kein Zufall ist"
+status: publish
+tags:
+  - DevOps
+---
+
+# Artikel
+`;
+
+    const publisher = new PreservingGitHubPublisher({
+      token: 'x',
+      repository: '0b-ivan/Blog',
+      baseBranch: 'staging'
+    });
+    publisher.file = vi.fn(async () => null);
+
+    const result = await publisher.preparedContent('chaos.md', raw);
+
+    expect(result).toContain('cover_title: "Chaos Engineering systematisch testen"');
+    expect(result).toContain('cover_subtitle: "Warum Chaos Monkey kein Zufall ist"');
+  });
+
   it('normalizes an empty snippets property to an empty YAML list', () => {
     const raw = `---
 title: RSS
