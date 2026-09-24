@@ -5,17 +5,16 @@ title: Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun
 cover_title: Warum Puck Man zu Pac-Man wurde
 cover_subtitle: 'パクパク, die ersten Automaten und ein Name, der für den US-Markt geändert wurde'
 status: publish
-date: 2026-09-24T00:00:00.000Z
-created_at: 2026-09-24T00:00:00.000Z
-updated_at: 2026-09-24T00:00:00.000Z
+date: 2026-09-24
+created_at: 2026-09-24
+updated_at: 2026-09-24
 author: obivan
 reviewed_by: pending
 category: Gaming
 excerpt: >-
-  Pac-Man hieß in Japan zunächst PUCK MAN. Der Name geht nicht auf einen
-  Eishockey-Puck zurück, sondern auf das japanische パクパク – paku paku: die
-  wiederholte Bewegung eines Mundes beim Essen. Für den US-Markt wurde daraus
-  PAC-MAN.
+  Pac-Man hieß zunächst PUCK MAN. Der Name kommt nicht vom Eishockey,
+  sondern vom japanischen パクパク – paku paku, der wiederholten Bewegung
+  eines Mundes beim Essen. Für den US-Markt wurde daraus PAC-MAN.
 tags:
   - Pac-Man
   - Puck-Man
@@ -52,186 +51,87 @@ cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
-Pac-Man ist heute so selbstverständlich, dass der Name kaum noch auffällt.
+Pac-Man gehört zu den Namen, die so bekannt geworden sind, dass man kaum noch darüber nachdenkt.
 
-Gelber Kreis. Ein Mund. Punkte. Vier Geister.
+Dabei hieß das Spiel am Anfang anders.
 
-Doch als Namco das Spiel 1980 in Japan erstmals öffentlich testen ließ, hieß es noch nicht **PAC-MAN**. Auf der frühen japanischen Fassung stand:
+Als Namco 1980 in Japan die ersten öffentlichen Tests durchführte, stand auf dem Spiel noch **PUCK MAN**. Das klingt aus heutiger englischer Sicht nach einem Eishockey-Puck. Die eigentliche Herkunft ist aber japanisch – und sie beschreibt ziemlich genau, was die Spielfigur tut.
 
-**PUCK MAN.**
+## 1980: erst Puck Man, dann Pac-Man
 
-Das klingt im Englischen nach einem Eishockey-Puck. Genau daher kommt der Name aber nicht. Seine eigentliche Spur führt zu einem japanischen Ausdruck, der ziemlich genau beschreibt, was die Spielfigur die ganze Zeit macht:
-
-**パクパク – paku paku.**
-
-## Die erste öffentliche Version: noch Puck Man
-
-Der 22. Mai 1980 gilt heute als Geburtstag von Pac-Man. An diesem Tag fand in Tokio der erste öffentliche Location-Test statt. Das Spiel war zu diesem Zeitpunkt noch nicht vollständig fertig. Nach dem Test wurde weiter daran gearbeitet; die reguläre Veröffentlichung in Japan folgte im Juli 1980. Im Oktober kam das Spiel in die USA.
+Der erste öffentliche Location-Test fand am **22. Mai 1980** in Tokio statt. Danach wurde weiter am Spiel gearbeitet. Die reguläre Veröffentlichung in Japan folgte im Juli, der US-Start im Oktober.
 
 ![Zeitleiste von Puck Man in Japan zu Pac-Man in den USA](/assets/posts/pac-man-puck-man/01-timeline.svg)
 
-![Pac-Man-Arcade-Automat mit klassischem Upright-Gehäuse](/assets/posts/pac-man-puck-man/04-arcade-machine.jpg)
+Die offizielle Pac-Man-Chronik bestätigt dabei zwei Dinge: Die frühe englische Schreibweise lautete **PUCK MAN**, und für die internationale Veröffentlichung wurde daraus **PAC-MAN**.
 
-*Ein moderner Arcade1Up-Pac-Man-Automat im klassischen Upright-Format. Foto: YosemiteYamper, CC BY-SA 4.0, via [Wikimedia Commons](/sources.html#pacman-commons-arcade-machine).*
-
-Die offizielle Pac-Man-Chronik nennt genau diese Stationen: erster Test am **22. Mai 1980**, Veröffentlichung in Japan im **Juli** und US-Start im **Oktober**. Sie bestätigt außerdem ausdrücklich, dass die englische Schreibweise zunächst **PUCK MAN** lautete und später zu **PAC-MAN** geändert wurde.
-
-In einem ausführlichen Rückblick von Bandai Namco beschreibt Tōru Iwatani den ersten Test noch genauer. Der Automat stand im Spielbereich des damaligen Tokyu Bunka Kaikan in Shibuya. Der Ort war bewusst gewählt: Dort kamen nicht nur die typischen Arcade-Spieler vorbei, sondern sehr unterschiedliche Menschen. Iwatani beobachtete insbesondere, dass Frauen und Paare mit dem Spiel Spaß hatten.
+Tōru Iwatani, der Designer hinter dem Spiel, wollte bewusst etwas anderes als die damals stark von Shootern geprägten Spielhallen anbieten. Pac-Man sollte leicht verständlich sein und Menschen ansprechen, die sich von den üblichen Actionspielen nicht angesprochen fühlten.
 
 ![Tōru Iwatani, der Schöpfer von Pac-Man, bei der Game Developers Conference 2011](/assets/posts/pac-man-puck-man/05-toru-iwatani.jpg)
 
 *Tōru Iwatani bei der GDC 2011. Foto: Official GDC, CC BY 2.0, via [Wikimedia Commons](/sources.html#pacman-commons-iwatani-gdc).*
 
-Das war wichtig, denn Pac-Man sollte sich bewusst von den damals dominierenden Shootern absetzen.
+## Der Name steckt in パクパク
 
-## パクパク: ein Name aus einer Bewegung
+Der sprachliche Ursprung liegt im japanischen Ausdruck:
 
-Der entscheidende Ausdruck ist:
+**パクパク – paku paku**
 
-**パクパク**
+Japanisch verwendet viele lautmalerische und mimetische Wörter. **Paku paku** beschreibt eine wiederholte Mundbewegung – besonders beim Essen.
 
-Romanisiert:
-
-**paku paku**
-
-Japanisch besitzt viele lautmalerische und mimetische Wörter. Sie beschreiben nicht nur Geräusche, sondern auch Bewegungen oder Zustände. **Paku paku** beschreibt das wiederholte Öffnen und Schließen des Mundes – insbesondere beim Essen.
-
-Also ungefähr:
+Genau daraus ergibt sich die Verbindung zu Pac-Man: Die Figur bewegt sich durch das Labyrinth und öffnet und schließt dabei ständig den Mund.
 
 ![Schematische Darstellung von paku paku als wiederholtes Öffnen und Schließen eines Mundes](/assets/posts/pac-man-puck-man/02-paku-paku.svg)
 
-Das Interessante daran: Der Name beschreibt nicht bloß das Thema des Spiels. Er beschreibt direkt die zentrale Animation.
+Aus **paku paku** wurde der japanische Name **パックマン**, romanisiert ungefähr **Pakku Man**. Die frühe lateinische Schreibweise war **PUCK MAN**.
 
-Pac-Man bewegt sich durch das Labyrinth und:
+Damit ist auch die Eishockey-Erklärung erledigt: Das englische Wort *puck* sieht zwar passend aus, ist aber nicht die dokumentierte Namensquelle.
 
-**paku → paku → paku → paku**
+## Warum wurde PUCK MAN zu PAC-MAN?
 
-Tōru Iwatani erklärte später selbst, dass die wichtige Essbewegung beziehungsweise das Essgeräusch mit dem japanischen **paku paku** verbunden war und daraus der Name entstand.
+Dass die Schreibweise geändert wurde, ist gut dokumentiert. Beim Grund muss man etwas genauer unterscheiden.
 
-## Von paku paku zu Pakku Man
+Die offizielle Pac-Man-Historie bestätigt die Änderung von **PUCK MAN** zu **PAC-MAN**, nennt an dieser Stelle aber keinen ausführlichen Grund.
 
-Hier entsteht schnell Verwirrung, weil drei verschiedene Schreibweisen nebeneinander stehen:
+In historischen Rückblicken wird immer wieder dieselbe Erklärung genannt: Für den US-Markt bestand die Sorge, dass sich das **P** auf einem Automaten sehr leicht in ein **F** verändern ließe. Aus dem Produktnamen wäre dann mit einem kleinen Eingriff ein vulgärer Schriftzug geworden.
 
-| Form | Bedeutung |
-| --- | --- |
-| **パクパク** | paku paku – Mund wiederholt auf und zu beim Essen |
-| **パックマン** | Pakku Man – japanischer Name der Figur |
-| **PUCK MAN** | frühe lateinische/englische Schreibweise |
-| **PAC-MAN** | spätere internationale Schreibweise |
+Smithsonian beschreibt diese Sorge ausdrücklich als Grund für die amerikanische Umbenennung.
 
-Das kleine japanische **ッ** in **パックマン** markiert einen verstärkten beziehungsweise verdoppelten folgenden Konsonanten. Deshalb wird der Name ungefähr als **Pakku Man** gelesen.
+Die neue Schreibweise **PAC-MAN** löste das Problem, ohne den Klang des japanischen Namens stark zu verändern.
 
-Die frühe Schreibweise **PUCK MAN** war also keine Übersetzung im Sinne von „Eishockey-Puck-Mann“. Sie war eine englische Schreibweise für einen Namen, dessen Ursprung im japanischen **paku paku** lag.
+## Ein erhaltenes Stück Puck-Man-Geschichte
 
-Dass die Schreibweise nicht nur in Textquellen überliefert ist, sieht man auch an erhaltenen Produkten: Ein japanisches TOMY-Handheld von 1981 trägt gut sichtbar den Schriftzug **PUCK MAN**.
+Die Schreibweise **PUCK MAN** ist nicht nur in Chroniken überliefert. Ein japanisches TOMY-Handheld von 1981 trägt den Namen gut sichtbar auf dem Gehäuse.
 
 ![TOMY-Handheld von 1981 mit dem Schriftzug PUCK MAN](/assets/posts/pac-man-puck-man/06-puck-man-handheld.jpg)
 
 *Ein TOMY-LSI-Handheld von 1981 mit sichtbar aufgedrucktem „PUCK MAN“. Foto: うぃき野郎, CC BY-SA 4.0, via [Wikimedia Commons](/sources.html#pacman-commons-puckman-handheld).*
 
+Die Namenskette lässt sich damit ziemlich kompakt zusammenfassen:
+
 ![Vom japanischen paku paku über Pakku Man und Puck Man zu Pac-Man](/assets/posts/pac-man-puck-man/03-name-evolution.svg)
 
-Damit wird auch klar, warum die oft erzählte Hockey-Erklärung nicht passt: Der englische Begriff *puck* sieht zwar zufällig passend aus, die dokumentierte Namensherkunft führt aber zum Essen.
+**パクパク → パックマン → PUCK MAN → PAC-MAN**
 
-## Warum wurde aus PUCK MAN schließlich PAC-MAN?
+Mehr braucht es eigentlich nicht, um die Geschichte zu verstehen.
 
-Hier lohnt es sich, zwei Dinge zu trennen.
+## Und die Pizza?
 
-Die **offizielle Pac-Man-Historie** bestätigt eindeutig:
+Die berühmte Pizza-Geschichte betrifft vor allem die **Form** der Figur, nicht die Herkunft des Namens.
 
-> Erst PUCK MAN, später PAC-MAN.
+Iwatani hat neben einer Pizza mit fehlendem Stück auch das japanische Zeichen **口** (*kuchi*, „Mund“) als Einfluss auf die reduzierte Form beschrieben. Das ist interessant, aber eine andere Frage als die Namensherkunft.
 
-Einen Grund für die Änderung nennt diese kurze offizielle Chronik an der Stelle allerdings nicht.
+Beim Namen ist die Spur deutlich direkter: **paku paku** beschreibt die Bewegung des Mundes, daraus wurde **Pakku Man**, daraus zunächst **Puck Man** und schließlich **Pac-Man**.
 
-In historischen Rückblicken wird dagegen regelmäßig dieselbe Erklärung genannt: Beim US-Start bestand die Sorge, dass jemand auf dem Automaten das **P** von **PUCK MAN** so verändern könnte, dass daraus ein **F** wird.
+## Was an der Geschichte interessant bleibt
 
-Aus
+Die Umbenennung wirkt heute wie eine Kleinigkeit. Tatsächlich zeigt sie ziemlich gut, was Lokalisierung schon 1980 bedeutete.
 
-`PUCK MAN`
+Ein Name musste nicht nur übersetzt oder romanisiert werden. Er musste in einem anderen Sprachraum funktionieren, auf einem Automaten gut aussehen und dort möglichst keine unbeabsichtigte zweite Bedeutung bekommen.
 
-wäre mit sehr wenig Aufwand ein vulgärer Schriftzug geworden.
+Bei Pac-Man änderte sich dafür am Ende nur ein Buchstabe.
 
-Smithsonian beschreibt genau diese Sorge als Grund für die Anpassung des Namens an den amerikanischen Markt. Die neue Schreibweise **PAC-MAN** vermied das Problem und lag zugleich näher an der Aussprache von **Pakku Man**.
-
-Das ist eine dieser kleinen Lokalisierungsentscheidungen, die im Nachhinein riesig wirken: Ein einziger Buchstabe wurde verändert – und genau diese Variante wurde anschließend zur weltweiten Marke.
-
-## Puck Man und Pac-Man waren keine zwei verschiedenen Spiele
-
-Bei „ersten Versionen“ kann leicht der Eindruck entstehen, Puck Man sei ein früher Prototyp gewesen und Pac-Man anschließend ein technisch neues Spiel.
-
-So sollte man es nicht verstehen.
-
-Der erste Location-Test war tatsächlich noch Teil der Entwicklung. Danach wurden Änderungen und Verbesserungen vorgenommen. Aber **Puck Man** und der kurz darauf international etablierte **Pac-Man** bezeichnen im Kern dasselbe Namco-Spiel aus dem Jahr 1980.
-
-![Pac-Man-Cartridge für Atari-8-Bit-Computer aus dem Jahr 1982](/assets/posts/pac-man-puck-man/04-atari-cartridge.jpg)
-
-*Pac-Man als Atari-8-Bit-Cartridge von 1982. Foto: Hedning, CC BY-SA 3.0, via [Wikimedia Commons](/sources.html#pacman-commons-atari-cartridge).*
-
-Für Nordamerika übernahm Midway den Vertrieb. Neben dem Namen wurden auch Präsentation und Vermarktung an den Markt angepasst. Das grundlegende Spielprinzip blieb jedoch dasselbe:
-
-```text
-Labyrinth
-+
-Punkte fressen
-+
-Geistern ausweichen
-+
-Power Pellets
-+
-Rollenwechsel: Verfolger werden Beute
-```
-
-Der Name änderte sich stärker als das Spiel.
-
-## Und was ist mit der berühmten Pizza?
-
-Fast jeder kennt die Geschichte: Iwatani habe eine Pizza gegessen, ein Stück herausgenommen und plötzlich Pac-Man vor sich gesehen.
-
-Die Geschichte ist nicht komplett erfunden, aber sie wird häufig zu einfach erzählt.
-
-Iwatani hat neben der Pizza auch das japanische Zeichen **口** (*kuchi*, „Mund“) als Einfluss auf die reduzierte Form beschrieben. The Strong National Museum of Play fasst diesen Zusammenhang ebenfalls zusammen.
-
-Für die **Namensherkunft** ist die Quellenlage dagegen deutlich unkomplizierter:
-
-**paku paku → Pakku Man → Puck Man → Pac-Man**
-
-Die Form hat mehrere Geschichten. Der Name hat eine ziemlich klare sprachliche Spur.
-
-## Warum der ursprüngliche Name heute noch interessant ist
-
-An **Puck Man** sieht man sehr schön, wie Spiele bereits 1980 internationalisiert wurden.
-
-Es ging nicht nur darum, Text zu übersetzen. Ein Produktname musste:
-
-- in einer anderen Schrift funktionieren,
-- ausgesprochen werden können,
-- auf einem Arcade-Automaten gut aussehen,
-- kulturell funktionieren,
-- und möglichst keine unfreiwilligen Nebenbedeutungen erzeugen.
-
-Heute würde man das unter **Lokalisierung**, **Branding** und wahrscheinlich einer ziemlich langen internationalen Trademark-Prüfung verbuchen.
-
-1980 reichte dafür im sichtbarsten Fall ein Buchstabe:
-
-```text
-PUCK MAN
-   ↓
-PAC-MAN
-```
-
-Und aus einer japanischen Essbewegung wurde einer der bekanntesten Namen der Videospielgeschichte.
-
-## Kurzfassung
-
-| Frage | Antwort |
-| --- | --- |
-| Wie hieß das Spiel zuerst? | **PUCK MAN** |
-| Wo? | Japan |
-| Wann war der erste öffentliche Test? | **22. Mai 1980** |
-| Was bedeutet *paku paku*? | Wiederholtes Öffnen und Schließen des Mundes beim Essen |
-| Ist „Puck“ vom Eishockey-Puck abgeleitet? | Nein, die dokumentierte Namensherkunft führt zu **paku paku** |
-| Warum wurde daraus PAC-MAN? | Für den US-Markt wurde die Schreibweise geändert; als Grund wird die Sorge vor einer leicht vandalisierten P→F-Schreibweise genannt |
-| Wann kam Pac-Man in die USA? | **Oktober 1980** |
+Das Spiel blieb im Kern dasselbe. Aber **PAC-MAN** wurde der Name, unter dem es weltweit bekannt wurde.
 
 ## Quellen
 
@@ -240,7 +140,5 @@ Und aus einer japanischen Essbewegung wurde einer der bekanntesten Namen der Vid
 - [Interview mit Tōru Iwatani zum 40. Jubiläum](/sources.html#pacman-iwatani-openers-40th)
 - [Smithsonian: Why Players Around the World Gobbled Up Pac-Man](/sources.html#pacman-smithsonian-history)
 - [The Strong National Museum of Play: Pac-Man](/sources.html#pacman-strong-museum)
-- [Wikimedia Commons: Pac-Man arcade machine](/sources.html#pacman-commons-arcade-machine)
-- [Wikimedia Commons: Pac-Man Atari cartridge (1982)](/sources.html#pacman-commons-atari-cartridge)
 - [Wikimedia Commons: Tōru Iwatani at GDC 2011](/sources.html#pacman-commons-iwatani-gdc)
 - [Wikimedia Commons: TOMY „PUCK MAN“ handheld](/sources.html#pacman-commons-puckman-handheld)
