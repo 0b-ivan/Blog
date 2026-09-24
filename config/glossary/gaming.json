@@ -160,12 +160,16 @@
       "Commons"
     ]
   },
+  "Wolfenstein": {
+    "full": "Wolfenstein",
+    "short": "Videospielreihe mit alternativhistorischem Setting, die unter anderem durch Wolfenstein 3D geprägt wurde.",
+    "description": "Wolfenstein bezeichnet eine langjährige Spielereihe, deren Wurzeln bis Castle Wolfenstein zurückreichen. Wolfenstein 3D von id Software machte den Namen Anfang der 1990er-Jahre besonders bekannt und beeinflusste die Entwicklung früher Ego-Shooter.",
+    "aliases": []
+  },
   "Wolfenstein 3D": {
     "full": "Wolfenstein 3D",
     "short": "1992 veröffentlichtes Ego-Shooter-Spiel von id Software und wichtiger technischer Vorläufer von DOOM.",
     "description": "Wolfenstein 3D etablierte id Softwares schnelle Ego-Perspektive auf PCs weiter und steht in der Entwicklungslinie zwischen Commander Keen und DOOM.",
-    "aliases": [
-      "Wolfenstein"
-    ]
+    "aliases": []
   }
 }

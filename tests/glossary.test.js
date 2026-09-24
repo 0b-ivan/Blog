@@ -109,6 +109,7 @@ describe('glossary', () => {
         'DoomWiki',
         'GDC',
         'Wolfenstein 3D',
+        'Wolfenstein',
         'IKEA TRÅDFRI',
         'Freedoom'
       ]
