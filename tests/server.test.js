@@ -88,6 +88,29 @@ describe('blog server', () => {
     expect(posts[0].readingTime).toBe(1);
   });
 
+  it('reads optional cover title metadata without changing the canonical title', async () => {
+    await writePost(
+      tmpDir,
+      'cover-title.md',
+      `---
+title: "Long canonical article title"
+cover_title: "Short cover title"
+cover_subtitle: "Readable cover subtitle"
+date: 2026-09-24
+category: DevOps
+---
+Body
+`
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts[0]).toMatchObject({
+      title: 'Long canonical article title',
+      coverTitle: 'Short cover title',
+      coverSubtitle: 'Readable cover subtitle'
+    });
+  });
+
   it('moves cover attribution into the article sources section', async () => {
     await writePost(
       tmpDir,
