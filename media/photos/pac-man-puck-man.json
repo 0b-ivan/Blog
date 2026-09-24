@@ -3,15 +3,6 @@
   "post": "posts/2026-09-24-pac-man-puck-man-paku-paku.md",
   "photos": [
     {
-      "source_id": "pacman-commons-arcade-machine",
-      "provider": "wikimedia-commons",
-      "source": "https://commons.wikimedia.org/wiki/File:Pac-Man_arcade_machine,_De_Notaris_Schaijk.jpg",
-      "output": "assets/posts/pac-man-puck-man/04-arcade-machine.jpg",
-      "alt": "Pac-Man-Arcade-Automat mit klassischem Upright-Gehäuse",
-      "expected_license": "CC BY-SA 4.0",
-      "width": 1400
-    },
-    {
       "source_id": "pacman-commons-iwatani-gdc",
       "provider": "wikimedia-commons",
       "source": "https://commons.wikimedia.org/wiki/File:Toru_Iwatani,_creator_of_Pac-Man,_at_GDC_2011.jpg",
@@ -30,5 +21,5 @@
       "width": 1400
     }
   ],
-  "connection_revision": 4
+  "connection_revision": 5
 }
