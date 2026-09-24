@@ -43,9 +43,12 @@ const VISUAL_INTENTS = [
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
-    query: 'rss feed reader dashboard news aggregator browser website',
-    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'website', 'subscription', 'syndication'],
-    avoid: ['icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    query: 'rss feed reader dashboard aggregator browser subscription',
+    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'subscription', 'syndication'],
+    requiredGroups: [
+      ['rss', 'feed', 'reader', 'aggregator', 'syndication']
+    ],
+    avoid: ['speed', 'speedometer', 'download', 'upload', 'mbps', 'broadband', 'performance', 'icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',
@@ -70,10 +73,14 @@ const VISUAL_INTENTS = [
   {
     key: 'docker-compose',
     pixabayCategory: 'computer',
+    pixabayImageType: 'all',
     markers: ['docker compose', 'docker', 'compose'],
-    query: 'devops software code terminal deployment programming',
-    positive: ['software', 'code', 'deployment', 'devops', 'development', 'programming', 'terminal'],
-    avoid: ['container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+    query: 'devops deployment orchestration services architecture workflow',
+    positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation'],
+    requiredGroups: [
+      ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation']
+    ],
+    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
   },
   {
     key: 'semantic-search',
@@ -359,6 +366,47 @@ function visualQuery(data) {
   return visualTerms.slice(0, 8).join(' ').slice(0, 100);
 }
 
+function articleVisualBrief(data = {}) {
+  const tags = normalizedTags(data).slice(0, 6);
+  const searchQueries = Array.isArray(data.search_queries)
+    ? data.search_queries
+      .map((entry) => typeof entry === 'string' ? entry : entry?.query)
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean)
+      .slice(0, 2)
+    : [];
+
+  const title = String(data.title || '').trim();
+  const subject = String(data.cover_subject || '').trim();
+  const category = String(data.category || '').trim();
+  const excerpt = String(data.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 420);
+
+  const positive = [
+    'Editorial hero cover for a technical blog article.',
+    title ? `Main article: ${title}` : '',
+    subject ? `Primary subject: ${subject}` : '',
+    tags.length ? `Topics: ${tags.join(', ')}` : '',
+    category ? `Category: ${category}` : '',
+    excerpt ? `Summary: ${excerpt}` : '',
+    searchQueries.length ? `Reader intent: ${searchQueries.join('; ')}` : '',
+    'Prefer a concrete contextual scene, useful visual metaphor, architecture, workflow, object or environment that communicates the main subject.'
+  ].filter(Boolean).join(' ');
+
+  const negative = [
+    'Unrelated generic stock photography.',
+    'Generic office meeting or smiling portrait.',
+    'Standalone logo, icon, symbol or button.',
+    'Generic error cross or warning sign.',
+    'Empty terminal window, raw code screenshot or generic programmer-at-laptop image unless the article is specifically about that interface.',
+    'Generic server rack or datacenter unless infrastructure itself is the main subject.'
+  ].join(' ');
+
+  return {
+    positive: positive.slice(0, 1600),
+    negative: negative.slice(0, 1200)
+  };
+}
+
 function queryCandidates(data, explicitQuery = '') {
   const tags = normalizedTags(data);
   const intent = visualIntent(data);
@@ -377,9 +425,7 @@ function queryCandidates(data, explicitQuery = '') {
       : [primary, visual, fallback])
     : (intent
       ? [intent.query, primary, visual || fallback]
-      : [primary, visual, fallback]);
-
-  if (!intent && !visual && title) candidates.push(title);
+      : [primary, title, visual || fallback]);
 
   return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, 3);
 }
@@ -796,6 +842,7 @@ function reportCandidate(entry, index) {
     user: hit.user || '',
     pageURL: hit.pageURL || '',
     previewURL: hit.previewURL || hit.webformatURL || '',
+    imageType: hit.type || '',
     searchQuery: hit.__coverQuery || '',
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
@@ -831,7 +878,7 @@ async function main() {
 
   const intent = visualIntent(parsed.data);
   const pixabayCategory = String(intent?.pixabayCategory || '').trim();
-  const pixabayImageType = String(intent?.pixabayImageType || 'photo').trim();
+  const pixabayImageType = String(intent?.pixabayImageType || 'all').trim();
   const hits = await collectCandidates(queries, apiKey, {
     searchOptions: {
       category: pixabayCategory,
@@ -842,12 +889,15 @@ async function main() {
 
   const rankingQuery = String(options.query || queries[0] || '').trim();
   const ranked = rankCandidates(hits, parsed.data, rankingQuery);
+  const visualBrief = articleVisualBrief(parsed.data);
   const reportBase = {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
     series: detectSeries(parsed.data),
     visualIntent: intent?.key || '',
     visualIntentEvidence: intent?.evidenceScore || 0,
+    visualBriefPositive: visualBrief.positive,
+    visualBriefNegative: visualBrief.negative,
     pixabayCategory,
     pixabayImageType,
     query: rankingQuery,
@@ -927,6 +977,7 @@ module.exports = {
   TOPIC_EXPANSIONS,
   VISUAL_INTENTS,
   articleProfile,
+  articleVisualBrief,
   cacheFileForQuery,
   choosePhoto,
   collectCandidates,

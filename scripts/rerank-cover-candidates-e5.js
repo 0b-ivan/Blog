@@ -22,10 +22,12 @@ const COVER_CONCEPT_PROTOTYPES = {
     negative: 'secretary office sales telephone call center business meeting portrait person'
   },
   'rss-reader': {
-    positive: 'RSS feed reader dashboard web feed subscription aggregator syndication browser website feed list unread articles feed application',
-    negative: 'RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account',
-    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'website', 'subscription', 'feed'],
-    heroAvoid: ['icon', 'logo', 'symbol', 'button', 'isolated']
+    positive: 'RSS feed reader dashboard web feed subscription aggregator syndication browser feed list unread articles feed application',
+    negative: 'internet speed speedometer download upload broadband performance RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account',
+    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'feed'],
+    heroRequired: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'interface', 'feed list'],
+    heroAvoid: ['speed', 'speedometer', 'download', 'upload', 'icon', 'logo', 'symbol', 'button', 'isolated'],
+    minHeroQuality: 55
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
@@ -33,15 +35,19 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'systemd-service': {
     positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
-    negative: 'empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
-    heroPreferred: ['server', 'service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
-    heroAvoid: ['screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize']
+    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
+    heroPreferred: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration', 'server'],
+    heroRequired: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
+    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'],
+    minHeroQuality: 55
   },
   'docker-compose': {
-    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow',
-    negative: 'generic code screen terminal screenshot programming laptop shipping cargo port freight metal container box jar can storage vessel',
-    heroPreferred: ['deployment', 'services', 'orchestration', 'configuration', 'architecture', 'workflow'],
-    heroAvoid: ['screen', 'terminal', 'screenshot', 'laptop']
+    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow automation',
+    negative: 'generic code screen terminal screenshot wallpaper programming laptop shipping cargo port freight metal container box jar can storage vessel',
+    heroPreferred: ['deployment', 'devops', 'services', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
+    heroRequired: ['deployment', 'devops', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
+    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop'],
+    minHeroQuality: 50
   },
   'semantic-search': {
     positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
@@ -57,7 +63,9 @@ const COVER_CONCEPT_PROTOTYPES = {
     positive: 'monkey ape primate chimpanzee macaque baboon playful chaos resilience technology infrastructure',
     negative: 'red cross error icon warning sign button GUI interface generic failure symbol',
     heroPreferred: ['monkey', 'ape', 'primate', 'chimpanzee', 'macaque', 'baboon'],
-    heroAvoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button', 'interface', 'gui']
+    heroRequired: ['monkey', 'ape', 'primate', 'chimpanzee', 'macaque', 'baboon'],
+    heroAvoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button', 'interface', 'gui'],
+    minHeroQuality: 70
   },
   'chaos-engineering': {
     positive: 'site reliability engineering resilience failure injection outage monitoring incident recovery infrastructure reliability experiment',
@@ -182,9 +190,28 @@ function round(value, digits = 4) {
 
 function conceptPrototype(report = {}) {
   const key = String(report.visualIntent || '').trim();
-  if (!key) return null;
-  const prototype = COVER_CONCEPT_PROTOTYPES[key];
-  return prototype ? { key, ...prototype } : null;
+  const override = key ? COVER_CONCEPT_PROTOTYPES[key] : null;
+  const briefPositive = String(report.visualBriefPositive || '').trim();
+  const briefNegative = String(report.visualBriefNegative || '').trim();
+
+  if (!override && !briefPositive) return null;
+
+  const generic = {
+    key: key || 'article-visual-brief',
+    positive: briefPositive,
+    negative: briefNegative,
+    source: key ? 'article+intent' : 'article'
+  };
+
+  if (!override) return generic;
+
+  return {
+    ...generic,
+    ...override,
+    key,
+    positive: [briefPositive, override.positive].filter(Boolean).join(' '),
+    negative: [briefNegative, override.negative].filter(Boolean).join(' ')
+  };
 }
 
 function prototypeMarginScore(margin) {
@@ -250,6 +277,18 @@ function heroQuality(candidate = {}, prototype = null) {
     reasons.push(`+${bonus} hero motif: ${preferred.slice(0, 4).join(', ')}`);
   }
 
+  const requiredHero = matchTerms(tags, prototype?.heroRequired || []);
+  if ((prototype?.heroRequired || []).length && requiredHero.length === 0) {
+    score -= 35;
+    reasons.push('-35 no rich hero motif');
+  }
+
+  const imageType = String(candidate.imageType || '').toLowerCase();
+  if (imageType === 'vector' && (prototype?.heroRequired || []).length && requiredHero.length === 0) {
+    score -= 10;
+    reasons.push('-10 generic vector without rich motif');
+  }
+
   const avoided = matchTerms(tags, prototype?.heroAvoid || []);
   if (avoided.length) {
     const penalty = Math.min(42, avoided.length * 12);
@@ -261,7 +300,9 @@ function heroQuality(candidate = {}, prototype = null) {
     score: Math.max(0, Math.min(100, Math.round(score))),
     reasons,
     preferred,
+    requiredHero,
     avoided,
+    imageType,
     iconMatches,
     errorMatches,
     screenMatches
@@ -327,7 +368,11 @@ async function rerankReport(report, articleText, embedder, options = {}) {
     const prototypeMismatch = Boolean(
       prototype && Number(positiveSimilarity) <= Number(negativeSimilarity)
     );
-    const semanticMismatch = articleMismatch || prototypeMismatch;
+    const resolverMismatch = Boolean(candidate.semanticMismatch);
+    const heroMismatch = Boolean(
+      prototype?.minHeroQuality && hero.score < Number(prototype.minHeroQuality)
+    );
+    const semanticMismatch = resolverMismatch || articleMismatch || prototypeMismatch || heroMismatch;
 
     return {
       ...candidate,
@@ -345,9 +390,12 @@ async function rerankReport(report, articleText, embedder, options = {}) {
       heroQualityReasons: hero.reasons,
       heroPreferredMatches: hero.preferred,
       heroAvoidMatches: hero.avoided,
+      heroRequiredMatches: hero.requiredHero,
       score,
       semanticMismatch,
+      resolverMismatch,
       prototypeMismatch,
+      heroMismatch,
       reasons: [
         `E5 article similarity ${round(similarity, 5)} (${articleSemanticScore}/100 relative)`,
         prototype
@@ -378,6 +426,7 @@ async function rerankReport(report, articleText, embedder, options = {}) {
     semanticWeight,
     semanticBestSimilarity: round(bestSimilarity, 5),
     semanticPrototype: prototype?.key || '',
+    semanticPrototypeSource: prototype?.source || '',
     semanticPrototypePositive: prototype?.positive || '',
     semanticPrototypeNegative: prototype?.negative || '',
     candidates: reranked

@@ -5,6 +5,7 @@ const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
   VISUAL_INTENTS,
+  articleVisualBrief,
   choosePhoto,
   collectCandidates,
   defaultQuery,
@@ -144,6 +145,25 @@ describe('Pixabay cover resolver', () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it('derives an article-specific visual brief even without a known intent', () => {
+    const article = {
+      title: 'NFC-Aufkleber: kleine Tags, große Automationen',
+      category: 'Hardware',
+      tags: ['NFC', 'Automation', 'Smart-Home'],
+      excerpt: 'Wie passive NFC-Tags Daten speichern und Aktionen auf dem Smartphone auslösen.'
+    };
+
+    expect(visualIntent(article)).toBeNull();
+
+    const brief = articleVisualBrief(article);
+    expect(brief.positive).toContain('NFC-Aufkleber');
+    expect(brief.positive).toContain('NFC, Automation, Smart-Home');
+    expect(brief.negative).toContain('Standalone logo, icon, symbol or button');
+
+    const queries = queryCandidates(article);
+    expect(queries).toContain('NFC-Aufkleber: kleine Tags, große Automationen');
+  });
+
   it('derives a visual intent before generic technical metadata', () => {
     const writing = {
       title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
@@ -167,7 +187,7 @@ describe('Pixabay cover resolver', () => {
     expect(queryCandidates({
       title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
       tags: ['RSS', 'FreshRSS', 'Miniflux']
-    })[0]).toBe('rss feed reader dashboard news aggregator browser website');
+    })[0]).toBe('rss feed reader dashboard aggregator browser subscription');
 
     expect(visualIntent({
       title: 'Eine VPC ist keine schwarze Magie',
@@ -225,6 +245,13 @@ describe('Pixabay cover resolver', () => {
         imageHeight: 1080
       }, rss).score
     );
+
+    const rssSpeedDashboard = scoreHit({
+      tags: 'speed, internet, download, upload, broadband, dashboard, website, server',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, rss);
+    expect(rssSpeedDashboard.semanticMismatch).toBe(true);
 
     const dependabot = {
       title: 'Dependabot im Einsatz',
