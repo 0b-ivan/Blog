@@ -24,10 +24,46 @@ async function verifyRuntime() {
   if (!runtimeCheck) {
     runtimeCheck = Promise.all([
       execFileAsync('pandoc', ['--version'], { timeout: 5000, maxBuffer: 1024 * 1024 }),
-      execFileAsync('lualatex', ['--version'], { timeout: 5000, maxBuffer: 1024 * 1024 })
+      execFileAsync('lualatex', ['--version'], { timeout: 5000, maxBuffer: 1024 * 1024 }),
+      execFileAsync('rsvg-convert', ['--version'], { timeout: 5000, maxBuffer: 1024 * 1024 })
     ]).then(() => true);
   }
   return runtimeCheck;
+}
+
+async function prepareSvgImagesForPdf(html, tempDir, options = {}) {
+  const execImpl = options.execImpl || execFileAsync;
+  const assetRoot = path.resolve(options.assetRoot || root, 'assets');
+  const sources = [...new Set(
+    [...String(html || '').matchAll(/\\bsrc="([^"]+\\.svg)"/gi)]
+      .map((match) => match[1])
+      .filter((src) => {
+        const absolute = path.resolve(src);
+        return absolute.startsWith(`${assetRoot}${path.sep}`);
+      })
+  )];
+
+  let prepared = String(html || '');
+
+  for (const [index, source] of sources.entries()) {
+    const output = path.join(tempDir, `article-image-${index + 1}.png`);
+    await execImpl('rsvg-convert', [
+      '--format',
+      'png',
+      '--output',
+      output,
+      source
+    ], {
+      timeout: 10000,
+      maxBuffer: 1024 * 1024
+    });
+
+    prepared = prepared
+      .split(`src="${source}"`)
+      .join(`src="${output}"`);
+  }
+
+  return prepared;
 }
 
 async function compileArticlePdf(post) {
@@ -37,7 +73,8 @@ async function compileArticlePdf(post) {
 
   try {
     const publication = await buildPdfPublication(post, { assetRoot: root });
-    await fs.writeFile(inputFile, publication.html, 'utf8');
+    const preparedHtml = await prepareSvgImagesForPdf(publication.html, tempDir, { assetRoot: root });
+    await fs.writeFile(inputFile, preparedHtml, 'utf8');
 
     const bibliographyFile = path.join(tempDir, 'references.bib');
     if (publication.sources.length) {
@@ -147,6 +184,7 @@ if (require.main === module) {
 
 module.exports = {
   compileArticlePdf,
+  prepareSvgImagesForPdf,
   createApp,
   startServer,
   verifyRuntime

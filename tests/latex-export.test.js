@@ -1,4 +1,7 @@
+const os = require('node:os');
+const fs = require('node:fs/promises');
 const path = require('node:path');
+const { prepareSvgImagesForPdf } = require('../pdf-export-server');
 const {
   buildBibTeX,
   buildPdfDocumentPreview,
@@ -75,6 +78,31 @@ describe('LaTeX publication export', () => {
     expect(bib).toContain('@misc{cover-demo');
     expect(bib).toContain('author = {Example}');
     expect(bib).toContain('note = {Pixabay Content License}');
+  });
+
+  it('converts local SVG article images to PNG before Pandoc/LuaLaTeX', async () => {
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-svg-pdf-'));
+    const assetRoot = path.join(tempDir, 'repo');
+    const svg = path.join(assetRoot, 'assets', 'posts', 'pac-man', 'timeline.svg');
+    const calls = [];
+
+    try {
+      const html = `<p><img src="${svg}" alt="Timeline" /></p>`;
+      const converted = await prepareSvgImagesForPdf(html, tempDir, {
+        assetRoot,
+        execImpl: async (command, args) => {
+          calls.push({ command, args });
+        }
+      });
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('rsvg-convert');
+      expect(calls[0].args).toContain(svg);
+      expect(converted).not.toContain(svg);
+      expect(converted).toContain('article-image-1.png');
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it('keeps preview metadata independent from the EPUB renderer', () => {
