@@ -190,9 +190,28 @@ function round(value, digits = 4) {
 
 function conceptPrototype(report = {}) {
   const key = String(report.visualIntent || '').trim();
-  if (!key) return null;
-  const prototype = COVER_CONCEPT_PROTOTYPES[key];
-  return prototype ? { key, ...prototype } : null;
+  const override = key ? COVER_CONCEPT_PROTOTYPES[key] : null;
+  const briefPositive = String(report.visualBriefPositive || report.title || '').trim();
+  const briefNegative = String(report.visualBriefNegative || '').trim();
+
+  if (!override && !briefPositive) return null;
+
+  const generic = {
+    key: key || 'article-visual-brief',
+    positive: briefPositive,
+    negative: briefNegative,
+    source: key ? 'article+intent' : 'article'
+  };
+
+  if (!override) return generic;
+
+  return {
+    ...generic,
+    ...override,
+    key,
+    positive: [briefPositive, override.positive].filter(Boolean).join(' '),
+    negative: [briefNegative, override.negative].filter(Boolean).join(' ')
+  };
 }
 
 function prototypeMarginScore(margin) {
@@ -407,6 +426,7 @@ async function rerankReport(report, articleText, embedder, options = {}) {
     semanticWeight,
     semanticBestSimilarity: round(bestSimilarity, 5),
     semanticPrototype: prototype?.key || '',
+    semanticPrototypeSource: prototype?.source || '',
     semanticPrototypePositive: prototype?.positive || '',
     semanticPrototypeNegative: prototype?.negative || '',
     candidates: reranked
