@@ -141,47 +141,18 @@ Die lokale Datei ersetzt nicht den Herkunftsnachweis.
 
 ## Photo Connection
 
-Rechteklare Drittbilder werden nicht manuell als Binärdaten durch Chat- oder GitHub-Clients geschoben. Dafür gibt es die **Photo Connection**.
+Rechteklare Drittbilder werden über die **Photo Connection** materialisiert statt manuell als Binärdaten durch Chat-, Browser- oder GitHub-Clients kopiert zu werden.
 
-Ein Artikel legt ein Manifest unter `media/photos/<asset-scope>.json` ab. Beispiel:
+Kurzfassung:
 
-```json
-{
-  "version": 1,
-  "post": "posts/2026-09-24-pac-man-puck-man-paku-paku.md",
-  "photos": [
-    {
-      "source_id": "pacman-commons-iwatani-gdc",
-      "provider": "wikimedia-commons",
-      "source": "https://commons.wikimedia.org/wiki/File:Toru_Iwatani,_creator_of_Pac-Man,_at_GDC_2011.jpg",
-      "output": "assets/posts/pac-man-puck-man/05-toru-iwatani.jpg",
-      "alt": "Tōru Iwatani bei der Game Developers Conference 2011",
-      "expected_license": "CC BY 2.0",
-      "width": 1400
-    }
-  ]
-}
-```
+- Manifest unter `media/photos/<asset-scope>.json`
+- aktuell unterstützter Provider: Wikimedia Commons
+- automatische Prüfung von Quelle, Lizenz, MIME-Type, Größe und Magic Bytes
+- Ausgabe ausschließlich unter `assets/posts/`
+- automatische Aktualisierung von `posts/_sources.json`
+- Materialisierung auf demselben Feature-/Artikel-Branch vor dem Merge
 
-Bei Änderungen an einem solchen Manifest in `photo/**`, `post/**`, `obsidian/**`, `feat/**` oder `fix/**` materialisiert GitHub Actions die Bilder **auf demselben Branch vor dem Merge**.
-
-Die Connection:
-
-1. fragt die Wikimedia-Commons-API nach Originaldatei, MIME-Type, Autor und Lizenz,
-2. akzeptiert nur klar wiederverwendbare Lizenzen (CC0/Public Domain/CC BY/CC BY-SA),
-3. lädt eine auf die gewünschte Breite begrenzte Variante,
-4. prüft HTTP-Status, Dateigröße, MIME-Type, Dateiendung und Magic Bytes,
-5. schreibt das Bild lokal nach `assets/posts/`,
-6. aktualisiert den Quellenkatalog `posts/_sources.json`,
-7. prüft, dass Artikelbild und Quellen-Credit tatsächlich zum Manifest passen.
-
-Der erste Provider ist bewusst **Wikimedia Commons**. Weitere Provider werden als eigene Adapter ergänzt, statt beliebige Download-URLs freizuschalten.
-
-Lokal:
-
-```bash
-npm run photos:ingest -- media/photos/mein-artikel.json
-```
+Die vollständige Authoring-, Betriebs- und Troubleshooting-Doku steht in [`docs/photo-connection.md`](photo-connection.md).
 
 ## CI-Regeln
 
