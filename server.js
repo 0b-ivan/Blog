@@ -405,6 +405,8 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const coverTitle = String(recovered.data.cover_title || '').trim();
+      const coverSubtitle = String(recovered.data.cover_subtitle || '').trim();
       const coverImage = String(recovered.data.cover_image || '').trim();
       const coverFocus = String(recovered.data.cover_focus || 'center').trim();
       const coverCredit = String(recovered.data.cover_credit || '').trim();
@@ -441,6 +443,8 @@ async function loadPosts(postsDir) {
         category,
         tags,
         excerpt,
+        coverTitle,
+        coverSubtitle,
         coverImage,
         coverFocus,
         coverCredit,
