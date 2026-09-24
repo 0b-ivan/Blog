@@ -1,4 +1,6 @@
+/* global vi */
 const {
+  PreservingGitHubPublisher,
   normalizeEmptyListField,
   normalizeTagWhitespace,
   preserveTopLevelBlock,
