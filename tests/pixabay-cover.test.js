@@ -144,6 +144,25 @@ describe('Pixabay cover resolver', () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it('derives an article-specific visual brief even without a known intent', () => {
+    const article = {
+      title: 'NFC-Aufkleber: kleine Tags, große Automationen',
+      category: 'Hardware',
+      tags: ['NFC', 'Automation', 'Smart-Home'],
+      excerpt: 'Wie passive NFC-Tags Daten speichern und Aktionen auf dem Smartphone auslösen.'
+    };
+
+    expect(visualIntent(article)).toBeNull();
+
+    const brief = articleVisualBrief(article);
+    expect(brief.positive).toContain('NFC-Aufkleber');
+    expect(brief.positive).toContain('NFC, Automation, Smart-Home');
+    expect(brief.negative).toContain('Standalone logo, icon, symbol or button');
+
+    const queries = queryCandidates(article);
+    expect(queries).toContain('NFC-Aufkleber: kleine Tags, große Automationen');
+  });
+
   it('derives a visual intent before generic technical metadata', () => {
     const writing = {
       title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
