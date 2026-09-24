@@ -34,19 +34,20 @@ search_queries:
 cover_query: pacman maze arcade yellow character ghost chase retro
 cover_subject: yellow maze-chase arcade character with ghosts and dots
 cover_intent: pacman-arcade
-cover_avoid: computer keyboard monitor space-invaders atari sega console controller hardware laptop screenshot office desk
+cover_avoid: >-
+  computer keyboard monitor space-invaders atari sega console controller
+  hardware laptop screenshot office desk
 cover_provider: pixabay
-cover_provider_id: '4728778'
+cover_provider_id: '151558'
 cover_image: /assets/covers/2026-09-24-pac-man-puck-man-paku-paku.png
 cover_alt: >-
-  retro, 8bit, 1980's, computer, space invaders, game, keyboard, joystick, sega,
-  atari, 80s, technology, plastic, eighties, old, obsolete, monitor, automation,
-  space invaders, 80s, 80s, 80s, 80s, 80s, automation
+  pacman, pac-man, dots, game, yellow, eating, pacman, pacman, pacman, pacman,
+  pacman, game
 cover_focus: center
-cover_score: 83
-cover_credit: by sergeitokmakov via Pixabay
-cover_credit_url: 'https://pixabay.com/illustrations/retro-8bit-1980s-computer-4728778/'
-cover_source_url: 'https://pixabay.com/illustrations/retro-8bit-1980s-computer-4728778/'
+cover_score: 100
+cover_credit: by OpenClipart-Vectors via Pixabay
+cover_credit_url: 'https://pixabay.com/vectors/pacman-pac-man-dots-game-yellow-151558/'
+cover_source_url: 'https://pixabay.com/vectors/pacman-pac-man-dots-game-yellow-151558/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
