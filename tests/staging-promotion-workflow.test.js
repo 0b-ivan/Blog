@@ -8,10 +8,12 @@ describe('staging promotion workflow', () => {
       'utf8'
     );
 
-    expect(workflow).toContain('Detect changed and existing published posts without covers');
+    expect(workflow).toContain('Detect changed posts needing Pixabay cover resolution');
     expect(workflow).toContain('COVER_BACKFILL_LIMIT: "20"');
     expect(workflow).toContain('scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT"');
     expect(workflow).toContain('Resolve missing Pixabay covers');
+    expect(workflow).toContain('cover_query|cover_subject|cover_avoid|cover_intent');
+    expect(workflow).toContain('Cover brief changed for $post; refreshing Pixabay cover');
     expect(workflow).toContain('--report "/tmp/cover-reports/${slug}.json"');
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--reports-dir /tmp/cover-reports');

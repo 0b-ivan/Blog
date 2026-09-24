@@ -88,7 +88,7 @@ jobs:
           echo 'Refusing staging deployment: commit is not associated with a merged PR into staging.'
           exit 1
 
-      - name: Detect changed and existing published posts without covers
+      - name: Detect changed posts needing Pixabay cover resolution
         if: github.event_name == 'push'
         id: cover_candidates
         shell: bash
@@ -113,11 +113,20 @@ jobs:
               case "$cover_value" in
                 ""|'""'|"''"|null|~)
                   echo "$post" >> /tmp/pixabay-cover-posts.txt
-                  ;;
-                *)
-                  echo "Keeping existing cover for $post"
+                  continue
                   ;;
               esac
+
+              previous_post="$(git show "${{ github.event.before }}:$post" 2>/dev/null || true)"
+              current_cover_brief="$(sed -n -E '/^[[:space:]]*(cover_query|cover_subject|cover_avoid|cover_intent):/p' "$post")"
+              previous_cover_brief="$(printf '%s\n' "$previous_post" | sed -n -E '/^[[:space:]]*(cover_query|cover_subject|cover_avoid|cover_intent):/p')"
+
+              if [ -n "$previous_post" ] && [ "$current_cover_brief" != "$previous_cover_brief" ]; then
+                echo "Cover brief changed for $post; refreshing Pixabay cover"
+                echo "$post" >> /tmp/pixabay-cover-posts.txt
+              else
+                echo "Keeping existing cover for $post"
+              fi
             done
 
           node scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT" > /tmp/pixabay-cover-backfill.txt
@@ -131,7 +140,7 @@ jobs:
             cat /tmp/pixabay-cover-posts.txt
           else
             echo "needed=false" >> "$GITHUB_OUTPUT"
-            echo 'No changed or existing published post needs a generated cover.'
+            echo 'No changed or existing published post needs generated or refreshed cover resolution.'
           fi
 
       - name: Setup Node.js for cover generation

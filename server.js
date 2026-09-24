@@ -588,8 +588,8 @@ function resolvePostBySlug(posts, requestedSlug) {
 }
 
 const RELATED_TITLE_STOP_WORDS = new Set([
-  'aber', 'auch', 'das', 'dem', 'den', 'der', 'die', 'ein', 'eine', 'einer', 'eines',
-  'fuer', 'ist', 'mit', 'nicht', 'oder', 'sich', 'und', 'von', 'was', 'wie', 'zu', 'zum', 'zur'
+  'aber', 'auch', 'das', 'dass', 'dem', 'den', 'der', 'die', 'ein', 'eine', 'einer', 'eines',
+  'fuer', 'ist', 'man', 'mit', 'nicht', 'oder', 'sich', 'und', 'von', 'warum', 'was', 'wie', 'zu', 'zum', 'zur'
 ]);
 
 function normalizeComparable(value) {
@@ -647,7 +647,7 @@ function findRelatedPosts(posts, currentPost, limit = 3) {
       post: candidate,
       score: relatedPostScore(currentPost, candidate)
     }))
-    .filter(({ score }) => score > 0)
+    .filter(({ score }) => score >= 3)
     .sort((a, b) => {
       if (b.score !== a.score) {
         return b.score - a.score;

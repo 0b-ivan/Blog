@@ -257,6 +257,41 @@ describe('Pixabay cover resolver', () => {
     })[0]).toBe('monkey ape primate chimpanzee macaque');
   });
 
+  it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
+    const article = {
+      title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
+      category: 'Gaming',
+      tags: ['Pac-Man', 'Puck-Man', 'Arcade', 'Retro-Gaming'],
+      cover_intent: 'pacman-arcade',
+      cover_query: 'pacman maze arcade yellow character ghost chase retro'
+    };
+
+    const intent = visualIntent(article);
+    expect(intent.key).toBe('pacman-arcade');
+    expect(intent.explicit).toBe(true);
+    expect(queryCandidates(article)[0]).toBe(
+      'pacman maze arcade yellow character ghost chase retro'
+    );
+
+    const maze = scoreHit({
+      type: 'illustration',
+      tags: 'pacman, maze, arcade, yellow, ghost, chase, retro, game',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    const genericHardware = scoreHit({
+      type: 'illustration',
+      tags: 'retro, 8bit, computer, keyboard, monitor, space invaders, atari, sega, game',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(maze.semanticMismatch).toBe(false);
+    expect(genericHardware.semanticMismatch).toBe(true);
+    expect(maze.score).toBeGreaterThan(genericHardware.score);
+  });
+
   it('allows one article to override the automatic Chaos Monkey animal intent', () => {
     const article = {
       title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',

@@ -31,9 +31,10 @@ search_queries:
     maxRank: 1
   - query: Warum wurde Puck Man in Pac-Man umbenannt?
     maxRank: 1
-cover_query: retro arcade cabinet 1980 joystick maze game neon yellow
-cover_subject: 1980 arcade cabinet maze chase game joystick retro gaming
-cover_avoid: logo icon modern console esports screenshot text
+cover_query: pacman maze arcade yellow character ghost chase retro
+cover_subject: yellow maze-chase arcade character with ghosts and dots
+cover_intent: pacman-arcade
+cover_avoid: computer keyboard monitor space-invaders atari sega console controller hardware laptop screenshot office desk
 cover_provider: pixabay
 cover_provider_id: '4728778'
 cover_image: /assets/covers/2026-09-24-pac-man-puck-man-paku-paku.png
