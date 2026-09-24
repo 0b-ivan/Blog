@@ -34,6 +34,7 @@ search_queries:
       Conditions?
     maxRank: 1
 cover_query: server datacenter infrastructure network cloud container cluster deployment
+cover_intent: chaos-engineering
 cover_provider: pixabay
 cover_provider_id: '1235959'
 cover_image: /assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg
