@@ -297,6 +297,18 @@ function visualIntentEvidence(data, intent) {
 }
 
 function visualIntent(data = {}) {
+  const explicitKey = String(data.cover_intent || '').trim().toLowerCase();
+  if (explicitKey) {
+    const explicit = VISUAL_INTENTS.find((intent) => intent.key === explicitKey);
+    if (explicit) {
+      return {
+        ...explicit,
+        ...visualIntentEvidence(data, explicit),
+        explicit: true
+      };
+    }
+  }
+
   const matches = VISUAL_INTENTS
     .map((intent) => ({
       ...intent,
