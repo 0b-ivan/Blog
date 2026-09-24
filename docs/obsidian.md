@@ -191,6 +191,8 @@ Beispiel:
 
 Root-relative Pfade funktionieren auf Website, RSS, EPUB/PDF und in der Artikelhistorie reproduzierbar.
 
+Für fremde, rechteklar wiederverwendbare Fotos gibt es zusätzlich die [Photo Connection](photo-connection.md). Sie materialisiert Bilder aus einem Manifest unter `media/photos/` lokal nach `assets/posts/` und übernimmt Quellen-/Lizenzmetadaten. Der aktuelle automatische LiveSync-Publisher erzeugt solche Manifeste noch nicht selbst; dieser Unterschied ist in der Photo-Connection-Doku beschrieben.
+
 ## Was nicht ins Repository gehoert
 
 Obsidian erzeugt lokale UI- und Workspace-Dateien. Diese sind benutzerspezifisch und werden ueber `.gitignore` ausgeschlossen. Community-Plugins sollten ebenfalls nicht ungeprueft als Teil des Blog-Repositories committed werden.

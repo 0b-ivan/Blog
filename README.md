@@ -163,6 +163,7 @@ docker-compose.prod.yml  Hetzner-Standby
 - `docs/reliability.md` – Status, Chaos Engineering und Guardrails
 - `docs/article-lifecycle.md` – Archiv und Artikel-Versionierung
 - `docs/article-images.md` – Cover, Inline-Bilder, Quellen, Ablage und CI-Regeln
+- `docs/photo-connection.md` – lizenzierte Drittbilder materialisieren, validieren und versionieren
 - `docs/analytics.md` – Artikelmetriken, Likes, Favoriten und Datenschutzmodell
 - `docs/glossary.md` – Glossar und Tooltips
 - `docs/knowledge-graph.md` – Wissensnetz und GraphRAG
