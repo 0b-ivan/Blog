@@ -491,9 +491,9 @@ function exactTagTokens(value) {
 }
 
 function heroHardGate(hit = {}) {
-  const width = gate.width;
-  const height = gate.height;
-  const ratio = gate.ratio;
+  const width = Number(hit.imageWidth || hit.webformatWidth || 0);
+  const height = Number(hit.imageHeight || hit.webformatHeight || 0);
+  const ratio = width > 0 && height > 0 ? width / height : 0;
   const tags = exactTagTokens(hit.tags);
   const uniqueTags = [...new Set(tags)];
   const imageType = String(hit.type || '').toLowerCase();
