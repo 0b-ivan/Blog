@@ -157,6 +157,48 @@ systemctl status example
     expect(press.semanticMismatch).toBe(true);
   });
 
+  it('preserves resolver semantic mismatches after E5 reranking', async () => {
+    const report = {
+      postPath: 'posts/rss.md',
+      title: 'RSS ist nicht tot',
+      visualIntent: 'rss-reader',
+      candidates: [
+        {
+          rank: 1,
+          id: 'speed-dashboard',
+          score: 90,
+          tags: 'speed, internet, download, dashboard, website, server',
+          semanticMismatch: true,
+          reasons: ['resolver rejected missing RSS/feed core signal']
+        },
+        {
+          rank: 2,
+          id: 'reader',
+          score: 70,
+          tags: 'rss, feed, reader, aggregator, subscription, dashboard',
+          semanticMismatch: false,
+          reasons: ['resolver accepted feed-reader concept']
+        }
+      ]
+    };
+
+    const embedder = {
+      embedQuery: async () => [1, 0],
+      embedDocuments: async () => [[1, 0], [0.99, 0.01]]
+    };
+
+    const reranked = await rerankReport(
+      report,
+      'FreshRSS reader and feed aggregation',
+      embedder,
+      { semanticWeight: 0.8, mismatchDelta: 0.07 }
+    );
+
+    const rejected = reranked.candidates.find((candidate) => candidate.id === 'speed-dashboard');
+    expect(rejected.resolverMismatch).toBe(true);
+    expect(rejected.semanticMismatch).toBe(true);
+  });
+
   it('maps concept margin into a strong text-semantic preference', () => {
     expect(prototypeMarginScore(0.1)).toBe(100);
     expect(prototypeMarginScore(0)).toBe(50);
