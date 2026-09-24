@@ -1,6 +1,7 @@
 const {
   candidateAdjustment,
   chooseDiverseCovers,
+  containsTerm,
   motifCluster
 } = require('../scripts/select-diverse-cover-candidates');
 
@@ -9,6 +10,12 @@ function candidate(rank, id, score, tags, user = 'photographer') {
 }
 
 describe('series-aware cover diversity', () => {
+  it('matches motif terms as whole words instead of substrings', () => {
+    expect(containsTerm('feedback, development, software', 'feed')).toBe(false);
+    expect(motifCluster('feedback, development, software')).not.toBe('feed-news');
+    expect(motifCluster('rss, feed, reader')).toBe('feed-news');
+  });
+
   it('classifies common infrastructure motifs', () => {
     expect(motifCluster('server, rack, datacenter, infrastructure')).toBe('server-infra');
     expect(motifCluster('network, router, ethernet, cable')).toBe('network');
