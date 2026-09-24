@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "post": "posts/2026-09-24-doom-shareware-internet.md",
+  "photos": [
+    {
+      "source_id": "doom-commons-logo",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:Doom_logo.png",
+      "output": "assets/posts/doom-shareware-internet/01-doom-logo.png",
+      "alt": "DOOM-Schriftzug",
+      "expected_license": "Public Domain",
+      "width": 1200
+    },
+    {
+      "source_id": "doom-commons-carmack",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:John_Carmack_2025.jpg",
+      "output": "assets/posts/doom-shareware-internet/03-john-carmack.jpg",
+      "alt": "John Carmack, Mitgründer von id Software und leitender Engine-Programmierer von DOOM",
+      "width": 1000
+    },
+    {
+      "source_id": "doom-commons-romero",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:John_Romero_-_GDC_2022.jpg",
+      "output": "assets/posts/doom-shareware-internet/04-john-romero.jpg",
+      "alt": "John Romero bei der Game Developers Conference 2022",
+      "expected_license": "CC BY 2.0",
+      "width": 1200
+    },
+    {
+      "source_id": "doom-commons-american-mcgee-id-1995",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:American_McGee_at_id_Software,_6_October_1995_(by_Ian_Mapleson,_administrator_of_the_Doom_Help_Service).jpg",
+      "output": "assets/posts/doom-shareware-internet/05-american-mcgee-id-1995.jpg",
+      "alt": "American McGee bei id Software im Jahr 1995",
+      "expected_license": "CC BY-SA 4.0",
+      "width": 810
+    },
+    {
+      "source_id": "doom-commons-freedoom-view",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:In-game-view-doom.png",
+      "output": "assets/posts/doom-shareware-internet/06-freedoom-engine-view.png",
+      "alt": "Freie Rekonstruktion einer DOOM-Engine-Spielszene mit Freedoom-Grafiken",
+      "expected_license": "CC BY-SA 4.0",
+      "width": 1400
+    },
+    {
+      "source_id": "doom-commons-spider-mastermind",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:Spider_Mastermind_model_crop.jpg",
+      "output": "assets/posts/doom-shareware-internet/07-spider-mastermind-model.jpg",
+      "alt": "Latexmodell des Spider Mastermind für DOOM",
+      "width": 800
+    },
+    {
+      "source_id": "doom-commons-shareware-disks",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:VIGAMUS_Doom_Shareware_Demo_Disks.jpg",
+      "output": "assets/posts/doom-shareware-internet/08-doom-shareware-disks.jpg",
+      "alt": "Originale Demo-Disketten der Shareware-Version von DOOM",
+      "expected_license": "CC BY-SA 3.0",
+      "width": 1400
+    }
+  ],
+  "connection_revision": 1
+}
