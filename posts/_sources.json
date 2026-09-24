@@ -339,5 +339,41 @@
     "author": "YosemiteYamper",
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "doom-doomwiki": {
+    "title": "Doom",
+    "publisher": "DoomWiki",
+    "url": "https://doomwiki.org/wiki/Doom",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-doomwiki-shareware": {
+    "title": "Shareware",
+    "publisher": "DoomWiki",
+    "url": "https://doomwiki.org/wiki/Shareware",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-romero-interview": {
+    "title": "John Romero — The Path to Doom and the Birth of the First-Person Shooter",
+    "publisher": "The Tim Ferriss Show",
+    "url": "https://tim.blog/2023/07/15/john-romero-transcript/",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-sanglard-ega": {
+    "title": "How id Software's Commander Keen used EGA",
+    "publisher": "Fabien Sanglard",
+    "url": "https://fabiensanglard.net/ega/",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-id-source": {
+    "title": "DOOM source code",
+    "publisher": "id Software / GitHub",
+    "url": "https://github.com/id-Software/DOOM",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-ikea-golem": {
+    "title": "Doom läuft auf einer Ikea-Lampe",
+    "publisher": "Golem.de",
+    "url": "https://www.golem.de/news/tradfri-doom-laeuft-auf-einer-ikea-lampe-2106-157279.html",
+    "accessed_at": "2026-09-24"
   }
 }
