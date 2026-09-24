@@ -48,11 +48,25 @@ function normalized(value) {
   return String(value || '').toLowerCase();
 }
 
-function motifCluster(tags) {
+function containsTerm(haystack, term) {
+  const escaped = String(term || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\function motifCluster(tags) {
   const haystack = normalized(tags);
 
   for (const [name, terms] of CLUSTERS) {
     if (terms.some((term) => haystack.includes(term))) return name;
+  }
+
+  return 'other';
+}');
+  if (!escaped) return false;
+  return new RegExp('(^|[^a-z0-9])' + escaped + '($|[^a-z0-9])', 'i').test(haystack);
+}
+
+function motifCluster(tags) {
+  const haystack = normalized(tags);
+
+  for (const [name, terms] of CLUSTERS) {
+    if (terms.some((term) => containsTerm(haystack, term))) return name;
   }
 
   return 'other';
@@ -275,6 +289,7 @@ if (require.main === module) {
 module.exports = {
   candidateAdjustment,
   chooseDiverseCovers,
+  containsTerm,
   loadReports,
   motifCluster,
   parseArgs,
