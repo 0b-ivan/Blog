@@ -28,6 +28,17 @@ cover_license:
 cover_license_url:
 ---
 
+<!--
+Bildplan:
+- Cover: Pixabay-Pipeline über cover_query / cover_subject / cover_avoid / cover_intent
+- Inline: 2–4 sinnvolle Abbildungen, wenn der Artikel davon profitiert
+- Priorität: eigenes Foto/Screenshot -> reales, wiederverwendbares Bild -> erklärende Grafik
+- Ablage: /assets/posts/<asset-scope>/NN-kurzer-name.ext
+- Fremdbild: Quelle/Lizenz in posts/_sources.json + Bildunterschrift mit /sources.html#<id>
+- Kein Hotlinking; jedes Inline-Bild braucht Alt-Text
+Siehe docs/article-images.md.
+-->
+
 # Titel
 
 Kurze Einleitung.
