@@ -35,6 +35,7 @@ cover_query: retro pc gaming floppy disks 1990s computer dark
 cover_subject: 1990s PC shareware game floppy disks on a dark desk
 cover_intent: doom-shareware-history
 cover_avoid: modern gaming console controller RGB laptop office stock photo
+cover_focus: center
 ---
 
 ![DOOM-Schriftzug](/assets/posts/doom-shareware-internet/01-doom-logo.png)
