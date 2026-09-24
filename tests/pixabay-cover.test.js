@@ -257,6 +257,24 @@ describe('Pixabay cover resolver', () => {
     })[0]).toBe('monkey ape primate chimpanzee macaque');
   });
 
+  it('allows one article to override the automatic Chaos Monkey animal intent', () => {
+    const article = {
+      title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
+      category: 'DevOps',
+      tags: ['Chaos-Engineering', 'Kubernetes', 'Resilience'],
+      cover_query: 'server datacenter infrastructure network cloud',
+      cover_intent: 'chaos-engineering'
+    };
+
+    const intent = visualIntent(article);
+    expect(intent.key).toBe('chaos-engineering');
+    expect(intent.explicit).toBe(true);
+    expect(intent.pixabayCategory).toBe('computer');
+    expect(queryCandidates(article)[0]).toBe(
+      'server monitoring outage incident failure resilience reliability'
+    );
+  });
+
   it('ranks the article image idea above generic metadata matches', () => {
     const writing = {
       title: 'Fehlerarme Texte trotz Legasthenie: meine Rechtschreib-Pipeline',
