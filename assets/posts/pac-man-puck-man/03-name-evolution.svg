@@ -1,32 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
-  <title id="title">Namensweg von paku paku zu Pac-Man</title>
-  <desc id="desc">Die sprachliche Entwicklung führt von paku paku über den japanischen Namen Pakku Man zur frühen Schreibweise Puck Man und schließlich zu Pac-Man.</desc>
-  <rect width="1200" height="560" rx="32" fill="#111827"/>
-  <text x="600" y="76" text-anchor="middle" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="38" font-weight="700">Der Weg des Namens</text>
-  <g font-family="system-ui, sans-serif" text-anchor="middle">
-    <rect x="55" y="170" width="235" height="150" rx="24" fill="#1e293b" stroke="#475569" stroke-width="3"/>
-    <text x="172" y="225" fill="#facc15" font-size="34" font-weight="700">パクパク</text>
-    <text x="172" y="270" fill="#fff" font-size="27">paku paku</text>
-    <text x="172" y="302" fill="#94a3b8" font-size="19">Essbewegung</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 700" role="img" aria-labelledby="title desc">
+  <title id="title">Von Puck Man zu Pac-Man</title>
+  <desc id="desc">Diagramm mit dem japanischen Ausdruck paku paku, dem japanischen Spielenamen Pakku Man, der frühen lateinischen Schreibweise Puck Man und dem US-Namen Pac-Man.</desc>
+  <style>
+    text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+    .title{font-size:44px;font-weight:800}
+    .jp{font-size:46px;font-weight:800}
+    .main{font-size:34px;font-weight:800}
+    .sub{font-size:20px;fill:#64748b}
+    .box{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2}
+    .warn{fill:#fff7ed;stroke:#ea580c;stroke-width:2}
+    .arrow{stroke:#64748b;stroke-width:4;fill:none;marker-end:url(#arrow)}
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L0,8 L11,4 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="700" rx="28" fill="#ffffff"/>
+  <text x="70" y="82" class="title">Der Name ist eine kleine Übersetzungskette</text>
 
-    <rect x="350" y="170" width="235" height="150" rx="24" fill="#1e293b" stroke="#475569" stroke-width="3"/>
-    <text x="467" y="225" fill="#facc15" font-size="34" font-weight="700">パックマン</text>
-    <text x="467" y="270" fill="#fff" font-size="27">Pakku Man</text>
-    <text x="467" y="302" fill="#94a3b8" font-size="19">japanischer Name</text>
+  <rect x="70" y="170" width="275" height="190" rx="22" class="box"/>
+  <text x="207" y="238" text-anchor="middle" class="jp">パクパク</text>
+  <text x="207" y="285" text-anchor="middle" class="main">paku paku</text>
+  <text x="207" y="326" text-anchor="middle" class="sub">Mund auf / zu · essen</text>
 
-    <rect x="645" y="170" width="235" height="150" rx="24" fill="#1e293b" stroke="#475569" stroke-width="3"/>
-    <text x="762" y="245" fill="#facc15" font-size="34" font-weight="700">PUCK MAN</text>
-    <text x="762" y="292" fill="#94a3b8" font-size="19">frühe lateinische Schreibweise</text>
+  <path d="M365 265 H445" class="arrow"/>
 
-    <rect x="940" y="170" width="205" height="150" rx="24" fill="#1e293b" stroke="#facc15" stroke-width="4"/>
-    <text x="1042" y="245" fill="#facc15" font-size="34" font-weight="800">PAC-MAN</text>
-    <text x="1042" y="292" fill="#94a3b8" font-size="19">internationale Marke</text>
-  </g>
-  <g stroke="#64748b" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M300 245 H335"/><path d="M325 232 L340 245 L325 258"/>
-    <path d="M595 245 H630"/><path d="M620 232 L635 245 L620 258"/>
-    <path d="M890 245 H925"/><path d="M915 232 L930 245 L915 258"/>
-  </g>
-  <text x="600" y="405" text-anchor="middle" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="25">Kein Hockey-Begriff, sondern eine sprachliche Spur vom Essen zum Markennamen.</text>
-  <text x="600" y="452" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="21">Für den US-Markt wurde PUCK MAN zu PAC-MAN; danach setzte sich die neue Schreibweise weltweit durch.</text>
+  <rect x="465" y="170" width="275" height="190" rx="22" class="box"/>
+  <text x="602" y="238" text-anchor="middle" class="jp">パックマン</text>
+  <text x="602" y="285" text-anchor="middle" class="main">Pakku Man</text>
+  <text x="602" y="326" text-anchor="middle" class="sub">japanischer Spielname</text>
+
+  <path d="M760 265 H840" class="arrow"/>
+
+  <rect x="860" y="170" width="275" height="190" rx="22" class="box"/>
+  <text x="997" y="262" text-anchor="middle" class="main">PUCK MAN</text>
+  <text x="997" y="312" text-anchor="middle" class="sub">frühe lateinische Schreibweise</text>
+
+  <path d="M1155 265 H1235" class="arrow"/>
+
+  <rect x="1160" y="430" width="170" height="120" rx="20" class="warn"/>
+  <text x="1245" y="480" text-anchor="middle" class="main">P → F?</text>
+  <text x="1245" y="520" text-anchor="middle" class="sub">US-Bedenken</text>
+  <path d="M1245 380 V420" class="arrow"/>
+
+  <rect x="795" y="430" width="300" height="150" rx="22" class="box"/>
+  <text x="945" y="500" text-anchor="middle" class="main">PAC-MAN</text>
+  <text x="945" y="543" text-anchor="middle" class="sub">USA 1980 → weltweit</text>
+  <path d="M1170 505 H1115" class="arrow"/>
+
+  <text x="70" y="640" class="sub">„Puck“ sieht englisch aus – die Wortwurzel liegt aber im japanischen paku paku.</text>
 </svg>

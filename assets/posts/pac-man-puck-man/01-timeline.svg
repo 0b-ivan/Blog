@@ -1,23 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
-  <title id="title">Zeitleiste der frühen Pac-Man-Versionen 1980</title>
-  <desc id="desc">Vom ersten Location-Test als Puck Man am 22. Mai 1980 über die japanische Veröffentlichung im Juli bis zum US-Start als Pac-Man im Oktober.</desc>
-  <rect width="1200" height="520" rx="32" fill="#111827"/>
-  <text x="70" y="82" fill="#f9fafb" font-family="system-ui, sans-serif" font-size="38" font-weight="700">1980: Von PUCK MAN zu PAC-MAN</text>
-  <line x1="130" y1="260" x2="1070" y2="260" stroke="#64748b" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="210" cy="260" r="28" fill="#facc15"/>
-  <circle cx="600" cy="260" r="28" fill="#facc15"/>
-  <circle cx="990" cy="260" r="28" fill="#facc15"/>
-  <text x="210" y="155" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="30" font-weight="700">22. Mai</text>
-  <text x="210" y="195" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="26">Location-Test</text>
-  <text x="210" y="335" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="700">PUCK MAN</text>
-  <text x="210" y="375" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="23">Shibuya, Tokio</text>
-  <text x="600" y="155" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="30" font-weight="700">Juli</text>
-  <text x="600" y="195" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="26">Japan-Release</text>
-  <text x="600" y="335" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="700">PUCK MAN</text>
-  <text x="600" y="375" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="23">Namco</text>
-  <text x="990" y="155" text-anchor="middle" fill="#fde68a" font-family="system-ui, sans-serif" font-size="30" font-weight="700">Oktober</text>
-  <text x="990" y="195" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="26">US-Start</text>
-  <text x="990" y="335" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="700">PAC-MAN</text>
-  <text x="990" y="375" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="23">Namco / Midway</text>
-  <text x="600" y="458" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="21">Der Name änderte sich – das zentrale Spielprinzip blieb dasselbe.</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Pac-Man Timeline 1980</title>
+  <desc id="desc">Zeitleiste vom ersten Location-Test im Mai 1980 über die japanische Veröffentlichung als Puck Man im Juli bis zur US-Veröffentlichung als Pac-Man im Oktober.</desc>
+  <style>
+    text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+    .title{font-size:46px;font-weight:800}
+    .date{font-size:24px;font-weight:800;fill:#0f766e}
+    .head{font-size:30px;font-weight:800}
+    .body{font-size:22px;fill:#475569}
+    .note{font-size:20px;fill:#64748b}
+    .line{stroke:#94a3b8;stroke-width:6}
+    .dot{fill:#facc15;stroke:#ca8a04;stroke-width:4}
+    .card{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2}
+    .accent{fill:#0f766e}
+  </style>
+  <rect width="1400" height="760" rx="28" fill="#ffffff"/>
+  <text x="70" y="85" class="title">1980: In wenigen Monaten von PUCK MAN zu PAC-MAN</text>
+  <line x1="155" y1="320" x2="1245" y2="320" class="line"/>
+
+  <circle cx="210" cy="320" r="22" class="dot"/>
+  <rect x="80" y="385" width="360" height="245" rx="22" class="card"/>
+  <rect x="80" y="385" width="360" height="12" rx="6" class="accent"/>
+  <text x="110" y="440" class="date">22. MAI 1980</text>
+  <text x="110" y="488" class="head">Location-Test</text>
+  <text x="110" y="530" class="body">Erster öffentlicher Test</text>
+  <text x="110" y="564" class="body">des neuen Namco-Spiels.</text>
+  <text x="110" y="605" class="note">Danach vor allem Balancing.</text>
+
+  <circle cx="700" cy="320" r="22" class="dot"/>
+  <rect x="520" y="125" width="360" height="155" rx="22" class="card"/>
+  <text x="550" y="180" class="date">JULI 1980 · JAPAN</text>
+  <text x="550" y="230" class="head">PUCK MAN</text>
+  <text x="550" y="262" class="body">Öffentliche Veröffentlichung.</text>
+
+  <circle cx="1190" cy="320" r="22" class="dot"/>
+  <rect x="960" y="385" width="360" height="245" rx="22" class="card"/>
+  <rect x="960" y="385" width="360" height="12" rx="6" class="accent"/>
+  <text x="990" y="440" class="date">OKTOBER 1980 · USA</text>
+  <text x="990" y="488" class="head">PAC-MAN</text>
+  <text x="990" y="530" class="body">Der Name wird geändert.</text>
+  <text x="990" y="570" class="body">Aus P sollte nicht durch</text>
+  <text x="990" y="604" class="body">Vandalismus ein F werden.</text>
+
+  <text x="70" y="705" class="note">Die neue Schreibweise PAC-MAN wurde anschließend zum weltweiten Standard.</text>
 </svg>
