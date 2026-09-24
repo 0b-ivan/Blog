@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const root = process.cwd();
 const scanRoots = ['posts', 'archive'];
+const ARTICLE_IMAGE_PREFIX = '/assets/posts/';
 const rootHtmlFiles = fs.readdirSync(root)
   .filter((name) => name.endsWith('.html'))
   .map((name) => path.join(root, name));
@@ -26,7 +27,7 @@ function isExternal(value) {
 }
 
 function cleanTarget(value) {
-  let target = value.trim();
+  let target = String(value || '').trim();
 
   if (target.startsWith('<') && target.endsWith('>')) {
     target = target.slice(1, -1);
@@ -49,16 +50,27 @@ function resolveTarget(sourceFile, target) {
   return path.resolve(path.dirname(sourceFile), target);
 }
 
-function collectMarkdownAssets(content) {
-  const assets = [];
-  const imagePattern = /!\[[^\]]*\]\(\s*(<?[^\s)>]+>?)/g;
+function stripFencedCode(content) {
+  return String(content || '').replace(
+    /^(?: {0,3})(`{3,}|~{3,})[^\n]*\n[\s\S]*?^ {0,3}\1[ \t]*$/gm,
+    ''
+  );
+}
+
+function collectMarkdownImages(content) {
+  const images = [];
+  const source = stripFencedCode(content);
+  const imagePattern = /!\[([^\]]*)\]\(\s*(<?[^\s)>]+>?)(?:\s+["'][^"']*["'])?\s*\)/g;
   let match;
 
-  while ((match = imagePattern.exec(content)) !== null) {
-    assets.push(match[1]);
+  while ((match = imagePattern.exec(source)) !== null) {
+    images.push({
+      alt: match[1],
+      target: match[2]
+    });
   }
 
-  return assets;
+  return images;
 }
 
 function collectHtmlAssets(content) {
@@ -73,45 +85,127 @@ function collectHtmlAssets(content) {
   return assets;
 }
 
-const files = [
-  ...scanRoots.flatMap((dir) => walk(path.join(root, dir))),
-  ...rootHtmlFiles,
-].filter((file) => file.endsWith('.md') || file.endsWith('.html'));
+function articleImagePolicyViolations(image) {
+  const violations = [];
+  const alt = String(image?.alt || '').trim();
+  const rawTarget = String(image?.target || '').trim();
+  const target = cleanTarget(rawTarget);
 
-const missing = [];
-let checked = 0;
+  if (!alt) {
+    violations.push('missing alt text');
+  }
 
-for (const file of files) {
-  const content = fs.readFileSync(file, 'utf8');
-  const targets = file.endsWith('.md')
-    ? collectMarkdownAssets(content)
-    : collectHtmlAssets(content);
+  if (!rawTarget || isExternal(rawTarget)) {
+    violations.push('article images must be stored locally under /assets/posts/; external/data targets are not allowed');
+    return violations;
+  }
 
-  for (const rawTarget of targets) {
-    if (!rawTarget || isExternal(rawTarget) || rawTarget.includes('${')) continue;
+  if (!target.startsWith(ARTICLE_IMAGE_PREFIX)) {
+    violations.push(`article images must use a root-relative ${ARTICLE_IMAGE_PREFIX} path`);
+  }
 
-    const target = cleanTarget(rawTarget);
-    if (!target || isExternal(target)) continue;
+  return violations;
+}
 
-    checked += 1;
-    const resolved = resolveTarget(file, target);
+function main() {
+  const files = [
+    ...scanRoots.flatMap((dir) => walk(path.join(root, dir))),
+    ...rootHtmlFiles,
+  ].filter((file) => file.endsWith('.md') || file.endsWith('.html'));
 
-    if (!fs.existsSync(resolved)) {
-      missing.push({
-        file: path.relative(root, file),
-        target: rawTarget,
-        resolved: path.relative(root, resolved),
-      });
+  const missing = [];
+  const policyViolations = [];
+  let checked = 0;
+
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+
+    if (file.endsWith('.md')) {
+      const images = collectMarkdownImages(content);
+
+      for (const image of images) {
+        const filePath = path.relative(root, file);
+        for (const reason of articleImagePolicyViolations(image)) {
+          policyViolations.push({
+            file: filePath,
+            target: image.target,
+            reason
+          });
+        }
+
+        if (!image.target || isExternal(image.target) || image.target.includes('${')) continue;
+
+        const target = cleanTarget(image.target);
+        if (!target || isExternal(target)) continue;
+
+        checked += 1;
+        const resolved = resolveTarget(file, target);
+
+        if (!fs.existsSync(resolved)) {
+          missing.push({
+            file: filePath,
+            target: image.target,
+            resolved: path.relative(root, resolved),
+          });
+        }
+      }
+
+      continue;
+    }
+
+    for (const rawTarget of collectHtmlAssets(content)) {
+      if (!rawTarget || isExternal(rawTarget) || rawTarget.includes('${')) continue;
+
+      const target = cleanTarget(rawTarget);
+      if (!target || isExternal(target)) continue;
+
+      checked += 1;
+      const resolved = resolveTarget(file, target);
+
+      if (!fs.existsSync(resolved)) {
+        missing.push({
+          file: path.relative(root, file),
+          target: rawTarget,
+          resolved: path.relative(root, resolved),
+        });
+      }
     }
   }
-}
 
-if (missing.length > 0) {
-  console.error(`Found ${missing.length} missing local asset(s):`);
-  for (const entry of missing) {
-    console.error(`- ${entry.file}: ${entry.target} -> ${entry.resolved}`);
+  if (policyViolations.length > 0) {
+    console.error(`Found ${policyViolations.length} article image policy violation(s):`);
+    for (const entry of policyViolations) {
+      console.error(`- ${entry.file}: ${entry.target || '<empty>'} (${entry.reason})`);
+    }
   }
-  process.exit(1);
+
+  if (missing.length > 0) {
+    console.error(`Found ${missing.length} missing local asset(s):`);
+    for (const entry of missing) {
+      console.error(`- ${entry.file}: ${entry.target} -> ${entry.resolved}`);
+    }
+  }
+
+  if (policyViolations.length > 0 || missing.length > 0) {
+    process.exit(1);
+  }
+
+  console.log(
+    `Local asset and article image policy check passed: ${checked} local reference(s) checked in ${files.length} file(s).`
+  );
 }
 
-console.log(`Local asset check passed: ${checked} reference(s) checked in ${files.length} file(s).`);
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  ARTICLE_IMAGE_PREFIX,
+  articleImagePolicyViolations,
+  cleanTarget,
+  collectHtmlAssets,
+  collectMarkdownImages,
+  isExternal,
+  resolveTarget,
+  stripFencedCode
+};

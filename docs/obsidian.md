@@ -170,13 +170,26 @@ Anschliessend einen Pull Request gegen `staging` erstellen. Nach erfolgreicher C
 
 ## Bilder
 
-Bilder fuer Artikel sollten unter `assets/posts/` liegen. Dadurch werden sie vom Content-Deployment und von der automatischen Artikelhistorie gemeinsam mit dem Artikel behandelt. Im Markdown koennen sie beispielsweise so referenziert werden:
+Für Artikelbilder gilt die verbindliche Policy in [`docs/article-images.md`](article-images.md).
+
+Kurzfassung:
+
+- Cover kommen über die bestehende Pixabay-Pipeline und liegen unter `assets/covers/`.
+- Inline-Bilder liegen lokal unter `assets/posts/<asset-scope>/`.
+- Bevorzugt werden echte Fotos/Screenshots, wenn sie inhaltlich stärker sind und die Nutzung geklärt ist; Diagramme ergänzen dort, wo sie etwas erklären.
+- Kein Hotlinking externer Bilder.
+- Jedes Inline-Bild braucht einen aussagekräftigen Alt-Text.
+- Fremde Bilder bekommen Quellen-/Lizenznachweis in `posts/_sources.json`.
+
+Beispiel:
 
 ```md
-![Beschreibung](/assets/posts/mein-bild.png)
+![Puck-Man-Arcade-Automat](/assets/posts/pac-man-puck-man/01-puck-man-cabinet.jpg)
+
+*Abb. 1: Früher Puck-Man-Automat. Quelle: [Wikimedia Commons](/sources.html#pacman-puckman-cabinet).*
 ```
 
-Root-relative Pfade funktionieren sowohl auf der Website als auch im RSS-Feed korrekt.
+Root-relative Pfade funktionieren auf Website, RSS, EPUB/PDF und in der Artikelhistorie reproduzierbar.
 
 ## Was nicht ins Repository gehoert
 
