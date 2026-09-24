@@ -167,7 +167,7 @@ describe('Pixabay cover resolver', () => {
     expect(queryCandidates({
       title: 'RSS ist nicht tot – FreshRSS als Self-Hosting-Empfehlung',
       tags: ['RSS', 'FreshRSS', 'Miniflux']
-    })[0]).toBe('rss feed reader dashboard news aggregator browser website');
+    })[0]).toBe('rss feed reader dashboard aggregator browser subscription');
 
     expect(visualIntent({
       title: 'Eine VPC ist keine schwarze Magie',
@@ -225,6 +225,13 @@ describe('Pixabay cover resolver', () => {
         imageHeight: 1080
       }, rss).score
     );
+
+    const rssSpeedDashboard = scoreHit({
+      tags: 'speed, internet, download, upload, broadband, dashboard, website, server',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, rss);
+    expect(rssSpeedDashboard.semanticMismatch).toBe(true);
 
     const dependabot = {
       title: 'Dependabot im Einsatz',
