@@ -68,7 +68,7 @@ Keen war damit technische Vorarbeit und Geschäftsmodell zugleich. Die erste Epi
 
 Zum frühen DOOM-Team gehörten **John Carmack**, **John Romero**, **Adrian Carmack**, **Kevin Cloud** und zunächst **Tom Hall**; **Sandy Petersen** stieß während der Entwicklung hinzu. **Bobby Prince** schrieb Musik und Soundeffekte.
 
-Carmack konzentrierte sich stark auf Engine und Technik. Romero programmierte Werkzeuge und Levels. Adrian Carmack und Kevin Cloud prägten Grafik, Texturen und Monster. Petersen übernahm einen großen Teil des Leveldesigns.
+Carmack konzentrierte sich stark auf Engine und Technik. Romero programmierte Werkzeuge und Levels. Adrian Carmack und Kevin Cloud prägten Grafik, Texturen und Gegner. Petersen übernahm einen großen Teil des Leveldesigns.
 
 John und Adrian Carmack sind trotz des gleichen Nachnamens nicht miteinander verwandt.
 
@@ -98,7 +98,7 @@ Die Welt war dabei noch kein frei modelliertes polygonales 3D. Carmacks Renderer
 
 Das Resultat war wichtiger als das Etikett: DOOM lief schnell auf Hardware, die 1993 in normalen PCs steckte.
 
-## Selbst die Monster waren Handarbeit
+## Selbst die Gegner waren Handarbeit
 
 ![Latexmodell des Spider Mastermind für DOOM](/assets/posts/doom-shareware-internet/07-spider-mastermind-model.jpg)
 
