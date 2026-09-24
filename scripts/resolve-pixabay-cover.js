@@ -366,6 +366,47 @@ function visualQuery(data) {
   return visualTerms.slice(0, 8).join(' ').slice(0, 100);
 }
 
+function articleVisualBrief(data = {}) {
+  const tags = normalizedTags(data).slice(0, 6);
+  const searchQueries = Array.isArray(data.search_queries)
+    ? data.search_queries
+      .map((entry) => typeof entry === 'string' ? entry : entry?.query)
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean)
+      .slice(0, 2)
+    : [];
+
+  const title = String(data.title || '').trim();
+  const subject = String(data.cover_subject || '').trim();
+  const category = String(data.category || '').trim();
+  const excerpt = String(data.excerpt || '').replace(/\s+/g, ' ').trim().slice(0, 420);
+
+  const positive = [
+    'Editorial hero cover for a technical blog article.',
+    title ? `Main article: ${title}` : '',
+    subject ? `Primary subject: ${subject}` : '',
+    tags.length ? `Topics: ${tags.join(', ')}` : '',
+    category ? `Category: ${category}` : '',
+    excerpt ? `Summary: ${excerpt}` : '',
+    searchQueries.length ? `Reader intent: ${searchQueries.join('; ')}` : '',
+    'Prefer a concrete contextual scene, useful visual metaphor, architecture, workflow, object or environment that communicates the main subject.'
+  ].filter(Boolean).join(' ');
+
+  const negative = [
+    'Unrelated generic stock photography.',
+    'Generic office meeting or smiling portrait.',
+    'Standalone logo, icon, symbol or button.',
+    'Generic error cross or warning sign.',
+    'Empty terminal window, raw code screenshot or generic programmer-at-laptop image unless the article is specifically about that interface.',
+    'Generic server rack or datacenter unless infrastructure itself is the main subject.'
+  ].join(' ');
+
+  return {
+    positive: positive.slice(0, 1600),
+    negative: negative.slice(0, 1200)
+  };
+}
+
 function queryCandidates(data, explicitQuery = '') {
   const tags = normalizedTags(data);
   const intent = visualIntent(data);
@@ -381,12 +422,10 @@ function queryCandidates(data, explicitQuery = '') {
   const candidates = explicitQuery
     ? (intent
       ? [primary, intent.query, visual || fallback]
-      : [primary, visual, fallback])
+      : [primary, title, visual || fallback])
     : (intent
       ? [intent.query, primary, visual || fallback]
-      : [primary, visual, fallback]);
-
-  if (!intent && !visual && title) candidates.push(title);
+      : [primary, title, visual || fallback]);
 
   return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, 3);
 }
@@ -839,7 +878,7 @@ async function main() {
 
   const intent = visualIntent(parsed.data);
   const pixabayCategory = String(intent?.pixabayCategory || '').trim();
-  const pixabayImageType = String(intent?.pixabayImageType || 'photo').trim();
+  const pixabayImageType = String(intent?.pixabayImageType || 'all').trim();
   const hits = await collectCandidates(queries, apiKey, {
     searchOptions: {
       category: pixabayCategory,
@@ -850,12 +889,15 @@ async function main() {
 
   const rankingQuery = String(options.query || queries[0] || '').trim();
   const ranked = rankCandidates(hits, parsed.data, rankingQuery);
+  const visualBrief = articleVisualBrief(parsed.data);
   const reportBase = {
     postPath: options.target,
     title: parsed.data.title || path.basename(target, '.md'),
     series: detectSeries(parsed.data),
     visualIntent: intent?.key || '',
     visualIntentEvidence: intent?.evidenceScore || 0,
+    visualBriefPositive: visualBrief.positive,
+    visualBriefNegative: visualBrief.negative,
     pixabayCategory,
     pixabayImageType,
     query: rankingQuery,
@@ -935,6 +977,7 @@ module.exports = {
   TOPIC_EXPANSIONS,
   VISUAL_INTENTS,
   articleProfile,
+  articleVisualBrief,
   cacheFileForQuery,
   choosePhoto,
   collectCandidates,
