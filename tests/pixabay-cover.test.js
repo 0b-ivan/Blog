@@ -5,6 +5,7 @@ const { URL } = require('node:url');
 const {
   PIXABAY_CACHE_TTL_MS,
   VISUAL_INTENTS,
+  articleVisualBrief,
   choosePhoto,
   collectCandidates,
   defaultQuery,
