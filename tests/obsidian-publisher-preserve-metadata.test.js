@@ -157,6 +157,45 @@ tags:
     expect(result).toContain('cover_subtitle: "Warum Chaos Monkey kein Zufall ist"');
   });
 
+  it('keeps repository cover metadata when an older Obsidian copy omits it', async () => {
+    const obsidian = `---
+title: "Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen"
+status: publish
+tags:
+  - DevOps
+---
+
+# Artikel aus Obsidian
+`;
+
+    const repositoryCopy = `---
+title: "Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen"
+cover_title: "Chaos Engineering systematisch testen"
+cover_subtitle: "Warum Chaos Monkey kein Zufall ist"
+cover_intent: chaos-engineering
+status: publish
+tags:
+  - DevOps
+---
+
+# Artikel im Repository
+`;
+
+    const publisher = new PreservingGitHubPublisher({
+      token: 'x',
+      repository: '0b-ivan/Blog',
+      baseBranch: 'staging'
+    });
+    publisher.file = vi.fn(async () => ({ content: repositoryCopy }));
+
+    const result = await publisher.preparedContent('chaos.md', obsidian);
+
+    expect(result).toContain('cover_title: "Chaos Engineering systematisch testen"');
+    expect(result).toContain('cover_subtitle: "Warum Chaos Monkey kein Zufall ist"');
+    expect(result).toContain('cover_intent: chaos-engineering');
+    expect(result).toContain('# Artikel aus Obsidian');
+  });
+
   it('normalizes an empty snippets property to an empty YAML list', () => {
     const raw = `---
 title: RSS
