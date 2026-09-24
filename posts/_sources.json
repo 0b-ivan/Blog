@@ -274,5 +274,35 @@
     "publisher": "Chaos Mesh",
     "url": "https://chaos-mesh.org/docs/",
     "accessed_at": "2026-09-20"
+  },
+  "pacman-official-history": {
+    "title": "HISTORY",
+    "publisher": "The Official Site for PAC-MAN / Bandai Namco Entertainment",
+    "url": "https://pacman.com/en/history/",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-official-1980": {
+    "title": "PAC-MAN History: 1980",
+    "publisher": "The Official Site for PAC-MAN / Bandai Namco Entertainment",
+    "url": "https://pacman.com/en/history/popup/y1980.php",
+    "accessed_at": "2026-09-24"
+  },
+  "toru-iwatani-openers-40th": {
+    "title": "Pac-Man Turns 40: An Interview with Creator Toru Iwatani",
+    "publisher": "OPENERS",
+    "url": "https://openers.jp/en/design/design_features/4CoXi",
+    "accessed_at": "2026-09-24"
+  },
+  "wired-pacman-30-iwatani": {
+    "title": "Q&A: Pac-Man Creator Reflects on 30 Years of Dot-Eating",
+    "publisher": "WIRED",
+    "url": "https://www.wired.com/2010/05/pac-man-30-years/",
+    "accessed_at": "2026-09-24"
+  },
+  "kotobank-pakupaku": {
+    "title": "ぱくぱく（パクパク）とは？ 意味や使い方",
+    "publisher": "Kotobank / 小学館 デジタル大辞泉",
+    "url": "https://kotobank.jp/word/%E3%81%B1%E3%81%8F%E3%81%B1%E3%81%8F-600437",
+    "accessed_at": "2026-09-24"
   }
 }
