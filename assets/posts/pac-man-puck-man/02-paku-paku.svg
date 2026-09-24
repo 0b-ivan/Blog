@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="470" viewBox="0 0 1200 470" role="img" aria-labelledby="title desc">
+  <title id="title">Paku paku als Mundbewegung</title>
+  <desc id="desc">Vier schematische gelbe Mundformen zeigen das wiederholte Öffnen und Schließen beim Essen.</desc>
+  <rect width="1200" height="470" rx="32" fill="#0f172a"/>
+  <text x="600" y="72" text-anchor="middle" fill="#f8fafc" font-family="system-ui, sans-serif" font-size="40" font-weight="700">パクパク · paku paku</text>
+  <text x="600" y="112" text-anchor="middle" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="24">wiederholt den Mund öffnen und schließen – besonders beim Essen</text>
+  <g transform="translate(115 160)">
+    <circle cx="90" cy="90" r="78" fill="#facc15"/>
+    <polygon points="90,90 178,38 178,142" fill="#0f172a"/>
+    <text x="90" y="205" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="27" font-weight="700">paku</text>
+  </g>
+  <g transform="translate(385 160)">
+    <circle cx="90" cy="90" r="78" fill="#facc15"/>
+    <polygon points="90,90 175,70 175,110" fill="#0f172a"/>
+    <text x="90" y="205" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="27" font-weight="700">paku</text>
+  </g>
+  <g transform="translate(655 160)">
+    <circle cx="90" cy="90" r="78" fill="#facc15"/>
+    <polygon points="90,90 178,38 178,142" fill="#0f172a"/>
+    <text x="90" y="205" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="27" font-weight="700">paku</text>
+  </g>
+  <g transform="translate(925 160)">
+    <circle cx="90" cy="90" r="78" fill="#facc15"/>
+    <polygon points="90,90 175,70 175,110" fill="#0f172a"/>
+    <text x="90" y="205" text-anchor="middle" fill="#fff" font-family="system-ui, sans-serif" font-size="27" font-weight="700">paku</text>
+  </g>
+  <path d="M300 250 H350 M570 250 H620 M840 250 H890" stroke="#64748b" stroke-width="7" stroke-linecap="round"/>
+  <path d="M340 237 L355 250 L340 263 M610 237 L625 250 L610 263 M880 237 L895 250 L880 263" fill="none" stroke="#64748b" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
