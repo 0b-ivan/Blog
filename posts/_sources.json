@@ -274,5 +274,35 @@
     "publisher": "Chaos Mesh",
     "url": "https://chaos-mesh.org/docs/",
     "accessed_at": "2026-09-20"
+  },
+  "pacman-official-history-1980": {
+    "title": "PAC-MAN History: 1980",
+    "publisher": "PAC-MAN Official Site / Bandai Namco Entertainment",
+    "url": "https://www.pacman.com/en/history/popup/y1980.php",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-bandai-creation-interview": {
+    "title": "Untold Stories of the Creation of PAC-MAN - Part 1",
+    "publisher": "Bandai Namco Entertainment / Funfare",
+    "url": "https://funfare.bandainamcoent.co.jp/8681/",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-iwatani-openers-40th": {
+    "title": "Pac-Man Turns 40: An Interview with Creator Toru Iwatani",
+    "publisher": "OPENERS",
+    "url": "https://openers.jp/en/design/design_features/4CoXi",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-smithsonian-history": {
+    "title": "Why Players Around the World Gobbled Up Pac-Man",
+    "publisher": "Smithsonian Magazine",
+    "url": "https://www.smithsonianmag.com/innovation/why-players-around-world-gobbled-up-pac-man-180974902/",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-strong-museum": {
+    "title": "Pac-Man",
+    "publisher": "The Strong National Museum of Play",
+    "url": "https://www.museumofplay.org/games/pac-man/",
+    "accessed_at": "2026-09-24"
   }
 }
