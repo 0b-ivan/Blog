@@ -139,6 +139,38 @@ describe('series-aware cover diversity', () => {
     expect(second.relevanceFloor).toBe(72);
   });
 
+  it('skips an article when every candidate fails the hero hard gate', () => {
+    const reports = [{
+      postPath: 'posts/rss.md',
+      title: 'RSS article',
+      series: '',
+      candidates: [
+        { ...candidate(1, 1, 95, 'rss, logo, icon'), heroRejected: true, semanticMismatch: true },
+        { ...candidate(2, 2, 90, 'rss, symbol, button'), heroRejected: true, semanticMismatch: true }
+      ]
+    }];
+
+    const [selection] = chooseDiverseCovers(reports);
+    expect(selection.skipped).toBe(true);
+    expect(selection.skipReason).toContain('hero size/logo hard gates');
+    expect(selection.id).toBeUndefined();
+  });
+
+  it('skips an article instead of falling back to semantically wrong imagery', () => {
+    const reports = [{
+      postPath: 'posts/systemd.md',
+      title: 'systemd',
+      series: '',
+      candidates: [
+        { ...candidate(1, 1, 95, 'generic server room'), heroRejected: false, semanticMismatch: true }
+      ]
+    }];
+
+    const [selection] = chooseDiverseCovers(reports);
+    expect(selection.skipped).toBe(true);
+    expect(selection.skipReason).toContain('semantically acceptable');
+  });
+
   it('does not choose a semantic mismatch merely to gain diversity', () => {
     const reports = [
       {
