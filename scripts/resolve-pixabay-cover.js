@@ -39,6 +39,19 @@ const TOPIC_AVOID = {
 
 const VISUAL_INTENTS = [
   {
+    key: 'pacman-arcade',
+    priority: 30,
+    pixabayImageType: 'all',
+    markers: ['pac-man', 'pacman', 'puck man', 'puck-man', 'paku paku', 'パクパク'],
+    query: 'pacman maze arcade yellow character ghost chase retro',
+    positive: ['pacman', 'maze', 'arcade', 'yellow', 'ghost', 'chase', 'retro', 'game', 'gaming', 'pixel', 'dots'],
+    minMatches: 2,
+    requiredGroups: [
+      ['maze', 'arcade', 'pacman']
+    ],
+    avoid: ['computer', 'keyboard', 'monitor', 'space invaders', 'atari', 'sega', 'console', 'controller', 'hardware', 'laptop', 'terminal', 'screenshot', 'office', 'desk']
+  },
+  {
     key: 'writing-proofreading',
     markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
     query: 'writing proofreading text document keyboard spelling grammar',
