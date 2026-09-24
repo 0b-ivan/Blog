@@ -49,7 +49,7 @@ function normalized(value) {
 }
 
 function containsTerm(haystack, term) {
-  const escaped = String(term || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const escaped = String(term || '').replace(/[.*+?^${}()|[\]\\]/g, '\\  const escaped = String(term || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');');
   if (!escaped) return false;
   return new RegExp('(^|[^a-z0-9])' + escaped + '($|[^a-z0-9])', 'i').test(haystack);
 }
