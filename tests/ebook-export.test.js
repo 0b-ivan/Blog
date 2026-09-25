@@ -60,13 +60,14 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('DIGITAL EDITION');
   });
 
-  it('uses editorial cover metadata only when a post opts in', () => {
+  it('uses the editorial Kernel Notes cover for every article', () => {
     expect(hasEditorialCoverMetadata({
       title: 'Long title'
-    })).toBe(false);
+    })).toBe(true);
     expect(hasEditorialCoverMetadata({
       title: 'Long title',
-      coverTitle: 'Short title'
+      cover_title: 'Short title',
+      cover_subtitle: 'Readable subtitle'
     })).toBe(true);
 
     const svg = buildEditorialCoverSvg({
@@ -183,6 +184,42 @@ describe('article ebook export helpers', () => {
       expect(deckblatt.html).toContain('alt="Deckblatt: Short cover title"');
       expect(deckblatt.html).not.toContain('<svg');
       await deckblatt.cleanup();
+    } finally {
+      await fs.rm(assetRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses title and excerpt fallbacks for ordinary articles with a cover image', async () => {
+    const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-default-editorial-cover-'));
+    try {
+      const coverDir = path.join(assetRoot, 'assets', 'covers');
+      await fs.mkdir(coverDir, { recursive: true });
+      await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+
+      let capturedSvg = '';
+      const cover = await createEpubCover({
+        slug: 'ordinary',
+        title: 'Ordinary blog article',
+        excerpt: 'This excerpt becomes the cover subtitle automatically.',
+        author: 'obivan',
+        category: 'IT',
+        tags: ['Linux', 'Self-Hosting'],
+        date: '2026-09-25',
+        coverImage: '/assets/covers/demo.jpg'
+      }, assetRoot, {
+        rasterizeSvg: async (svg) => {
+          capturedSvg = svg;
+          return Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+        }
+      });
+
+      expect(cover.name).toBe('ordinary-cover.png');
+      expect(cover.type).toBe('image/png');
+      expect(capturedSvg).toContain('Ordinary blog article');
+      expect(capturedSvg).toContain('This excerpt becomes the cover');
+      expect(capturedSvg).toContain('LINUX');
+      expect(capturedSvg).toContain('SELF HOSTING');
+      expect(capturedSvg).toContain('Ivan Babayev');
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
