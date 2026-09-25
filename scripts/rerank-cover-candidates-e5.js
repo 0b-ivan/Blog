@@ -17,51 +17,68 @@ const GENERIC_ERROR_TERMS = ['error', 'cross', 'warning', 'wrong', 'false', 'mis
 const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'];
 
 const COVER_CONCEPT_PROTOTYPES = {
+  'doom-shareware-history': {
+    positive: 'DOOM 1993 retro PC gaming shareware DOS floppy disk old computer game distribution internet history',
+    negative: 'modern RGB gaming laptop esports controller smartphone office generic modern console',
+    heroPreferred: ['doom', 'shareware', 'floppy', 'disk', 'retro', '1990s', 'computer', 'dos'],
+    heroRequired: ['doom', 'shareware', 'floppy', 'retro', 'dos', '1990s'],
+    heroAvoid: ['modern', 'rgb', 'laptop', 'esports', 'controller', 'smartphone', 'office'],
+    minHeroQuality: 55
+  },
   'pokemon-oop-domain-model': {
     positive: 'Pokemon game handheld Pikachu Pokeball cartridge battle role playing game creature monster gaming scene',
-    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite cassette tape recorder music office laptop keyboard terminal screenshot unrelated franchise unrelated object',
+    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite cassette tape recorder music office laptop keyboard terminal screenshot smartphone iPhone mobile phone unrelated franchise unrelated object',
     heroPreferred: ['pokemon', 'pikachu', 'pokeball', 'game', 'handheld', 'console', 'cartridge', 'battle'],
     heroRequired: ['pokemon', 'pikachu', 'pokeball'],
-    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'office', 'laptop', 'keyboard', 'terminal', 'screenshot'],
+    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'office', 'laptop', 'keyboard', 'terminal', 'screenshot', 'smartphone', 'iphone', 'mobile', 'phone'],
     minHeroQuality: 65
   },
   'writing-proofreading': {
-    positive: 'writing proofreading spelling grammar text editing document keyboard manuscript corrected text language tool',
-    negative: 'secretary office sales telephone call center business meeting portrait person'
+    positive: 'writing proofreading spelling grammar text editing document manuscript correction corrected text language tool',
+    negative: 'secretary office sales telephone call center business meeting portrait person analytics big data cyber security',
+    heroPreferred: ['writing', 'proofreading', 'spelling', 'grammar', 'text', 'editing', 'document', 'correction', 'correcting'],
+    heroAvoid: ['analytics', 'big data', 'cyber', 'security', 'office', 'business'],
+    minHeroQuality: 55
   },
   'rss-reader': {
     positive: 'RSS feed reader dashboard web feed subscription aggregator syndication browser feed list unread articles feed application',
-    negative: 'internet speed speedometer download upload broadband performance RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account',
-    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'feed'],
+    negative: 'internet speed speedometer download upload broadband performance RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi ebook e-book kobo tablet reading novel account registration sign up login password membership user account',
+    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'feed', 'articles'],
     heroRequired: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'interface', 'feed list'],
-    heroAvoid: ['speed', 'speedometer', 'download', 'upload', 'icon', 'logo', 'symbol', 'button', 'isolated'],
+    heroAvoid: ['speed', 'speedometer', 'download', 'upload', 'icon', 'logo', 'symbol', 'button', 'isolated', 'ebook', 'e-book', 'kobo', 'tablet', 'reading'],
     minHeroQuality: 55
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
-    negative: 'physical lock safe vault key insurance house security'
+    negative: 'physical lock safe vault key insurance house security analytics big data innovation marketing generic dashboard gambling casino betting mobile phone smartphone hand drugs chemistry chemical addiction medicine medical pharmaceutical',
+    heroPreferred: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability', 'patch', 'repository', 'version'],
+    heroRequired: ['package', 'update', 'github', 'vulnerability', 'repository', 'version'],
+    heroAvoid: ['analytics', 'big data', 'innovation', 'marketing', 'dashboard', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand', 'drug', 'drugs', 'chemistry', 'chemical', 'addiction', 'medical'],
+    minHeroQuality: 55
   },
   'systemd-service': {
     positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
-    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
+    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport office workspace desktop sorting classification report database decision consultant advisor analyst specialist computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
     heroPreferred: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration', 'server'],
-    heroRequired: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
-    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'],
+    heroRequired: ['service', 'logs', 'daemon', 'process', 'administration', 'journalctl', 'linux'],
+    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database', 'consultant', 'advisor', 'analyst', 'specialist', 'cable', 'wire', 'ethernet', 'cyberspace', 'electronics'],
     minHeroQuality: 55
   },
   'docker-compose': {
-    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow automation',
-    negative: 'generic code screen terminal screenshot wallpaper programming laptop shipping cargo port freight metal container box jar can storage vessel',
-    heroPreferred: ['deployment', 'devops', 'services', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
-    heroRequired: ['deployment', 'devops', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
-    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop'],
+    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow automation container metal shipping container',
+    negative: 'generic code screen terminal screenshot wallpaper programming laptop cargo ship port harbor freight smart home smarthome IoT house automation product',
+    heroPreferred: ['deployment', 'devops', 'services', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation', 'container', 'metal container'],
+    heroRequired: ['deployment', 'devops', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation', 'container'],
+    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop', 'ship', 'port', 'harbor', 'smarthome', 'iot', 'house'],
     minHeroQuality: 50
   },
   'semantic-search': {
     positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
-    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media search engine smartphone robot portrait human',
-    heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval'],
-    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot']
+    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media SEO marketing search engine optimization smartphone robot portrait human cyber security hacker binary matrix ball abstract data sphere philatelist stamp collection hobby',
+    heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval', 'embedding'],
+    heroRequired: ['search', 'vector', 'index', 'retrieval', 'embedding'],
+    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'binary', 'matrix', 'ball', 'philatelist', 'stamp', 'collecting', 'collection'],
+    minHeroQuality: 55
   },
   'vpc-networking': {
     positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
@@ -82,16 +99,27 @@ const COVER_CONCEPT_PROTOTYPES = {
     heroAvoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button']
   },
   'regression-testing': {
-    positive: 'software regression testing automated tests bug quality assurance test suite continuous integration code failure',
-    negative: 'school exam laboratory medical test car crash business meeting'
+    positive: 'software regression testing automated tests bug test suite continuous integration code failure verification',
+    negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing virtual reality cyberspace simulator puppet business meeting marketing consumer sales',
+    heroPreferred: ['testing', 'test', 'bug', 'automation', 'regression', 'verification'],
+    heroRequired: ['testing', 'test', 'bug', 'regression'],
+    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales', 'virus', 'malware', 'antivirus', 'scan', 'cybersecurity'],
+    minHeroQuality: 55
   },
   'logging-observability': {
     positive: 'software logs observability metrics monitoring alerts dashboard log lines terminal server application telemetry',
-    negative: 'car dashboard speedometer vehicle smartphone photography game'
+    negative: 'wood timber firewood forest tree lumber space spacex rocket nasa cape canaveral car dashboard speedometer vehicle smartphone photography game',
+    heroPreferred: ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'alerts', 'telemetry'],
+    heroAvoid: ['wood', 'timber', 'firewood', 'forest', 'tree', 'space', 'spacex', 'rocket', 'nasa'],
+    minHeroQuality: 55
   },
   'photo-storage-sync': {
     positive: 'photo library gallery cloud sync backup files images photo management storage synchronization',
-    negative: 'airplane fighter aircraft warehouse self storage tourist photographer music business'
+    negative: 'airplane fighter aircraft warehouse self storage tourist photographer music business',
+    heroPreferred: ['photo', 'gallery', 'image', 'cloud', 'sync', 'backup', 'files', 'library'],
+    heroRequired: ['photo', 'gallery', 'image', 'cloud', 'sync', 'backup', 'files'],
+    heroAvoid: ['airplane', 'fighter', 'aircraft', 'warehouse', 'music', 'business'],
+    minHeroQuality: 50
   }
 };
 

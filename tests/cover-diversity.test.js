@@ -52,7 +52,7 @@ describe('series-aware cover diversity', () => {
     expect(ids.some((id) => id !== '10')).toBe(true);
   });
 
-  it('allows exact image reuse inside the same series', () => {
+  it('prefers distinct images inside the same series when a relevant alternative exists', () => {
     const reports = [
       {
         postPath: 'posts/part-1.md',
@@ -75,8 +75,8 @@ describe('series-aware cover diversity', () => {
     ];
 
     const selections = chooseDiverseCovers(reports);
-    expect(selections.map((selection) => selection.id)).toEqual(['42', '42']);
-    expect(selections[1].sameSeriesReuse).toBe(true);
+    expect(selections.map((selection) => selection.id)).toEqual(['42', '44']);
+    expect(selections[1].sameSeriesReuse).toBe(false);
   });
 
   it('penalizes repeated motifs outside a series even when image ids differ', () => {

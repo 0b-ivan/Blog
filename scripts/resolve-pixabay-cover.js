@@ -29,24 +29,105 @@ const WEAK_DIRECT_TERMS = new Set([
 ]);
 
 const GENERIC_SUBJECT_CONTEXT_TERMS = new Set([
-  'article', 'blog', 'technical', 'technology', 'software', 'programming', 'code',
+  'article', 'technical', 'technology', 'software', 'programming', 'code',
   'engineering', 'architecture', 'system', 'service', 'application', 'automation',
   'game', 'gaming', 'retro', 'handheld', 'console', 'battle', 'combat', 'fight',
   'creature', 'monster', 'fantasy', 'rpg', 'cloud', 'server', 'network', 'data',
-  'image', 'photo', 'illustration', 'scene', 'workflow', 'computer'
+  'image', 'photo', 'illustration', 'scene', 'workflow', 'computer',
+  'dark', 'desk', 'old', 'modern'
 ]);
 
+const SUBJECT_ALIAS_OVERRIDES = {
+  deployment: ['deploy', 'automation', 'infrastructure'],
+  github: ['repository', 'pull request', 'source control'],
+  dependabot: ['dependency', 'dependencies', 'package', 'update', 'vulnerability', 'github'],
+  docker: ['container', 'devops', 'deployment', 'orchestration', 'services'],
+  compose: ['container', 'devops', 'deployment', 'orchestration', 'services'],
+  rss: ['feed', 'reader', 'aggregator', 'syndication'],
+  freshrss: ['rss', 'feed', 'reader', 'aggregator'],
+  systemd: ['daemon', 'journalctl', 'process', 'service'],
+  subnet: ['topology', 'router', 'routing', 'ethernet', 'lan'],
+  vpc: ['topology', 'subnet', 'router', 'routing', 'ethernet'],
+  kubernetes: ['cluster', 'container', 'orchestration'],
+  k3s: ['kubernetes', 'cluster', 'container', 'orchestration'],
+  proxmox: ['virtualization', 'hypervisor', 'virtual machine'],
+  gitops: ['flux', 'continuous delivery', 'deployment automation'],
+  semanticsearch: ['search', 'embedding', 'embeddings', 'vector', 'retrieval'],
+  kernelgrep: ['search', 'grep', 'embedding', 'retrieval'],
+  immich: ['photo', 'gallery', 'photo management'],
+  nextcloud: ['files', 'cloud storage', 'sync'],
+  webdav: ['files', 'sync', 'remote storage'],
+  rclone: ['files', 'sync', 'backup'],
+  observability: ['monitoring', 'metrics', 'logs', 'alerts', 'telemetry'],
+  cloudwatch: ['monitoring', 'metrics', 'logs', 'alerts'],
+  logging: ['logs', 'monitoring', 'telemetry'],
+  logger: ['logs', 'logging', 'monitoring'],
+  regression: ['testing', 'test', 'bug'],
+  regressionstest: ['testing', 'test', 'bug'],
+  testing: ['test', 'bug', 'regression'],
+  resilience: ['reliability', 'recovery', 'incident', 'outage', 'failure'],
+  reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure'],
+  doom: ['shareware', 'floppy', 'disk', 'dos'],
+  shareware: ['floppy', 'disk', 'dos'],
+  blog: ['website', 'publishing', 'web']
+};
+
+const SUBJECT_ALIAS_CONTEXT = {
+  cluster: ['kubernetes', 'container', 'server', 'cloud', 'computer', 'network', 'infrastructure', 'orchestration', 'hosting', 'virtualization'],
+  container: ['kubernetes', 'docker', 'server', 'cloud', 'software', 'devops', 'orchestration', 'cluster'],
+  service: ['linux', 'server', 'daemon', 'systemd', 'monitoring', 'logs', 'process', 'software'],
+  process: ['linux', 'server', 'daemon', 'systemd', 'service', 'software'],
+  feed: ['rss', 'reader', 'aggregator', 'browser', 'subscription', 'articles', 'syndication', 'news'],
+  reader: ['rss', 'feed', 'aggregator', 'browser', 'subscription', 'articles', 'syndication'],
+  photo: ['gallery', 'image', 'cloud', 'files', 'sync', 'backup', 'library'],
+  gallery: ['photo', 'image', 'cloud', 'files', 'sync', 'backup', 'library'],
+  package: ['software', 'dependency', 'update', 'version', 'github', 'repository', 'code'],
+  update: ['software', 'dependency', 'package', 'version', 'github', 'repository', 'code'],
+  test: ['software', 'testing', 'bug', 'automation', 'code', 'regression'],
+  logs: ['software', 'monitoring', 'metrics', 'server', 'observability', 'logging', 'telemetry']
+};
+
 const TOPIC_AVOID = {
-  kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
-  k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
-  proxmox: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
-  docker: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
-  compose: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
+  kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
+  k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
+  proxmox: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
+  docker: ['ship', 'port', 'harbour', 'harbor'],
+  compose: ['ship', 'port', 'harbour', 'harbor'],
   devops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
-  gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan']
+  gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
+  rss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
+  freshrss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
+  logging: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber', 'space', 'spacex', 'rocket', 'nasa', 'cape canaveral'],
+  logger: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  observability: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  cloudwatch: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  regression: ['school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom'],
+  testing: ['school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom'],
+  doom: ['truck', 'pickup', 'vehicle', 'car', 'chevrolet'],
+  shareware: ['truck', 'pickup', 'vehicle', 'car', 'chevrolet']
 };
 
 const VISUAL_INTENTS = [
+  {
+    key: 'doom-shareware-history',
+    priority: 35,
+    pixabayImageType: 'all',
+    markers: ['doom', 'shareware', 'commander keen', 'wolfenstein'],
+    query: 'doom retro pc gaming shareware floppy disk 1990s',
+    queryVariants: [
+      'doom game 1993 pc',
+      'retro pc shareware floppy disk',
+      '1990s pc gaming floppy disk shareware'
+    ],
+    queryLimit: 6,
+    positive: ['doom', 'shareware', 'floppy', 'disk', '1990s', 'retro', 'pc', 'gaming', 'computer', 'dos'],
+    minMatches: 2,
+    requiredGroups: [
+      ['doom', 'shareware', 'floppy', 'dos', '1990s', 'retro'],
+      ['computer', 'pc', 'gaming', 'game', 'disk']
+    ],
+    avoid: ['modern console', 'controller', 'rgb', 'laptop', 'office', 'smartphone', 'esports']
+  },
   {
     key: 'pacman-arcade',
     priority: 30,
@@ -86,15 +167,24 @@ const VISUAL_INTENTS = [
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
       'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'album',
-      'office', 'laptop', 'keyboard', 'terminal', 'screenshot'
+      'office', 'laptop', 'keyboard', 'terminal', 'screenshot',
+      'smartphone', 'iphone', 'mobile', 'phone'
     ]
   },
   {
     key: 'writing-proofreading',
     markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
     query: 'writing proofreading text document keyboard spelling grammar',
-    positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter'],
-    avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business']
+    queryVariants: [
+      'proofreading correction paper spelling grammar',
+      'editing manuscript text correction document'
+    ],
+    positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter', 'correction', 'correcting'],
+    minMatches: 2,
+    requiredGroups: [
+      ['writing', 'text', 'document', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter']
+    ],
+    avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business', 'analytics', 'big data', 'cyber', 'security']
   },
   {
     key: 'rss-reader',
@@ -102,11 +192,16 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
     query: 'rss feed reader dashboard aggregator browser subscription',
-    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'subscription', 'syndication'],
+    queryVariants: [
+      'news feed dashboard browser articles subscriptions',
+      'feed reader interface subscriptions articles'
+    ],
+    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'subscription', 'syndication', 'articles'],
+    minMatches: 2,
     requiredGroups: [
       ['rss', 'feed', 'reader', 'aggregator', 'syndication']
     ],
-    avoid: ['speed', 'speedometer', 'download', 'upload', 'mbps', 'broadband', 'performance', 'icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    avoid: ['speed', 'speedometer', 'download', 'upload', 'mbps', 'broadband', 'performance', 'icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'ebook', 'e-book', 'kobo', 'tablet', 'reading', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',
@@ -114,7 +209,11 @@ const VISUAL_INTENTS = [
     markers: ['dependabot', 'dependency', 'dependencies', 'supply-chain', 'supply chain'],
     query: 'software dependency package update code github vulnerability',
     positive: ['dependency', 'dependencies', 'package', 'update', 'software', 'code', 'github', 'vulnerability'],
-    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance']
+    requiredGroups: [
+      ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability'],
+      ['software', 'code', 'github', 'package', 'version', 'repository']
+    ],
+    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance', 'analytics', 'big data', 'innovation', 'marketing', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand', 'drug', 'drugs', 'chemistry', 'chemical', 'tablet', 'addiction', 'addicted', 'medicine', 'medical', 'pharmaceutical']
   },
   {
     key: 'systemd-service',
@@ -122,23 +221,29 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['systemd', 'journalctl'],
     query: 'linux server administration monitoring service logs daemon',
-    positive: ['linux', 'server', 'service', 'logs', 'administration', 'monitoring', 'daemon', 'process'],
-    requiredGroups: [
-      ['service', 'logs', 'monitoring', 'daemon', 'process']
+    queryVariants: [
+      'linux service monitoring daemon process administration',
+      'server service logs monitoring process linux'
     ],
-    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
+    positive: ['linux', 'server', 'service', 'logs', 'administration', 'monitoring', 'daemon', 'process'],
+    minMatches: 2,
+    requiredGroups: [
+      ['service', 'daemon', 'process', 'systemd', 'journalctl'],
+      ['logs', 'monitoring', 'administration', 'linux']
+    ],
+    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision', 'consultant', 'advisor', 'analyst', 'specialist', 'cable', 'wire', 'ethernet', 'cyberspace', 'electronics']
   },
   {
     key: 'docker-compose',
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
-    markers: ['docker compose', 'docker', 'compose'],
-    query: 'devops deployment orchestration services architecture workflow',
-    positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation'],
+    markers: ['docker compose', 'docker-compose', 'compose'],
+    query: 'devops deployment orchestration services architecture workflow container',
+    positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation', 'container', 'shipping container', 'metal container'],
     requiredGroups: [
-      ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation']
+      ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation', 'container']
     ],
-    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'port', 'harbour', 'harbor', 'smarthome', 'iot', 'house']
   },
   {
     key: 'semantic-search',
@@ -146,9 +251,12 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
     query: 'search data code analytics magnifying glass',
-    positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
+    positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding', 'vector', 'retrieval', 'index'],
     minMatches: 2,
-    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar']
+    requiredGroups: [
+      ['search', 'embedding', 'vector', 'retrieval', 'index']
+    ],
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'ball', 'binary', 'matrix', 'philatelist', 'stamp', 'collecting', 'collection']
   },
   {
     key: 'vpc-networking',
@@ -157,6 +265,9 @@ const VISUAL_INTENTS = [
     query: 'computer network topology router routing subnet infrastructure',
     positive: ['topology', 'router', 'routing', 'subnet', 'infrastructure', 'ethernet'],
     minMatches: 2,
+    requiredGroups: [
+      ['topology', 'router', 'routing', 'subnet', 'ethernet', 'network']
+    ],
     avoid: ['social media', 'icons', 'online', 'smartphone', 'database', 'storage', 'rack', 'datacenter']
   },
   {
@@ -178,7 +289,12 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['chaos-engineering', 'chaos engineering', 'blast radius', 'steady state', 'resilience'],
     query: 'server monitoring outage incident failure resilience reliability',
-    positive: ['server', 'monitoring', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'resilience', 'observability'],
+    queryVariants: [
+      'server outage monitoring incident recovery infrastructure',
+      'infrastructure failure recovery monitoring reliability',
+      'resilience reliability server monitoring incident'
+    ],
+    positive: ['server', 'monitoring', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'resilience', 'observability', 'recovery'],
     minMatches: 2,
     requiredGroups: [
       ['monitoring', 'outage', 'incident', 'failure', 'reliability', 'resilience', 'observability']
@@ -191,8 +307,16 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['regressionstest', 'regression test', 'regression'],
     query: 'software testing quality assurance bug code',
-    positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
-    avoid: ['business', 'meeting', 'office']
+    queryVariants: [
+      'software test automation bug quality assurance',
+      'continuous integration automated testing code bug'
+    ],
+    positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code', 'automation', 'continuous integration'],
+    minMatches: 2,
+    requiredGroups: [
+      ['testing', 'test', 'bug', 'regression']
+    ],
+    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales', 'virus', 'malware', 'antivirus', 'security scan', 'cybersecurity']
   },
   {
     key: 'logging-observability',
@@ -200,18 +324,28 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['logger.info', 'logging', 'logger', 'observability'],
     query: 'server logs monitoring metrics observability cloudwatch alerts',
-    positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts'],
+    queryVariants: [
+      'application logs monitoring metrics alerts server',
+      'observability telemetry metrics logs monitoring'
+    ],
+    positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts', 'telemetry'],
+    minMatches: 2,
     requiredGroups: [
       ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts']
     ],
-    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office']
+    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office', 'wood', 'timber', 'firewood', 'forest', 'tree', 'lumber', 'space', 'spacex', 'rocket', 'nasa', 'cape canaveral']
   },
   {
     key: 'photo-storage-sync',
     pixabayCategory: 'computer',
     markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
     query: 'cloud photo backup files gallery sync',
-    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup'],
+    queryVariants: [
+      'photo library cloud backup gallery sync',
+      'image gallery files cloud synchronization backup',
+      'photo management cloud storage gallery files'
+    ],
+    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup', 'library', 'storage'],
     minMatches: 2,
     requiredGroups: [
       ['photo', 'gallery', 'image'],
@@ -319,26 +453,97 @@ function subjectAnchors(data = {}, query = '') {
   if (!queryTokens.length) return [];
 
   const candidatesFor = (identityTokens) => {
-    const identity = new Set(identityTokens.map(canonicalSubjectToken).filter(Boolean));
-    return [...new Set(
-      queryTokens
-        .filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token))
-        .filter((token) => identity.has(canonicalSubjectToken(token)))
+    const canonicalQuery = new Set(queryTokens.map(canonicalSubjectToken).filter(Boolean));
+    const anchors = [];
+
+    for (const rawToken of identityTokens) {
+      const token = canonicalSubjectToken(rawToken);
+      if (!token || token.length < 3 || GENERIC_SUBJECT_CONTEXT_TERMS.has(token)) continue;
+
+      if (canonicalQuery.has(token)) {
+        anchors.push(token);
+        continue;
+      }
+
+      const visualAliases = [
+        ...(SUBJECT_ALIAS_OVERRIDES[token] || [])
+      ]
+        .flatMap((value) => tokensFrom(value))
         .map(canonicalSubjectToken)
-        .filter((token) => token.length >= 3)
-    )].slice(0, 8);
+        .filter(Boolean);
+
+      if (visualAliases.some((alias) => canonicalQuery.has(alias))) {
+        anchors.push(token);
+      }
+    }
+
+    return [...new Set(anchors)].slice(0, 8);
   };
 
   // The article's own identity is stronger than the visual brief. A word that
   // only appears in cover_subject (for example "smartphone" in an NFC scene)
   // is context, not automatically the subject of the article.
-  const articleIdentity = candidatesFor([
-    ...tokensFrom(data.title),
-    ...normalizedTags(data).flatMap(tokensFrom)
-  ]);
-  if (articleIdentity.length) return articleIdentity;
+  const titleIdentity = candidatesFor(tokensFrom(data.title));
+  if (titleIdentity.length) return titleIdentity;
+
+  const tagIdentity = candidatesFor(normalizedTags(data).flatMap(tokensFrom));
+  if (tagIdentity.length) return tagIdentity;
 
   return candidatesFor(tokensFrom(data.cover_subject));
+}
+
+function subjectAliasTokens(anchor, intent = null) {
+  const aliases = new Set([anchor]);
+
+  for (const related of SUBJECT_ALIAS_OVERRIDES[anchor] || []) {
+    for (const token of tokensFrom(related)) aliases.add(canonicalSubjectToken(token));
+  }
+
+  // Intent groups validate the scene separately. Subject aliases stay
+  // intentionally narrower, otherwise era/style words such as "retro" or
+  // "1990s" could impersonate a concrete subject such as DOOM.
+  void intent;
+
+  return [...aliases].filter(Boolean);
+}
+
+function subjectAliasContextMet(anchor, alias, canonicalHits) {
+  // A literal container is an intentional Docker/Compose visual metaphor, but
+  // the word "container" alone is still too broad (mailboxes, storage boxes,
+  // fruit crates). Require either technical Docker context or unmistakable
+  // freight-container vocabulary.
+  if (alias === 'container' && ['docker', 'compose'].includes(anchor)) {
+    const dockerContainerContext = [
+      'docker', 'compose', 'devops', 'deployment', 'orchestration',
+      'metal', 'steel', 'shipping', 'cargo', 'freight', 'intermodal'
+    ].map(canonicalSubjectToken);
+    return dockerContainerContext.some((token) => canonicalHits.has(token));
+  }
+
+  const required = SUBJECT_ALIAS_CONTEXT[alias] || [];
+  if (!required.length) return true;
+  return required
+    .map(canonicalSubjectToken)
+    .some((token) => canonicalHits.has(token));
+}
+
+function subjectAnchorEvidence(hitTokens, anchors, intent = null) {
+  const canonicalHits = new Set([...hitTokens].map(canonicalSubjectToken));
+  const matches = [];
+  const evidence = {};
+
+  for (const anchor of anchors) {
+    const aliases = subjectAliasTokens(anchor, intent);
+    const hit = aliases.find((token) =>
+      canonicalHits.has(token)
+      && (token === anchor || subjectAliasContextMet(anchor, token, canonicalHits))
+    );
+    if (!hit) continue;
+    matches.push(anchor);
+    evidence[anchor] = hit;
+  }
+
+  return { matches, evidence };
 }
 
 function markerMatches(value, markers) {
@@ -469,6 +674,98 @@ function visualQuery(data) {
   return visualTerms.slice(0, 8).join(' ').slice(0, 100);
 }
 
+function compactQuery(parts) {
+  return [...new Set(
+    parts
+      .flatMap((value) => String(value || '').split(/\s+/))
+      .map((value) => value.trim())
+      .filter(Boolean)
+  )].slice(0, 4).join(' ').slice(0, 100);
+}
+
+function subjectSearchVariants(data = {}, intent = null) {
+  const seedQuery = intent?.query || data.cover_query || defaultQuery(data);
+  const anchors = subjectAnchors(data, seedQuery);
+  const variants = [];
+
+  for (const anchor of anchors.slice(0, 3)) {
+    const phrases = [
+      anchor,
+      ...(SUBJECT_ALIAS_OVERRIDES[anchor] || [])
+    ].filter(Boolean);
+
+    const aliases = phrases
+      .slice(1)
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+
+    if (aliases.length) {
+      variants.push(compactQuery([anchor, aliases[0]]));
+    }
+    if (aliases.length >= 2) {
+      variants.push(compactQuery([aliases[0], aliases[1]]));
+      variants.push(compactQuery([anchor, aliases[0], aliases[1]]));
+    }
+    if (aliases.length >= 3) {
+      variants.push(compactQuery([aliases[0], aliases[1], aliases[2]]));
+    }
+  }
+
+  if (intent) {
+    const positiveTerms = [...new Set(
+      (intent.positive || []).flatMap((value) => tokensFrom(value))
+    )].filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token));
+
+    const requiredGroups = (intent.requiredGroups || [])
+      .map((group) => [...new Set(group.flatMap((value) => tokensFrom(value)))])
+      .filter((group) => group.length);
+
+    for (const group of requiredGroups.slice(0, 3)) {
+      variants.push(compactQuery(group.slice(0, 3)));
+      const context = positiveTerms.find((term) => !group.includes(term));
+      if (context) variants.push(compactQuery([...group.slice(0, 2), context]));
+    }
+
+    if (positiveTerms.length >= 3) {
+      variants.push(compactQuery(positiveTerms.slice(0, 3)));
+    }
+  }
+
+  return [...new Set(variants.filter(Boolean))].slice(0, 8);
+}
+
+function intentSearchVariants(data = {}, intent = null) {
+  if (!intent) return [];
+
+  const anchors = subjectAnchors(data, intent.query || data.cover_query || '');
+  const requiredTerms = [...new Set(
+    (intent.requiredGroups || [])
+      .flatMap((group) => group)
+      .flatMap((value) => tokensFrom(value))
+  )];
+  const positiveTerms = [...new Set(
+    (intent.positive || []).flatMap((value) => tokensFrom(value))
+  )];
+
+  const variants = [];
+  if (anchors.length && requiredTerms.length) {
+    variants.push(compactQuery([anchors[0], ...requiredTerms.slice(0, 3)]));
+  }
+  if (requiredTerms.length) {
+    variants.push(compactQuery(requiredTerms.slice(0, 4)));
+  } else if (positiveTerms.length) {
+    variants.push(compactQuery(positiveTerms.slice(0, 4)));
+  }
+
+  variants.push(...subjectSearchVariants(data, intent));
+
+  return [...new Set(
+    variants
+      .map((value) => String(value || '').trim().slice(0, 100))
+      .filter(Boolean)
+  )].slice(0, 10);
+}
+
 function articleVisualBrief(data = {}) {
   const tags = normalizedTags(data).slice(0, 6);
   const searchQueries = Array.isArray(data.search_queries)
@@ -522,18 +819,23 @@ function queryCandidates(data, explicitQuery = '') {
     .slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
+  const subjectQueries = subjectSearchVariants(data, intent);
   const intentQueries = intent
-    ? [intent.query, ...(Array.isArray(intent.queryVariants) ? intent.queryVariants : [])]
+    ? [
+        intent.query,
+        ...(Array.isArray(intent.queryVariants) ? intent.queryVariants : []),
+        ...intentSearchVariants(data, intent)
+      ]
     : [];
   const candidates = explicitQuery
     ? (intent
-      ? [primary, ...intentQueries, visual || fallback]
+      ? [primary, ...intentQueries, ...subjectQueries, visual || fallback]
       : [primary, visual, fallback])
     : (intent
-      ? [...intentQueries, primary, visual || fallback]
-      : [primary, title, visual || fallback]);
+      ? [...intentQueries, ...subjectQueries, primary, visual || fallback]
+      : [primary, ...subjectQueries, title, visual || fallback]);
 
-  const queryLimit = Math.max(1, Number(intent?.queryLimit || 3));
+  const queryLimit = Math.max(1, Number(intent?.queryLimit || (intent ? 8 : 6)));
   return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, queryLimit);
 }
 
@@ -567,12 +869,18 @@ function articleProfile(data, query = '') {
   const explicitAvoidTokens = explicitAvoid
     .flatMap((value) => tokensFrom(value))
     .filter((token) => !subjectSet.has(canonicalSubjectToken(token)));
+  const contextualAvoidTokens = contextualAvoid
+    .flatMap((value) => tokensFrom(value))
+    .filter((token) => !subjectSet.has(canonicalSubjectToken(token)));
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
-    ...contextualAvoid.flatMap((value) => tokensFrom(value)),
+    ...contextualAvoidTokens,
     ...explicitAvoidTokens
   ]);
-  const hardAvoid = new Set(explicitAvoidTokens);
+  const hardAvoid = new Set([
+    ...contextualAvoidTokens,
+    ...explicitAvoidTokens
+  ]);
 
   const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
   const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
@@ -657,8 +965,9 @@ function scoreHit(hit, data = {}, query = '') {
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
   const hardAvoidMatches = [...hitTokens].filter((token) => profile.hardAvoid.has(token));
-  const canonicalHitTokens = new Set([...hitTokens].map(canonicalSubjectToken));
-  const subjectAnchorMatches = profile.subjectAnchors.filter((token) => canonicalHitTokens.has(token));
+  const subjectEvidence = subjectAnchorEvidence(hitTokens, profile.subjectAnchors, profile.intent);
+  const subjectAnchorMatches = subjectEvidence.matches;
+  const subjectAnchorEvidenceMap = subjectEvidence.evidence;
   const subjectAnchorRequired = profile.subjectAnchors.length > 0;
   const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
@@ -666,11 +975,18 @@ function scoreHit(hit, data = {}, query = '') {
     (group) => [...hitTokens].filter((token) => group.has(token))
   );
   const requiredGroupsMet = requiredGroupMatches.every((matches) => matches.length > 0);
+  const topicalEvidenceRequired = !subjectAnchorRequired && !profile.intent;
+  const topicalEvidenceMet = directMatches.length > 0 || expandedMatches.length > 0;
 
   if (subjectAnchorRequired) {
     if (subjectAnchorMatches.length) {
       score += 24;
-      reasons.push(`+24 subject anchor: ${subjectAnchorMatches.slice(0, 3).join(', ')}`);
+      const evidence = subjectAnchorMatches
+        .slice(0, 3)
+        .map((anchor) => subjectAnchorEvidenceMap[anchor] && subjectAnchorEvidenceMap[anchor] !== anchor
+          ? `${anchor}→${subjectAnchorEvidenceMap[anchor]}`
+          : anchor);
+      reasons.push(`+24 subject anchor: ${evidence.join(', ')}`);
     } else {
       score -= 45;
       reasons.push(`-45 missing subject anchor: ${profile.subjectAnchors.slice(0, 4).join(', ')}`);
@@ -763,11 +1079,14 @@ function scoreHit(hit, data = {}, query = '') {
     hardAvoidMatches,
     subjectAnchors: profile.subjectAnchors,
     subjectAnchorMatches,
+    subjectAnchorEvidence: subjectAnchorEvidenceMap,
     subjectAnchorRequired,
     intentKey: profile.intent?.key || '',
     intentMatches,
     intentAvoidMatches,
     requiredGroupMatches,
+    topicalEvidenceRequired,
+    topicalEvidenceMet,
     heroRejected: gate.rejected,
     heroRejectReasons: gate.reasons,
     heroWidth: gate.width,
@@ -776,6 +1095,7 @@ function scoreHit(hit, data = {}, query = '') {
     heroLogoLike: gate.logoLike,
     semanticMismatch: Boolean(
       gate.rejected
+      || (topicalEvidenceRequired && !topicalEvidenceMet)
       || (subjectAnchorRequired && subjectAnchorMatches.length === 0)
       || hardAvoidMatches.length > 0
       || intentAvoidMatches.length > 0
@@ -820,10 +1140,30 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
   const category = String(options.category || '').trim().toLowerCase();
   if (category) url.searchParams.set('category', category);
 
-  const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(`Pixabay search failed with HTTP ${response.status}`);
-  const payload = await response.json();
-  return Array.isArray(payload.hits) ? payload.hits : [];
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || 4));
+  const sleep = options.sleep || delay;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
+
+    if (response.ok) {
+      const payload = await response.json();
+      return Array.isArray(payload.hits) ? payload.hits : [];
+    }
+
+    const retryable = response.status === 429 || response.status >= 500;
+    if (!retryable || attempt === maxAttempts) {
+      throw new Error(`Pixabay search failed with HTTP ${response.status}`);
+    }
+
+    const retryAfter = Number(response.headers?.get?.('retry-after') || 0);
+    const retryMs = retryAfter > 0
+      ? retryAfter * 1000
+      : Math.min(8000, 500 * (2 ** (attempt - 1)));
+    await sleep(retryMs);
+  }
+
+  return [];
 }
 
 function cacheFileForQuery(
@@ -857,7 +1197,11 @@ async function searchPixabayCached(query, apiKey, options = {}) {
     if (!error || (error.code !== 'ENOENT' && error.name !== 'SyntaxError')) throw error;
   }
 
-  const hits = await searchPixabay(query, apiKey, fetchImpl, { category, imageType });
+  const hits = await searchPixabay(query, apiKey, fetchImpl, {
+    ...options,
+    category,
+    imageType
+  });
   await fs.mkdir(cacheDir, { recursive: true });
   await fs.writeFile(
     cacheFile,
@@ -873,7 +1217,19 @@ async function collectCandidates(queries, apiKey, options = {}) {
 
   for (const query of queries) {
     console.log(`Searching Pixabay for: ${query}`);
-    const hits = await searchImpl(query, apiKey, options.searchOptions || {});
+    let hits;
+    try {
+      hits = await searchImpl(query, apiKey, options.searchOptions || {});
+    } catch (error) {
+      const message = String(error?.message || error || '');
+      if (/Pixabay search failed with HTTP 429/.test(message) && byId.size > 0) {
+        console.warn(
+          `Pixabay rate limit reached after ${byId.size} candidate(s); keeping the partial pool and stopping further queries.`
+        );
+        break;
+      }
+      throw error;
+    }
 
     for (const hit of hits) {
       const key = String(hit.id || hit.pageURL || hit.webformatURL || '');
@@ -1077,7 +1433,10 @@ function reportCandidate(entry, index) {
     intentMatches: entry.intentMatches || [],
     subjectAnchors: entry.subjectAnchors || [],
     subjectAnchorMatches: entry.subjectAnchorMatches || [],
+    subjectAnchorEvidence: entry.subjectAnchorEvidence || {},
     subjectAnchorRequired: Boolean(entry.subjectAnchorRequired),
+    topicalEvidenceRequired: Boolean(entry.topicalEvidenceRequired),
+    topicalEvidenceMet: Boolean(entry.topicalEvidenceMet),
     hardAvoidMatches: entry.hardAvoidMatches || [],
     requiredGroupMatches: entry.requiredGroupMatches || [],
     semanticMismatch: Boolean(entry.semanticMismatch),
@@ -1224,6 +1583,8 @@ module.exports = {
   fileExtension,
   findPhotoById,
   heroHardGate,
+  intentSearchVariants,
+  subjectSearchVariants,
   parseArgs,
   queryCandidates,
   visualIntent,
@@ -1235,5 +1596,8 @@ module.exports = {
   searchPixabay,
   searchPixabayCached,
   subjectAnchors,
+  subjectAliasTokens,
+  subjectAliasContextMet,
+  subjectAnchorEvidence,
   updateCoverStylesheet
 };

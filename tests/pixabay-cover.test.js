@@ -26,7 +26,11 @@ const {
   scoreHit,
   searchPixabay,
   searchPixabayCached,
-  subjectAnchors
+  subjectAnchors,
+  subjectAliasTokens,
+  subjectAnchorEvidence,
+  intentSearchVariants,
+  subjectSearchVariants
 } = require('../scripts/resolve-pixabay-cover');
 
 describe('Pixabay cover resolver', () => {
@@ -124,6 +128,37 @@ describe('Pixabay cover resolver', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0].id).toBe(42);
     expect(fetchImpl).toHaveBeenCalledOnce();
+  });
+
+  it('retries transient Pixabay throttling with backoff', async () => {
+    let attempt = 0;
+    const sleep = globalThis.vi.fn(async () => {});
+    const fetchImpl = globalThis.vi.fn(async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        return {
+          ok: false,
+          status: 429,
+          headers: { get: () => null }
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({ hits: [{ id: 77, tags: 'rss, feed, reader' }] })
+      };
+    });
+
+    const hits = await searchPixabay('rss feed reader', 'test-key', fetchImpl, {
+      maxAttempts: 3,
+      sleep
+    });
+
+    expect(hits).toHaveLength(1);
+    expect(hits[0].id).toBe(77);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledWith(500);
   });
 
   it('hard-rejects undersized and logo-like hero candidates', () => {
@@ -258,6 +293,19 @@ describe('Pixabay cover resolver', () => {
     })[0]).toBe('monkey ape primate chimpanzee macaque');
   });
 
+  it('does not route every Docker article into the Docker Compose intent', () => {
+    expect(visualIntent({
+      title: 'Deployment mit Hetzner, Docker und Cloudflare Zero Trust',
+      tags: ['Hetzner', 'Docker', 'Cloudflare', 'DevOps'],
+      excerpt: 'Ein Deployment mit Containern und Cloudflare Zero Trust.'
+    })?.key || '').not.toBe('docker-compose');
+
+    expect(visualIntent({
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      tags: ['Docker', 'Compose', 'DevOps']
+    }).key).toBe('docker-compose');
+  });
+
   it('expands a strict intent into multiple focused search variants', () => {
     const article = {
       title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
@@ -337,6 +385,437 @@ describe('Pixabay cover resolver', () => {
     expect(result.semanticMismatch).toBe(false);
   });
 
+  it('matches conceptual subjects through reusable visual aliases', () => {
+    const rss = scoreHit({
+      type: 'illustration',
+      tags: 'feed, reader, dashboard, browser, subscription',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'RSS ist nicht tot',
+      tags: ['RSS', 'FreshRSS'],
+      cover_query: 'rss feed reader dashboard aggregator browser subscription'
+    });
+
+    expect(rss.subjectAnchors).toContain('rss');
+    expect(rss.subjectAnchorMatches).toContain('rss');
+    expect(rss.subjectAnchorEvidence.rss).toBe('feed');
+
+    const vpc = scoreHit({
+      type: 'photo',
+      tags: 'network, router, routing, ethernet, topology',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'Eine VPC ist keine schwarze Magie',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet'],
+      cover_query: 'computer network topology router routing subnet infrastructure'
+    });
+
+    expect(vpc.subjectAnchors).toContain('vpc');
+    expect(vpc.subjectAnchorMatches).toContain('vpc');
+    expect(['topology', 'subnet', 'router', 'routing', 'ethernet']).toContain(
+      vpc.subjectAnchorEvidence.vpc
+    );
+  });
+
+  it('allows a literal metal container as a Docker visual metaphor', () => {
+    const article = {
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      tags: ['Docker', 'Docker-Compose', 'DevOps'],
+      cover_query: 'devops deployment orchestration services architecture workflow container'
+    };
+
+    const metalContainer = scoreHit({
+      type: 'photo',
+      tags: 'shipping container, metal container, cargo container, steel, freight',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const cargoShip = scoreHit({
+      type: 'photo',
+      tags: 'cargo ship, container ship, port, harbor, freight, shipping',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const mailbox = scoreHit({
+      type: 'photo',
+      tags: 'wood, outdoors, rural, mailboxes, communication, snail mail, post boxes, rustic, container',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(metalContainer.semanticMismatch).toBe(false);
+    expect(mailbox.semanticMismatch).toBe(true);
+    expect(cargoShip.semanticMismatch).toBe(true);
+    expect(cargoShip.hardAvoidMatches).toEqual(expect.arrayContaining(['ship', 'port']));
+  });
+
+  it('requires technical context for ambiguous subject aliases such as cluster and container', () => {
+    const article = {
+      title: 'K3s auf Proxmox – Teil II: GitOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox', 'GitOps'],
+      cover_query: 'server datacenter infrastructure network cloud container cluster kubernetes'
+    };
+
+    const fruitCluster = scoreHit({
+      type: 'photo',
+      tags: 'currant, fruits, berries, cluster, harvest, produce, organic',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const metalContainer = scoreHit({
+      type: 'photo',
+      tags: 'yellow, blue, container, window, color, metal, geometry',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const kubernetesCluster = scoreHit({
+      type: 'illustration',
+      tags: 'kubernetes, cluster, container, orchestration, server, cloud, infrastructure',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(fruitCluster.subjectAnchors).toContain('k3s');
+    expect(fruitCluster.subjectAnchorMatches).toHaveLength(0);
+    expect(fruitCluster.semanticMismatch).toBe(true);
+
+    expect(metalContainer.subjectAnchorMatches).toHaveLength(0);
+    expect(metalContainer.semanticMismatch).toBe(true);
+
+    expect(kubernetesCluster.subjectAnchorMatches).toContain('k3s');
+    expect(kubernetesCluster.semanticMismatch).toBe(false);
+  });
+
+  it('turns a blog topic into a concrete website/publishing subject instead of generic analytics', () => {
+    const article = {
+      title: 'Wie dieser Blog gebaut ist',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    };
+
+    const analytics = scoreHit({
+      type: 'illustration',
+      tags: 'analytics, information, innovation, communication, big data, cyber security',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const publishing = scoreHit({
+      type: 'illustration',
+      tags: 'website, publishing, web, code, server, deployment',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(analytics.subjectAnchors).toContain('blog');
+    expect(analytics.semanticMismatch).toBe(true);
+    expect(publishing.subjectAnchorMatches).toContain('blog');
+    expect(publishing.semanticMismatch).toBe(false);
+  });
+
+  it('keeps concrete subjects strict when no visual alias is defined', () => {
+    const evidence = subjectAnchorEvidence(
+      new Set(['smartphone', 'game', 'retro']),
+      ['pokemon'],
+      visualIntent({
+        title: 'Pokémon ist perfekt für OOP',
+        tags: ['Pokémon'],
+        cover_intent: 'pokemon-oop-domain-model'
+      })
+    );
+
+    expect(evidence.matches).toHaveLength(0);
+    expect(subjectAliasTokens('pokemon')).toEqual(['pokemon']);
+  });
+
+  it('builds short subject-aware queries for technical topics without article-specific hacks', () => {
+    const k3s = {
+      title: 'K3s auf Proxmox – Teil I: Blog-Staging',
+      tags: ['Kubernetes', 'K3s', 'Proxmox', 'Cloudflare'],
+      cover_query: 'server datacenter infrastructure network cloud container cluster kubernetes'
+    };
+    const k3sVariants = subjectSearchVariants(k3s);
+    expect(k3sVariants).toEqual(expect.arrayContaining([
+      'k3s kubernetes',
+      'kubernetes cluster'
+    ]));
+    expect(queryCandidates(k3s).length).toBeGreaterThan(3);
+
+    const rss = {
+      title: 'RSS ist nicht tot',
+      tags: ['RSS', 'FreshRSS'],
+      cover_query: 'rss feed reader dashboard aggregator browser subscription'
+    };
+    const rssIntent = visualIntent(rss);
+    expect(subjectSearchVariants(rss, rssIntent)).toEqual(expect.arrayContaining([
+      'rss feed',
+      'feed reader'
+    ]));
+
+    const immich = {
+      title: 'Warum ich Immich nicht synchronisiere',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone'],
+      cover_query: 'photo storage server cloud gallery files sync homelab'
+    };
+    const immichIntent = visualIntent(immich);
+    expect(subjectSearchVariants(immich, immichIntent)).toEqual(expect.arrayContaining([
+      'immich photo',
+      'photo gallery'
+    ]));
+  });
+
+  it('derives extra search variants from reusable intent vocabulary', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations'],
+      cover_query: 'linux server administration monitoring service logs daemon'
+    };
+    const intent = visualIntent(systemd);
+    const variants = intentSearchVariants(systemd, intent);
+    expect(variants.some((value) => value.includes('service'))).toBe(true);
+    expect(queryCandidates(systemd).length).toBeGreaterThan(2);
+  });
+
+  it('supports the configured DOOM shareware visual intent', () => {
+    const article = {
+      title: 'DOOM: Wie Shareware das PC-Gaming veränderte',
+      tags: ['DOOM', 'Shareware', 'Retro-Gaming'],
+      cover_intent: 'doom-shareware-history',
+      cover_query: 'doom retro pc gaming shareware floppy disk 1990s'
+    };
+    const intent = visualIntent(article);
+    expect(intent.key).toBe('doom-shareware-history');
+
+    const floppy = scoreHit({
+      type: 'photo',
+      tags: 'floppy, disk, retro, computer, dos, data',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const modern = scoreHit({
+      type: 'photo',
+      tags: 'rgb, laptop, esports, controller, modern gaming',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    const genericDisk = scoreHit({
+      type: 'photo',
+      tags: 'binary, disk, storage, registration, magnetic, device, digital, archive',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(floppy.semanticMismatch).toBe(false);
+    expect(genericDisk.semanticMismatch).toBe(true);
+    expect(modern.semanticMismatch).toBe(true);
+  });
+
+  it('promotes only explicitly curated visual aliases into subject identity', () => {
+    const anchors = subjectAnchors({
+      title: 'Wie dieser Blog gebaut ist',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    });
+
+    expect(anchors).toContain('blog');
+    expect(anchors).not.toContain('devops');
+  });
+
+  it('hard-rejects known cross-domain word collisions', () => {
+    const cases = [
+      {
+        article: {
+          title: 'logger.info() – wird schon nichts kosten',
+          tags: ['AWS', 'CloudWatch', 'Observability', 'Logging'],
+          cover_query: 'server logs monitoring metrics observability cloudwatch alerts'
+        },
+        hit: 'wood, logs, firewood, timber, forest'
+      },
+      {
+        article: {
+          title: 'K3s auf Proxmox – Production',
+          tags: ['Kubernetes', 'K3s', 'Proxmox'],
+          cover_query: 'kubernetes proxmox server datacenter infrastructure'
+        },
+        hit: 'proxy, proxy server, web proxy, scraping, network'
+      },
+      {
+        article: {
+          title: 'Regressionstests – was sie sind',
+          tags: ['Testing', 'Regressionstest', 'CI'],
+          cover_query: 'software testing quality assurance bug code'
+        },
+        hit: 'pupil, school, teaching, education, testing, laptop'
+      },
+      {
+        article: {
+          title: 'RSS ist nicht tot',
+          tags: ['RSS', 'FreshRSS'],
+          cover_query: 'rss feed reader dashboard aggregator browser subscription'
+        },
+        hit: 'kobo, ebook, tablet, reading, reader'
+      },
+      {
+        article: {
+          title: 'DOOM: Wie Shareware das PC-Gaming veränderte',
+          tags: ['DOOM', 'Shareware', 'Retro-Gaming'],
+          cover_intent: 'doom-shareware-history',
+          cover_query: 'doom retro pc gaming shareware floppy disk 1990s'
+        },
+        hit: 'truck, pickup, chevrolet, 1993, 1990s, retro'
+      }
+    ];
+
+    for (const entry of cases) {
+      const result = scoreHit({
+        type: 'photo',
+        tags: entry.hit,
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, entry.article);
+      expect(result.semanticMismatch, entry.hit).toBe(true);
+      expect(result.hardAvoidMatches.length, entry.hit).toBeGreaterThan(0);
+    }
+  });
+
+  it('prefers title-derived subjects over broader tags', () => {
+    const docker = subjectAnchors({
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      tags: ['Docker', 'Compose', 'DevOps', 'Automation'],
+      cover_query: 'devops deployment orchestration services architecture workflow'
+    });
+
+    expect(docker).toEqual(expect.arrayContaining(['docker', 'compose']));
+    expect(docker).not.toContain('devops');
+
+    const blog = subjectAnchors({
+      title: 'Wie dieser Blog gebaut ist',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    });
+
+    expect(blog).toContain('blog');
+    expect(blog).not.toContain('devops');
+  });
+
+  it('rejects generic stock motifs for concrete technical intents', () => {
+    const cases = [
+      {
+        article: {
+          title: 'Dependabot im Einsatz',
+          tags: ['Dependabot', 'GitHub', 'Dependencies'],
+          cover_query: 'software dependency package update code github vulnerability'
+        },
+        hit: 'analytics, information, innovation, communication, big data, cyber security'
+      },
+      {
+        article: {
+          title: 'Dependabot im Einsatz',
+          tags: ['Dependabot', 'GitHub', 'Dependencies'],
+          cover_query: 'software dependency package update code github vulnerability'
+        },
+        hit: 'mobile, hand, technology, communication, wireless, dependency, gambling'
+      },
+      {
+        article: {
+          title: 'Dependabot im Einsatz',
+          tags: ['Dependabot', 'GitHub', 'Dependencies'],
+          cover_query: 'software dependency package update code github vulnerability'
+        },
+        hit: 'chemistry, structural formula, harmful, addicted, tablets, dependency, drugs'
+      },
+      {
+        article: {
+          title: 'Kernel Grep: semantische Suche',
+          tags: ['Semantic-Search', 'Embeddings', 'Kernel-Grep'],
+          cover_query: 'search data code analytics magnifying glass'
+        },
+        hit: 'ball, binary, computer data, binary matrix, digital binary'
+      },
+      {
+        article: {
+          title: 'Kernel Grep: semantische Suche',
+          tags: ['Semantic-Search', 'Embeddings', 'Kernel-Grep'],
+          cover_query: 'search data code analytics magnifying glass'
+        },
+        hit: 'philatelist, stamp collection, stamp, collecting, collection, glass, zoom, detail'
+      },
+      {
+        article: {
+          title: 'systemd Services sauber betreiben',
+          tags: ['Linux', 'systemd', 'Operations'],
+          cover_query: 'linux server administration monitoring service logs daemon'
+        },
+        hit: 'cyberspace, data, wire, electronic, ethernet, infrastructure, cable, computer'
+      },
+      {
+        article: {
+          title: 'systemd Services sauber betreiben',
+          tags: ['Linux', 'systemd', 'Operations'],
+          cover_query: 'linux server administration monitoring service logs daemon'
+        },
+        hit: 'cloud, monitor, cloud computing, data store, capacity, network, services, disk space'
+      },
+      {
+        article: {
+          title: 'Regressionstests – was sie sind',
+          tags: ['Testing', 'Regressionstest', 'CI'],
+          cover_query: 'software testing quality assurance bug code'
+        },
+        hit: 'marketing, development, software, usefulness, consumer-friendly, quality, cost'
+      },
+      {
+        article: {
+          title: 'Regressionstests – was sie sind',
+          tags: ['Testing', 'Regressionstest', 'CI'],
+          cover_query: 'software testing quality assurance bug code'
+        },
+        hit: 'scan, system, bug, virus, malware, search, error, code, alert'
+      }
+    ];
+
+    for (const entry of cases) {
+      const result = scoreHit({
+        type: 'illustration',
+        tags: entry.hit,
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, entry.article);
+
+      expect(result.semanticMismatch, entry.hit).toBe(true);
+    }
+  });
+
+  it('uses a curated subject anchor before broad lexical topic evidence', () => {
+    const article = {
+      title: 'Wie dieser Blog gebaut ist',
+      category: 'Engineering',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    };
+
+    const unrelated = scoreHit({
+      type: 'illustration',
+      tags: 'analytics, information, innovation, communication, big data, cyber security',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const relevant = scoreHit({
+      type: 'illustration',
+      tags: 'website, publishing, web, code, server, deployment, infrastructure, cloud',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(unrelated.subjectAnchorRequired).toBe(true);
+    expect(unrelated.subjectAnchorMatches).toHaveLength(0);
+    expect(unrelated.semanticMismatch).toBe(true);
+    expect(relevant.subjectAnchorMatches).toContain('blog');
+    expect(relevant.semanticMismatch).toBe(false);
+  });
+
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
     const article = {
       title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
@@ -377,6 +856,25 @@ describe('Pixabay cover resolver', () => {
       title: 'Example',
       cover_intent: 'does-not-exist'
     })).toThrow('Unknown cover_intent "does-not-exist"');
+  });
+
+  it('rejects mobile Pokémon-Go imagery for the handheld/game intent', () => {
+    const result = scoreHit({
+      type: 'illustration',
+      tags: 'pokemon, smartphone, pokemon go, virtual, game, iphone, reality, mobile',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      tags: ['Pokémon', 'Java', 'OOP'],
+      cover_intent: 'pokemon-oop-domain-model',
+      cover_query: 'pokemon game handheld battle'
+    });
+
+    expect(result.semanticMismatch).toBe(true);
+    expect(result.hardAvoidMatches).toEqual(
+      expect.arrayContaining(['smartphone', 'iphone', 'mobile'])
+    );
   });
 
   it('rejects a semantically adjacent but wrong franchise for Pokémon covers', () => {
@@ -1066,6 +1564,27 @@ describe('Pixabay cover resolver', () => {
     expect(hits[2].__coverQuery).toBe('fallback');
   });
 
+  it('keeps an already collected candidate pool when Pixabay starts rate limiting', async () => {
+    const searchImpl = globalThis.vi.fn(async (query) => {
+      if (query === 'primary') {
+        return [
+          { id: 1, tags: 'dependency, package, update, software' },
+          { id: 2, tags: 'github, repository, code' }
+        ];
+      }
+      throw new Error('Pixabay search failed with HTTP 429');
+    });
+
+    const hits = await collectCandidates(
+      ['primary', 'fallback', 'extra'],
+      'secret',
+      { searchImpl }
+    );
+
+    expect(searchImpl).toHaveBeenCalledTimes(2);
+    expect(hits.map((hit) => hit.id)).toEqual([1, 2]);
+  });
+
   it('ranks technically relevant images above generic people stock photos', () => {
     const article = {
       title: 'Warum ich Immich nicht synchronisiere',
@@ -1074,7 +1593,7 @@ describe('Pixabay cover resolver', () => {
     };
     const technical = {
       id: 1,
-      tags: 'server, storage, cloud, files, network',
+      tags: 'photo, gallery, storage, cloud, files, network',
       imageWidth: 1920,
       imageHeight: 1080,
       downloads: 5000,
