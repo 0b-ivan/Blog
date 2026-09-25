@@ -367,10 +367,10 @@ describe('Pixabay cover resolver', () => {
       cover_query: 'computer network topology router routing subnet infrastructure'
     });
 
-    expect(vpc.subjectAnchors).toContain('subnet');
-    expect(vpc.subjectAnchorMatches).toContain('subnet');
-    expect(['network', 'topology', 'router', 'routing', 'ethernet']).toContain(
-      vpc.subjectAnchorEvidence.subnet
+    expect(vpc.subjectAnchors).toContain('vpc');
+    expect(vpc.subjectAnchorMatches).toContain('vpc');
+    expect(['network', 'cloud', 'infrastructure', 'datacenter']).toContain(
+      vpc.subjectAnchorEvidence.vpc
     );
   });
 
