@@ -28,6 +28,14 @@ const WEAK_DIRECT_TERMS = new Set([
   'architecture', 'deployment', 'engineering', 'operations'
 ]);
 
+const GENERIC_SUBJECT_CONTEXT_TERMS = new Set([
+  'article', 'blog', 'technical', 'technology', 'software', 'programming', 'code',
+  'engineering', 'architecture', 'system', 'service', 'application', 'automation',
+  'game', 'gaming', 'retro', 'handheld', 'console', 'battle', 'combat', 'fight',
+  'creature', 'monster', 'fantasy', 'rpg', 'cloud', 'server', 'network', 'data',
+  'image', 'photo', 'illustration', 'scene', 'workflow', 'computer'
+]);
+
 const TOPIC_AVOID = {
   kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
   k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
@@ -302,6 +310,30 @@ function listFrom(value) {
   return String(value || '').split(/[,;]+/).flatMap((item) => tokensFrom(item));
 }
 
+function canonicalSubjectToken(value) {
+  return normalizeText(value).replace(/[^a-z0-9+#]+/g, '');
+}
+
+function subjectAnchors(data = {}, query = '') {
+  const queryTokens = tokensFrom(query || data.cover_query);
+  if (!queryTokens.length) return [];
+
+  const identityTokens = [
+    ...tokensFrom(data.title),
+    ...normalizedTags(data).flatMap(tokensFrom),
+    ...tokensFrom(data.cover_subject)
+  ];
+  const identity = new Set(identityTokens.map(canonicalSubjectToken).filter(Boolean));
+
+  return [...new Set(
+    queryTokens
+      .filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token))
+      .filter((token) => identity.has(canonicalSubjectToken(token)))
+      .map(canonicalSubjectToken)
+      .filter((token) => token.length >= 3)
+  )].slice(0, 8);
+}
+
 function markerMatches(value, markers) {
   const haystack = normalizeText(value);
   if (!haystack) return [];
@@ -500,6 +532,8 @@ function queryCandidates(data, explicitQuery = '') {
 
 function articleProfile(data, query = '') {
   const intent = visualIntent(data);
+  const subject = subjectAnchors(data, query);
+  const subjectSet = new Set(subject);
   const primary = new Set([
     ...tokensFrom(data.cover_subject),
     ...tokensFrom(data.cover_query),
@@ -523,12 +557,15 @@ function articleProfile(data, query = '') {
     ...(intent?.avoid || []),
     ...listFrom(data.cover_avoid)
   ];
+  const explicitAvoidTokens = explicitAvoid
+    .flatMap((value) => tokensFrom(value))
+    .filter((token) => !subjectSet.has(canonicalSubjectToken(token)));
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
-    ...contextualAvoid,
-    ...explicitAvoid
-  ].flatMap((value) => tokensFrom(value)));
-  const hardAvoid = new Set(explicitAvoid.flatMap((value) => tokensFrom(value)));
+    ...contextualAvoid.flatMap((value) => tokensFrom(value)),
+    ...explicitAvoidTokens
+  ]);
+  const hardAvoid = new Set(explicitAvoidTokens);
 
   const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
   const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
@@ -539,6 +576,7 @@ function articleProfile(data, query = '') {
   return {
     primary,
     expanded,
+    subjectAnchors: subject,
     avoid,
     hardAvoid,
     intent,
@@ -612,12 +650,25 @@ function scoreHit(hit, data = {}, query = '') {
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
   const hardAvoidMatches = [...hitTokens].filter((token) => profile.hardAvoid.has(token));
+  const canonicalHitTokens = new Set([...hitTokens].map(canonicalSubjectToken));
+  const subjectAnchorMatches = profile.subjectAnchors.filter((token) => canonicalHitTokens.has(token));
+  const subjectAnchorRequired = profile.subjectAnchors.length > 0;
   const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
   const requiredGroupMatches = profile.intentRequiredGroups.map(
     (group) => [...hitTokens].filter((token) => group.has(token))
   );
   const requiredGroupsMet = requiredGroupMatches.every((matches) => matches.length > 0);
+
+  if (subjectAnchorRequired) {
+    if (subjectAnchorMatches.length) {
+      score += 24;
+      reasons.push(`+24 subject anchor: ${subjectAnchorMatches.slice(0, 3).join(', ')}`);
+    } else {
+      score -= 45;
+      reasons.push(`-45 missing subject anchor: ${profile.subjectAnchors.slice(0, 4).join(', ')}`);
+    }
+  }
 
   if (profile.intent) {
     const minIntentMatches = Math.max(1, Number(profile.intent.minMatches || 1));
@@ -703,6 +754,9 @@ function scoreHit(hit, data = {}, query = '') {
     expandedMatches,
     avoidMatches,
     hardAvoidMatches,
+    subjectAnchors: profile.subjectAnchors,
+    subjectAnchorMatches,
+    subjectAnchorRequired,
     intentKey: profile.intent?.key || '',
     intentMatches,
     intentAvoidMatches,
@@ -715,6 +769,7 @@ function scoreHit(hit, data = {}, query = '') {
     heroLogoLike: gate.logoLike,
     semanticMismatch: Boolean(
       gate.rejected
+      || (subjectAnchorRequired && subjectAnchorMatches.length === 0)
       || hardAvoidMatches.length > 0
       || intentAvoidMatches.length > 0
       || (
@@ -1013,6 +1068,9 @@ function reportCandidate(entry, index) {
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
     intentMatches: entry.intentMatches || [],
+    subjectAnchors: entry.subjectAnchors || [],
+    subjectAnchorMatches: entry.subjectAnchorMatches || [],
+    subjectAnchorRequired: Boolean(entry.subjectAnchorRequired),
     hardAvoidMatches: entry.hardAvoidMatches || [],
     requiredGroupMatches: entry.requiredGroupMatches || [],
     semanticMismatch: Boolean(entry.semanticMismatch),
@@ -1063,6 +1121,7 @@ async function main() {
     series: detectSeries(parsed.data),
     visualIntent: intent?.key || '',
     visualIntentEvidence: intent?.evidenceScore || 0,
+    subjectAnchors: subjectAnchors(parsed.data, rankingQuery),
     visualBriefPositive: visualBrief.positive,
     visualBriefNegative: visualBrief.negative,
     pixabayCategory,
@@ -1168,5 +1227,6 @@ module.exports = {
   scoreHit,
   searchPixabay,
   searchPixabayCached,
+  subjectAnchors,
   updateCoverStylesheet
 };
