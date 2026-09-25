@@ -379,6 +379,43 @@ describe('Pixabay cover resolver', () => {
     expect(monsterBattle.score).toBeGreaterThan(cassetteDragon.score);
   });
 
+  it('rejects adjacent fantasy and sci-fi battle franchises for Pokémon covers', () => {
+    const article = {
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      category: 'Engineering',
+      tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
+      cover_intent: 'pokemon-oop-domain-model',
+      cover_subject: 'turn based handheld game battle with two fantasy creatures facing each other'
+    };
+
+    const dndDragon = scoreHit({
+      type: 'illustration',
+      tags: 'dnd, rpg, dragon, wyvern, fantasy, creature, monster, rider, medieval, warrior, knight, soldier, war, battle',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    const alienBattle = scoreHit({
+      type: 'photo',
+      tags: 'alien, battle, fantasy, ufo, spaceship, action, fight, game, ninja turtle, sci-fi',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    const creatureDuel = scoreHit({
+      type: 'illustration',
+      tags: 'handheld, game, rpg, creature, monster, fantasy, battle, combat, duel',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(dndDragon.semanticMismatch).toBe(true);
+    expect(dndDragon.hardAvoidMatches).toEqual(expect.arrayContaining(['dnd', 'warrior', 'knight']));
+    expect(alienBattle.semanticMismatch).toBe(true);
+    expect(alienBattle.hardAvoidMatches).toEqual(expect.arrayContaining(['alien', 'ufo', 'spaceship']));
+    expect(creatureDuel.semanticMismatch).toBe(false);
+  });
+
   it('treats explicit cover_avoid terms as semantic blockers, not only score penalties', () => {
     const result = scoreHit({
       type: 'photo',
@@ -1091,6 +1128,36 @@ describe('Pixabay cover resolver', () => {
 
     expect(result.buffer.equals(bytes)).toBe(true);
     expect(result.contentType).toBe('image/jpeg');
+  });
+
+  it('retries transient Pixabay CDN rate limits before failing the deployment', async () => {
+    const bytes = Buffer.from('image-after-retry');
+    let attempt = 0;
+    const fetchImpl = globalThis.vi.fn(async () => {
+      attempt += 1;
+      if (attempt < 3) {
+        return {
+          ok: false,
+          status: 429,
+          headers: { get: () => null }
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: (name) => name === 'content-type' ? 'image/jpeg' : null },
+        arrayBuffer: async () => bytes
+      };
+    });
+    const sleep = globalThis.vi.fn(async () => {});
+
+    const result = await downloadPhoto({
+      largeImageURL: 'https://cdn.example.test/rate-limited.jpg'
+    }, fetchImpl, { sleep, maxAttempts: 4 });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(result.buffer.equals(bytes)).toBe(true);
   });
 
   it('selects a stable local extension from image metadata', () => {
