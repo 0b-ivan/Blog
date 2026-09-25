@@ -527,11 +527,27 @@ describe('Pixabay cover resolver', () => {
       },
       {
         article: {
+          title: 'Dependabot im Einsatz',
+          tags: ['Dependabot', 'GitHub', 'Dependencies'],
+          cover_query: 'software dependency package update code github vulnerability'
+        },
+        hit: 'mobile, hand, technology, communication, wireless, dependency, gambling'
+      },
+      {
+        article: {
           title: 'Kernel Grep: semantische Suche',
           tags: ['Semantic-Search', 'Embeddings', 'Kernel-Grep'],
           cover_query: 'search data code analytics magnifying glass'
         },
         hit: 'ball, binary, computer data, binary matrix, digital binary'
+      },
+      {
+        article: {
+          title: 'Kernel Grep: semantische Suche',
+          tags: ['Semantic-Search', 'Embeddings', 'Kernel-Grep'],
+          cover_query: 'search data code analytics magnifying glass'
+        },
+        hit: 'philatelist, stamp collection, stamp, collecting, collection, glass, zoom, detail'
       },
       {
         article: {
@@ -561,6 +577,34 @@ describe('Pixabay cover resolver', () => {
 
       expect(result.semanticMismatch, entry.hit).toBe(true);
     }
+  });
+
+  it('requires lexical topic evidence when no subject anchor or visual intent exists', () => {
+    const article = {
+      title: 'Wie dieser Blog gebaut ist',
+      category: 'Engineering',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    };
+
+    const unrelated = scoreHit({
+      type: 'illustration',
+      tags: 'analytics, information, innovation, communication, big data, cyber security',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const relevant = scoreHit({
+      type: 'illustration',
+      tags: 'website, code, server, deployment, infrastructure, cloud',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(unrelated.topicalEvidenceRequired).toBe(true);
+    expect(unrelated.topicalEvidenceMet).toBe(false);
+    expect(unrelated.semanticMismatch).toBe(true);
+    expect(relevant.topicalEvidenceMet).toBe(true);
+    expect(relevant.semanticMismatch).toBe(false);
   });
 
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
