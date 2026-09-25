@@ -32,21 +32,21 @@ snippets:
     description: Zeigt einen festen Image-Tag für den Blog-Service.
     type: Compose-Ausschnitt
     language: yaml
-cover_query: docker container
+cover_query: container devops deployment
 cover_provider: pixabay
-cover_provider_id: '1012422'
+cover_provider_id: '181736'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  container, blue, container carrier, metal, container, container, container,
-  container, container, container carrier, container carrier
+  deployment, practice, action, police, in an emergency, team, armed, police
+  officer
 cover_focus: center
-cover_credit: by ennelise via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/container-blue-container-carrier-1012422/'
-cover_source_url: 'https://pixabay.com/photos/container-blue-container-carrier-1012422/'
+cover_credit: by Bergadder via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/deployment-practice-action-police-181736/'
+cover_source_url: 'https://pixabay.com/photos/deployment-practice-action-police-181736/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 80
+cover_score: 79
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

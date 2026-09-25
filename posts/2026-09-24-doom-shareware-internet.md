@@ -47,7 +47,7 @@ cover_alt: >-
   disk, memory, drive, floppy disc, retro, magnetic, data, file, information,
   computer, binary, technology, floppy disks, old, software, formatted, retro,
   software, software, software, software, software
-cover_score: 88
+cover_score: 90
 cover_credit: by DanXaw via Pixabay
 cover_credit_url: 'https://pixabay.com/vectors/disk-memory-drive-floppy-disc-4925838/'
 cover_source_url: 'https://pixabay.com/vectors/disk-memory-drive-floppy-disc-4925838/'
