@@ -5,16 +5,16 @@ title: Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun
 cover_title: Warum Puck Man zu Pac-Man wurde
 cover_subtitle: 'パクパク, die ersten Automaten und ein Name, der für den US-Markt geändert wurde'
 status: publish
-date: 2026-09-24
-created_at: 2026-09-24
-updated_at: 2026-09-24
+date: 2026-09-24T00:00:00.000Z
+created_at: 2026-09-24T00:00:00.000Z
+updated_at: 2026-09-24T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Gaming
 excerpt: >-
-  Pac-Man hieß zunächst PUCK MAN. Der Name kommt nicht vom Eishockey,
-  sondern vom japanischen パクパク – paku paku, der wiederholten Bewegung
-  eines Mundes beim Essen. Für den US-Markt wurde daraus PAC-MAN.
+  Pac-Man hieß zunächst PUCK MAN. Der Name kommt nicht vom Eishockey, sondern
+  vom japanischen パクパク – paku paku, der wiederholten Bewegung eines Mundes beim
+  Essen. Für den US-Markt wurde daraus PAC-MAN.
 tags:
   - Pac-Man
   - Puck-Man
@@ -43,7 +43,7 @@ cover_alt: >-
   pacman, pac-man, dots, game, yellow, eating, pacman, pacman, pacman, pacman,
   pacman, game
 cover_focus: center
-cover_score: 100
+cover_score: 96
 cover_credit: by OpenClipart-Vectors via Pixabay
 cover_credit_url: 'https://pixabay.com/vectors/pacman-pac-man-dots-game-yellow-151558/'
 cover_source_url: 'https://pixabay.com/vectors/pacman-pac-man-dots-game-yellow-151558/'

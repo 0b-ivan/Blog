@@ -21,29 +21,24 @@ search_queries:
     maxRank: 1
   - query: Codeblöcke sollen von der Rechtschreibprüfung ignoriert werden
     maxRank: 1
-cover_query: GitHub-Actions Automation CSpell Automation
+cover_query: proofreading correction paper spelling grammar
 cover_provider: pixabay
-cover_provider_id: '3088958'
+cover_provider_id: '1351629'
 cover_image: /assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg
 cover_alt: >-
-  analytics, information, innovation, communication, big data, data, cyber
-  security, cyber, space, technology, internet, cryptocurrency, code, source
-  code, programming, application, electronic, blockchain, digital, network,
-  virtual, crypto, currency, mining, cryptography, logs, crypto currency,
-  automation, javascript, text, string, tech, technical, bits, bytes, matrix,
-  transfer, tube, analyze, blue technology, blue data, blue network, blue
-  community, blue internet, blue digital, blue communication, blue tech, blue
-  security, blue information, blue code, blue coding, blue programming, blue
-  innovation, blue technical, big data, big data, big data, data, data, data,
-  data, data, cyber security, cyber security, cyber, code, blockchain,
-  blockchain, crypto, crypto, automation, tech, tech
+  correcting, papers, english teacher, teacher, english, coffee, work, working,
+  correct, mistake, red, pen, red pen, edit, fix, wrong, document, review,
+  error, correction, editor, wood, wooden, table, proofread, check, grammar,
+  test, editing, reviewing, education, school, accuracy, proofreading, revising,
+  revise, proofread, proofread, grammar, proofreading, proofreading,
+  proofreading, proofreading, proofreading
 cover_focus: center
-cover_credit: by xresch via Pixabay
-cover_credit_url: 'https://pixabay.com/illustrations/analytics-information-innovation-3088958/'
-cover_source_url: 'https://pixabay.com/illustrations/analytics-information-innovation-3088958/'
+cover_credit: by 1139623 via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/correcting-papers-english-teacher-1351629/'
+cover_source_url: 'https://pixabay.com/photos/correcting-papers-english-teacher-1351629/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 85
+cover_score: 92
 ---
 
 Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.

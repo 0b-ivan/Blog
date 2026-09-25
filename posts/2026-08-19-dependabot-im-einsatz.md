@@ -40,7 +40,7 @@ cover_credit_url: 'https://pixabay.com/photos/code-javascript-html-programmer-52
 cover_source_url: 'https://pixabay.com/photos/code-javascript-html-programmer-5290465/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 86
+cover_score: 85
 ---
 
 Dependencies sind schnell eingebaut und genauso schnell vergessen. Genau hier hilft **Dependabot**: GitHub kennt die Abhängigkeiten eines Repositorys, gleicht sie mit bekannten Schwachstellen ab und kann passende Updates als Pull Request vorschlagen.
