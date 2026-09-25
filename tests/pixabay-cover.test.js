@@ -445,9 +445,17 @@ describe('Pixabay cover resolver', () => {
       imageWidth: 1920,
       imageHeight: 1080
     }, article);
+    const dockWorkerStatue = scoreHit({
+      type: 'photo',
+      tags: 'statue, sculpture, iron, steel, docker, finland, hamina',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
 
     expect(metalContainer.semanticMismatch).toBe(false);
     expect(mailbox.semanticMismatch).toBe(true);
+    expect(dockWorkerStatue.subjectAnchorMatches).not.toContain('docker');
+    expect(dockWorkerStatue.semanticMismatch).toBe(true);
     expect(cargoShip.semanticMismatch).toBe(true);
     expect(cargoShip.hardAvoidMatches).toEqual(expect.arrayContaining(['ship', 'port']));
   });
