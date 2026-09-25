@@ -194,7 +194,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability']
     ],
-    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance', 'analytics', 'big data', 'innovation', 'marketing']
+    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance', 'analytics', 'big data', 'innovation', 'marketing', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand']
   },
   {
     key: 'systemd-service',
@@ -234,9 +234,9 @@ const VISUAL_INTENTS = [
     positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding', 'vector', 'retrieval', 'index'],
     minMatches: 2,
     requiredGroups: [
-      ['search', 'magnifying', 'embedding', 'vector', 'retrieval', 'index']
+      ['search', 'embedding', 'vector', 'retrieval', 'index']
     ],
-    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'ball', 'binary', 'matrix']
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'ball', 'binary', 'matrix', 'philatelist', 'stamp', 'collecting', 'collection']
   },
   {
     key: 'vpc-networking',
@@ -869,6 +869,8 @@ function scoreHit(hit, data = {}, query = '') {
     (group) => [...hitTokens].filter((token) => group.has(token))
   );
   const requiredGroupsMet = requiredGroupMatches.every((matches) => matches.length > 0);
+  const topicalEvidenceRequired = !subjectAnchorRequired && !profile.intent;
+  const topicalEvidenceMet = directMatches.length > 0 || expandedMatches.length > 0;
 
   if (subjectAnchorRequired) {
     if (subjectAnchorMatches.length) {
@@ -977,6 +979,8 @@ function scoreHit(hit, data = {}, query = '') {
     intentMatches,
     intentAvoidMatches,
     requiredGroupMatches,
+    topicalEvidenceRequired,
+    topicalEvidenceMet,
     heroRejected: gate.rejected,
     heroRejectReasons: gate.reasons,
     heroWidth: gate.width,
@@ -985,6 +989,7 @@ function scoreHit(hit, data = {}, query = '') {
     heroLogoLike: gate.logoLike,
     semanticMismatch: Boolean(
       gate.rejected
+      || (topicalEvidenceRequired && !topicalEvidenceMet)
       || (subjectAnchorRequired && subjectAnchorMatches.length === 0)
       || hardAvoidMatches.length > 0
       || intentAvoidMatches.length > 0
@@ -1288,6 +1293,8 @@ function reportCandidate(entry, index) {
     subjectAnchorMatches: entry.subjectAnchorMatches || [],
     subjectAnchorEvidence: entry.subjectAnchorEvidence || {},
     subjectAnchorRequired: Boolean(entry.subjectAnchorRequired),
+    topicalEvidenceRequired: Boolean(entry.topicalEvidenceRequired),
+    topicalEvidenceMet: Boolean(entry.topicalEvidenceMet),
     hardAvoidMatches: entry.hardAvoidMatches || [],
     requiredGroupMatches: entry.requiredGroupMatches || [],
     semanticMismatch: Boolean(entry.semanticMismatch),
