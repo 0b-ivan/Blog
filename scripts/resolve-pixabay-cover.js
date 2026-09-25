@@ -686,12 +686,18 @@ function articleProfile(data, query = '') {
   const explicitAvoidTokens = explicitAvoid
     .flatMap((value) => tokensFrom(value))
     .filter((token) => !subjectSet.has(canonicalSubjectToken(token)));
+  const contextualAvoidTokens = contextualAvoid
+    .flatMap((value) => tokensFrom(value))
+    .filter((token) => !subjectSet.has(canonicalSubjectToken(token)));
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
-    ...contextualAvoid.flatMap((value) => tokensFrom(value)),
+    ...contextualAvoidTokens,
     ...explicitAvoidTokens
   ]);
-  const hardAvoid = new Set(explicitAvoidTokens);
+  const hardAvoid = new Set([
+    ...contextualAvoidTokens,
+    ...explicitAvoidTokens
+  ]);
 
   const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
   const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
