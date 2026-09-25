@@ -148,7 +148,7 @@ function chooseDiverseCovers(reports) {
   const selected = [];
 
   for (const report of ordered) {
-    const candidates = (report.candidates || []).slice(0, 5);
+    const candidates = report.candidates || [];
     if (!candidates.length) {
       selected.push({
         postPath: report.postPath,
