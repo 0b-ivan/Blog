@@ -43,6 +43,7 @@ jobs:
       POST_PATH: ${{ inputs.post_path }}
       QUERY: ${{ inputs.query }}
       SELECTION: ${{ inputs.selection }}
+      RAG_MODEL_CACHE: ${{ github.workspace }}/.cache/kernel-grep-models
 
     steps:
       - name: Checkout staging
@@ -60,6 +61,17 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install semantic cover ranking dependencies
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund --onnxruntime-node-install=skip
+
+      - name: Cache semantic cover ranking model
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kernel-grep-models
+          key: cover-e5-${{ runner.os }}-${{ hashFiles('rag/package.json') }}
+          restore-keys: |
+            cover-e5-${{ runner.os }}-
 
       - name: Build Pixabay cache key
         id: pixabay_cache_key
@@ -106,34 +118,64 @@ jobs:
             esac
           fi
 
-      - name: Preview Pixabay candidates
+      - name: Preview semantically ranked Pixabay candidates
         if: inputs.mode == 'preview'
         shell: bash
         run: |
           set -euo pipefail
-          {
-            echo '# Pixabay cover candidates'
-            echo
-            printf 'Post: `%s`\n\n' "$POST_PATH"
-            echo
-            if [ -n "$QUERY" ]; then
-              npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --preview
-            else
-              npm run covers:resolve -- "$POST_PATH" --preview
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p /tmp/cover-semantic
+          report="/tmp/cover-semantic/report.json"
 
-      - name: Apply selected cover
+          if [ -n "$QUERY" ]; then
+            npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --preview --report "$report"
+          else
+            npm run covers:resolve -- "$POST_PATH" --preview --report "$report"
+          fi
+
+          node scripts/rerank-cover-candidates-e5.js \
+            --reports-dir /tmp/cover-semantic \
+            --posts-dir posts \
+            --cache-dir "$RAG_MODEL_CACHE"
+
+          node scripts/render-cover-review.js \
+            --report "$report" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply selected semantic cover
         if: inputs.mode == 'apply'
         shell: bash
         run: |
           set -euo pipefail
-          report="/tmp/cover-report.json"
+          mkdir -p /tmp/cover-semantic
+          report="/tmp/cover-semantic/report.json"
+
           if [ -n "$QUERY" ]; then
-            npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --select "$SELECTION" --report "$report"
+            npm run covers:resolve -- "$POST_PATH" --query "$QUERY" --preview --report "$report"
           else
-            npm run covers:resolve -- "$POST_PATH" --select "$SELECTION" --report "$report"
+            npm run covers:resolve -- "$POST_PATH" --preview --report "$report"
           fi
+
+          node scripts/rerank-cover-candidates-e5.js \
+            --reports-dir /tmp/cover-semantic \
+            --posts-dir posts \
+            --cache-dir "$RAG_MODEL_CACHE"
+
+          image_id="$(jq -r --argjson rank "$SELECTION" '.candidates[] | select(.rank == $rank) | .id' "$report" | head -n 1)"
+          semantic_score="$(jq -r --argjson rank "$SELECTION" '.candidates[] | select(.rank == $rank) | .score' "$report" | head -n 1)"
+          semantic_mismatch="$(jq -r --argjson rank "$SELECTION" '.candidates[] | select(.rank == $rank) | .semanticMismatch' "$report" | head -n 1)"
+
+          test -n "$image_id" && [ "$image_id" != "null" ] || {
+            echo "Semantic candidate rank $SELECTION is unavailable." >&2
+            exit 1
+          }
+          if [ "$semantic_mismatch" = "true" ]; then
+            echo "Refusing candidate rank $SELECTION: semantic guardrails marked it as a mismatch." >&2
+            exit 1
+          fi
+
+          npm run covers:resolve -- "$POST_PATH" --select-id "$image_id" --score "$semantic_score"
+          cp "$report" /tmp/cover-report.json
 
       - name: Validate generated changes
         if: inputs.mode == 'apply'
@@ -143,7 +185,7 @@ jobs:
           git diff --check
           npm run posts:validate-meta
           npm run lint
-          npx vitest run tests/pixabay-cover.test.js tests/cover-review.test.js tests/ebook-export.test.js
+          npx vitest run tests/pixabay-cover.test.js tests/cover-semantic-rerank.test.js tests/cover-review.test.js tests/ebook-export.test.js
 
       - name: Create cover pull request
         if: inputs.mode == 'apply'
