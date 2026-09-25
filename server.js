@@ -922,6 +922,40 @@ function createApp(options = {}) {
   const postsDir = options.postsDir;
   const siteUrl = options.siteUrl;
   const ebookExporterLoader = options.ebookExporterLoader || (() => require('./lib/ebook-export'));
+  const pdfServiceUrl = String(
+    options.pdfServiceUrl
+      || process.env.PDF_SERVICE_URL
+      || ''
+  ).replace(/\/+$/, '');
+
+  async function proxyPdfControl(slug, action, method = 'GET') {
+    if (!pdfServiceUrl) {
+      return { status: 503, body: { ready: false, preparing: false, message: 'PDF service unavailable' } };
+    }
+
+    const response = await globalThis.fetch(
+      `${pdfServiceUrl}/${action}/${encodeURIComponent(slug)}`,
+      {
+        method,
+        headers: { Accept: 'application/json' },
+        signal: globalThis.AbortSignal.timeout(5000)
+      }
+    );
+
+    const body = await response.json().catch(() => ({
+      ready: false,
+      preparing: false
+    }));
+
+    return { status: response.status, body };
+  }
+
+  function warmPdfInBackground(slug) {
+    if (!pdfServiceUrl) return;
+    void proxyPdfControl(slug, 'prepare', 'POST').catch((error) => {
+      console.warn(`Could not prewarm PDF for ${slug}: ${error.message}`);
+    });
+  }
 
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.get('/snippets/manifest.json', async (_req, res) => {
@@ -968,6 +1002,42 @@ function createApp(options = {}) {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Could not load posts' });
+    }
+  });
+
+  app.post('/api/pdf/:slug/prepare', async (req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      const post = resolvePostBySlug(posts, req.params.slug);
+      if (!post) {
+        res.status(404).json({ ready: false, preparing: false, message: 'Post not found' });
+        return;
+      }
+
+      const result = await proxyPdfControl(post.slug, 'prepare', 'POST');
+      res.set('Cache-Control', 'no-store');
+      res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error(error);
+      res.status(503).json({ ready: false, preparing: false });
+    }
+  });
+
+  app.get('/api/pdf/:slug/status', async (req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      const post = resolvePostBySlug(posts, req.params.slug);
+      if (!post) {
+        res.status(404).json({ ready: false, preparing: false, message: 'Post not found' });
+        return;
+      }
+
+      const result = await proxyPdfControl(post.slug, 'status');
+      res.set('Cache-Control', 'no-store');
+      res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error(error);
+      res.status(503).json({ ready: false, preparing: false });
     }
   });
 
@@ -1035,6 +1105,7 @@ function createApp(options = {}) {
         return;
       }
 
+      warmPdfInBackground(post.slug);
       const relatedPosts = findRelatedPosts(posts, post, 3);
       res.type('html').send(renderPostPage(post, relatedPosts));
     } catch (error) {
