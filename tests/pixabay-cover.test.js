@@ -535,6 +535,14 @@ describe('Pixabay cover resolver', () => {
       },
       {
         article: {
+          title: 'Dependabot im Einsatz',
+          tags: ['Dependabot', 'GitHub', 'Dependencies'],
+          cover_query: 'software dependency package update code github vulnerability'
+        },
+        hit: 'chemistry, structural formula, harmful, addicted, tablets, dependency, drugs'
+      },
+      {
+        article: {
           title: 'Kernel Grep: semantische Suche',
           tags: ['Semantic-Search', 'Embeddings', 'Kernel-Grep'],
           cover_query: 'search data code analytics magnifying glass'
@@ -559,11 +567,27 @@ describe('Pixabay cover resolver', () => {
       },
       {
         article: {
+          title: 'systemd Services sauber betreiben',
+          tags: ['Linux', 'systemd', 'Operations'],
+          cover_query: 'linux server administration monitoring service logs daemon'
+        },
+        hit: 'cloud, monitor, cloud computing, data store, capacity, network, services, disk space'
+      },
+      {
+        article: {
           title: 'Regressionstests – was sie sind',
           tags: ['Testing', 'Regressionstest', 'CI'],
           cover_query: 'software testing quality assurance bug code'
         },
         hit: 'marketing, development, software, usefulness, consumer-friendly, quality, cost'
+      },
+      {
+        article: {
+          title: 'Regressionstests – was sie sind',
+          tags: ['Testing', 'Regressionstest', 'CI'],
+          cover_query: 'software testing quality assurance bug code'
+        },
+        hit: 'scan, system, bug, virus, malware, search, error, code, alert'
       }
     ];
 
