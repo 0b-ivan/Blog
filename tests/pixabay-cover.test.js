@@ -428,6 +428,73 @@ describe('Pixabay cover resolver', () => {
     expect(modern.semanticMismatch).toBe(true);
   });
 
+  it('infers a subject when the cover query uses its visual vocabulary', () => {
+    const anchors = subjectAnchors({
+      title: 'Wie dieser Blog gebaut ist',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    });
+
+    expect(anchors).toContain('blog');
+  });
+
+  it('hard-rejects known cross-domain word collisions', () => {
+    const cases = [
+      {
+        article: {
+          title: 'logger.info() – wird schon nichts kosten',
+          tags: ['AWS', 'CloudWatch', 'Observability', 'Logging'],
+          cover_query: 'server logs monitoring metrics observability cloudwatch alerts'
+        },
+        hit: 'wood, logs, firewood, timber, forest'
+      },
+      {
+        article: {
+          title: 'K3s auf Proxmox – Production',
+          tags: ['Kubernetes', 'K3s', 'Proxmox'],
+          cover_query: 'kubernetes proxmox server datacenter infrastructure'
+        },
+        hit: 'proxy, proxy server, web proxy, scraping, network'
+      },
+      {
+        article: {
+          title: 'Regressionstests – was sie sind',
+          tags: ['Testing', 'Regressionstest', 'CI'],
+          cover_query: 'software testing quality assurance bug code'
+        },
+        hit: 'pupil, school, teaching, education, testing, laptop'
+      },
+      {
+        article: {
+          title: 'RSS ist nicht tot',
+          tags: ['RSS', 'FreshRSS'],
+          cover_query: 'rss feed reader dashboard aggregator browser subscription'
+        },
+        hit: 'kobo, ebook, tablet, reading, reader'
+      },
+      {
+        article: {
+          title: 'DOOM: Wie Shareware das PC-Gaming veränderte',
+          tags: ['DOOM', 'Shareware', 'Retro-Gaming'],
+          cover_intent: 'doom-shareware-history',
+          cover_query: 'doom retro pc gaming shareware floppy disk 1990s'
+        },
+        hit: 'truck, pickup, chevrolet, 1993, 1990s, retro'
+      }
+    ];
+
+    for (const entry of cases) {
+      const result = scoreHit({
+        type: 'photo',
+        tags: entry.hit,
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, entry.article);
+      expect(result.semanticMismatch, entry.hit).toBe(true);
+      expect(result.hardAvoidMatches.length, entry.hit).toBeGreaterThan(0);
+    }
+  });
+
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
     const article = {
       title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
