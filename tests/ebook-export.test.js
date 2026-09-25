@@ -10,6 +10,8 @@ const {
   createEpubCover,
   displayAuthor,
   ensureCoverImageProperty,
+  ensureDeckblattFixedLayout,
+  ensureDeckblattItemrefProperties,
   hasEditorialCoverMetadata,
   normalizeEpubDate,
   prepareChapterHtml,
@@ -122,7 +124,7 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('cover-monkey');
   });
 
-  it('generates an editorial EPUB cover for an explicitly configured post', async () => {
+  it('uses the real raster image as the EPUB library cover for editorial posts', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-cover-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
@@ -140,12 +142,9 @@ describe('article ebook export helpers', () => {
         coverImage: '/assets/covers/demo.jpg'
       }, assetRoot);
 
-      expect(cover.name).toBe('demo-cover.svg');
-      expect(cover.type).toBe('image/svg+xml');
-      const content = Buffer.from(await cover.arrayBuffer()).toString('utf8');
-      expect(content).toContain('Short cover title');
-      expect(content).toContain('Readable subtitle');
-      expect(content).toContain('data:image/jpeg;base64,');
+      expect(cover.name).toBe('demo-cover.jpg');
+      expect(cover.type).toBe('image/jpeg');
+      expect(Buffer.from(await cover.arrayBuffer())).toEqual(Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
@@ -207,6 +206,24 @@ describe('article ebook export helpers', () => {
 
     expect(patched).toContain('properties="svg cover-image"');
     expect(ensureCoverImageProperty(patched)).toBe(patched);
+  });
+
+  it('marks only the deckblatt spine item as fixed layout', () => {
+    const opf = '<package><manifest><item id="deckblatt" href="deckblatt.xhtml" media-type="application/xhtml+xml" /><item id="article" href="article.xhtml" media-type="application/xhtml+xml" /></manifest><spine><itemref idref="deckblatt" /><itemref idref="article" /></spine></package>';
+    const patched = ensureDeckblattItemrefProperties(opf);
+
+    expect(patched).toContain('idref="deckblatt" properties="rendition:layout-pre-paginated rendition:spread-none"');
+    expect(patched).toContain('<itemref idref="article" />');
+  });
+
+  it('forces the deckblatt XHTML to the 1600x2560 viewport without reader margins', () => {
+    const xhtml = '<html><head><title>Deckblatt</title></head><body><div class="book-deckblatt"><img src="cover.svg" /></div></body></html>';
+    const patched = ensureDeckblattFixedLayout(xhtml);
+
+    expect(patched).toContain('width=1600,height=2560');
+    expect(patched).toContain('margin: 0 !important');
+    expect(patched).toContain('height: 2560px !important');
+    expect(patched).toContain('object-fit: cover');
   });
 
   it('rewrites local article assets to file URLs for offline EPUB embedding', () => {
