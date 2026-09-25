@@ -37,7 +37,7 @@ jobs:
   cover:
     name: Pixabay cover
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
       POST_PATH: ${{ inputs.post_path }}
