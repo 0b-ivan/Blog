@@ -107,7 +107,8 @@ const VISUAL_INTENTS = [
     positive: ['doom', 'shareware', 'floppy', 'disk', '1990s', 'retro', 'pc', 'gaming', 'computer', 'dos'],
     minMatches: 2,
     requiredGroups: [
-      ['doom', 'shareware', 'floppy', 'disk', '1990s', 'retro']
+      ['doom', 'shareware', 'floppy', 'dos', '1990s', 'retro'],
+      ['computer', 'pc', 'gaming', 'game', 'disk']
     ],
     avoid: ['modern console', 'controller', 'rgb', 'laptop', 'office', 'smartphone', 'esports']
   },
@@ -150,7 +151,8 @@ const VISUAL_INTENTS = [
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
       'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'album',
-      'office', 'laptop', 'keyboard', 'terminal', 'screenshot'
+      'office', 'laptop', 'keyboard', 'terminal', 'screenshot',
+      'smartphone', 'iphone', 'mobile', 'phone'
     ]
   },
   {
@@ -219,7 +221,7 @@ const VISUAL_INTENTS = [
     key: 'docker-compose',
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
-    markers: ['docker compose', 'docker', 'compose'],
+    markers: ['docker compose', 'docker-compose', 'compose'],
     query: 'devops deployment orchestration services architecture workflow',
     positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation'],
     requiredGroups: [
