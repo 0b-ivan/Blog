@@ -45,10 +45,10 @@ snippets:
     description: Baut das lokale Image und veröffentlicht Port 8080.
     type: Compose-Beispiel
     language: yaml
-cover_query: DevOps Docker DevOps
+cover_query: docker deployment devops orchestration
 cover_provider: pixabay
-cover_provider_id: '3148393'
-cover_image: /assets/covers/2026-08-21-docker-vs-docker-compose.png
+cover_provider_id: '3155973'
+cover_image: /assets/covers/2026-08-21-docker-vs-docker-compose.jpg
 cover_alt: >-
   devops, business, process improvement, development, it, operation, processes,
   incentives, effectively, efficiently, collaboration, quality control,
@@ -58,17 +58,18 @@ cover_alt: >-
   symbolic, design, automation, background, concept, communication, maintenance,
   developer, computer, company, tool, infrastructure, organization, agile, agile
   it, parts, to qualify, platform, program, it standard, framework, code,
-  version management, kpi, key performance indicator, releases, static, dynamic,
-  toolchain, binary, formats, itil, configuration, monitor, customers, into each
-  other, eight, swinging, blue, coloured, devops, devops, devops, devops,
-  devops, agile, agile
+  version management, kpi, performance measure, releases, static, dynamic,
+  binary, formats, itil, configuration, monitor, customers, into each other,
+  circle, timeline, social media, blue, coloured, devops, devops, devops,
+  devops, devops, software, software, software development, software
+  development, software development, agile, agile, agile, agile, kpi
 cover_focus: center
 cover_credit: by MR-PANDA via Pixabay
-cover_credit_url: 'https://pixabay.com/illustrations/devops-business-process-improvement-3148393/'
-cover_source_url: 'https://pixabay.com/illustrations/devops-business-process-improvement-3148393/'
+cover_credit_url: 'https://pixabay.com/illustrations/devops-business-process-improvement-3155973/'
+cover_source_url: 'https://pixabay.com/illustrations/devops-business-process-improvement-3155973/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 84
 ---
 
 Docker und Docker Compose werden oft in einen Topf geworfen. Dabei lösen beide unterschiedliche Aufgaben.

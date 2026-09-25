@@ -32,24 +32,21 @@ snippets:
     description: Zeigt einen festen Image-Tag für den Blog-Service.
     type: Compose-Ausschnitt
     language: yaml
-cover_query: container server deployment software terminal network cloud security
+cover_query: docker container
 cover_provider: pixabay
-cover_provider_id: '8598424'
+cover_provider_id: '1012422'
 cover_image: >-
   /assets/covers/2026-08-19-deployment-mit-hetzner-docker-und-cloudflare-zero-trust.jpg
 cover_alt: >-
-  cloud, server, cloud computing, secure, digital, network, business,
-  application, connect, modernization, global, privacy, hardware,
-  infrastructure, database, security, cloudscape, smart, computer, design,
-  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
-  cloud computing, cloud computing, cloud computing, cloud computing
+  container, blue, container carrier, metal, container, container, container,
+  container, container, container carrier, container carrier
 cover_focus: center
-cover_credit: by kumar111aakashin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
-cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_credit: by ennelise via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/container-blue-container-carrier-1012422/'
+cover_source_url: 'https://pixabay.com/photos/container-blue-container-carrier-1012422/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 85
+cover_score: 80
 ---
 
 Für kleinere Webanwendungen und selbst gehostete Dienste braucht es nicht immer Kubernetes oder eine große Cloud-Plattform.

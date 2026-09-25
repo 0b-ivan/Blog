@@ -49,7 +49,7 @@ cover_credit_url: 'https://pixabay.com/photos/animal-celebes-crested-macaque-662
 cover_source_url: 'https://pixabay.com/photos/animal-celebes-crested-macaque-6626792/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 93
+cover_score: 92
 ---
 
 Teil IV endete mit einer einfachen Frage:
