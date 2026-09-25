@@ -2,8 +2,6 @@
 id: {{title}}
 version: 1
 title:
-cover_title:
-cover_subtitle:
 status: draft
 date: {{date:YYYY-MM-DD}}
 created_at: {{date:YYYY-MM-DD}}
@@ -14,6 +12,9 @@ category: IT
 excerpt:
 tags: []
 series:
+# Optional: kurze Buchcover-Texte; ohne diese Felder werden title + excerpt verwendet.
+# cover_title: Kurzer Titel für das EPUB-Cover
+# cover_subtitle: Kurzer Untertitel für das EPUB-Cover
 cover_query:
 cover_subject:
 cover_avoid:
