@@ -192,9 +192,10 @@ const VISUAL_INTENTS = [
     query: 'software dependency package update code github vulnerability',
     positive: ['dependency', 'dependencies', 'package', 'update', 'software', 'code', 'github', 'vulnerability'],
     requiredGroups: [
-      ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability']
+      ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability'],
+      ['software', 'code', 'github', 'package', 'version', 'repository']
     ],
-    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance', 'analytics', 'big data', 'innovation', 'marketing', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand']
+    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance', 'analytics', 'big data', 'innovation', 'marketing', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand', 'drug', 'drugs', 'chemistry', 'chemical', 'tablet', 'addiction', 'addicted', 'medicine', 'medical', 'pharmaceutical']
   },
   {
     key: 'systemd-service',
@@ -209,7 +210,8 @@ const VISUAL_INTENTS = [
     positive: ['linux', 'server', 'service', 'logs', 'administration', 'monitoring', 'daemon', 'process'],
     minMatches: 2,
     requiredGroups: [
-      ['service', 'logs', 'monitoring', 'daemon', 'process']
+      ['service', 'daemon', 'process', 'systemd', 'journalctl'],
+      ['logs', 'monitoring', 'administration', 'linux']
     ],
     avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision', 'consultant', 'advisor', 'analyst', 'specialist', 'cable', 'wire', 'ethernet', 'cyberspace', 'electronics']
   },
@@ -296,7 +298,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['testing', 'test', 'bug', 'regression']
     ],
-    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales']
+    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales', 'virus', 'malware', 'antivirus', 'security scan', 'cybersecurity']
   },
   {
     key: 'logging-observability',
