@@ -4,6 +4,7 @@ const path = require('node:path');
 const readline = require('node:readline/promises');
 const { stdin: input, stdout: output } = require('node:process');
 const { URL } = require('node:url');
+const { setTimeout: delay } = require('node:timers/promises');
 const matter = require('gray-matter');
 
 const root = path.join(__dirname, '..');
@@ -916,9 +917,7 @@ async function downloadPhoto(hit, fetchImpl = globalThis.fetch, options = {}) {
   if (parsedUrl.protocol !== 'https:') throw new Error('Pixabay image URL must use HTTPS');
 
   const maxAttempts = Math.max(1, Number(options.maxAttempts || 4));
-  const sleep = options.sleep || ((milliseconds) =>
-    new Promise((resolve) => setTimeout(resolve, milliseconds))
-  );
+  const sleep = options.sleep || delay;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const response = await fetchImpl(sourceUrl);
