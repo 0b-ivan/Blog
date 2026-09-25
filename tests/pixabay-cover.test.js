@@ -152,6 +152,7 @@ describe('Pixabay cover resolver', () => {
 
     const hits = await searchPixabay('rss feed reader', 'test-key', fetchImpl, {
       maxAttempts: 3,
+      baseRetryMs: 500,
       sleep
     });
 
@@ -1583,6 +1584,42 @@ describe('Pixabay cover resolver', () => {
 
     expect(searchImpl).toHaveBeenCalledTimes(2);
     expect(hits.map((hit) => hit.id)).toEqual([1, 2]);
+  });
+
+  it('paces successive live Pixabay queries to stay below burst limits', async () => {
+    const sleep = globalThis.vi.fn(async () => {});
+    const searchImpl = searchPixabayCached;
+    const fetchImpl = globalThis.vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => ({ hits: [] })
+    }));
+
+    const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'pixabay-pacing-'));
+    try {
+      await collectCandidates(
+        ['one', 'two', 'three'],
+        'test-key',
+        {
+          searchImpl,
+          requestDelayMs: 850,
+          sleep,
+          searchOptions: {
+            cacheDir: tmp,
+            fetchImpl,
+            sleep
+          }
+        }
+      );
+    } finally {
+      await fs.rm(tmp, { recursive: true, force: true });
+    }
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenNthCalledWith(1, 850);
+    expect(sleep).toHaveBeenNthCalledWith(2, 850);
   });
 
   it('ranks technically relevant images above generic people stock photos', () => {
