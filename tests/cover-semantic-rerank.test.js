@@ -154,6 +154,18 @@ systemctl status example
     }, prototype);
     expect(cassette.score).toBeLessThan(battle.score);
     expect(cassette.avoided).toEqual(expect.arrayContaining(['cassette', 'tape', 'music']));
+
+    const dnd = heroQuality({
+      tags: 'dnd, rpg, dragon, creature, monster, warrior, knight, soldier, battle'
+    }, prototype);
+    const alien = heroQuality({
+      tags: 'alien, ufo, spaceship, fantasy, fight, game, ninja turtle'
+    }, prototype);
+
+    expect(dnd.score).toBeLessThan(battle.score);
+    expect(dnd.avoided).toEqual(expect.arrayContaining(['dnd', 'warrior', 'knight']));
+    expect(alien.score).toBeLessThan(battle.score);
+    expect(alien.avoided).toEqual(expect.arrayContaining(['alien', 'ufo', 'spaceship']));
   });
 
   it('uses positive and negative concept prototypes to reject adjacent RSS concepts', async () => {
