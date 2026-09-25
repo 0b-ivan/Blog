@@ -127,6 +127,29 @@ systemctl status example
     expect(prototype.negative).toContain('Generic unrelated stock photography');
   });
 
+  it('defines a strict Pokémon domain-model prototype that rejects Mario imagery', () => {
+    const prototype = conceptPrototype({
+      visualIntent: 'pokemon-oop-domain-model',
+      visualBriefPositive: 'Pokémon OOP article with a retro handheld creature battle.',
+      visualBriefNegative: 'Wrong franchise or branded character.'
+    });
+
+    expect(prototype.key).toBe('pokemon-oop-domain-model');
+    expect(prototype.positive).toContain('creature battle');
+    expect(prototype.negative).toContain('Mario');
+    expect(prototype.heroAvoid).toContain('mario');
+
+    const mario = heroQuality({
+      tags: 'mario, figure, nintendo, super mario bros, retro, game'
+    }, prototype);
+    const battle = heroQuality({
+      tags: 'retro, handheld, pixel, creature, monster, battle, game, rpg'
+    }, prototype);
+
+    expect(battle.score).toBeGreaterThan(mario.score);
+    expect(mario.avoided).toContain('mario');
+  });
+
   it('uses positive and negative concept prototypes to reject adjacent RSS concepts', async () => {
     const report = {
       postPath: 'posts/rss.md',
