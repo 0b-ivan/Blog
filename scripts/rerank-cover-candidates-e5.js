@@ -21,16 +21,16 @@ const COVER_CONCEPT_PROTOTYPES = {
     positive: 'DOOM 1993 retro PC gaming shareware DOS floppy disk old computer game distribution internet history',
     negative: 'modern RGB gaming laptop esports controller smartphone office generic modern console',
     heroPreferred: ['doom', 'shareware', 'floppy', 'disk', 'retro', '1990s', 'computer', 'dos'],
-    heroRequired: ['doom', 'shareware', 'floppy', 'disk', 'retro'],
+    heroRequired: ['doom', 'shareware', 'floppy', 'retro', 'dos', '1990s'],
     heroAvoid: ['modern', 'rgb', 'laptop', 'esports', 'controller', 'smartphone', 'office'],
     minHeroQuality: 55
   },
   'pokemon-oop-domain-model': {
     positive: 'Pokemon game handheld Pikachu Pokeball cartridge battle role playing game creature monster gaming scene',
-    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite cassette tape recorder music office laptop keyboard terminal screenshot unrelated franchise unrelated object',
+    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite cassette tape recorder music office laptop keyboard terminal screenshot smartphone iPhone mobile phone unrelated franchise unrelated object',
     heroPreferred: ['pokemon', 'pikachu', 'pokeball', 'game', 'handheld', 'console', 'cartridge', 'battle'],
     heroRequired: ['pokemon', 'pikachu', 'pokeball'],
-    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'office', 'laptop', 'keyboard', 'terminal', 'screenshot'],
+    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'office', 'laptop', 'keyboard', 'terminal', 'screenshot', 'smartphone', 'iphone', 'mobile', 'phone'],
     minHeroQuality: 65
   },
   'writing-proofreading': {
