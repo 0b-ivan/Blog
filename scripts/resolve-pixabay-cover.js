@@ -635,6 +635,66 @@ function visualQuery(data) {
   return visualTerms.slice(0, 8).join(' ').slice(0, 100);
 }
 
+function compactQuery(parts) {
+  return [...new Set(
+    parts
+      .flatMap((value) => String(value || '').split(/\s+/))
+      .map((value) => value.trim())
+      .filter(Boolean)
+  )].slice(0, 4).join(' ').slice(0, 100);
+}
+
+function subjectSearchVariants(data = {}, intent = null) {
+  const seedQuery = intent?.query || data.cover_query || defaultQuery(data);
+  const anchors = subjectAnchors(data, seedQuery);
+  const variants = [];
+
+  for (const anchor of anchors.slice(0, 3)) {
+    const phrases = [
+      anchor,
+      ...(SUBJECT_ALIAS_OVERRIDES[anchor] || [])
+    ].filter(Boolean);
+
+    const aliases = phrases
+      .slice(1)
+      .map((value) => String(value).trim())
+      .filter(Boolean);
+
+    if (aliases.length) {
+      variants.push(compactQuery([anchor, aliases[0]]));
+    }
+    if (aliases.length >= 2) {
+      variants.push(compactQuery([aliases[0], aliases[1]]));
+      variants.push(compactQuery([anchor, aliases[0], aliases[1]]));
+    }
+    if (aliases.length >= 3) {
+      variants.push(compactQuery([aliases[0], aliases[1], aliases[2]]));
+    }
+  }
+
+  if (intent) {
+    const positiveTerms = [...new Set(
+      (intent.positive || []).flatMap((value) => tokensFrom(value))
+    )].filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token));
+
+    const requiredGroups = (intent.requiredGroups || [])
+      .map((group) => [...new Set(group.flatMap((value) => tokensFrom(value)))])
+      .filter((group) => group.length);
+
+    for (const group of requiredGroups.slice(0, 3)) {
+      variants.push(compactQuery(group.slice(0, 3)));
+      const context = positiveTerms.find((term) => !group.includes(term));
+      if (context) variants.push(compactQuery([...group.slice(0, 2), context]));
+    }
+
+    if (positiveTerms.length >= 3) {
+      variants.push(compactQuery(positiveTerms.slice(0, 3)));
+    }
+  }
+
+  return [...new Set(variants.filter(Boolean))].slice(0, 8);
+}
+
 function intentSearchVariants(data = {}, intent = null) {
   if (!intent) return [];
 
@@ -650,19 +710,21 @@ function intentSearchVariants(data = {}, intent = null) {
 
   const variants = [];
   if (anchors.length && requiredTerms.length) {
-    variants.push([anchors[0], ...requiredTerms.slice(0, 6)].join(' '));
+    variants.push(compactQuery([anchors[0], ...requiredTerms.slice(0, 3)]));
   }
   if (requiredTerms.length) {
-    variants.push(requiredTerms.slice(0, 8).join(' '));
+    variants.push(compactQuery(requiredTerms.slice(0, 4)));
   } else if (positiveTerms.length) {
-    variants.push(positiveTerms.slice(0, 8).join(' '));
+    variants.push(compactQuery(positiveTerms.slice(0, 4)));
   }
+
+  variants.push(...subjectSearchVariants(data, intent));
 
   return [...new Set(
     variants
       .map((value) => String(value || '').trim().slice(0, 100))
       .filter(Boolean)
-  )];
+  )].slice(0, 10);
 }
 
 function articleVisualBrief(data = {}) {
@@ -718,6 +780,7 @@ function queryCandidates(data, explicitQuery = '') {
     .slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
+  const subjectQueries = subjectSearchVariants(data, intent);
   const intentQueries = intent
     ? [
         intent.query,
@@ -727,13 +790,13 @@ function queryCandidates(data, explicitQuery = '') {
     : [];
   const candidates = explicitQuery
     ? (intent
-      ? [primary, ...intentQueries, visual || fallback]
-      : [primary, visual, fallback])
+      ? [primary, ...subjectQueries, ...intentQueries, visual || fallback]
+      : [primary, ...subjectQueries, visual, fallback])
     : (intent
-      ? [...intentQueries, primary, visual || fallback]
-      : [primary, title, visual || fallback]);
+      ? [...subjectQueries, ...intentQueries, primary, visual || fallback]
+      : [primary, ...subjectQueries, title, visual || fallback]);
 
-  const queryLimit = Math.max(1, Number(intent?.queryLimit || (intent ? 5 : 3)));
+  const queryLimit = Math.max(1, Number(intent?.queryLimit || (intent ? 8 : 6)));
   return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, queryLimit);
 }
 
@@ -1446,6 +1509,7 @@ module.exports = {
   findPhotoById,
   heroHardGate,
   intentSearchVariants,
+  subjectSearchVariants,
   parseArgs,
   queryCandidates,
   visualIntent,
