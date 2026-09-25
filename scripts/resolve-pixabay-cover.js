@@ -508,10 +508,17 @@ function subjectAliasTokens(anchor, intent = null) {
 }
 
 function subjectAliasContextMet(anchor, alias, canonicalHits) {
-  // A literal container is an intentional Docker/Compose visual metaphor.
-  // For Kubernetes/K3s the same word is too ambiguous and still needs
-  // technical context so fruit clusters or metal boxes cannot pass.
-  if (alias === 'container' && ['docker', 'compose'].includes(anchor)) return true;
+  // A literal container is an intentional Docker/Compose visual metaphor, but
+  // the word "container" alone is still too broad (mailboxes, storage boxes,
+  // fruit crates). Require either technical Docker context or unmistakable
+  // freight-container vocabulary.
+  if (alias === 'container' && ['docker', 'compose'].includes(anchor)) {
+    const dockerContainerContext = [
+      'docker', 'compose', 'devops', 'deployment', 'orchestration',
+      'metal', 'steel', 'shipping', 'cargo', 'freight', 'intermodal'
+    ].map(canonicalSubjectToken);
+    return dockerContainerContext.some((token) => canonicalHits.has(token));
+  }
 
   const required = SUBJECT_ALIAS_CONTEXT[alias] || [];
   if (!required.length) return true;
@@ -1190,7 +1197,11 @@ async function searchPixabayCached(query, apiKey, options = {}) {
     if (!error || (error.code !== 'ENOENT' && error.name !== 'SyntaxError')) throw error;
   }
 
-  const hits = await searchPixabay(query, apiKey, fetchImpl, { category, imageType });
+  const hits = await searchPixabay(query, apiKey, fetchImpl, {
+    ...options,
+    category,
+    imageType
+  });
   await fs.mkdir(cacheDir, { recursive: true });
   await fs.writeFile(
     cacheFile,
@@ -1206,7 +1217,19 @@ async function collectCandidates(queries, apiKey, options = {}) {
 
   for (const query of queries) {
     console.log(`Searching Pixabay for: ${query}`);
-    const hits = await searchImpl(query, apiKey, options.searchOptions || {});
+    let hits;
+    try {
+      hits = await searchImpl(query, apiKey, options.searchOptions || {});
+    } catch (error) {
+      const message = String(error?.message || error || '');
+      if (/Pixabay search failed with HTTP 429/.test(message) && byId.size > 0) {
+        console.warn(
+          `Pixabay rate limit reached after ${byId.size} candidate(s); keeping the partial pool and stopping further queries.`
+        );
+        break;
+      }
+      throw error;
+    }
 
     for (const hit of hits) {
       const key = String(hit.id || hit.pageURL || hit.webformatURL || '');
