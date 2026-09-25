@@ -1,0 +1,244 @@
+name: Cover Canary — All Articles
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/cover-canary-all.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: cover-canary-all-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  canary:
+    name: Test every published article
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      RAG_MODEL_CACHE: ${{ github.workspace }}/.cache/kernel-grep-models
+
+    steps:
+      - name: Checkout pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install semantic ranking dependencies
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund --onnxruntime-node-install=skip
+
+      - name: Cache semantic model
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kernel-grep-models
+          key: cover-canary-e5-${{ runner.os }}-${{ hashFiles('rag/package.json') }}
+          restore-keys: |
+            cover-canary-e5-${{ runner.os }}-
+
+      - name: Validate Pixabay secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PIXABAY_API_KEY" || {
+            echo 'PIXABAY_API_KEY is not configured.' >&2
+            exit 1
+          }
+
+      - name: Build daily Pixabay cache key
+        id: pixabay_cache_key
+        shell: bash
+        run: echo "key=pixabay-canary-${RUNNER_OS}-$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Pixabay cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pixabay
+          key: ${{ steps.pixabay_cache_key.outputs.key }}
+          restore-keys: |
+            pixabay-canary-${{ runner.os }}-
+            pixabay-api-${{ runner.os }}-
+
+      - name: Select every published article
+        id: posts
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/list-missing-cover-posts.js --include-covered --all > /tmp/cover-canary-posts.txt
+          count="$(wc -l < /tmp/cover-canary-posts.txt | tr -d ' ')"
+          test "$count" -gt 0 || {
+            echo 'No published articles found.' >&2
+            exit 1
+          }
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "Testing $count published articles."
+
+      - name: Collect Pixabay candidates for every article
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cover-canary/reports
+
+          while IFS= read -r post; do
+            [ -n "$post" ] || continue
+            slug="$(basename "$post" .md)"
+            echo "::group::Candidates — $post"
+            npm run covers:resolve -- "$post" --preview --report "/tmp/cover-canary/reports/${slug}.json"
+            echo "::endgroup::"
+          done < /tmp/cover-canary-posts.txt
+
+      - name: Re-rank every candidate semantically
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/rerank-cover-candidates-e5.js \
+            --reports-dir /tmp/cover-canary/reports \
+            --posts-dir posts \
+            --cache-dir "$RAG_MODEL_CACHE"
+
+      - name: Run global diversity selection
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/select-diverse-cover-candidates.js \
+            --reports-dir /tmp/cover-canary/reports \
+            --output /tmp/cover-canary/selection.json \
+            --selection-list /tmp/cover-canary/selection.list
+
+      - name: Build canary summary
+        shell: bash
+        env:
+          ARTICLE_COUNT: ${{ steps.posts.outputs.count }}
+        run: |
+          set -euo pipefail
+          node <<'NODE' > /tmp/cover-canary/summary.md
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const reportsDir = '/tmp/cover-canary/reports';
+          const manifest = JSON.parse(fs.readFileSync('/tmp/cover-canary/selection.json', 'utf8'));
+          const reports = new Map();
+
+          for (const name of fs.readdirSync(reportsDir).filter((name) => name.endsWith('.json'))) {
+            const report = JSON.parse(fs.readFileSync(path.join(reportsDir, name), 'utf8'));
+            reports.set(report.postPath, report);
+          }
+
+          const selections = manifest.selections || [];
+          const accepted = selections.filter((entry) => !entry.skipped);
+          const skipped = selections.filter((entry) => entry.skipped);
+          const anchored = [...reports.values()].filter((report) => (report.subjectAnchors || []).length > 0);
+          const reasonCounts = new Map();
+          for (const entry of skipped) {
+            const reason = entry.skipReason || 'unknown';
+            reasonCounts.set(reason, (reasonCounts.get(reason) || 0) + 1);
+          }
+
+          console.log('<!-- cover-canary-all -->');
+          console.log('# Cover Canary — alle veröffentlichten Artikel');
+          console.log('');
+          console.log('Dry-Run: Es werden **keine Cover-Dateien oder Artikel verändert**. Jeder veröffentlichte Artikel läuft durch Pixabay-Suche → Hero-Gates → Subject-first → E5-Ranking → globale Diversitätsauswahl.');
+          console.log('');
+          console.log('| Kennzahl | Ergebnis |');
+          console.log('| --- | ---: |');
+          console.log(`| Artikel getestet | ${selections.length} |`);
+          console.log(`| Kandidat akzeptiert | ${accepted.length} |`);
+          console.log(`| Fail-closed / übersprungen | ${skipped.length} |`);
+          console.log(`| Mit Subject Anchor | ${anchored.length} |`);
+          console.log('');
+
+          if (reasonCounts.size) {
+            console.log('**Skip-Gründe:** ' + [...reasonCounts.entries()].map(([reason, count]) => `${count}× ${reason}`).join(' · '));
+            console.log('');
+          }
+
+          console.log('| Artikel | Subject | Ergebnis | Score | Kandidat |');
+          console.log('| --- | --- | --- | ---: | --- |');
+
+          const esc = (value) => String(value || '').replace(/[|\r\n]+/g, ' ').trim();
+          for (const selection of selections) {
+            const report = reports.get(selection.postPath) || {};
+            const subject = (report.subjectAnchors || []).join(', ') || '–';
+            if (selection.skipped) {
+              console.log(`| ${esc(report.title || selection.title || selection.postPath)} | ${esc(subject)} | ⏭ ${esc(selection.skipReason)} | – | – |`);
+              continue;
+            }
+
+            const candidate = (report.candidates || []).find((entry) => String(entry.id) === String(selection.id)) || {};
+            const tags = esc(candidate.tags).slice(0, 90) || `Pixabay #${selection.id}`;
+            const preview = candidate.previewURL ? `[Vorschau](${candidate.previewURL})` : '';
+            const source = candidate.pageURL ? `[Quelle](${candidate.pageURL})` : '';
+            const links = [preview, source].filter(Boolean).join(' · ');
+            console.log(
+              `| ${esc(report.title || selection.title || selection.postPath)} | ${esc(subject)} | ✅ Rang ${selection.rank} | ${selection.baseScore} → ${selection.adjustedScore} | ${tags}${links ? '<br>' + links : ''} |`
+            );
+          }
+
+          console.log('');
+          console.log('Der vollständige Top-3-Review pro Artikel steht im **Actions Step Summary** dieses Canary-Laufs.');
+          NODE
+
+          cat /tmp/cover-canary/summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+
+          node scripts/render-cover-review.js \
+            --reports-dir /tmp/cover-canary/reports \
+            --selection-manifest /tmp/cover-canary/selection.json \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$GITHUB_SHA" \
+            --compact >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish or update PR canary report
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          body_file=/tmp/cover-canary/comment.md
+          cp /tmp/cover-canary/summary.md "$body_file"
+          cat >> "$body_file" <<EOF
+
+          ---
+          [Vollständigen Canary-Lauf öffnen](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})
+          EOF
+
+          comment_id="$(
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments?per_page=100" \
+              --jq '.[] | select(.body | contains("<!-- cover-canary-all -->")) | .id' \
+              | head -n 1
+          )"
+
+          jq -n --rawfile body "$body_file" '{body: $body}' > /tmp/cover-canary/comment.json
+
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" \
+              --input /tmp/cover-canary/comment.json >/dev/null
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+              --input /tmp/cover-canary/comment.json >/dev/null
+          fi
+
+      - name: Verify dry-run did not modify repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)" || {
+            echo 'Canary unexpectedly modified tracked repository files:' >&2
+            git status --short >&2
+            exit 1
+          }
