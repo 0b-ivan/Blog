@@ -129,7 +129,8 @@ jobs:
               error_message="$(tail -n 1 "$log" | sed -E 's/\x1B\[[0-9;]*[mK]//g')"
               echo "Canary fail-closed for $post: $error_message"
 
-              POST_PATH="$post" REPORT_PATH="$report" CANARY_ERROR="$error_message" \
+              NODE_PATH="$GITHUB_WORKSPACE/node_modules" \
+                POST_PATH="$post" REPORT_PATH="$report" CANARY_ERROR="$error_message" \
                 node /tmp/cover-canary/write-error-report.js
             fi
             echo "::endgroup::"
