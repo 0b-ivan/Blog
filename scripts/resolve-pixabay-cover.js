@@ -198,7 +198,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation']
     ],
-    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight', 'smarthome', 'smart home', 'home automation', 'iot']
+    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight', 'smarthome', 'iot', 'house']
   },
   {
     key: 'semantic-search',
@@ -208,7 +208,7 @@ const VISUAL_INTENTS = [
     query: 'search data code analytics magnifying glass',
     positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
     minMatches: 2,
-    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'search engine', 'optimization', 'icon']
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon']
   },
   {
     key: 'vpc-networking',
