@@ -32,25 +32,25 @@ search_queries:
     maxRank: 1
   - query: Wie modelliert man ein Pokémon-Kampfsystem objektorientiert?
     maxRank: 1
-cover_query: retro handheld creature battle monster rpg turn based pixel
-cover_subject: abstract retro handheld creature battle with two fantasy monsters facing each other
+cover_query: retro handheld creature battle pixel game turn based
+cover_subject: >-
+  abstract retro handheld creature battle with two fantasy monsters facing each
+  other
 cover_intent: pokemon-oop-domain-model
 cover_avoid: >-
   pokemon logo pikachu copyrighted artwork trading cards phone laptop office
   keyboard code screenshot text logo
 cover_provider: pixabay
-cover_provider_id: '1558068'
-cover_image: /assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.jpg
+cover_provider_id: '8809929'
+cover_image: /assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.png
 cover_alt: >-
-  mario, figure, game, nintendo, super, retro, classic, computer game,
-  character, cartoon, video, games console, happy, video game, super mario bros,
-  marios, mario, mario, mario, cartoon, cartoon, cartoon, cartoon, video, video,
-  video, video, video, video game, video game
+  cassette, tape, pixel art, pixel, recorder, retro, classic, music, dragon,
+  reptile, creature, fantasy, wild, ancient, medieval
 cover_focus: center
-cover_score: 84
-cover_credit: by Alexas_Fotos via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/mario-figure-game-nintendo-super-1558068/'
-cover_source_url: 'https://pixabay.com/photos/mario-figure-game-nintendo-super-1558068/'
+cover_score: 89
+cover_credit: by Avedeto via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/cassette-tape-pixel-art-pixel-8809929/'
+cover_source_url: 'https://pixabay.com/illustrations/cassette-tape-pixel-art-pixel-8809929/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
