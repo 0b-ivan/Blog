@@ -38,13 +38,35 @@ const GENERIC_SUBJECT_CONTEXT_TERMS = new Set([
 ]);
 
 const SUBJECT_ALIAS_OVERRIDES = {
-  deployment: ['deploy', 'automation', 'infrastructure', 'server', 'cloud'],
-  github: ['code', 'software', 'repository', 'programming'],
-  subnet: ['network', 'topology', 'router', 'routing', 'ethernet', 'lan'],
+  deployment: ['deploy', 'automation', 'infrastructure'],
+  github: ['repository', 'pull request', 'source control'],
+  dependabot: ['dependency', 'dependencies', 'package', 'update', 'vulnerability', 'github'],
+  docker: ['devops', 'deployment', 'orchestration', 'services'],
+  compose: ['devops', 'deployment', 'orchestration', 'services'],
+  rss: ['feed', 'reader', 'aggregator', 'syndication'],
+  freshrss: ['rss', 'feed', 'reader', 'aggregator'],
+  systemd: ['daemon', 'journalctl', 'process', 'service'],
+  subnet: ['topology', 'router', 'routing', 'ethernet', 'lan'],
+  vpc: ['topology', 'subnet', 'router', 'routing', 'ethernet'],
+  kubernetes: ['cluster', 'container', 'orchestration'],
+  k3s: ['kubernetes', 'cluster', 'container', 'orchestration'],
+  proxmox: ['virtualization', 'hypervisor', 'virtual machine'],
+  gitops: ['flux', 'continuous delivery', 'deployment automation'],
+  semanticsearch: ['search', 'embedding', 'embeddings', 'vector', 'retrieval'],
+  kernelgrep: ['search', 'grep', 'embedding', 'retrieval'],
+  immich: ['photo', 'gallery', 'photo management'],
+  nextcloud: ['files', 'cloud storage', 'sync'],
+  webdav: ['files', 'sync', 'remote storage'],
+  rclone: ['files', 'sync', 'backup'],
   observability: ['monitoring', 'metrics', 'logs', 'alerts', 'telemetry'],
-  cloudwatch: ['monitoring', 'metrics', 'logs', 'alerts', 'cloud'],
-  resilience: ['reliability', 'recovery', 'incident', 'outage', 'failure', 'monitoring'],
-  reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure', 'monitoring'],
+  cloudwatch: ['monitoring', 'metrics', 'logs', 'alerts'],
+  logging: ['logs', 'monitoring', 'telemetry'],
+  logger: ['logs', 'logging', 'monitoring'],
+  regression: ['testing', 'test', 'bug'],
+  regressionstest: ['testing', 'test', 'bug'],
+  testing: ['test', 'bug', 'regression'],
+  resilience: ['reliability', 'recovery', 'incident', 'outage', 'failure'],
+  reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure'],
   doom: ['shareware', 'floppy', 'disk', 'dos'],
   shareware: ['floppy', 'disk', 'dos']
 };
@@ -418,7 +440,6 @@ function subjectAnchors(data = {}, query = '') {
       }
 
       const visualAliases = [
-        ...(TOPIC_EXPANSIONS[token] || []),
         ...(SUBJECT_ALIAS_OVERRIDES[token] || [])
       ]
         .flatMap((value) => tokensFrom(value))
@@ -448,9 +469,6 @@ function subjectAnchors(data = {}, query = '') {
 function subjectAliasTokens(anchor, intent = null) {
   const aliases = new Set([anchor]);
 
-  for (const related of TOPIC_EXPANSIONS[anchor] || []) {
-    for (const token of tokensFrom(related)) aliases.add(canonicalSubjectToken(token));
-  }
   for (const related of SUBJECT_ALIAS_OVERRIDES[anchor] || []) {
     for (const token of tokensFrom(related)) aliases.add(canonicalSubjectToken(token));
   }
