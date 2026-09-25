@@ -29,7 +29,8 @@ const {
   subjectAnchors,
   subjectAliasTokens,
   subjectAnchorEvidence,
-  intentSearchVariants
+  intentSearchVariants,
+  subjectSearchVariants
 } = require('../scripts/resolve-pixabay-cover');
 
 describe('Pixabay cover resolver', () => {
@@ -400,6 +401,42 @@ describe('Pixabay cover resolver', () => {
 
     expect(evidence.matches).toHaveLength(0);
     expect(subjectAliasTokens('pokemon')).toEqual(['pokemon']);
+  });
+
+  it('builds short subject-aware queries for technical topics without article-specific hacks', () => {
+    const k3s = {
+      title: 'K3s auf Proxmox – Teil I: Blog-Staging',
+      tags: ['Kubernetes', 'K3s', 'Proxmox', 'Cloudflare'],
+      cover_query: 'server datacenter infrastructure network cloud container cluster kubernetes'
+    };
+    const k3sVariants = subjectSearchVariants(k3s);
+    expect(k3sVariants).toEqual(expect.arrayContaining([
+      'k3s kubernetes',
+      'kubernetes cluster'
+    ]));
+    expect(queryCandidates(k3s).length).toBeGreaterThan(3);
+
+    const rss = {
+      title: 'RSS ist nicht tot',
+      tags: ['RSS', 'FreshRSS'],
+      cover_query: 'rss feed reader dashboard aggregator browser subscription'
+    };
+    const rssIntent = visualIntent(rss);
+    expect(subjectSearchVariants(rss, rssIntent)).toEqual(expect.arrayContaining([
+      'rss feed',
+      'feed reader'
+    ]));
+
+    const immich = {
+      title: 'Warum ich Immich nicht synchronisiere',
+      tags: ['Immich', 'Nextcloud', 'WebDAV', 'rclone'],
+      cover_query: 'photo storage server cloud gallery files sync homelab'
+    };
+    const immichIntent = visualIntent(immich);
+    expect(subjectSearchVariants(immich, immichIntent)).toEqual(expect.arrayContaining([
+      'immich photo',
+      'photo gallery'
+    ]));
   });
 
   it('derives extra search variants from reusable intent vocabulary', () => {
