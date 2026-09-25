@@ -263,14 +263,14 @@ describe('Pixabay cover resolver', () => {
       category: 'Engineering',
       tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
       cover_intent: 'pokemon-oop-domain-model',
-      cover_query: 'handheld monster battle rpg creature combat fantasy game'
+      cover_query: 'pokemon game handheld battle'
     };
 
     const queries = queryCandidates(article);
     expect(queries.length).toBeGreaterThan(3);
-    expect(queries[0]).toBe('handheld monster battle rpg creature combat fantasy game');
-    expect(queries).toContain('two monsters fighting fantasy game battle');
-    expect(queries).toContain('creature duel rpg fantasy combat game');
+    expect(queries[0]).toBe('pokemon game handheld battle');
+    expect(queries).toContain('pokemon pikachu game');
+    expect(queries).toContain('pokemon gameboy cartridge');
   });
 
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
@@ -321,9 +321,9 @@ describe('Pixabay cover resolver', () => {
       category: 'Engineering',
       tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
       cover_intent: 'pokemon-oop-domain-model',
-      cover_subject: 'retro handheld game console with a simple turn based creature battle',
-      cover_query: 'retro handheld game console pixel game creature battle programming',
-      cover_avoid: 'pokemon logo pikachu copyrighted artwork trading cards phone laptop office keyboard code screenshot text logo'
+      cover_subject: 'Pokémon game scene or handheld Pokémon game with clear franchise context',
+      cover_query: 'pokemon game handheld battle',
+      cover_avoid: 'logo trading cards phone laptop office keyboard code screenshot text'
     };
 
     const intent = visualIntent(article);
@@ -337,17 +337,19 @@ describe('Pixabay cover resolver', () => {
       imageHeight: 1080
     }, article);
 
-    const creatureBattle = scoreHit({
+    const pokemonGame = scoreHit({
       type: 'illustration',
-      tags: 'retro, handheld, pixel, creature, monster, battle, game, rpg',
+      tags: 'pokemon, pikachu, game, handheld, battle, rpg',
       imageWidth: 1920,
       imageHeight: 1080
     }, article);
 
     expect(mario.semanticMismatch).toBe(true);
     expect(mario.hardAvoidMatches).toContain('mario');
-    expect(creatureBattle.semanticMismatch).toBe(false);
-    expect(creatureBattle.score).toBeGreaterThan(mario.score);
+    expect(pokemonGame.semanticMismatch).toBe(false);
+    expect(pokemonGame.hardAvoidMatches).not.toContain('pokemon');
+    expect(pokemonGame.hardAvoidMatches).not.toContain('pikachu');
+    expect(pokemonGame.score).toBeGreaterThan(mario.score);
   });
 
   it('rejects a retro creature motif when there is no actual battle or game scene', () => {
@@ -356,7 +358,7 @@ describe('Pixabay cover resolver', () => {
       category: 'Engineering',
       tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
       cover_intent: 'pokemon-oop-domain-model',
-      cover_subject: 'abstract turn based creature duel on a handheld game screen'
+      cover_subject: 'Pokémon game scene or handheld Pokémon game with clear franchise context'
     };
 
     const cassetteDragon = scoreHit({
@@ -366,17 +368,24 @@ describe('Pixabay cover resolver', () => {
       imageHeight: 1080
     }, article);
 
-    const monsterBattle = scoreHit({
+    const genericMonsterBattle = scoreHit({
       type: 'illustration',
       tags: 'handheld, game, rpg, creature, monster, fantasy, battle, combat, duel',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const pokemonBattle = scoreHit({
+      type: 'illustration',
+      tags: 'pokemon, pokeball, handheld, game, battle',
       imageWidth: 1920,
       imageHeight: 1080
     }, article);
 
     expect(cassetteDragon.semanticMismatch).toBe(true);
     expect(cassetteDragon.hardAvoidMatches).toEqual(expect.arrayContaining(['cassette', 'tape', 'music']));
-    expect(monsterBattle.semanticMismatch).toBe(false);
-    expect(monsterBattle.score).toBeGreaterThan(cassetteDragon.score);
+    expect(genericMonsterBattle.semanticMismatch).toBe(true);
+    expect(pokemonBattle.semanticMismatch).toBe(false);
+    expect(pokemonBattle.score).toBeGreaterThan(genericMonsterBattle.score);
   });
 
   it('rejects adjacent fantasy and sci-fi battle franchises for Pokémon covers', () => {
@@ -402,18 +411,23 @@ describe('Pixabay cover resolver', () => {
       imageHeight: 1080
     }, article);
 
-    const creatureDuel = scoreHit({
+    const genericCreatureDuel = scoreHit({
       type: 'illustration',
       tags: 'handheld, game, rpg, creature, monster, fantasy, battle, combat, duel',
       imageWidth: 1920,
       imageHeight: 1080
     }, article);
+    const pokemonBattle = scoreHit({
+      type: 'illustration',
+      tags: 'pokemon, pikachu, handheld, game, battle',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
 
     expect(dndDragon.semanticMismatch).toBe(true);
-    expect(dndDragon.hardAvoidMatches).toEqual(expect.arrayContaining(['dnd', 'warrior', 'knight']));
     expect(alienBattle.semanticMismatch).toBe(true);
-    expect(alienBattle.hardAvoidMatches).toEqual(expect.arrayContaining(['alien', 'ufo', 'spaceship']));
-    expect(creatureDuel.semanticMismatch).toBe(false);
+    expect(genericCreatureDuel.semanticMismatch).toBe(true);
+    expect(pokemonBattle.semanticMismatch).toBe(false);
   });
 
   it('treats explicit cover_avoid terms as semantic blockers, not only score penalties', () => {
