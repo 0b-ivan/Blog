@@ -128,6 +128,13 @@ function candidateTable(candidates, options = {}) {
     const semanticGate = candidate.semanticMismatch
       ? '⛔ Semantic-Gate: Motiv passt nicht zuverlässig zum Artikel'
       : '';
+    const subjectGate = candidate.subjectAnchorRequired
+      ? (
+          (candidate.subjectAnchorMatches || []).length
+            ? `Subject: ${markdownText((candidate.subjectAnchorMatches || []).join(', '))}`
+            : `⛔ Subject fehlt: ${markdownText((candidate.subjectAnchors || []).join(', '))}`
+        )
+      : '';
 
     const details = compact
       ? [
@@ -137,6 +144,7 @@ function candidateTable(candidates, options = {}) {
           heroQuality,
           dimensions,
           hardGate,
+          subjectGate,
           semanticGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
@@ -149,6 +157,7 @@ function candidateTable(candidates, options = {}) {
           heuristic,
           dimensions,
           hardGate,
+          subjectGate,
           semanticGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
