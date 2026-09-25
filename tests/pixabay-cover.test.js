@@ -26,7 +26,10 @@ const {
   scoreHit,
   searchPixabay,
   searchPixabayCached,
-  subjectAnchors
+  subjectAnchors,
+  subjectAliasTokens,
+  subjectAnchorEvidence,
+  intentSearchVariants
 } = require('../scripts/resolve-pixabay-cover');
 
 describe('Pixabay cover resolver', () => {
@@ -335,6 +338,94 @@ describe('Pixabay cover resolver', () => {
     expect(result.subjectAnchors).toContain('nfc');
     expect(result.hardAvoidMatches).not.toContain('nfc');
     expect(result.semanticMismatch).toBe(false);
+  });
+
+  it('matches conceptual subjects through reusable visual aliases', () => {
+    const rss = scoreHit({
+      type: 'illustration',
+      tags: 'feed, reader, dashboard, browser, subscription',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'RSS ist nicht tot',
+      tags: ['RSS', 'FreshRSS'],
+      cover_query: 'rss feed reader dashboard aggregator browser subscription'
+    });
+
+    expect(rss.subjectAnchors).toContain('rss');
+    expect(rss.subjectAnchorMatches).toContain('rss');
+    expect(rss.subjectAnchorEvidence.rss).toBe('feed');
+
+    const vpc = scoreHit({
+      type: 'photo',
+      tags: 'network, router, routing, ethernet, topology',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'Eine VPC ist keine schwarze Magie',
+      tags: ['AWS', 'VPC', 'Networking', 'Subnet'],
+      cover_query: 'computer network topology router routing subnet infrastructure'
+    });
+
+    expect(vpc.subjectAnchors).toContain('subnet');
+    expect(vpc.subjectAnchorMatches).toContain('subnet');
+    expect(['network', 'topology', 'router', 'routing', 'ethernet']).toContain(
+      vpc.subjectAnchorEvidence.subnet
+    );
+  });
+
+  it('keeps concrete subjects strict when no visual alias is defined', () => {
+    const evidence = subjectAnchorEvidence(
+      new Set(['smartphone', 'game', 'retro']),
+      ['pokemon'],
+      visualIntent({
+        title: 'Pokémon ist perfekt für OOP',
+        tags: ['Pokémon'],
+        cover_intent: 'pokemon-oop-domain-model'
+      })
+    );
+
+    expect(evidence.matches).toHaveLength(0);
+    expect(subjectAliasTokens('pokemon')).toEqual(['pokemon']);
+  });
+
+  it('derives extra search variants from reusable intent vocabulary', () => {
+    const systemd = {
+      title: 'systemd Services sauber betreiben',
+      tags: ['Linux', 'systemd', 'Operations'],
+      cover_query: 'linux server administration monitoring service logs daemon'
+    };
+    const intent = visualIntent(systemd);
+    const variants = intentSearchVariants(systemd, intent);
+    expect(variants.some((value) => value.includes('service'))).toBe(true);
+    expect(queryCandidates(systemd).length).toBeGreaterThan(2);
+  });
+
+  it('supports the configured DOOM shareware visual intent', () => {
+    const article = {
+      title: 'DOOM: Wie Shareware das PC-Gaming veränderte',
+      tags: ['DOOM', 'Shareware', 'Retro-Gaming'],
+      cover_intent: 'doom-shareware-history',
+      cover_query: 'doom retro pc gaming shareware floppy disk 1990s'
+    };
+    const intent = visualIntent(article);
+    expect(intent.key).toBe('doom-shareware-history');
+
+    const floppy = scoreHit({
+      type: 'photo',
+      tags: 'floppy, disk, retro, computer, dos, data',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const modern = scoreHit({
+      type: 'photo',
+      tags: 'rgb, laptop, esports, controller, modern gaming',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(floppy.semanticMismatch).toBe(false);
+    expect(modern.semanticMismatch).toBe(true);
   });
 
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
