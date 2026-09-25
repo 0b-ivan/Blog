@@ -495,6 +495,26 @@ describe('Pixabay cover resolver', () => {
     }
   });
 
+  it('prefers title-derived subjects over broader tags', () => {
+    const docker = subjectAnchors({
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      tags: ['Docker', 'Compose', 'DevOps', 'Automation'],
+      cover_query: 'devops deployment orchestration services architecture workflow'
+    });
+
+    expect(docker).toEqual(expect.arrayContaining(['docker', 'compose']));
+    expect(docker).not.toContain('devops');
+
+    const blog = subjectAnchors({
+      title: 'Wie dieser Blog gebaut ist',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    });
+
+    expect(blog).toContain('blog');
+    expect(blog).not.toContain('devops');
+  });
+
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
     const article = {
       title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
