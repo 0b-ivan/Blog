@@ -87,6 +87,17 @@ const SUBJECT_ALIAS_CONTEXT = {
   logs: ['software', 'monitoring', 'metrics', 'server', 'observability', 'logging', 'telemetry']
 };
 
+const SUBJECT_EXACT_CONTEXT = {
+  docker: [
+    'software', 'devops', 'deployment', 'container', 'containers', 'compose',
+    'orchestration', 'server', 'cloud', 'code', 'application', 'service'
+  ],
+  compose: [
+    'docker', 'software', 'devops', 'deployment', 'container', 'containers',
+    'orchestration', 'service', 'services', 'application'
+  ]
+};
+
 const TOPIC_AVOID = {
   kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
   k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
@@ -534,10 +545,19 @@ function subjectAnchorEvidence(hitTokens, anchors, intent = null) {
 
   for (const anchor of anchors) {
     const aliases = subjectAliasTokens(anchor, intent);
-    const hit = aliases.find((token) =>
-      canonicalHits.has(token)
-      && (token === anchor || subjectAliasContextMet(anchor, token, canonicalHits))
-    );
+    const hit = aliases.find((token) => {
+      if (!canonicalHits.has(token)) return false;
+
+      if (token === anchor) {
+        const required = SUBJECT_EXACT_CONTEXT[anchor] || [];
+        if (!required.length) return true;
+        return required
+          .map(canonicalSubjectToken)
+          .some((contextToken) => canonicalHits.has(contextToken));
+      }
+
+      return subjectAliasContextMet(anchor, token, canonicalHits);
+    });
     if (!hit) continue;
     matches.push(anchor);
     evidence[anchor] = hit;
