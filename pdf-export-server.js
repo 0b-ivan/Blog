@@ -52,7 +52,7 @@ function rememberPdf(post, pdf) {
   return pdf;
 }
 
-function prepareArticlePdf(post) {
+function prepareArticlePdf(post, options = {}) {
   const state = pdfRenderState(post);
   if (state.ready) {
     return Promise.resolve(pdfCache.get(state.key));
@@ -61,8 +61,9 @@ function prepareArticlePdf(post) {
     return pdfPending.get(state.key);
   }
 
+  const compileImpl = options.compileImpl || compileArticlePdf;
   const startedAt = Date.now();
-  const pending = compileArticlePdf(post)
+  const pending = compileImpl(post)
     .then((pdf) => {
       console.log(`PDF render ready for ${post.slug} in ${Date.now() - startedAt}ms`);
       return rememberPdf(post, pdf);
