@@ -156,6 +156,26 @@ describe('series-aware cover diversity', () => {
     expect(selection.id).toBeUndefined();
   });
 
+  it('can select a valid candidate beyond the old top-five cutoff', () => {
+    const report = {
+      postPath: 'posts/pokemon.md',
+      title: 'Pokémon OOP',
+      series: '',
+      candidates: [
+        { ...candidate(1, 1, 96, 'mario, retro, game'), semanticMismatch: true },
+        { ...candidate(2, 2, 94, 'cassette, dragon, retro'), semanticMismatch: true },
+        { ...candidate(3, 3, 92, 'generic, retro, pixel'), semanticMismatch: true },
+        { ...candidate(4, 4, 90, 'console, game'), semanticMismatch: true },
+        { ...candidate(5, 5, 88, 'creature, fantasy'), semanticMismatch: true },
+        { ...candidate(6, 6, 86, 'handheld, rpg, monster, battle, combat'), semanticMismatch: false }
+      ]
+    };
+
+    const [selection] = chooseDiverseCovers([report]);
+    expect(selection.skipped).toBeFalsy();
+    expect(selection.id).toBe('6');
+  });
+
   it('skips an article instead of falling back to semantically wrong imagery', () => {
     const reports = [{
       postPath: 'posts/systemd.md',
