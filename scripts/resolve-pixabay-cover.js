@@ -33,8 +33,19 @@ const GENERIC_SUBJECT_CONTEXT_TERMS = new Set([
   'engineering', 'architecture', 'system', 'service', 'application', 'automation',
   'game', 'gaming', 'retro', 'handheld', 'console', 'battle', 'combat', 'fight',
   'creature', 'monster', 'fantasy', 'rpg', 'cloud', 'server', 'network', 'data',
-  'image', 'photo', 'illustration', 'scene', 'workflow', 'computer'
+  'image', 'photo', 'illustration', 'scene', 'workflow', 'computer',
+  'dark', 'desk', 'old', 'modern'
 ]);
+
+const SUBJECT_ALIAS_OVERRIDES = {
+  deployment: ['deploy', 'automation', 'infrastructure', 'server', 'cloud'],
+  github: ['code', 'software', 'repository', 'programming'],
+  subnet: ['network', 'topology', 'router', 'routing', 'ethernet', 'lan'],
+  observability: ['monitoring', 'metrics', 'logs', 'alerts', 'telemetry'],
+  cloudwatch: ['monitoring', 'metrics', 'logs', 'alerts', 'cloud'],
+  resilience: ['reliability', 'recovery', 'incident', 'outage', 'failure', 'monitoring'],
+  reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure', 'monitoring']
+};
 
 const TOPIC_AVOID = {
   kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
@@ -339,6 +350,49 @@ function subjectAnchors(data = {}, query = '') {
   if (articleIdentity.length) return articleIdentity;
 
   return candidatesFor(tokensFrom(data.cover_subject));
+}
+
+function subjectAliasTokens(anchor, intent = null) {
+  const aliases = new Set([anchor]);
+
+  for (const related of TOPIC_EXPANSIONS[anchor] || []) {
+    for (const token of tokensFrom(related)) aliases.add(canonicalSubjectToken(token));
+  }
+  for (const related of SUBJECT_ALIAS_OVERRIDES[anchor] || []) {
+    for (const token of tokensFrom(related)) aliases.add(canonicalSubjectToken(token));
+  }
+
+  // If an intent explicitly defines a required group around this subject,
+  // that group is the visual vocabulary for the same concept. This keeps
+  // concrete brands strict (Pokémon stays Pokémon) while concepts such as
+  // RSS/feed or observability/metrics can use realistic image tags.
+  for (const group of intent?.requiredGroups || []) {
+    const canonicalGroup = group
+      .flatMap((value) => tokensFrom(value))
+      .map(canonicalSubjectToken)
+      .filter(Boolean);
+    if (canonicalGroup.includes(anchor)) {
+      for (const token of canonicalGroup) aliases.add(token);
+    }
+  }
+
+  return [...aliases].filter(Boolean);
+}
+
+function subjectAnchorEvidence(hitTokens, anchors, intent = null) {
+  const canonicalHits = new Set([...hitTokens].map(canonicalSubjectToken));
+  const matches = [];
+  const evidence = {};
+
+  for (const anchor of anchors) {
+    const aliases = subjectAliasTokens(anchor, intent);
+    const hit = aliases.find((token) => canonicalHits.has(token));
+    if (!hit) continue;
+    matches.push(anchor);
+    evidence[anchor] = hit;
+  }
+
+  return { matches, evidence };
 }
 
 function markerMatches(value, markers) {
@@ -657,8 +711,9 @@ function scoreHit(hit, data = {}, query = '') {
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
   const hardAvoidMatches = [...hitTokens].filter((token) => profile.hardAvoid.has(token));
-  const canonicalHitTokens = new Set([...hitTokens].map(canonicalSubjectToken));
-  const subjectAnchorMatches = profile.subjectAnchors.filter((token) => canonicalHitTokens.has(token));
+  const subjectEvidence = subjectAnchorEvidence(hitTokens, profile.subjectAnchors, profile.intent);
+  const subjectAnchorMatches = subjectEvidence.matches;
+  const subjectAnchorEvidenceMap = subjectEvidence.evidence;
   const subjectAnchorRequired = profile.subjectAnchors.length > 0;
   const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
@@ -670,7 +725,12 @@ function scoreHit(hit, data = {}, query = '') {
   if (subjectAnchorRequired) {
     if (subjectAnchorMatches.length) {
       score += 24;
-      reasons.push(`+24 subject anchor: ${subjectAnchorMatches.slice(0, 3).join(', ')}`);
+      const evidence = subjectAnchorMatches
+        .slice(0, 3)
+        .map((anchor) => subjectAnchorEvidenceMap[anchor] && subjectAnchorEvidenceMap[anchor] !== anchor
+          ? `${anchor}→${subjectAnchorEvidenceMap[anchor]}`
+          : anchor);
+      reasons.push(`+24 subject anchor: ${evidence.join(', ')}`);
     } else {
       score -= 45;
       reasons.push(`-45 missing subject anchor: ${profile.subjectAnchors.slice(0, 4).join(', ')}`);
@@ -763,6 +823,7 @@ function scoreHit(hit, data = {}, query = '') {
     hardAvoidMatches,
     subjectAnchors: profile.subjectAnchors,
     subjectAnchorMatches,
+    subjectAnchorEvidence: subjectAnchorEvidenceMap,
     subjectAnchorRequired,
     intentKey: profile.intent?.key || '',
     intentMatches,
@@ -1077,6 +1138,7 @@ function reportCandidate(entry, index) {
     intentMatches: entry.intentMatches || [],
     subjectAnchors: entry.subjectAnchors || [],
     subjectAnchorMatches: entry.subjectAnchorMatches || [],
+    subjectAnchorEvidence: entry.subjectAnchorEvidence || {},
     subjectAnchorRequired: Boolean(entry.subjectAnchorRequired),
     hardAvoidMatches: entry.hardAvoidMatches || [],
     requiredGroupMatches: entry.requiredGroupMatches || [],
@@ -1235,5 +1297,7 @@ module.exports = {
   searchPixabay,
   searchPixabayCached,
   subjectAnchors,
+  subjectAliasTokens,
+  subjectAnchorEvidence,
   updateCoverStylesheet
 };
