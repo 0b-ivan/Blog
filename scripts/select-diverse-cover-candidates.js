@@ -105,7 +105,6 @@ function candidateAdjustment(candidate, report, state) {
   const unrelatedAuthor = unrelatedCount(authorUsage, series);
   const authorPenalty = Math.min(12, unrelatedAuthor * 4);
 
-  const seriesConsistencyBonus = 0;
   const adjustedScore = Number(candidate.score || 0) - clusterPenalty - authorPenalty;
 
   return {
