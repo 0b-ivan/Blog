@@ -580,14 +580,15 @@ describe('Pixabay cover resolver', () => {
     expect(modern.semanticMismatch).toBe(true);
   });
 
-  it('does not promote broad topic expansions into subject identity', () => {
+  it('promotes only explicitly curated visual aliases into subject identity', () => {
     const anchors = subjectAnchors({
       title: 'Wie dieser Blog gebaut ist',
       tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
       cover_query: 'website code server publishing deployment automation infrastructure cloud'
     });
 
-    expect(anchors).not.toContain('blog');
+    expect(anchors).toContain('blog');
+    expect(anchors).not.toContain('devops');
   });
 
   it('hard-rejects known cross-domain word collisions', () => {
@@ -663,7 +664,7 @@ describe('Pixabay cover resolver', () => {
       cover_query: 'website code server publishing deployment automation infrastructure cloud'
     });
 
-    expect(blog).not.toContain('blog');
+    expect(blog).toContain('blog');
     expect(blog).not.toContain('devops');
   });
 
@@ -755,7 +756,7 @@ describe('Pixabay cover resolver', () => {
     }
   });
 
-  it('requires lexical topic evidence when no subject anchor or visual intent exists', () => {
+  it('uses a curated subject anchor before broad lexical topic evidence', () => {
     const article = {
       title: 'Wie dieser Blog gebaut ist',
       category: 'Engineering',
@@ -771,15 +772,15 @@ describe('Pixabay cover resolver', () => {
     }, article);
     const relevant = scoreHit({
       type: 'illustration',
-      tags: 'website, code, server, deployment, infrastructure, cloud',
+      tags: 'website, publishing, web, code, server, deployment, infrastructure, cloud',
       imageWidth: 1920,
       imageHeight: 1080
     }, article);
 
-    expect(unrelated.topicalEvidenceRequired).toBe(true);
-    expect(unrelated.topicalEvidenceMet).toBe(false);
+    expect(unrelated.subjectAnchorRequired).toBe(true);
+    expect(unrelated.subjectAnchorMatches).toHaveLength(0);
     expect(unrelated.semanticMismatch).toBe(true);
-    expect(relevant.topicalEvidenceMet).toBe(true);
+    expect(relevant.subjectAnchorMatches).toContain('blog');
     expect(relevant.semanticMismatch).toBe(false);
   });
 
