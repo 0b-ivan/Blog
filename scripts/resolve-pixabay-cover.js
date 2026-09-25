@@ -44,17 +44,29 @@ const SUBJECT_ALIAS_OVERRIDES = {
   observability: ['monitoring', 'metrics', 'logs', 'alerts', 'telemetry'],
   cloudwatch: ['monitoring', 'metrics', 'logs', 'alerts', 'cloud'],
   resilience: ['reliability', 'recovery', 'incident', 'outage', 'failure', 'monitoring'],
-  reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure', 'monitoring']
+  reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure', 'monitoring'],
+  doom: ['shareware', 'floppy', 'disk', 'dos'],
+  shareware: ['floppy', 'disk', 'dos']
 };
 
 const TOPIC_AVOID = {
-  kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
-  k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
-  proxmox: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
+  kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
+  k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
+  proxmox: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
   docker: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
   compose: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
   devops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
-  gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan']
+  gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
+  rss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
+  freshrss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
+  logging: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  logger: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  observability: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  cloudwatch: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  regression: ['school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom'],
+  testing: ['school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom'],
+  doom: ['truck', 'pickup', 'vehicle', 'car', 'chevrolet'],
+  shareware: ['truck', 'pickup', 'vehicle', 'car', 'chevrolet']
 };
 
 const VISUAL_INTENTS = [
@@ -139,7 +151,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['rss', 'feed', 'reader', 'aggregator', 'syndication']
     ],
-    avoid: ['speed', 'speedometer', 'download', 'upload', 'mbps', 'broadband', 'performance', 'icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
+    avoid: ['speed', 'speedometer', 'download', 'upload', 'mbps', 'broadband', 'performance', 'icon', 'logo', 'symbol', 'button', 'isolated', 'journalist', 'press', 'photographer', 'reporter', 'newspaper', 'television', 'book', 'books', 'bookstore', 'library', 'novel', 'novels', 'ebook', 'e-book', 'kobo', 'tablet', 'reading', 'server', 'rack', 'datacenter', 'storage', 'hard drive', 'disk', 'database']
   },
   {
     key: 'dependency-updates',
@@ -159,7 +171,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['service', 'logs', 'monitoring', 'daemon', 'process']
     ],
-    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design']
+    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop']
   },
   {
     key: 'docker-compose',
@@ -231,7 +243,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['testing', 'test', 'quality', 'assurance', 'bug']
     ],
-    avoid: ['business', 'meeting', 'office']
+    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom']
   },
   {
     key: 'logging-observability',
@@ -243,7 +255,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts']
     ],
-    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office']
+    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office', 'wood', 'timber', 'firewood', 'forest', 'tree', 'lumber']
   },
   {
     key: 'photo-storage-sync',
@@ -390,19 +402,10 @@ function subjectAliasTokens(anchor, intent = null) {
     for (const token of tokensFrom(related)) aliases.add(canonicalSubjectToken(token));
   }
 
-  // If an intent explicitly defines a required group around this subject,
-  // that group is the visual vocabulary for the same concept. This keeps
-  // concrete brands strict (Pokémon stays Pokémon) while concepts such as
-  // RSS/feed or observability/metrics can use realistic image tags.
-  for (const group of intent?.requiredGroups || []) {
-    const canonicalGroup = group
-      .flatMap((value) => tokensFrom(value))
-      .map(canonicalSubjectToken)
-      .filter(Boolean);
-    if (canonicalGroup.includes(anchor)) {
-      for (const token of canonicalGroup) aliases.add(token);
-    }
-  }
+  // Intent groups validate the scene separately. Subject aliases stay
+  // intentionally narrower, otherwise era/style words such as "retro" or
+  // "1990s" could impersonate a concrete subject such as DOOM.
+  void intent;
 
   return [...aliases].filter(Boolean);
 }
