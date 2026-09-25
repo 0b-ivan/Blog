@@ -515,6 +515,54 @@ describe('Pixabay cover resolver', () => {
     expect(blog).not.toContain('devops');
   });
 
+  it('rejects generic stock motifs for concrete technical intents', () => {
+    const cases = [
+      {
+        article: {
+          title: 'Dependabot im Einsatz',
+          tags: ['Dependabot', 'GitHub', 'Dependencies'],
+          cover_query: 'software dependency package update code github vulnerability'
+        },
+        hit: 'analytics, information, innovation, communication, big data, cyber security'
+      },
+      {
+        article: {
+          title: 'Kernel Grep: semantische Suche',
+          tags: ['Semantic-Search', 'Embeddings', 'Kernel-Grep'],
+          cover_query: 'search data code analytics magnifying glass'
+        },
+        hit: 'ball, binary, computer data, binary matrix, digital binary'
+      },
+      {
+        article: {
+          title: 'systemd Services sauber betreiben',
+          tags: ['Linux', 'systemd', 'Operations'],
+          cover_query: 'linux server administration monitoring service logs daemon'
+        },
+        hit: 'cyberspace, data, wire, electronic, ethernet, infrastructure, cable, computer'
+      },
+      {
+        article: {
+          title: 'Regressionstests – was sie sind',
+          tags: ['Testing', 'Regressionstest', 'CI'],
+          cover_query: 'software testing quality assurance bug code'
+        },
+        hit: 'marketing, development, software, usefulness, consumer-friendly, quality, cost'
+      }
+    ];
+
+    for (const entry of cases) {
+      const result = scoreHit({
+        type: 'illustration',
+        tags: entry.hit,
+        imageWidth: 1920,
+        imageHeight: 1080
+      }, entry.article);
+
+      expect(result.semanticMismatch, entry.hit).toBe(true);
+    }
+  });
+
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
     const article = {
       title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
