@@ -369,7 +369,7 @@ describe('Pixabay cover resolver', () => {
 
     expect(vpc.subjectAnchors).toContain('vpc');
     expect(vpc.subjectAnchorMatches).toContain('vpc');
-    expect(['network', 'cloud', 'infrastructure', 'datacenter']).toContain(
+    expect(['topology', 'subnet', 'router', 'routing', 'ethernet']).toContain(
       vpc.subjectAnchorEvidence.vpc
     );
   });
@@ -428,14 +428,14 @@ describe('Pixabay cover resolver', () => {
     expect(modern.semanticMismatch).toBe(true);
   });
 
-  it('infers a subject when the cover query uses its visual vocabulary', () => {
+  it('does not promote broad topic expansions into subject identity', () => {
     const anchors = subjectAnchors({
       title: 'Wie dieser Blog gebaut ist',
       tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
       cover_query: 'website code server publishing deployment automation infrastructure cloud'
     });
 
-    expect(anchors).toContain('blog');
+    expect(anchors).not.toContain('blog');
   });
 
   it('hard-rejects known cross-domain word collisions', () => {
@@ -511,7 +511,7 @@ describe('Pixabay cover resolver', () => {
       cover_query: 'website code server publishing deployment automation infrastructure cloud'
     });
 
-    expect(blog).toContain('blog');
+    expect(blog).not.toContain('blog');
     expect(blog).not.toContain('devops');
   });
 
@@ -1300,7 +1300,7 @@ describe('Pixabay cover resolver', () => {
     };
     const technical = {
       id: 1,
-      tags: 'server, storage, cloud, files, network',
+      tags: 'photo, gallery, storage, cloud, files, network',
       imageWidth: 1920,
       imageHeight: 1080,
       downloads: 5000,
