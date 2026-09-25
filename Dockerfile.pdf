@@ -13,9 +13,11 @@ RUN apt-get update \
     texlive-latex-extra \
     texlive-fonts-recommended \
     texlive-lang-german \
+    texlive-lang-japanese \
     texlive-pictures \
     librsvg2-bin \
     fonts-texgyre \
+    fonts-noto-cjk \
     lmodern \
   && rm -rf /var/lib/apt/lists/*
 
