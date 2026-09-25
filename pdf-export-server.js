@@ -18,6 +18,67 @@ const template = process.env.PDF_LATEX_TEMPLATE || path.join(root, 'templates', 
 const compileTimeoutMs = Number(process.env.PDF_COMPILE_TIMEOUT_MS || 60000);
 
 let runtimeCheck;
+const pdfCache = new Map();
+const pdfPending = new Map();
+
+function pdfCacheKey(post) {
+  return [
+    String(post?.slug || ''),
+    String(post?.version || 1),
+    String(post?.updatedAt || post?.date || '')
+  ].join(':');
+}
+
+function pdfRenderState(post) {
+  const key = pdfCacheKey(post);
+  return {
+    key,
+    ready: pdfCache.has(key),
+    preparing: pdfPending.has(key)
+  };
+}
+
+function rememberPdf(post, pdf) {
+  const key = pdfCacheKey(post);
+  const slugPrefix = `${String(post?.slug || '')}:`;
+
+  for (const existingKey of pdfCache.keys()) {
+    if (existingKey.startsWith(slugPrefix) && existingKey !== key) {
+      pdfCache.delete(existingKey);
+    }
+  }
+
+  pdfCache.set(key, pdf);
+  return pdf;
+}
+
+function prepareArticlePdf(post, options = {}) {
+  const state = pdfRenderState(post);
+  if (state.ready) {
+    return Promise.resolve(pdfCache.get(state.key));
+  }
+  if (state.preparing) {
+    return pdfPending.get(state.key);
+  }
+
+  const compileImpl = options.compileImpl || compileArticlePdf;
+  const startedAt = Date.now();
+  const pending = compileImpl(post)
+    .then((pdf) => {
+      console.log(`PDF render ready for ${post.slug} in ${Date.now() - startedAt}ms`);
+      return rememberPdf(post, pdf);
+    })
+    .catch((error) => {
+      console.error(`PDF render failed for ${post.slug} after ${Date.now() - startedAt}ms`);
+      throw error;
+    })
+    .finally(() => {
+      pdfPending.delete(state.key);
+    });
+
+  pdfPending.set(state.key, pending);
+  return pending;
+}
 
 async function verifyRuntime() {
   if (!runtimeCheck) {
@@ -134,6 +195,58 @@ function createApp() {
     }
   });
 
+  app.get('/status/:slug', async (req, res) => {
+    try {
+      const posts = await legacy.readPosts(postsDir);
+      const post = legacy.resolvePostBySlug(posts, req.params.slug);
+
+      if (!post) {
+        res.status(404).json({ ready: false, preparing: false, message: 'Post not found' });
+        return;
+      }
+
+      const state = pdfRenderState(post);
+      res.set('Cache-Control', 'no-store');
+      res.status(200).json({
+        ready: state.ready,
+        preparing: state.preparing
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ready: false, preparing: false });
+    }
+  });
+
+  app.post('/prepare/:slug', async (req, res) => {
+    try {
+      await verifyRuntime();
+      const posts = await legacy.readPosts(postsDir);
+      const post = legacy.resolvePostBySlug(posts, req.params.slug);
+
+      if (!post) {
+        res.status(404).json({ ready: false, preparing: false, message: 'Post not found' });
+        return;
+      }
+
+      const state = pdfRenderState(post);
+      if (state.ready) {
+        res.set('Cache-Control', 'no-store');
+        res.status(200).json({ ready: true, preparing: false });
+        return;
+      }
+
+      void prepareArticlePdf(post).catch((error) => {
+        console.error(error);
+      });
+
+      res.set('Cache-Control', 'no-store');
+      res.status(202).json({ ready: false, preparing: true });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ ready: false, preparing: false });
+    }
+  });
+
   app.get('/pdf/:slug', async (req, res) => {
     try {
       await verifyRuntime();
@@ -145,7 +258,7 @@ function createApp() {
         return;
       }
 
-      const pdf = await compileArticlePdf(post);
+      const pdf = await prepareArticlePdf(post);
       res.set('Content-Type', 'application/pdf');
       res.set('Cache-Control', 'public, max-age=3600');
       res.status(200).send(pdf);
@@ -170,6 +283,9 @@ if (require.main === module) {
 
 module.exports = {
   compileArticlePdf,
+  pdfCacheKey,
+  pdfRenderState,
+  prepareArticlePdf,
   prepareSvgImagesForPdf,
   createApp,
   startServer,

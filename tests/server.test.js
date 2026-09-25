@@ -175,6 +175,50 @@ Body
     });
   });
 
+  it('proxies PDF preparation state and warms the PDF when an article is opened', async () => {
+    await writePost(
+      tmpDir,
+      'warm-me.md',
+      '---\ntitle: Warm Me\ndate: 2026-05-01\ncategory: Docs\n---\nBody'
+    );
+
+    const fetchMock = globalThis.vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, options = {}) => ({
+      status: options.method === 'POST' ? 202 : 200,
+      json: async () => options.method === 'POST'
+        ? { ready: false, preparing: true }
+        : { ready: true, preparing: false }
+    }));
+
+    try {
+      const app = createApp({
+        postsDir: tmpDir,
+        pdfServiceUrl: 'http://pdf:8092'
+      });
+
+      const prepare = await request(app).post('/api/pdf/warm-me/prepare');
+      expect(prepare.status).toBe(202);
+      expect(prepare.body).toMatchObject({ ready: false, preparing: true });
+
+      const status = await request(app).get('/api/pdf/warm-me/status');
+      expect(status.status).toBe(200);
+      expect(status.body).toMatchObject({ ready: true, preparing: false });
+
+      const article = await request(app).get('/posts/warm-me');
+      expect(article.status).toBe(200);
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://pdf:8092/prepare/warm-me',
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://pdf:8092/status/warm-me',
+        expect.objectContaining({ method: 'GET' })
+      );
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
   it('post detail route renders html and 404 for missing slug', async () => {
     await writePost(
       tmpDir,

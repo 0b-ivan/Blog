@@ -534,16 +534,58 @@ jobs:
         if: steps.deploy_mode.outputs.build_images == 'true'
         env:
           STAGING_URL: https://staging-blog.obivan.org
+          PDF_SMOKE_SLUG: 2026-09-20-chaos-engineering-chaos-monkey-kubernetes
         shell: bash
         run: |
           set -euo pipefail
           output=/tmp/staging-chaos-engineering.pdf
-          curl -fsS --max-time 90 \
-            "${STAGING_URL}/download/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.pdf?deploy=${GITHUB_SHA}" \
+
+          echo 'Starting PDF preparation through the public API without holding a long Cloudflare request.'
+          accepted=false
+          for attempt in $(seq 1 24); do
+            response="$(curl -fsS --max-time 10 -X POST \
+              "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/prepare?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            ready="$(printf '%s' "$response" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("ready", False)).lower())' 2>/dev/null || true)"
+            preparing="$(printf '%s' "$response" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("preparing", False)).lower())' 2>/dev/null || true)"
+
+            if [ "$ready" = true ] || [ "$preparing" = true ]; then
+              accepted=true
+              echo "PDF preparation accepted on attempt ${attempt}."
+              break
+            fi
+
+            echo "PDF service not ready for preparation yet (attempt ${attempt}/24)."
+            sleep 5
+          done
+
+          test "$accepted" = true
+
+          echo 'Waiting for the cached PDF to become ready.'
+          pdf_ready=false
+          for attempt in $(seq 1 30); do
+            state="$(curl -fsS --max-time 10 \
+              "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/status?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            ready="$(printf '%s' "$state" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("ready", False)).lower())' 2>/dev/null || true)"
+            preparing="$(printf '%s' "$state" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("preparing", False)).lower())' 2>/dev/null || true)"
+
+            if [ "$ready" = true ]; then
+              pdf_ready=true
+              echo "PDF cache is ready after ${attempt} status check(s)."
+              break
+            fi
+
+            echo "PDF state: ready=${ready:-unknown}, preparing=${preparing:-unknown} (attempt ${attempt}/30)"
+            sleep 5
+          done
+
+          test "$pdf_ready" = true
+
+          curl -fsS --max-time 20 \
+            "${STAGING_URL}/download/${PDF_SMOKE_SLUG}.pdf?deploy=${GITHUB_SHA}" \
             -o "$output"
           test "$(head -c 5 "$output")" = '%PDF-'
           test "$(wc -c < "$output")" -gt 10000
-          echo 'Public staging LaTeX PDF export is healthy.'
+          echo 'Public staging LaTeX PDF export is healthy and served from the prepared cache.'
 
       - name: Check public staging after GitOps-only change
         if: steps.deploy_mode.outputs.gitops_only == 'true'

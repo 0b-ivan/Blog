@@ -25,7 +25,7 @@ spec:
             - name: SITE_URL
               value: https://blog.obivan.org
             - name: PDF_COMPILE_TIMEOUT_MS
-              value: "60000"
+              value: "120000"
           readinessProbe:
             httpGet:
               path: /healthz
