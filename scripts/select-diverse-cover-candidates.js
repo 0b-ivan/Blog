@@ -154,7 +154,11 @@ function chooseDiverseCovers(reports) {
         title: report.title,
         series: String(report.series || ''),
         skipped: true,
-        skipReason: 'no candidates returned by Pixabay'
+        skipReason: String(
+          report.resolverError
+          || report.canaryError
+          || 'no candidates returned by Pixabay'
+        )
       });
       continue;
     }

@@ -1140,7 +1140,8 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
   const category = String(options.category || '').trim().toLowerCase();
   if (category) url.searchParams.set('category', category);
 
-  const maxAttempts = Math.max(1, Number(options.maxAttempts || 4));
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || 6));
+  const baseRetryMs = Math.max(100, Number(options.baseRetryMs || 1500));
   const sleep = options.sleep || delay;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -1158,8 +1159,11 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
 
     const retryAfter = Number(response.headers?.get?.('retry-after') || 0);
     const retryMs = retryAfter > 0
-      ? retryAfter * 1000
-      : Math.min(8000, 500 * (2 ** (attempt - 1)));
+      ? Math.min(60000, retryAfter * 1000)
+      : Math.min(30000, baseRetryMs * (2 ** (attempt - 1)));
+    console.warn(
+      `Pixabay search returned HTTP ${response.status}; retrying in ${retryMs} ms (attempt ${attempt + 1}/${maxAttempts})`
+    );
     await sleep(retryMs);
   }
 
@@ -1214,8 +1218,23 @@ async function searchPixabayCached(query, apiKey, options = {}) {
 async function collectCandidates(queries, apiKey, options = {}) {
   const searchImpl = options.searchImpl || searchPixabayCached;
   const byId = new Map();
+  const sleep = options.sleep || delay;
+  const requestDelayMs = Math.max(
+    0,
+    Number(
+      options.requestDelayMs
+      ?? process.env.PIXABAY_REQUEST_DELAY_MS
+      ?? (searchImpl === searchPixabayCached ? 850 : 0)
+    )
+  );
+  let queryIndex = 0;
 
   for (const query of queries) {
+    if (queryIndex > 0 && requestDelayMs > 0) {
+      await sleep(requestDelayMs);
+    }
+    queryIndex += 1;
+
     console.log(`Searching Pixabay for: ${query}`);
     let hits;
     try {

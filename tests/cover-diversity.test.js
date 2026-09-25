@@ -139,6 +139,19 @@ describe('series-aware cover diversity', () => {
     expect(second.relevanceFloor).toBe(72);
   });
 
+  it('preserves resolver failures in the selection report', () => {
+    const [selection] = chooseDiverseCovers([{
+      postPath: 'posts/rss.md',
+      title: 'RSS article',
+      series: '',
+      resolverError: 'Pixabay search failed with HTTP 429',
+      candidates: []
+    }]);
+
+    expect(selection.skipped).toBe(true);
+    expect(selection.skipReason).toBe('Pixabay search failed with HTTP 429');
+  });
+
   it('skips an article when every candidate fails the hero hard gate', () => {
     const reports = [{
       postPath: 'posts/rss.md',
