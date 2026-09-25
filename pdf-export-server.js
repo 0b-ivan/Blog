@@ -6,7 +6,6 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 const legacy = require('./server');
 const {
-  buildBibTeX,
   buildPdfPublication,
   pdfMetadata
 } = require('./lib/latex-export');
@@ -76,11 +75,6 @@ async function compileArticlePdf(post) {
     const preparedHtml = await prepareSvgImagesForPdf(publication.html, tempDir, { assetRoot: root });
     await fs.writeFile(inputFile, preparedHtml, 'utf8');
 
-    const bibliographyFile = path.join(tempDir, 'references.bib');
-    if (publication.sources.length) {
-      await fs.writeFile(bibliographyFile, buildBibTeX(publication.sources), 'utf8');
-    }
-
     const metadata = pdfMetadata(post, {
       assetRoot: root,
       siteUrl: process.env.SITE_URL || 'https://blog.obivan.org'
@@ -96,14 +90,6 @@ async function compileArticlePdf(post) {
       `--template=${template}`,
       '--number-sections',
       '--listings',
-      ...(publication.sources.length ? [
-        '--citeproc',
-        `--bibliography=${bibliographyFile}`,
-        '-M',
-        'nocite=@*',
-        '-M',
-        'reference-section-title=Literatur- und Quellenverzeichnis'
-      ] : []),
       `--resource-path=${[root, path.join(root, 'assets'), path.join(root, 'snippets')].join(':')}`,
       `--metadata-file=${metadataFile}`,
       '--pdf-engine-opt=-interaction=nonstopmode',
