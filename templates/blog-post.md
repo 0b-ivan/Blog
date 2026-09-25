@@ -2,6 +2,8 @@
 id: {{title}}
 version: 1
 title:
+cover_title:
+cover_subtitle:
 status: draft
 date: {{date:YYYY-MM-DD}}
 created_at: {{date:YYYY-MM-DD}}
