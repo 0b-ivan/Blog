@@ -50,14 +50,18 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
-    negative: 'physical lock safe vault key insurance house security'
+    negative: 'physical lock safe vault key insurance house security analytics big data innovation marketing generic dashboard',
+    heroPreferred: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability', 'patch'],
+    heroRequired: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability'],
+    heroAvoid: ['analytics', 'big data', 'innovation', 'marketing', 'dashboard'],
+    minHeroQuality: 55
   },
   'systemd-service': {
     positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
     negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport office workspace desktop sorting classification report database decision consultant advisor analyst specialist computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
     heroPreferred: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration', 'server'],
     heroRequired: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
-    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database', 'consultant', 'advisor', 'analyst', 'specialist'],
+    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database', 'consultant', 'advisor', 'analyst', 'specialist', 'cable', 'wire', 'ethernet', 'cyberspace', 'electronics'],
     minHeroQuality: 55
   },
   'docker-compose': {
@@ -70,9 +74,11 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'semantic-search': {
     positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
-    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media SEO marketing search engine optimization smartphone robot portrait human cyber security hacker',
-    heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval'],
-    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon']
+    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media SEO marketing search engine optimization smartphone robot portrait human cyber security hacker binary matrix ball abstract data sphere',
+    heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval', 'embedding'],
+    heroRequired: ['search', 'magnifying', 'vector', 'index', 'retrieval', 'embedding'],
+    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'binary', 'matrix', 'ball'],
+    minHeroQuality: 55
   },
   'vpc-networking': {
     positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
@@ -93,11 +99,12 @@ const COVER_CONCEPT_PROTOTYPES = {
     heroAvoid: ['error', 'cross', 'warning', 'sign', 'icon', 'symbol', 'button']
   },
   'regression-testing': {
-    positive: 'software regression testing automated tests bug quality assurance test suite continuous integration code failure',
-    negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing virtual reality cyberspace simulator puppet business meeting',
-    heroPreferred: ['testing', 'test', 'bug', 'software', 'automation', 'quality', 'code'],
-    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical', 'virtual reality', 'cyberspace', 'simulator', 'puppet'],
-    minHeroQuality: 50
+    positive: 'software regression testing automated tests bug test suite continuous integration code failure verification',
+    negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing virtual reality cyberspace simulator puppet business meeting marketing consumer sales',
+    heroPreferred: ['testing', 'test', 'bug', 'automation', 'regression', 'verification'],
+    heroRequired: ['testing', 'test', 'bug', 'regression'],
+    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales'],
+    minHeroQuality: 55
   },
   'logging-observability': {
     positive: 'software logs observability metrics monitoring alerts dashboard log lines terminal server application telemetry',
