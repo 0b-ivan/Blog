@@ -29,7 +29,7 @@ const WEAK_DIRECT_TERMS = new Set([
 ]);
 
 const GENERIC_SUBJECT_CONTEXT_TERMS = new Set([
-  'article', 'blog', 'technical', 'technology', 'software', 'programming', 'code',
+  'article', 'technical', 'technology', 'software', 'programming', 'code',
   'engineering', 'architecture', 'system', 'service', 'application', 'automation',
   'game', 'gaming', 'retro', 'handheld', 'console', 'battle', 'combat', 'fight',
   'creature', 'monster', 'fantasy', 'rpg', 'cloud', 'server', 'network', 'data',
@@ -186,7 +186,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['service', 'logs', 'monitoring', 'daemon', 'process']
     ],
-    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision']
+    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision', 'consultant', 'advisor', 'analyst', 'specialist']
   },
   {
     key: 'docker-compose',
@@ -198,7 +198,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation']
     ],
-    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight']
+    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight', 'smarthome', 'smart home', 'home automation', 'iot']
   },
   {
     key: 'semantic-search',
@@ -208,7 +208,7 @@ const VISUAL_INTENTS = [
     query: 'search data code analytics magnifying glass',
     positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
     minMatches: 2,
-    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker']
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'search engine', 'optimization', 'icon']
   },
   {
     key: 'vpc-networking',
@@ -268,7 +268,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['testing', 'test', 'quality', 'assurance', 'bug']
     ],
-    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing']
+    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing', 'virtual reality', 'cyberspace', 'simulator', 'puppet']
   },
   {
     key: 'logging-observability',
@@ -436,11 +436,11 @@ function subjectAnchors(data = {}, query = '') {
   // The article's own identity is stronger than the visual brief. A word that
   // only appears in cover_subject (for example "smartphone" in an NFC scene)
   // is context, not automatically the subject of the article.
-  const articleIdentity = candidatesFor([
-    ...tokensFrom(data.title),
-    ...normalizedTags(data).flatMap(tokensFrom)
-  ]);
-  if (articleIdentity.length) return articleIdentity;
+  const titleIdentity = candidatesFor(tokensFrom(data.title));
+  if (titleIdentity.length) return titleIdentity;
+
+  const tagIdentity = candidatesFor(normalizedTags(data).flatMap(tokensFrom));
+  if (tagIdentity.length) return tagIdentity;
 
   return candidatesFor(tokensFrom(data.cover_subject));
 }
