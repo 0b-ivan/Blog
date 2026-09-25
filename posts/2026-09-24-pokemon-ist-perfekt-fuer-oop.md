@@ -38,7 +38,8 @@ cover_subject: >-
 cover_intent: pokemon-oop-domain-model
 cover_avoid: >-
   pokemon logo pikachu copyrighted artwork trading cards phone laptop office
-  keyboard code screenshot text logo
+  keyboard code screenshot text logo dnd warhammer xbox ninja turtle alien ufo
+  spaceship marine soldier warrior knight paladin weapon axe hammer rifle gun
 cover_provider: pixabay
 cover_provider_id: '8809929'
 cover_image: /assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.png
