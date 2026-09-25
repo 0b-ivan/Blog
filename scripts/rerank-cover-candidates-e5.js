@@ -18,12 +18,12 @@ const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd
 
 const COVER_CONCEPT_PROTOTYPES = {
   'pokemon-oop-domain-model': {
-    positive: 'retro handheld creature battle turn based monster battle pixel game role playing game abstract creature combat game scene',
-    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite branded character toy figure doll plush trading card unrelated franchise mascot',
-    heroPreferred: ['handheld', 'creature', 'monster', 'battle', 'pixel', 'retro', 'game'],
-    heroRequired: ['creature', 'monster', 'battle', 'pixel', 'rpg'],
-    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card'],
-    minHeroQuality: 65
+    positive: 'handheld role playing game creature monster fantasy battle combat duel versus turn based game scene two creatures facing each other',
+    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite branded character toy figure doll plush trading card cassette tape recorder music album unrelated object unrelated franchise mascot',
+    heroPreferred: ['handheld', 'console', 'game', 'rpg', 'creature', 'monster', 'battle', 'combat', 'fight', 'duel', 'versus'],
+    heroRequired: ['battle', 'combat', 'fight', 'fighting', 'duel', 'versus'],
+    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card', 'cassette', 'tape', 'recorder', 'music', 'album'],
+    minHeroQuality: 70
   },
   'writing-proofreading': {
     positive: 'writing proofreading spelling grammar text editing document keyboard manuscript corrected text language tool',
