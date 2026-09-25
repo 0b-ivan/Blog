@@ -59,7 +59,7 @@ const TOPIC_AVOID = {
   gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
   rss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
   freshrss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
-  logging: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
+  logging: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber', 'space', 'spacex', 'rocket', 'nasa', 'cape canaveral'],
   logger: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
   observability: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
   cloudwatch: ['wood', 'timber', 'firewood', 'forest', 'tree', 'lumber'],
@@ -135,11 +135,16 @@ const VISUAL_INTENTS = [
     key: 'writing-proofreading',
     markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
     query: 'writing proofreading text document keyboard spelling grammar',
-    positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter'],
+    queryVariants: [
+      'proofreading correction paper spelling grammar',
+      'editing manuscript text correction document'
+    ],
+    positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter', 'correction', 'correcting'],
+    minMatches: 2,
     requiredGroups: [
       ['writing', 'text', 'document', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter']
     ],
-    avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business']
+    avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business', 'analytics', 'big data', 'cyber', 'security']
   },
   {
     key: 'rss-reader',
@@ -147,7 +152,12 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['freshrss', 'miniflux', 'rss', 'feed'],
     query: 'rss feed reader dashboard aggregator browser subscription',
-    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'subscription', 'syndication'],
+    queryVariants: [
+      'news feed dashboard browser articles subscriptions',
+      'feed reader interface subscriptions articles'
+    ],
+    positive: ['rss', 'feed', 'reader', 'dashboard', 'aggregator', 'browser', 'subscription', 'syndication', 'articles'],
+    minMatches: 2,
     requiredGroups: [
       ['rss', 'feed', 'reader', 'aggregator', 'syndication']
     ],
@@ -167,11 +177,16 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['systemd', 'journalctl'],
     query: 'linux server administration monitoring service logs daemon',
+    queryVariants: [
+      'linux service monitoring daemon process administration',
+      'server service logs monitoring process linux'
+    ],
     positive: ['linux', 'server', 'service', 'logs', 'administration', 'monitoring', 'daemon', 'process'],
+    minMatches: 2,
     requiredGroups: [
       ['service', 'logs', 'monitoring', 'daemon', 'process']
     ],
-    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop']
+    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision']
   },
   {
     key: 'docker-compose',
@@ -226,7 +241,12 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['chaos-engineering', 'chaos engineering', 'blast radius', 'steady state', 'resilience'],
     query: 'server monitoring outage incident failure resilience reliability',
-    positive: ['server', 'monitoring', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'resilience', 'observability'],
+    queryVariants: [
+      'server outage monitoring incident recovery infrastructure',
+      'infrastructure failure recovery monitoring reliability',
+      'resilience reliability server monitoring incident'
+    ],
+    positive: ['server', 'monitoring', 'outage', 'infrastructure', 'reliability', 'incident', 'failure', 'resilience', 'observability', 'recovery'],
     minMatches: 2,
     requiredGroups: [
       ['monitoring', 'outage', 'incident', 'failure', 'reliability', 'resilience', 'observability']
@@ -239,11 +259,16 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['regressionstest', 'regression test', 'regression'],
     query: 'software testing quality assurance bug code',
-    positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
+    queryVariants: [
+      'software test automation bug quality assurance',
+      'continuous integration automated testing code bug'
+    ],
+    positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code', 'automation', 'continuous integration'],
+    minMatches: 2,
     requiredGroups: [
       ['testing', 'test', 'quality', 'assurance', 'bug']
     ],
-    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom']
+    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing']
   },
   {
     key: 'logging-observability',
@@ -251,7 +276,12 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['logger.info', 'logging', 'logger', 'observability'],
     query: 'server logs monitoring metrics observability cloudwatch alerts',
-    positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts'],
+    queryVariants: [
+      'application logs monitoring metrics alerts server',
+      'observability telemetry metrics logs monitoring'
+    ],
+    positive: ['server', 'logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts', 'telemetry'],
+    minMatches: 2,
     requiredGroups: [
       ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts']
     ],
@@ -262,7 +292,12 @@ const VISUAL_INTENTS = [
     pixabayCategory: 'computer',
     markers: ['immich', 'nextcloud', 'webdav', 'rclone'],
     query: 'cloud photo backup files gallery sync',
-    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup'],
+    queryVariants: [
+      'photo library cloud backup gallery sync',
+      'image gallery files cloud synchronization backup',
+      'photo management cloud storage gallery files'
+    ],
+    positive: ['photo', 'gallery', 'files', 'sync', 'cloud', 'image', 'backup', 'library', 'storage'],
     minMatches: 2,
     requiredGroups: [
       ['photo', 'gallery', 'image'],
