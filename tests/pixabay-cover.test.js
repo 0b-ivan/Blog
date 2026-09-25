@@ -438,8 +438,15 @@ describe('Pixabay cover resolver', () => {
       imageWidth: 1920,
       imageHeight: 1080
     }, article);
+    const mailbox = scoreHit({
+      type: 'photo',
+      tags: 'wood, outdoors, rural, mailboxes, communication, snail mail, post boxes, rustic, container',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
 
     expect(metalContainer.semanticMismatch).toBe(false);
+    expect(mailbox.semanticMismatch).toBe(true);
     expect(cargoShip.semanticMismatch).toBe(true);
     expect(cargoShip.hardAvoidMatches).toEqual(expect.arrayContaining(['ship', 'port']));
   });
@@ -1555,6 +1562,27 @@ describe('Pixabay cover resolver', () => {
     expect(hits.map((hit) => hit.id)).toEqual([1, 2, 3, 4]);
     expect(hits[1].__coverQueries).toEqual(['primary', 'fallback']);
     expect(hits[2].__coverQuery).toBe('fallback');
+  });
+
+  it('keeps an already collected candidate pool when Pixabay starts rate limiting', async () => {
+    const searchImpl = globalThis.vi.fn(async (query) => {
+      if (query === 'primary') {
+        return [
+          { id: 1, tags: 'dependency, package, update, software' },
+          { id: 2, tags: 'github, repository, code' }
+        ];
+      }
+      throw new Error('Pixabay search failed with HTTP 429');
+    });
+
+    const hits = await collectCandidates(
+      ['primary', 'fallback', 'extra'],
+      'secret',
+      { searchImpl }
+    );
+
+    expect(searchImpl).toHaveBeenCalledTimes(2);
+    expect(hits.map((hit) => hit.id)).toEqual([1, 2]);
   });
 
   it('ranks technically relevant images above generic people stock photos', () => {
