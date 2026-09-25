@@ -95,7 +95,7 @@ function candidateAdjustment(candidate, report, state) {
 
   const idUsage = state.ids.get(id) || [];
   const exactReuseInSeries = sameSeries(series, idUsage);
-  const blockedDuplicate = idUsage.length > 0 && !exactReuseInSeries;
+  const blockedDuplicate = idUsage.length > 0;
 
   const clusterUsage = state.clusters.get(cluster) || [];
   const unrelatedCluster = unrelatedCount(clusterUsage, series);
@@ -105,8 +105,8 @@ function candidateAdjustment(candidate, report, state) {
   const unrelatedAuthor = unrelatedCount(authorUsage, series);
   const authorPenalty = Math.min(12, unrelatedAuthor * 4);
 
-  const seriesConsistencyBonus = exactReuseInSeries ? 4 : 0;
-  const adjustedScore = Number(candidate.score || 0) - clusterPenalty - authorPenalty + seriesConsistencyBonus;
+  const seriesConsistencyBonus = 0;
+  const adjustedScore = Number(candidate.score || 0) - clusterPenalty - authorPenalty;
 
   return {
     adjustedScore,
@@ -242,8 +242,8 @@ function chooseDiverseCovers(reports) {
         adjustment.authorPenalty
           ? `-${adjustment.authorPenalty} photographer diversity: ${candidate.user} already used by ${adjustment.unrelatedAuthor} unrelated article(s)`
           : '',
-        adjustment.exactReuseInSeries
-          ? '+4 same-series consistency: exact image reuse allowed'
+        adjustment.exactReuseInSeries && forcedDuplicate
+          ? 'same-series reuse: exact image only because no distinct relevant candidate remained'
           : '',
         forcedDuplicate
           ? 'forced duplicate: all semantically relevant alternatives were already used outside this series'
