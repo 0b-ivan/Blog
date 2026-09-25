@@ -523,6 +523,36 @@ function visualQuery(data) {
   return visualTerms.slice(0, 8).join(' ').slice(0, 100);
 }
 
+function intentSearchVariants(data = {}, intent = null) {
+  if (!intent) return [];
+
+  const anchors = subjectAnchors(data, intent.query || data.cover_query || '');
+  const requiredTerms = [...new Set(
+    (intent.requiredGroups || [])
+      .flatMap((group) => group)
+      .flatMap((value) => tokensFrom(value))
+  )];
+  const positiveTerms = [...new Set(
+    (intent.positive || []).flatMap((value) => tokensFrom(value))
+  )];
+
+  const variants = [];
+  if (anchors.length && requiredTerms.length) {
+    variants.push([anchors[0], ...requiredTerms.slice(0, 6)].join(' '));
+  }
+  if (requiredTerms.length) {
+    variants.push(requiredTerms.slice(0, 8).join(' '));
+  } else if (positiveTerms.length) {
+    variants.push(positiveTerms.slice(0, 8).join(' '));
+  }
+
+  return [...new Set(
+    variants
+      .map((value) => String(value || '').trim().slice(0, 100))
+      .filter(Boolean)
+  )];
+}
+
 function articleVisualBrief(data = {}) {
   const tags = normalizedTags(data).slice(0, 6);
   const searchQueries = Array.isArray(data.search_queries)
@@ -577,7 +607,11 @@ function queryCandidates(data, explicitQuery = '') {
   const title = String(data.title || '').trim().slice(0, 100);
 
   const intentQueries = intent
-    ? [intent.query, ...(Array.isArray(intent.queryVariants) ? intent.queryVariants : [])]
+    ? [
+        intent.query,
+        ...(Array.isArray(intent.queryVariants) ? intent.queryVariants : []),
+        ...intentSearchVariants(data, intent)
+      ]
     : [];
   const candidates = explicitQuery
     ? (intent
@@ -587,7 +621,7 @@ function queryCandidates(data, explicitQuery = '') {
       ? [...intentQueries, primary, visual || fallback]
       : [primary, title, visual || fallback]);
 
-  const queryLimit = Math.max(1, Number(intent?.queryLimit || 3));
+  const queryLimit = Math.max(1, Number(intent?.queryLimit || (intent ? 5 : 3)));
   return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, queryLimit);
 }
 
@@ -1286,6 +1320,7 @@ module.exports = {
   fileExtension,
   findPhotoById,
   heroHardGate,
+  intentSearchVariants,
   parseArgs,
   queryCandidates,
   visualIntent,
