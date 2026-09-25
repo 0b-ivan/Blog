@@ -59,6 +59,25 @@ const TOPIC_AVOID = {
 
 const VISUAL_INTENTS = [
   {
+    key: 'doom-shareware-history',
+    priority: 35,
+    pixabayImageType: 'all',
+    markers: ['doom', 'shareware', 'commander keen', 'wolfenstein'],
+    query: 'doom retro pc gaming shareware floppy disk 1990s',
+    queryVariants: [
+      'doom game 1993 pc',
+      'retro pc shareware floppy disk',
+      '1990s pc gaming floppy disk shareware'
+    ],
+    queryLimit: 6,
+    positive: ['doom', 'shareware', 'floppy', 'disk', '1990s', 'retro', 'pc', 'gaming', 'computer', 'dos'],
+    minMatches: 2,
+    requiredGroups: [
+      ['doom', 'shareware', 'floppy', 'disk', '1990s', 'retro']
+    ],
+    avoid: ['modern console', 'controller', 'rgb', 'laptop', 'office', 'smartphone', 'esports']
+  },
+  {
     key: 'pacman-arcade',
     priority: 30,
     pixabayImageType: 'all',
@@ -105,6 +124,9 @@ const VISUAL_INTENTS = [
     markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
     query: 'writing proofreading text document keyboard spelling grammar',
     positive: ['writing', 'text', 'document', 'keyboard', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter'],
+    requiredGroups: [
+      ['writing', 'text', 'document', 'spelling', 'grammar', 'proofreading', 'editing', 'words', 'typewriter']
+    ],
     avoid: ['secretary', 'office', 'telephone', 'call', 'sales', 'robot', 'robotics', 'factory', 'business']
   },
   {
@@ -168,6 +190,9 @@ const VISUAL_INTENTS = [
     query: 'computer network topology router routing subnet infrastructure',
     positive: ['topology', 'router', 'routing', 'subnet', 'infrastructure', 'ethernet'],
     minMatches: 2,
+    requiredGroups: [
+      ['topology', 'router', 'routing', 'subnet', 'ethernet', 'network']
+    ],
     avoid: ['social media', 'icons', 'online', 'smartphone', 'database', 'storage', 'rack', 'datacenter']
   },
   {
@@ -203,6 +228,9 @@ const VISUAL_INTENTS = [
     markers: ['regressionstest', 'regression test', 'regression'],
     query: 'software testing quality assurance bug code',
     positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code'],
+    requiredGroups: [
+      ['testing', 'test', 'quality', 'assurance', 'bug']
+    ],
     avoid: ['business', 'meeting', 'office']
   },
   {
