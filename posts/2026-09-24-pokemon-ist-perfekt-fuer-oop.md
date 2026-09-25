@@ -39,19 +39,17 @@ cover_intent: pokemon-oop-domain-model
 cover_avoid: >-
   pokemon logo pikachu copyrighted artwork trading cards phone laptop office
   keyboard code screenshot text logo
-cover_provider: pixabay
-cover_provider_id: '8809929'
-cover_image: /assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.png
-cover_alt: >-
-  cassette, tape, pixel art, pixel, recorder, retro, classic, music, dragon,
-  reptile, creature, fantasy, wild, ancient, medieval
+cover_provider: wikimedia-commons
+cover_provider_id: pokemon-oop-commons-rby-back
+cover_image: /assets/posts/pokemon-oop/01-pokemon-cartridges.jpg
+cover_alt: Rückseiten der europäischen Game-Boy-Cartridges Pokémon Rot, Blau und Gelb
 cover_focus: center
-cover_score: 89
-cover_credit: by Avedeto via Pixabay
-cover_credit_url: 'https://pixabay.com/illustrations/cassette-tape-pixel-art-pixel-8809929/'
-cover_source_url: 'https://pixabay.com/illustrations/cassette-tape-pixel-art-pixel-8809929/'
-cover_license: Pixabay Content License
-cover_license_url: 'https://pixabay.com/service/license-summary/'
+cover_score: 100
+cover_credit: Kigsz via Wikimedia Commons
+cover_credit_url: 'https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg'
+cover_source_url: 'https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg'
+cover_license: CC BY-SA 3.0
+cover_license_url: 'https://creativecommons.org/licenses/by-sa/3.0'
 ---
 
 Autos. Tiere. Bankkonten.
