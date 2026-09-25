@@ -52,6 +52,18 @@ cover_intent:
 
 Ein Cover-Briefing soll das **konkrete Motiv** beschreiben, nicht nur eine grobe Epoche oder Kategorie. Beispiel: Für einen Pac-Man-Artikel ist `maze arcade yellow character ghost chase` sinnvoller als nur `retro gaming 1980`.
 
+### Semantische Guardrails
+
+Die Cover-Auswahl arbeitet fail-closed:
+
+- ein gesetztes `cover_intent` muss als unterstützter Intent bekannt sein; unbekannte Werte werden nicht still auf eine generische Suche zurückgestuft,
+- `cover_avoid` und Intent-spezifische Ausschlüsse sind semantische Sperren, nicht nur kleine Score-Abzüge,
+- automatische Staging-Auswahl, Backfill und manueller Cover-Workflow verwenden dieselbe E5-Neubewertung der Pixabay-Kandidaten,
+- wenn nach Hard-Gates und semantischer Prüfung kein geeigneter Kandidat bleibt, wird **kein** generisches Ersatzbild automatisch akzeptiert,
+- die Review-Ausgabe kennzeichnet semantisch abgelehnte Kandidaten ausdrücklich.
+
+Damit reicht eine grobe Nähe wie `retro + game + console` nicht aus, wenn das konkrete Motiv zum falschen Produkt, Franchise oder Gegenstand gehört.
+
 ## Inline-Bilder
 
 Inline-Bilder werden lokal gespeichert:
