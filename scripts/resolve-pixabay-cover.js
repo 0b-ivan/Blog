@@ -41,8 +41,8 @@ const SUBJECT_ALIAS_OVERRIDES = {
   deployment: ['deploy', 'automation', 'infrastructure'],
   github: ['repository', 'pull request', 'source control'],
   dependabot: ['dependency', 'dependencies', 'package', 'update', 'vulnerability', 'github'],
-  docker: ['devops', 'deployment', 'orchestration', 'services'],
-  compose: ['devops', 'deployment', 'orchestration', 'services'],
+  docker: ['container', 'devops', 'deployment', 'orchestration', 'services'],
+  compose: ['container', 'devops', 'deployment', 'orchestration', 'services'],
   rss: ['feed', 'reader', 'aggregator', 'syndication'],
   freshrss: ['rss', 'feed', 'reader', 'aggregator'],
   systemd: ['daemon', 'journalctl', 'process', 'service'],
@@ -507,7 +507,12 @@ function subjectAliasTokens(anchor, intent = null) {
   return [...aliases].filter(Boolean);
 }
 
-function subjectAliasContextMet(alias, canonicalHits) {
+function subjectAliasContextMet(anchor, alias, canonicalHits) {
+  // A literal container is an intentional Docker/Compose visual metaphor.
+  // For Kubernetes/K3s the same word is too ambiguous and still needs
+  // technical context so fruit clusters or metal boxes cannot pass.
+  if (alias === 'container' && ['docker', 'compose'].includes(anchor)) return true;
+
   const required = SUBJECT_ALIAS_CONTEXT[alias] || [];
   if (!required.length) return true;
   return required
@@ -524,7 +529,7 @@ function subjectAnchorEvidence(hitTokens, anchors, intent = null) {
     const aliases = subjectAliasTokens(anchor, intent);
     const hit = aliases.find((token) =>
       canonicalHits.has(token)
-      && (token === anchor || subjectAliasContextMet(token, canonicalHits))
+      && (token === anchor || subjectAliasContextMet(anchor, token, canonicalHits))
     );
     if (!hit) continue;
     matches.push(anchor);
