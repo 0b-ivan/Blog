@@ -156,6 +156,7 @@ describe('article ebook export helpers', () => {
       expect(capturedSvg).toContain('Short cover title');
       expect(capturedSvg).toContain('Readable subtitle');
       expect(capturedSvg).toContain('data:image/jpeg;base64,');
+      expect(capturedSvg).toContain('fill="url(#imageFade)"');
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
