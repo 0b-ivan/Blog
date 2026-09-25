@@ -191,7 +191,10 @@ const VISUAL_INTENTS = [
     markers: ['dependabot', 'dependency', 'dependencies', 'supply-chain', 'supply chain'],
     query: 'software dependency package update code github vulnerability',
     positive: ['dependency', 'dependencies', 'package', 'update', 'software', 'code', 'github', 'vulnerability'],
-    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance']
+    requiredGroups: [
+      ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability']
+    ],
+    avoid: ['safe', 'vault', 'lock', 'padlock', 'key', 'insurance', 'analytics', 'big data', 'innovation', 'marketing']
   },
   {
     key: 'systemd-service',
@@ -208,7 +211,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['service', 'logs', 'monitoring', 'daemon', 'process']
     ],
-    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision', 'consultant', 'advisor', 'analyst', 'specialist']
+    avoid: ['screenshot', 'window', 'cmd', 'console', 'terminal', 'prompt', 'scroll', 'minimize', 'smartphone', 'photography', 'binary', 'globe', 'game', 'gaming', 'playstation', 'controller', 'xbox', 'sony', 'train', 'subway', 'station', 'airport', 'vehicle', 'transport', 'ambulance', 'html', 'css', 'website', 'web design', 'office', 'workspace', 'desktop', 'sorting', 'classification', 'report', 'database', 'decision', 'consultant', 'advisor', 'analyst', 'specialist', 'cable', 'wire', 'ethernet', 'cyberspace', 'electronics']
   },
   {
     key: 'docker-compose',
@@ -228,9 +231,12 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['semantic-search', 'semantic search', 'kernel grep', 'embeddings', 'duckdb'],
     query: 'search data code analytics magnifying glass',
-    positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
+    positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding', 'vector', 'retrieval', 'index'],
     minMatches: 2,
-    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon']
+    requiredGroups: [
+      ['search', 'magnifying', 'embedding', 'vector', 'retrieval', 'index']
+    ],
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'ball', 'binary', 'matrix']
   },
   {
     key: 'vpc-networking',
@@ -288,9 +294,9 @@ const VISUAL_INTENTS = [
     positive: ['testing', 'test', 'quality', 'assurance', 'bug', 'software', 'code', 'automation', 'continuous integration'],
     minMatches: 2,
     requiredGroups: [
-      ['testing', 'test', 'quality', 'assurance', 'bug']
+      ['testing', 'test', 'bug', 'regression']
     ],
-    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing', 'virtual reality', 'cyberspace', 'simulator', 'puppet']
+    avoid: ['business', 'meeting', 'office', 'school', 'pupil', 'student', 'teaching', 'education', 'exam', 'classroom', 'electrical', 'vehicle', 'automotive', 'mechanical', 'manufacturing', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales']
   },
   {
     key: 'logging-observability',
