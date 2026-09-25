@@ -261,6 +261,19 @@ describe('Pixabay cover resolver', () => {
     })[0]).toBe('monkey ape primate chimpanzee macaque');
   });
 
+  it('does not route every Docker article into the Docker Compose intent', () => {
+    expect(visualIntent({
+      title: 'Deployment mit Hetzner, Docker und Cloudflare Zero Trust',
+      tags: ['Hetzner', 'Docker', 'Cloudflare', 'DevOps'],
+      excerpt: 'Ein Deployment mit Containern und Cloudflare Zero Trust.'
+    })?.key || '').not.toBe('docker-compose');
+
+    expect(visualIntent({
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      tags: ['Docker', 'Compose', 'DevOps']
+    }).key).toBe('docker-compose');
+  });
+
   it('expands a strict intent into multiple focused search variants', () => {
     const article = {
       title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
@@ -424,7 +437,15 @@ describe('Pixabay cover resolver', () => {
       imageHeight: 1080
     }, article);
 
+    const genericDisk = scoreHit({
+      type: 'photo',
+      tags: 'binary, disk, storage, registration, magnetic, device, digital, archive',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
     expect(floppy.semanticMismatch).toBe(false);
+    expect(genericDisk.semanticMismatch).toBe(true);
     expect(modern.semanticMismatch).toBe(true);
   });
 
@@ -671,6 +692,25 @@ describe('Pixabay cover resolver', () => {
       title: 'Example',
       cover_intent: 'does-not-exist'
     })).toThrow('Unknown cover_intent "does-not-exist"');
+  });
+
+  it('rejects mobile Pokémon-Go imagery for the handheld/game intent', () => {
+    const result = scoreHit({
+      type: 'illustration',
+      tags: 'pokemon, smartphone, pokemon go, virtual, game, iphone, reality, mobile',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      tags: ['Pokémon', 'Java', 'OOP'],
+      cover_intent: 'pokemon-oop-domain-model',
+      cover_query: 'pokemon game handheld battle'
+    });
+
+    expect(result.semanticMismatch).toBe(true);
+    expect(result.hardAvoidMatches).toEqual(
+      expect.arrayContaining(['smartphone', 'iphone', 'mobile'])
+    );
   });
 
   it('rejects a semantically adjacent but wrong franchise for Pokémon covers', () => {
