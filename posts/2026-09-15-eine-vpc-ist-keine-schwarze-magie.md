@@ -29,22 +29,21 @@ search_queries:
     maxRank: 1
   - query: Wie troubleshootet man AWS VPC Netzwerkprobleme?
     maxRank: 1
-cover_query: computer network topology router routing subnet infrastructure
+cover_query: vpc topology router routing
 cover_provider: pixabay
-cover_provider_id: '4393368'
+cover_provider_id: '4393372'
 cover_image: /assets/covers/2026-09-15-eine-vpc-ist-keine-schwarze-magie.jpg
 cover_alt: >-
   network, edp, plug, patch cord, data cable, rj45, ethernet, copper, lan,
-  switch, router, hardware, data, dsl, internet, web, connection, connected,
-  network, network, network, ethernet, ethernet, lan, lan, switch, switch,
-  router, router, router, router, router, hardware, data
+  switch, router, firewall, hardware, data, dsl, internet, web, connection,
+  connected, router, router, firewall, firewall, firewall, firewall, firewall
 cover_focus: center
 cover_credit: by Bru-nO via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/network-edp-plug-patch-cord-4393368/'
-cover_source_url: 'https://pixabay.com/photos/network-edp-plug-patch-cord-4393368/'
+cover_credit_url: 'https://pixabay.com/photos/network-edp-plug-patch-cord-4393372/'
+cover_source_url: 'https://pixabay.com/photos/network-edp-plug-patch-cord-4393372/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 86
+cover_score: 84
 ---
 
 VPC, Subnet, Route Table, Internet Gateway, NAT Gateway, Security Group, NACL …

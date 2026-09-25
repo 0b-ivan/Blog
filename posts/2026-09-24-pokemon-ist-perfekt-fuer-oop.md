@@ -32,21 +32,21 @@ search_queries:
     maxRank: 1
   - query: Wie modelliert man ein Pokémon-Kampfsystem objektorientiert?
     maxRank: 1
-cover_query: pokemon game handheld battle
+cover_query: pokemon pikachu game
 cover_subject: Pokémon game scene or handheld Pokémon game with clear franchise context
 cover_intent: pokemon-oop-domain-model
 cover_avoid: logo trading cards phone laptop office keyboard code screenshot text
 cover_provider: pixabay
-cover_provider_id: '1593048'
+cover_provider_id: '7988263'
 cover_image: /assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.jpg
 cover_alt: >-
-  pokemon, smartphone, pokemon go, virtual, game, iphone, reality, rendering,
-  3d, pokemon, pokemon, pokemon, pokemon, pokemon
+  ai generated, pikachu, pokemon, pokeball, character, anime, manga, games,
+  pikachu, pikachu, pikachu, pikachu, pikachu
 cover_focus: center
-cover_score: 91
-cover_credit: by PIRO4D via Pixabay
-cover_credit_url: 'https://pixabay.com/illustrations/pokemon-smartphone-pokemon-go-1593048/'
-cover_source_url: 'https://pixabay.com/illustrations/pokemon-smartphone-pokemon-go-1593048/'
+cover_score: 94
+cover_credit: by Stakalo via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/ai-generated-pikachu-pokemon-7988263/'
+cover_source_url: 'https://pixabay.com/illustrations/ai-generated-pikachu-pokemon-7988263/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---

@@ -33,23 +33,21 @@ search_queries:
   - query: Wie halte ich Hetzner parallel zu K3s als Rollback Standby aktuell?
     maxRank: 1
 cover_provider: pixabay
-cover_provider_id: '4605834'
+cover_provider_id: '2001090'
 cover_image: /assets/covers/2026-09-19-k3s-proxmox-production-part-4.jpg
 cover_alt: >-
-  proxy, proxy server, free proxy, online proxy, proxy site, proxy list, web
-  proxy, web scraping, scraping, data scraping, instagram proxy, sneaker proxy,
-  twitter proxy, facebook proxy, supreme bot proxy, residential proxy,
-  residential ip, datacenter ip, web crawler, ip rotation, laptop, computer,
-  internet, notebook, network, gray data, gray facebook, gray online, gray
-  network, gray internet, gray web, gray social, gray media, gray server, proxy,
-  proxy, proxy, proxy, proxy
+  cloud computing, network, internet, cloud computing concept, communication,
+  networking, virtual, cloud technology, black computer, black technology, black
+  laptop, black clouds, black network, black community, black internet, black
+  communication, cloud computing, cloud computing, cloud computing, cloud
+  computing, cloud computing
 cover_focus: center
-cover_credit: by kevinandthepup via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/proxy-proxy-server-free-proxy-4605834/'
-cover_source_url: 'https://pixabay.com/photos/proxy-proxy-server-free-proxy-4605834/'
+cover_credit: by wynpnt via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/cloud-computing-network-internet-2001090/'
+cover_source_url: 'https://pixabay.com/illustrations/cloud-computing-network-internet-2001090/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 83
+cover_score: 81
 ---
 
 Teil I hat den Blog auf K3s gebracht, Teil II daraus GitOps gemacht und Teil III feste Versionen sowie verschlüsselte Secrets ergänzt.

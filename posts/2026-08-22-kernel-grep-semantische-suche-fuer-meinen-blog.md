@@ -31,20 +31,18 @@ search_queries:
     maxRank: 1
 cover_query: search data code analytics magnifying glass
 cover_provider: pixabay
-cover_provider_id: '5512814'
-cover_image: /assets/covers/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.jpg
+cover_provider_id: '7160303'
+cover_image: /assets/covers/2026-08-22-kernel-grep-semantische-suche-fuer-meinen-blog.png
 cover_alt: >-
-  search engine, search, gears, optimization, magnifying glass, analysis, search
-  engine optimization, computer, technology, pc, search engine, search engine
-  optimization, search engine optimization, search engine optimization, search
-  engine optimization, search engine optimization
+  cloud, search, internet, web, digital, computer, magnifying glass, cloud,
+  search, internet, internet, internet, internet, internet, computer
 cover_focus: center
-cover_credit: by geralt via Pixabay
-cover_credit_url: 'https://pixabay.com/illustrations/search-engine-search-gears-5512814/'
-cover_source_url: 'https://pixabay.com/illustrations/search-engine-search-gears-5512814/'
+cover_credit: by indaurrest via Pixabay
+cover_credit_url: 'https://pixabay.com/vectors/cloud-search-internet-web-digital-7160303/'
+cover_source_url: 'https://pixabay.com/vectors/cloud-search-internet-web-digital-7160303/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 85
+cover_score: 80
 ---
 
 Eine normale Volltextsuche ist gut darin, Wörter wiederzufinden. Ich tippe `Docker` ein und bekomme Artikel zurück, in denen `Docker` steht.

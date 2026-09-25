@@ -35,7 +35,7 @@ search_queries:
     maxRank: 1
   - query: Wie verbreitete sich DOOM über das Internet?
     maxRank: 1
-cover_query: retro pc gaming floppy disks 1990s computer dark
+cover_query: doom retro pc gaming shareware floppy disk 1990s
 cover_subject: 1990s PC shareware game floppy disks on a dark desk
 cover_intent: doom-shareware-history
 cover_avoid: modern gaming console controller RGB laptop office stock photo
@@ -47,7 +47,7 @@ cover_alt: >-
   disk, memory, drive, floppy disc, retro, magnetic, data, file, information,
   computer, binary, technology, floppy disks, old, software, formatted, retro,
   software, software, software, software, software
-cover_score: 83
+cover_score: 88
 cover_credit: by DanXaw via Pixabay
 cover_credit_url: 'https://pixabay.com/vectors/disk-memory-drive-floppy-disc-4925838/'
 cover_source_url: 'https://pixabay.com/vectors/disk-memory-drive-floppy-disc-4925838/'

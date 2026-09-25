@@ -42,7 +42,7 @@ cover_credit_url: 'https://pixabay.com/vectors/computer-cloud-datacenter-server-
 cover_source_url: 'https://pixabay.com/vectors/computer-cloud-datacenter-server-161933/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 83
 ---
 
 Server von Hand aufzusetzen funktioniert erstaunlich lange.
