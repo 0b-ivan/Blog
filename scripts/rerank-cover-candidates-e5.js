@@ -65,11 +65,11 @@ const COVER_CONCEPT_PROTOTYPES = {
     minHeroQuality: 55
   },
   'docker-compose': {
-    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow automation',
-    negative: 'generic code screen terminal screenshot wallpaper programming laptop shipping cargo port freight metal container box jar can storage vessel smart home smarthome IoT house automation product',
-    heroPreferred: ['deployment', 'devops', 'services', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
-    heroRequired: ['deployment', 'devops', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
-    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop', 'smarthome', 'iot', 'house'],
+    positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow automation container metal shipping container',
+    negative: 'generic code screen terminal screenshot wallpaper programming laptop cargo ship port harbor freight smart home smarthome IoT house automation product',
+    heroPreferred: ['deployment', 'devops', 'services', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation', 'container', 'metal container'],
+    heroRequired: ['deployment', 'devops', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation', 'container'],
+    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop', 'ship', 'port', 'harbor', 'smarthome', 'iot', 'house'],
     minHeroQuality: 50
   },
   'semantic-search': {
