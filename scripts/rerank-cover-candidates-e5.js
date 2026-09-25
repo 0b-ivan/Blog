@@ -17,6 +17,14 @@ const GENERIC_ERROR_TERMS = ['error', 'cross', 'warning', 'wrong', 'false', 'mis
 const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'];
 
 const COVER_CONCEPT_PROTOTYPES = {
+  'doom-shareware-history': {
+    positive: 'DOOM 1993 retro PC gaming shareware DOS floppy disk old computer game distribution internet history',
+    negative: 'modern RGB gaming laptop esports controller smartphone office generic modern console',
+    heroPreferred: ['doom', 'shareware', 'floppy', 'disk', 'retro', '1990s', 'computer', 'dos'],
+    heroRequired: ['doom', 'shareware', 'floppy', 'disk', 'retro'],
+    heroAvoid: ['modern', 'rgb', 'laptop', 'esports', 'controller', 'smartphone', 'office'],
+    minHeroQuality: 55
+  },
   'pokemon-oop-domain-model': {
     positive: 'Pokemon game handheld Pikachu Pokeball cartridge battle role playing game creature monster gaming scene',
     negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite cassette tape recorder music office laptop keyboard terminal screenshot unrelated franchise unrelated object',
