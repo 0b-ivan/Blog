@@ -285,7 +285,7 @@ const VISUAL_INTENTS = [
     requiredGroups: [
       ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'cloudwatch', 'alerts']
     ],
-    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office', 'wood', 'timber', 'firewood', 'forest', 'tree', 'lumber']
+    avoid: ['dashboard', 'car', 'speedometer', 'vehicle', 'automobile', 'steering', 'smartphone', 'photography', 'binary', 'game', 'gaming', 'business', 'meeting', 'office', 'wood', 'timber', 'firewood', 'forest', 'tree', 'lumber', 'space', 'spacex', 'rocket', 'nasa', 'cape canaveral']
   },
   {
     key: 'photo-storage-sync',
