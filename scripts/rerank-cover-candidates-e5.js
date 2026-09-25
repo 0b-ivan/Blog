@@ -54,25 +54,25 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'systemd-service': {
     positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
-    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport office workspace desktop sorting classification report database decision computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
+    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport office workspace desktop sorting classification report database decision consultant advisor analyst specialist computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
     heroPreferred: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration', 'server'],
     heroRequired: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
-    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database'],
+    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database', 'consultant', 'advisor', 'analyst', 'specialist'],
     minHeroQuality: 55
   },
   'docker-compose': {
     positive: 'software deployment DevOps application services orchestration compose configuration architecture workflow automation',
-    negative: 'generic code screen terminal screenshot wallpaper programming laptop shipping cargo port freight metal container box jar can storage vessel',
+    negative: 'generic code screen terminal screenshot wallpaper programming laptop shipping cargo port freight metal container box jar can storage vessel smart home smarthome IoT house automation product',
     heroPreferred: ['deployment', 'devops', 'services', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
     heroRequired: ['deployment', 'devops', 'orchestration', 'configuration', 'architecture', 'workflow', 'automation'],
-    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop'],
+    heroAvoid: ['screen', 'terminal', 'screenshot', 'wallpaper', 'laptop', 'smarthome', 'iot', 'house'],
     minHeroQuality: 50
   },
   'semantic-search': {
     positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
-    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media search engine smartphone robot portrait human cyber security hacker',
+    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media SEO marketing search engine optimization smartphone robot portrait human cyber security hacker',
     heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval'],
-    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker']
+    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon']
   },
   'vpc-networking': {
     positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
@@ -94,9 +94,9 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'regression-testing': {
     positive: 'software regression testing automated tests bug quality assurance test suite continuous integration code failure',
-    negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing business meeting',
+    negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing virtual reality cyberspace simulator puppet business meeting',
     heroPreferred: ['testing', 'test', 'bug', 'software', 'automation', 'quality', 'code'],
-    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical'],
+    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical', 'virtual reality', 'cyberspace', 'simulator', 'puppet'],
     minHeroQuality: 50
   },
   'logging-observability': {
