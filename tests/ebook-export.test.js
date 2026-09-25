@@ -161,7 +161,7 @@ describe('article ebook export helpers', () => {
     }
   });
 
-  it('uses a full-page editorial deckblatt only for opted-in posts', async () => {
+  it('uses a full-page editorial deckblatt for normal articles', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-deckblatt-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
@@ -248,7 +248,7 @@ describe('article ebook export helpers', () => {
     expect(capturedSvg).toContain('Generated Cover');
   });
 
-  it('uses the existing raster article image as the pragmatic EPUB library cover', async () => {
+  it('keeps a raw raster fallback only for titleless non-article inputs', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-cover-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
@@ -258,7 +258,6 @@ describe('article ebook export helpers', () => {
 
       const cover = await createEpubCover({
         slug: 'demo',
-        title: 'Demo',
         coverImage: '/assets/covers/demo.jpg'
       }, assetRoot);
 
