@@ -124,7 +124,7 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('cover-monkey');
   });
 
-  it('uses the real raster image as the EPUB library cover for editorial posts', async () => {
+  it('uses the portrait editorial artwork as the EPUB library cover for editorial posts', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-cover-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
@@ -142,9 +142,12 @@ describe('article ebook export helpers', () => {
         coverImage: '/assets/covers/demo.jpg'
       }, assetRoot);
 
-      expect(cover.name).toBe('demo-cover.jpg');
-      expect(cover.type).toBe('image/jpeg');
-      expect(Buffer.from(await cover.arrayBuffer())).toEqual(Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+      expect(cover.name).toBe('demo-cover.svg');
+      expect(cover.type).toBe('image/svg+xml');
+      const content = Buffer.from(await cover.arrayBuffer()).toString('utf8');
+      expect(content).toContain('Short cover title');
+      expect(content).toContain('Readable subtitle');
+      expect(content).toContain('data:image/jpeg;base64,');
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
