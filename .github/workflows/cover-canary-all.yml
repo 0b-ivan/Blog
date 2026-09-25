@@ -292,12 +292,9 @@ jobs:
               --input /tmp/cover-canary/comment.json >/dev/null
           fi
 
-      - name: Verify dry-run did not modify repository
+      - name: Verify dry-run did not modify tracked repository files
         shell: bash
         run: |
           set -euo pipefail
-          test -z "$(git status --porcelain)" || {
-            echo 'Canary unexpectedly modified tracked repository files:' >&2
-            git status --short >&2
-            exit 1
-          }
+          git diff --quiet
+          git diff --cached --quiet
