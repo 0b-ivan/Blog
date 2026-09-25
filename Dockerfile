@@ -29,6 +29,10 @@ RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		@resvg/resvg-wasm@2.6.2 \
 	&& npm cache clean --force
 
+# Fail the image build if the WASM renderer cannot actually initialize and
+# produce a PNG. Unit tests mock rasterization, so this is the runtime contract.
+RUN node -e "const fs=require('fs'),path=require('path'),r=require('@resvg/resvg-wasm');(async()=>{const entry=require.resolve('@resvg/resvg-wasm');await r.initWasm(fs.readFileSync(path.join(path.dirname(entry),'index_bg.wasm')));const png=new r.Resvg('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\" fill=\"white\"/></svg>').render().asPng();if(!png.length)process.exit(1)})().catch(e=>{console.error(e);process.exit(1)})"
+
 ARG BUILD_VERSION
 RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
 		VERSION="${BUILD_VERSION:-$FILE_VERSION}" && \
