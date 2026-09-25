@@ -124,13 +124,15 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('cover-monkey');
   });
 
-  it('uses the portrait editorial artwork as the EPUB library cover for editorial posts', async () => {
+  it('rasterizes the portrait editorial artwork for the EPUB library cover', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-cover-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
       await fs.mkdir(coverDir, { recursive: true });
       await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
 
+      let capturedSvg = '';
+      const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const cover = await createEpubCover({
         slug: 'demo',
         title: 'A very long article title',
@@ -140,14 +142,19 @@ describe('article ebook export helpers', () => {
         category: 'DevOps',
         date: '2026-09-24',
         coverImage: '/assets/covers/demo.jpg'
-      }, assetRoot);
+      }, assetRoot, {
+        rasterizeSvg: async (svg) => {
+          capturedSvg = svg;
+          return fakePng;
+        }
+      });
 
-      expect(cover.name).toBe('demo-cover.svg');
-      expect(cover.type).toBe('image/svg+xml');
-      const content = Buffer.from(await cover.arrayBuffer()).toString('utf8');
-      expect(content).toContain('Short cover title');
-      expect(content).toContain('Readable subtitle');
-      expect(content).toContain('data:image/jpeg;base64,');
+      expect(cover.name).toBe('demo-cover.png');
+      expect(cover.type).toBe('image/png');
+      expect(Buffer.from(await cover.arrayBuffer())).toEqual(fakePng);
+      expect(capturedSvg).toContain('Short cover title');
+      expect(capturedSvg).toContain('Readable subtitle');
+      expect(capturedSvg).toContain('data:image/jpeg;base64,');
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
@@ -179,6 +186,29 @@ describe('article ebook export helpers', () => {
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
+  });
+
+  it('rasterizes generated covers when no article photo exists', async () => {
+    const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    let capturedSvg = '';
+
+    const cover = await createEpubCover({
+      slug: 'generated',
+      title: 'Generated Cover',
+      author: 'obivan',
+      category: 'DevOps',
+      date: '2026-09-24'
+    }, '/tmp/does-not-matter', {
+      rasterizeSvg: async (svg) => {
+        capturedSvg = svg;
+        return fakePng;
+      }
+    });
+
+    expect(cover.name).toBe('generated-cover.png');
+    expect(cover.type).toBe('image/png');
+    expect(Buffer.from(await cover.arrayBuffer())).toEqual(fakePng);
+    expect(capturedSvg).toContain('Generated Cover');
   });
 
   it('uses the existing raster article image as the pragmatic EPUB library cover', async () => {
