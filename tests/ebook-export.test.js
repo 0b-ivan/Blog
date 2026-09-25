@@ -208,22 +208,27 @@ describe('article ebook export helpers', () => {
     expect(ensureCoverImageProperty(patched)).toBe(patched);
   });
 
-  it('marks only the deckblatt spine item as fixed layout', () => {
-    const opf = '<package><manifest><item id="deckblatt" href="deckblatt.xhtml" media-type="application/xhtml+xml" /><item id="article" href="article.xhtml" media-type="application/xhtml+xml" /></manifest><spine><itemref idref="deckblatt" /><itemref idref="article" /></spine></package>';
+  it('keeps the deckblatt spine item reflow-safe for Apple Books', () => {
+    const opf = '<package><manifest><item id="deckblatt" href="deckblatt.xhtml" media-type="application/xhtml+xml" /><item id="article" href="article.xhtml" media-type="application/xhtml+xml" /></manifest><spine><itemref idref="deckblatt" properties="rendition:layout-pre-paginated rendition:spread-none" /><itemref idref="article" /></spine></package>';
     const patched = ensureDeckblattItemrefProperties(opf);
 
-    expect(patched).toContain('idref="deckblatt" properties="rendition:layout-pre-paginated rendition:spread-none"');
+    expect(patched).toContain('<itemref idref="deckblatt" />');
+    expect(patched).not.toContain('rendition:layout-pre-paginated');
+    expect(patched).not.toContain('rendition:spread-none');
     expect(patched).toContain('<itemref idref="article" />');
   });
 
-  it('forces the deckblatt XHTML to the 1600x2560 viewport without reader margins', () => {
+  it('keeps the deckblatt on one responsive viewport without fixed pixel dimensions', () => {
     const xhtml = '<html><head><title>Deckblatt</title></head><body><div class="book-deckblatt"><img src="cover.svg" /></div></body></html>';
     const patched = ensureDeckblattFixedLayout(xhtml);
 
-    expect(patched).toContain('width=1600,height=2560');
+    expect(patched).toContain('width=device-width, initial-scale=1.0');
     expect(patched).toContain('margin: 0 !important');
-    expect(patched).toContain('height: 2560px !important');
-    expect(patched).toContain('object-fit: cover');
+    expect(patched).toContain('height: 100vh !important');
+    expect(patched).toContain('max-height: 100vh !important');
+    expect(patched).toContain('object-fit: contain !important');
+    expect(patched).not.toContain('width: 1600px !important');
+    expect(patched).not.toContain('height: 2560px !important');
   });
 
   it('rewrites local article assets to file URLs for offline EPUB embedding', () => {
