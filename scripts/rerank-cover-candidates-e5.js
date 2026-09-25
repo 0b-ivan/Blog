@@ -17,6 +17,14 @@ const GENERIC_ERROR_TERMS = ['error', 'cross', 'warning', 'wrong', 'false', 'mis
 const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'];
 
 const COVER_CONCEPT_PROTOTYPES = {
+  'pokemon-oop-domain-model': {
+    positive: 'retro handheld creature battle turn based monster battle pixel game role playing game abstract creature combat game scene',
+    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite branded character toy figure doll plush trading card unrelated franchise mascot',
+    heroPreferred: ['handheld', 'creature', 'monster', 'battle', 'pixel', 'retro', 'game'],
+    heroRequired: ['creature', 'monster', 'battle', 'pixel', 'rpg'],
+    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card'],
+    minHeroQuality: 65
+  },
   'writing-proofreading': {
     positive: 'writing proofreading spelling grammar text editing document keyboard manuscript corrected text language tool',
     negative: 'secretary office sales telephone call center business meeting portrait person'

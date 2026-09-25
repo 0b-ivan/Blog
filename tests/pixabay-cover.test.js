@@ -292,6 +292,63 @@ describe('Pixabay cover resolver', () => {
     expect(maze.score).toBeGreaterThan(genericHardware.score);
   });
 
+  it('fails closed for unknown explicit cover intents', () => {
+    expect(() => visualIntent({
+      title: 'Example',
+      cover_intent: 'does-not-exist'
+    })).toThrow('Unknown cover_intent "does-not-exist"');
+  });
+
+  it('rejects a semantically adjacent but wrong franchise for Pokémon covers', () => {
+    const article = {
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      category: 'Engineering',
+      tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
+      cover_intent: 'pokemon-oop-domain-model',
+      cover_subject: 'retro handheld game console with a simple turn based creature battle',
+      cover_query: 'retro handheld game console pixel game creature battle programming',
+      cover_avoid: 'pokemon logo pikachu copyrighted artwork trading cards phone laptop office keyboard code screenshot text logo'
+    };
+
+    const intent = visualIntent(article);
+    expect(intent.key).toBe('pokemon-oop-domain-model');
+    expect(intent.explicit).toBe(true);
+
+    const mario = scoreHit({
+      type: 'photo',
+      tags: 'mario, figure, game, nintendo, super, retro, classic, computer game, character, cartoon, video, games console, super mario bros, marios',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    const creatureBattle = scoreHit({
+      type: 'illustration',
+      tags: 'retro, handheld, pixel, creature, monster, battle, game, rpg',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(mario.semanticMismatch).toBe(true);
+    expect(mario.hardAvoidMatches).toContain('mario');
+    expect(creatureBattle.semanticMismatch).toBe(false);
+    expect(creatureBattle.score).toBeGreaterThan(mario.score);
+  });
+
+  it('treats explicit cover_avoid terms as semantic blockers, not only score penalties', () => {
+    const result = scoreHit({
+      type: 'photo',
+      tags: 'server, cloud, office, laptop',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'Cloud architecture',
+      cover_avoid: 'office laptop'
+    });
+
+    expect(result.hardAvoidMatches).toEqual(expect.arrayContaining(['office', 'laptop']));
+    expect(result.semanticMismatch).toBe(true);
+  });
+
   it('allows one article to override the automatic Chaos Monkey animal intent', () => {
     const article = {
       title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen',
