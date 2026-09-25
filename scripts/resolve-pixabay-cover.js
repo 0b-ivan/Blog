@@ -193,7 +193,7 @@ const VISUAL_INTENTS = [
     query: 'search data code analytics magnifying glass',
     positive: ['search', 'data', 'code', 'magnifying', 'analytics', 'embedding'],
     minMatches: 2,
-    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar']
+    avoid: ['robot', 'human', 'person', 'google', 'smartphone', 'mobile phone', 'telephone', 'container', 'box', 'jar', 'cyber', 'security', 'hacker']
   },
   {
     key: 'vpc-networking',
