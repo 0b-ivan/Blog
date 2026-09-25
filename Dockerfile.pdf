@@ -47,7 +47,7 @@ COPY server.js pdf-export-server.js ./
 ENV PORT=8092
 ENV POSTS_DIR=/app/posts
 ENV PDF_LATEX_TEMPLATE=/app/templates/paper.tex
-ENV PDF_COMPILE_TIMEOUT_MS=60000
+ENV PDF_COMPILE_TIMEOUT_MS=80000
 
 USER node
 
