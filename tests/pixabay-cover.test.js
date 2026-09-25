@@ -25,7 +25,8 @@ const {
   renderCandidates,
   scoreHit,
   searchPixabay,
-  searchPixabayCached
+  searchPixabayCached,
+  subjectAnchors
 } = require('../scripts/resolve-pixabay-cover');
 
 describe('Pixabay cover resolver', () => {
@@ -271,6 +272,69 @@ describe('Pixabay cover resolver', () => {
     expect(queries[0]).toBe('pokemon game handheld battle');
     expect(queries).toContain('pokemon pikachu game');
     expect(queries).toContain('pokemon gameboy cartridge');
+  });
+
+  it('derives subject anchors generically from the article identity and cover query', () => {
+    expect(subjectAnchors({
+      title: 'Wie funktionieren NFC-Aufkleber?',
+      tags: ['NFC', 'Hardware', 'Automation'],
+      cover_subject: 'NFC tag used with a smartphone',
+      cover_query: 'nfc tag smartphone contactless'
+    })).toContain('nfc');
+
+    expect(subjectAnchors({
+      title: 'Eine VPC ist keine schwarze Magie',
+      tags: ['AWS', 'VPC', 'Networking'],
+      cover_subject: 'cloud network topology',
+      cover_query: 'computer network topology router subnet'
+    })).not.toContain('network');
+  });
+
+  it('uses subject anchors as a generic hard gate outside Pokémon', () => {
+    const article = {
+      title: 'Wie funktionieren NFC-Aufkleber?',
+      tags: ['NFC', 'Hardware', 'Automation'],
+      cover_subject: 'NFC tag used with a smartphone',
+      cover_query: 'nfc tag smartphone contactless'
+    };
+
+    const unrelatedSticker = scoreHit({
+      type: 'photo',
+      tags: 'sticker, barcode, smartphone, contactless, technology',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const nfcTag = scoreHit({
+      type: 'photo',
+      tags: 'nfc, tag, smartphone, contactless, technology',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(unrelatedSticker.subjectAnchors).toContain('nfc');
+    expect(unrelatedSticker.subjectAnchorMatches).toHaveLength(0);
+    expect(unrelatedSticker.semanticMismatch).toBe(true);
+    expect(nfcTag.subjectAnchorMatches).toContain('nfc');
+    expect(nfcTag.semanticMismatch).toBe(false);
+  });
+
+  it('does not let cover_avoid accidentally ban the article subject itself', () => {
+    const result = scoreHit({
+      type: 'photo',
+      tags: 'nfc, tag, smartphone, contactless',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, {
+      title: 'Wie funktionieren NFC-Aufkleber?',
+      tags: ['NFC', 'Hardware'],
+      cover_subject: 'NFC tag used with a smartphone',
+      cover_query: 'nfc tag smartphone contactless',
+      cover_avoid: 'nfc logo qr code'
+    });
+
+    expect(result.subjectAnchors).toContain('nfc');
+    expect(result.hardAvoidMatches).not.toContain('nfc');
+    expect(result.semanticMismatch).toBe(false);
   });
 
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
