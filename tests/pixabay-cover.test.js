@@ -334,6 +334,35 @@ describe('Pixabay cover resolver', () => {
     expect(creatureBattle.score).toBeGreaterThan(mario.score);
   });
 
+  it('rejects a retro creature motif when there is no actual battle or game scene', () => {
+    const article = {
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      category: 'Engineering',
+      tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
+      cover_intent: 'pokemon-oop-domain-model',
+      cover_subject: 'abstract turn based creature duel on a handheld game screen'
+    };
+
+    const cassetteDragon = scoreHit({
+      type: 'illustration',
+      tags: 'cassette, tape, pixel art, pixel, recorder, retro, classic, music, dragon, reptile, creature, fantasy',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    const monsterBattle = scoreHit({
+      type: 'illustration',
+      tags: 'handheld, game, rpg, creature, monster, fantasy, battle, combat, duel',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(cassetteDragon.semanticMismatch).toBe(true);
+    expect(cassetteDragon.hardAvoidMatches).toEqual(expect.arrayContaining(['cassette', 'tape', 'music']));
+    expect(monsterBattle.semanticMismatch).toBe(false);
+    expect(monsterBattle.score).toBeGreaterThan(cassetteDragon.score);
+  });
+
   it('treats explicit cover_avoid terms as semantic blockers, not only score penalties', () => {
     const result = scoreHit({
       type: 'photo',
