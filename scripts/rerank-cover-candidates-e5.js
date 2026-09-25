@@ -19,10 +19,10 @@ const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd
 const COVER_CONCEPT_PROTOTYPES = {
   'pokemon-oop-domain-model': {
     positive: 'handheld role playing game creature monster fantasy battle combat duel versus turn based game scene two creatures facing each other',
-    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite branded character toy figure doll plush trading card cassette tape recorder music album unrelated object unrelated franchise mascot',
+    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite Dungeons Dragons DND Warhammer Xbox ninja turtle alien UFO spaceship marine soldier warrior knight paladin weapon axe hammer rifle gun branded character toy figure doll plush trading card cassette tape recorder music album unrelated object unrelated franchise mascot',
     heroPreferred: ['handheld', 'console', 'game', 'rpg', 'creature', 'monster', 'battle', 'combat', 'fight', 'duel', 'versus'],
     heroRequired: ['battle', 'combat', 'fight', 'fighting', 'duel', 'versus'],
-    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card', 'cassette', 'tape', 'recorder', 'music', 'album'],
+    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'dnd', 'dungeons', 'warhammer', 'xbox', 'ninja turtle', 'alien', 'ufo', 'spaceship', 'marine', 'soldier', 'warrior', 'knight', 'paladin', 'weapon', 'axe', 'hammer', 'rifle', 'gun', 'figure', 'toy', 'plush', 'doll', 'trading card', 'cassette', 'tape', 'recorder', 'music', 'album'],
     minHeroQuality: 70
   },
   'writing-proofreading': {
