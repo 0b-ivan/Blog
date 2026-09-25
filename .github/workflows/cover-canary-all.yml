@@ -92,6 +92,29 @@ jobs:
           set -euo pipefail
           mkdir -p /tmp/cover-canary/reports /tmp/cover-canary/logs
 
+          cat > /tmp/cover-canary/write-error-report.js <<'NODE'
+          const fs = require('node:fs');
+          const matter = require('gray-matter');
+          const { subjectAnchors } = require(process.cwd() + '/scripts/resolve-pixabay-cover');
+
+          const postPath = process.env.POST_PATH;
+          const raw = fs.readFileSync(postPath, 'utf8');
+          const parsed = matter(raw);
+          const data = parsed.data || {};
+          const report = {
+            postPath,
+            title: data.title || postPath,
+            series: data.series || '',
+            visualIntent: data.cover_intent || '',
+            subjectAnchors: subjectAnchors(data, data.cover_query || ''),
+            query: data.cover_query || '',
+            queries: [],
+            candidates: [],
+            canaryError: process.env.CANARY_ERROR || 'cover resolver failed'
+          };
+          fs.writeFileSync(process.env.REPORT_PATH, JSON.stringify(report, null, 2));
+          NODE
+
           while IFS= read -r post; do
             [ -n "$post" ] || continue
             slug="$(basename "$post" .md)"
@@ -106,28 +129,8 @@ jobs:
               error_message="$(tail -n 1 "$log" | sed -E 's/\x1B\[[0-9;]*[mK]//g')"
               echo "Canary fail-closed for $post: $error_message"
 
-              POST_PATH="$post" REPORT_PATH="$report" CANARY_ERROR="$error_message" node <<'NODE'
-              const fs = require('node:fs');
-              const matter = require('gray-matter');
-              const { subjectAnchors } = require('./scripts/resolve-pixabay-cover');
-
-              const postPath = process.env.POST_PATH;
-              const raw = fs.readFileSync(postPath, 'utf8');
-              const parsed = matter(raw);
-              const data = parsed.data || {};
-              const report = {
-                postPath,
-                title: data.title || postPath,
-                series: data.series || '',
-                visualIntent: data.cover_intent || '',
-                subjectAnchors: subjectAnchors(data, data.cover_query || ''),
-                query: data.cover_query || '',
-                queries: [],
-                candidates: [],
-                canaryError: process.env.CANARY_ERROR || 'cover resolver failed'
-              };
-              fs.writeFileSync(process.env.REPORT_PATH, JSON.stringify(report, null, 2));
-              NODE
+              POST_PATH="$post" REPORT_PATH="$report" CANARY_ERROR="$error_message" \
+                node /tmp/cover-canary/write-error-report.js
             fi
             echo "::endgroup::"
           done < /tmp/cover-canary-posts.txt
