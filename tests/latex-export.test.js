@@ -5,6 +5,7 @@ const { prepareSvgImagesForPdf } = require('../pdf-export-server');
 const {
   buildBibTeX,
   buildPdfDocumentPreview,
+  normalizeFiguresForPdf,
   pdfMetadata,
   promoteArticleHeadings,
   rewriteGlossaryLinksForPdf,
@@ -53,7 +54,18 @@ describe('LaTeX publication export', () => {
 
     expect(
       rewriteSourceLinksForPdf('<a href="sources.xhtml#source-docker-compose">[1]</a>')
-    ).toBe('<a href="#ref-docker-compose">[1]</a>');
+    ).toBe('<a href="#source-docker-compose">[1]</a>');
+  });
+
+  it('turns standalone article images into bounded scientific figures', () => {
+    const html = normalizeFiguresForPdf(
+      '<p><img src="/assets/posts/pac-man/timeline.svg" alt="Zeitleiste von Puck Man zu Pac-Man" /></p><p><em>Chronologie der Umbenennung im Jahr 1980.</em></p>'
+    );
+
+    expect(html).toContain('<figure class="paper-figure">');
+    expect(html).toContain('width="88%" height="52%"');
+    expect(html).toContain('<figcaption>Chronologie der Umbenennung im Jahr 1980.</figcaption>');
+    expect(html).not.toContain('<p><em>');
   });
 
   it('generates bibliography records for the sources used by the paper', () => {
