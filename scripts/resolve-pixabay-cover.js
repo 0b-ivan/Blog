@@ -79,7 +79,10 @@ const VISUAL_INTENTS = [
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
       'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card',
-      'cassette', 'tape', 'recorder', 'music', 'album'
+      'cassette', 'tape', 'recorder', 'music', 'album',
+      'dnd', 'dungeons', 'warhammer', 'xbox', 'ninja turtle',
+      'alien', 'ufo', 'spaceship', 'marine', 'soldier', 'warrior', 'knight',
+      'paladin', 'weapon', 'axe', 'hammer', 'rifle', 'gun'
     ]
   },
   {
@@ -905,26 +908,51 @@ function fileExtension(url, contentType) {
   return 'jpg';
 }
 
-async function downloadPhoto(hit, fetchImpl = globalThis.fetch) {
+async function downloadPhoto(hit, fetchImpl = globalThis.fetch, options = {}) {
   const sourceUrl = hit.largeImageURL || hit.webformatURL;
   if (!sourceUrl) throw new Error('Pixabay result has no downloadable image URL');
 
   const parsedUrl = new URL(sourceUrl);
   if (parsedUrl.protocol !== 'https:') throw new Error('Pixabay image URL must use HTTPS');
 
-  const response = await fetchImpl(sourceUrl);
-  if (!response.ok) throw new Error(`Pixabay image download failed with HTTP ${response.status}`);
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || 4));
+  const sleep = options.sleep || ((milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds))
+  );
 
-  const contentType = response.headers.get('content-type') || 'image/jpeg';
-  if (!/^image\/(?:jpeg|png|webp)(?:;|$)/i.test(contentType)) {
-    throw new Error(`Unexpected Pixabay image content type: ${contentType}`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await fetchImpl(sourceUrl);
+
+    if (response.ok) {
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      if (!/^image\/(?:jpeg|png|webp)(?:;|$)/i.test(contentType)) {
+        throw new Error(`Unexpected Pixabay image content type: ${contentType}`);
+      }
+
+      return {
+        buffer: Buffer.from(await response.arrayBuffer()),
+        contentType,
+        sourceUrl
+      };
+    }
+
+    const retryable = response.status === 429 || response.status >= 500;
+    if (!retryable || attempt === maxAttempts) {
+      throw new Error(`Pixabay image download failed with HTTP ${response.status}`);
+    }
+
+    const retryAfter = Number.parseFloat(response.headers.get('retry-after') || '');
+    const backoffMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? Math.min(5000, Math.round(retryAfter * 1000))
+      : Math.min(4000, 500 * (2 ** (attempt - 1)));
+
+    console.warn(
+      `Pixabay image download returned HTTP ${response.status}; retrying in ${backoffMs} ms (attempt ${attempt + 1}/${maxAttempts})`
+    );
+    await sleep(backoffMs);
   }
 
-  return {
-    buffer: Buffer.from(await response.arrayBuffer()),
-    contentType,
-    sourceUrl
-  };
+  throw new Error('Pixabay image download failed after retries');
 }
 
 async function removeStaleCoverVariants(slug, keepExtension) {
