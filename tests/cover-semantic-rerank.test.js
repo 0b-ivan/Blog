@@ -148,6 +148,12 @@ systemctl status example
 
     expect(battle.score).toBeGreaterThan(mario.score);
     expect(mario.avoided).toContain('mario');
+
+    const cassette = heroQuality({
+      tags: 'cassette, tape, pixel art, retro, dragon, creature, fantasy, music'
+    }, prototype);
+    expect(cassette.score).toBeLessThan(battle.score);
+    expect(cassette.avoided).toEqual(expect.arrayContaining(['cassette', 'tape', 'music']));
   });
 
   it('uses positive and negative concept prototypes to reject adjacent RSS concepts', async () => {

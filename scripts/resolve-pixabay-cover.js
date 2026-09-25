@@ -56,16 +56,22 @@ const VISUAL_INTENTS = [
     priority: 35,
     pixabayImageType: 'all',
     markers: ['pokémon', 'pokemon', 'pikachu', 'oop', 'domain-modeling', 'domain modeling'],
-    query: 'retro handheld creature battle pixel game turn based',
-    positive: ['handheld', 'retro', 'game', 'gaming', 'creature', 'monster', 'battle', 'turn based', 'pixel', 'rpg'],
-    minMatches: 2,
+    query: 'handheld monster battle rpg creature combat fantasy game',
+    positive: [
+      'handheld', 'console', 'game', 'gaming', 'rpg',
+      'creature', 'monster', 'dragon', 'fantasy',
+      'battle', 'combat', 'fight', 'fighting', 'versus', 'duel', 'turn based'
+    ],
+    minMatches: 3,
     requiredGroups: [
-      ['handheld', 'console', 'retro', 'game', 'gaming'],
-      ['creature', 'monster', 'battle', 'combat', 'rpg']
+      ['handheld', 'console', 'game', 'gaming', 'rpg'],
+      ['creature', 'monster', 'dragon', 'fantasy'],
+      ['battle', 'combat', 'fight', 'fighting', 'versus', 'duel']
     ],
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
-      'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card'
+      'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card',
+      'cassette', 'tape', 'recorder', 'music', 'album'
     ]
   },
   {
