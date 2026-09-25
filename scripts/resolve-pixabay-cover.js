@@ -91,8 +91,8 @@ const TOPIC_AVOID = {
   kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
   k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
   proxmox: ['train', 'railway', 'railroad', 'locomotive', 'mongolia', 'proxy', 'scraping'],
-  docker: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
-  compose: ['ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight'],
+  docker: ['ship', 'port', 'harbour', 'harbor'],
+  compose: ['ship', 'port', 'harbour', 'harbor'],
   devops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
   gitops: ['soldier', 'army', 'military', 'weapon', 'war', 'patrol', 'afghanistan'],
   rss: ['ebook', 'e-book', 'kobo', 'tablet', 'reading', 'novel'],
@@ -238,12 +238,12 @@ const VISUAL_INTENTS = [
     pixabayCategory: 'computer',
     pixabayImageType: 'all',
     markers: ['docker compose', 'docker-compose', 'compose'],
-    query: 'devops deployment orchestration services architecture workflow',
-    positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation'],
+    query: 'devops deployment orchestration services architecture workflow container',
+    positive: ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation', 'container', 'shipping container', 'metal container'],
     requiredGroups: [
-      ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation']
+      ['deployment', 'devops', 'orchestration', 'services', 'architecture', 'workflow', 'configuration', 'automation', 'container']
     ],
-    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'container', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'cargo', 'port', 'harbour', 'harbor', 'shipping', 'freight', 'smarthome', 'iot', 'house']
+    avoid: ['screen', 'screenshot', 'terminal', 'wallpaper', 'box', 'jar', 'can', 'vessel', 'urn', 'storage', 'ship', 'port', 'harbour', 'harbor', 'smarthome', 'iot', 'house']
   },
   {
     key: 'semantic-search',
