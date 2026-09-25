@@ -1,5 +1,3 @@
-FROM node:26-alpine AS app-deps
-
 FROM debian:bookworm-slim AS cover-fonts
 RUN apt-get update \
   && apt-get install -y --no-install-recommends fonts-dejavu-core fonts-noto-cjk \
