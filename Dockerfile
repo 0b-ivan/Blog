@@ -5,6 +5,9 @@ RUN apt-get update \
 
 FROM node:26-alpine AS app-deps
 
+COPY --from=cover-fonts /usr/share/fonts/truetype/dejavu /usr/share/fonts/truetype/dejavu
+COPY --from=cover-fonts /usr/share/fonts/opentype/noto /usr/share/fonts/opentype/noto
+
 WORKDIR /app
 
 COPY package.json package-lock.json* VERSION RELEASE_NAME ./
@@ -29,9 +32,10 @@ RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		@resvg/resvg-wasm@2.6.2 \
 	&& npm cache clean --force
 
-# Fail the image build if the WASM renderer cannot actually initialize and
-# produce a PNG. Unit tests mock rasterization, so this is the runtime contract.
-RUN node -e "const fs=require('fs'),path=require('path'),r=require('@resvg/resvg-wasm');(async()=>{const entry=require.resolve('@resvg/resvg-wasm');await r.initWasm(fs.readFileSync(path.join(path.dirname(entry),'index_bg.wasm')));const png=new r.Resvg('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\" fill=\"white\"/></svg>').render().asPng();if(!png.length)process.exit(1)})().catch(e=>{console.error(e);process.exit(1)})"
+# Fail the image build if the WASM renderer cannot initialize *and* render
+# actual text. resvg-wasm cannot read fontDirs from Node like the native
+# resvg build; fonts must be passed as byte buffers.
+RUN node -e "const fs=require('fs'),path=require('path'),r=require('@resvg/resvg-wasm');(async()=>{const entry=require.resolve('@resvg/resvg-wasm');await r.initWasm(fs.readFileSync(path.join(path.dirname(entry),'index_bg.wasm')));const fonts=['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf','/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf','/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf','/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'].map(p=>new Uint8Array(fs.readFileSync(p)));const opts={font:{fontBuffers:fonts,defaultFontFamily:'DejaVu Sans',sansSerifFamily:'DejaVu Sans',monospaceFamily:'DejaVu Sans Mono'}};const blank=new r.Resvg('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"320\" height=\"96\"></svg>',opts).render().asPng();const text=new r.Resvg('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"320\" height=\"96\"><text x=\"8\" y=\"52\" font-family=\"sans-serif\" font-size=\"38\">Kernel Notes パクパク</text></svg>',opts).render().asPng();if(Buffer.compare(Buffer.from(blank),Buffer.from(text))===0)throw new Error('WASM cover renderer produced no text')})().catch(e=>{console.error(e);process.exit(1)})"
 
 ARG BUILD_VERSION
 RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
