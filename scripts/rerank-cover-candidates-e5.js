@@ -50,10 +50,10 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
-    negative: 'physical lock safe vault key insurance house security analytics big data innovation marketing generic dashboard',
+    negative: 'physical lock safe vault key insurance house security analytics big data innovation marketing generic dashboard gambling casino betting mobile phone smartphone hand',
     heroPreferred: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability', 'patch'],
     heroRequired: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability'],
-    heroAvoid: ['analytics', 'big data', 'innovation', 'marketing', 'dashboard'],
+    heroAvoid: ['analytics', 'big data', 'innovation', 'marketing', 'dashboard', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand'],
     minHeroQuality: 55
   },
   'systemd-service': {
@@ -74,10 +74,10 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'semantic-search': {
     positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
-    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media SEO marketing search engine optimization smartphone robot portrait human cyber security hacker binary matrix ball abstract data sphere',
+    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media SEO marketing search engine optimization smartphone robot portrait human cyber security hacker binary matrix ball abstract data sphere philatelist stamp collection hobby',
     heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval', 'embedding'],
-    heroRequired: ['search', 'magnifying', 'vector', 'index', 'retrieval', 'embedding'],
-    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'binary', 'matrix', 'ball'],
+    heroRequired: ['search', 'vector', 'index', 'retrieval', 'embedding'],
+    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker', 'seo', 'marketing', 'optimization', 'icon', 'binary', 'matrix', 'ball', 'philatelist', 'stamp', 'collecting', 'collection'],
     minHeroQuality: 55
   },
   'vpc-networking': {
