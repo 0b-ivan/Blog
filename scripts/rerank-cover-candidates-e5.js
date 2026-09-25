@@ -50,17 +50,17 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'dependency-updates': {
     positive: 'software dependencies package updates version upgrade dependency graph source code GitHub pull request vulnerability patch',
-    negative: 'physical lock safe vault key insurance house security analytics big data innovation marketing generic dashboard gambling casino betting mobile phone smartphone hand',
-    heroPreferred: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability', 'patch'],
-    heroRequired: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability'],
-    heroAvoid: ['analytics', 'big data', 'innovation', 'marketing', 'dashboard', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand'],
+    negative: 'physical lock safe vault key insurance house security analytics big data innovation marketing generic dashboard gambling casino betting mobile phone smartphone hand drugs chemistry chemical addiction medicine medical pharmaceutical',
+    heroPreferred: ['dependency', 'dependencies', 'package', 'update', 'github', 'vulnerability', 'patch', 'repository', 'version'],
+    heroRequired: ['package', 'update', 'github', 'vulnerability', 'repository', 'version'],
+    heroAvoid: ['analytics', 'big data', 'innovation', 'marketing', 'dashboard', 'gambling', 'casino', 'bet', 'mobile', 'phone', 'smartphone', 'hand', 'drug', 'drugs', 'chemistry', 'chemical', 'addiction', 'medical'],
     minHeroQuality: 55
   },
   'systemd-service': {
     positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
     negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport office workspace desktop sorting classification report database decision consultant advisor analyst specialist computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
     heroPreferred: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration', 'server'],
-    heroRequired: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
+    heroRequired: ['service', 'logs', 'daemon', 'process', 'administration', 'journalctl', 'linux'],
     heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database', 'consultant', 'advisor', 'analyst', 'specialist', 'cable', 'wire', 'ethernet', 'cyberspace', 'electronics'],
     minHeroQuality: 55
   },
@@ -103,7 +103,7 @@ const COVER_CONCEPT_PROTOTYPES = {
     negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing virtual reality cyberspace simulator puppet business meeting marketing consumer sales',
     heroPreferred: ['testing', 'test', 'bug', 'automation', 'regression', 'verification'],
     heroRequired: ['testing', 'test', 'bug', 'regression'],
-    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales'],
+    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical', 'virtual reality', 'cyberspace', 'simulator', 'puppet', 'marketing', 'consumer', 'sales', 'virus', 'malware', 'antivirus', 'scan', 'cybersecurity'],
     minHeroQuality: 55
   },
   'logging-observability': {
