@@ -68,7 +68,23 @@ const SUBJECT_ALIAS_OVERRIDES = {
   resilience: ['reliability', 'recovery', 'incident', 'outage', 'failure'],
   reliability: ['resilience', 'recovery', 'incident', 'outage', 'failure'],
   doom: ['shareware', 'floppy', 'disk', 'dos'],
-  shareware: ['floppy', 'disk', 'dos']
+  shareware: ['floppy', 'disk', 'dos'],
+  blog: ['website', 'publishing', 'web']
+};
+
+const SUBJECT_ALIAS_CONTEXT = {
+  cluster: ['kubernetes', 'container', 'server', 'cloud', 'computer', 'network', 'infrastructure', 'orchestration', 'hosting', 'virtualization'],
+  container: ['kubernetes', 'docker', 'server', 'cloud', 'software', 'devops', 'orchestration', 'cluster'],
+  service: ['linux', 'server', 'daemon', 'systemd', 'monitoring', 'logs', 'process', 'software'],
+  process: ['linux', 'server', 'daemon', 'systemd', 'service', 'software'],
+  feed: ['rss', 'reader', 'aggregator', 'browser', 'subscription', 'articles', 'syndication', 'news'],
+  reader: ['rss', 'feed', 'aggregator', 'browser', 'subscription', 'articles', 'syndication'],
+  photo: ['gallery', 'image', 'cloud', 'files', 'sync', 'backup', 'library'],
+  gallery: ['photo', 'image', 'cloud', 'files', 'sync', 'backup', 'library'],
+  package: ['software', 'dependency', 'update', 'version', 'github', 'repository', 'code'],
+  update: ['software', 'dependency', 'package', 'version', 'github', 'repository', 'code'],
+  test: ['software', 'testing', 'bug', 'automation', 'code', 'regression'],
+  logs: ['software', 'monitoring', 'metrics', 'server', 'observability', 'logging', 'telemetry']
 };
 
 const TOPIC_AVOID = {
@@ -491,6 +507,14 @@ function subjectAliasTokens(anchor, intent = null) {
   return [...aliases].filter(Boolean);
 }
 
+function subjectAliasContextMet(alias, canonicalHits) {
+  const required = SUBJECT_ALIAS_CONTEXT[alias] || [];
+  if (!required.length) return true;
+  return required
+    .map(canonicalSubjectToken)
+    .some((token) => canonicalHits.has(token));
+}
+
 function subjectAnchorEvidence(hitTokens, anchors, intent = null) {
   const canonicalHits = new Set([...hitTokens].map(canonicalSubjectToken));
   const matches = [];
@@ -498,7 +522,10 @@ function subjectAnchorEvidence(hitTokens, anchors, intent = null) {
 
   for (const anchor of anchors) {
     const aliases = subjectAliasTokens(anchor, intent);
-    const hit = aliases.find((token) => canonicalHits.has(token));
+    const hit = aliases.find((token) =>
+      canonicalHits.has(token)
+      && (token === anchor || subjectAliasContextMet(token, canonicalHits))
+    );
     if (!hit) continue;
     matches.push(anchor);
     evidence[anchor] = hit;
@@ -1101,10 +1128,30 @@ async function searchPixabay(query, apiKey, fetchImpl = globalThis.fetch, option
   const category = String(options.category || '').trim().toLowerCase();
   if (category) url.searchParams.set('category', category);
 
-  const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(`Pixabay search failed with HTTP ${response.status}`);
-  const payload = await response.json();
-  return Array.isArray(payload.hits) ? payload.hits : [];
+  const maxAttempts = Math.max(1, Number(options.maxAttempts || 4));
+  const sleep = options.sleep || delay;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
+
+    if (response.ok) {
+      const payload = await response.json();
+      return Array.isArray(payload.hits) ? payload.hits : [];
+    }
+
+    const retryable = response.status === 429 || response.status >= 500;
+    if (!retryable || attempt === maxAttempts) {
+      throw new Error(`Pixabay search failed with HTTP ${response.status}`);
+    }
+
+    const retryAfter = Number(response.headers?.get?.('retry-after') || 0);
+    const retryMs = retryAfter > 0
+      ? retryAfter * 1000
+      : Math.min(8000, 500 * (2 ** (attempt - 1)));
+    await sleep(retryMs);
+  }
+
+  return [];
 }
 
 function cacheFileForQuery(
@@ -1522,6 +1569,7 @@ module.exports = {
   searchPixabayCached,
   subjectAnchors,
   subjectAliasTokens,
+  subjectAliasContextMet,
   subjectAnchorEvidence,
   updateCoverStylesheet
 };
