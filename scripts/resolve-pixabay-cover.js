@@ -370,14 +370,32 @@ function subjectAnchors(data = {}, query = '') {
   if (!queryTokens.length) return [];
 
   const candidatesFor = (identityTokens) => {
-    const identity = new Set(identityTokens.map(canonicalSubjectToken).filter(Boolean));
-    return [...new Set(
-      queryTokens
-        .filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token))
-        .filter((token) => identity.has(canonicalSubjectToken(token)))
+    const canonicalQuery = new Set(queryTokens.map(canonicalSubjectToken).filter(Boolean));
+    const anchors = [];
+
+    for (const rawToken of identityTokens) {
+      const token = canonicalSubjectToken(rawToken);
+      if (!token || token.length < 3 || GENERIC_SUBJECT_CONTEXT_TERMS.has(token)) continue;
+
+      if (canonicalQuery.has(token)) {
+        anchors.push(token);
+        continue;
+      }
+
+      const visualAliases = [
+        ...(TOPIC_EXPANSIONS[token] || []),
+        ...(SUBJECT_ALIAS_OVERRIDES[token] || [])
+      ]
+        .flatMap((value) => tokensFrom(value))
         .map(canonicalSubjectToken)
-        .filter((token) => token.length >= 3)
-    )].slice(0, 8);
+        .filter(Boolean);
+
+      if (visualAliases.some((alias) => canonicalQuery.has(alias))) {
+        anchors.push(token);
+      }
+    }
+
+    return [...new Set(anchors)].slice(0, 8);
   };
 
   // The article's own identity is stronger than the visual brief. A word that
