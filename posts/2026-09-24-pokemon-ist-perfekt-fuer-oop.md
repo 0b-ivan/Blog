@@ -32,8 +32,8 @@ search_queries:
     maxRank: 1
   - query: Wie modelliert man ein Pokémon-Kampfsystem objektorientiert?
     maxRank: 1
-cover_query: retro handheld game console pixel game creature battle programming
-cover_subject: retro handheld game console with a simple turn based creature battle
+cover_query: retro handheld creature battle monster rpg turn based pixel
+cover_subject: abstract retro handheld creature battle with two fantasy monsters facing each other
 cover_intent: pokemon-oop-domain-model
 cover_avoid: >-
   pokemon logo pikachu copyrighted artwork trading cards phone laptop office
