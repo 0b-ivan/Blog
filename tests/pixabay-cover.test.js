@@ -419,6 +419,31 @@ describe('Pixabay cover resolver', () => {
     );
   });
 
+  it('allows a literal metal container as a Docker visual metaphor', () => {
+    const article = {
+      title: 'Docker vs. Docker Compose: Was ist der Unterschied?',
+      tags: ['Docker', 'Docker-Compose', 'DevOps'],
+      cover_query: 'devops deployment orchestration services architecture workflow container'
+    };
+
+    const metalContainer = scoreHit({
+      type: 'photo',
+      tags: 'shipping container, metal container, cargo container, steel, freight',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const cargoShip = scoreHit({
+      type: 'photo',
+      tags: 'cargo ship, container ship, port, harbor, freight, shipping',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(metalContainer.semanticMismatch).toBe(false);
+    expect(cargoShip.semanticMismatch).toBe(true);
+    expect(cargoShip.hardAvoidMatches).toEqual(expect.arrayContaining(['ship', 'port']));
+  });
+
   it('requires technical context for ambiguous subject aliases such as cluster and container', () => {
     const article = {
       title: 'K3s auf Proxmox – Teil II: GitOps',
