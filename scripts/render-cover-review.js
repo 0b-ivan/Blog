@@ -125,6 +125,9 @@ function candidateTable(candidates, options = {}) {
     const hardGate = candidate.heroRejected
       ? `⛔ Hero-Gate: ${markdownText((candidate.heroRejectReasons || []).join(' · '))}`
       : '';
+    const semanticGate = candidate.semanticMismatch
+      ? '⛔ Semantic-Gate: Motiv passt nicht zuverlässig zum Artikel'
+      : '';
 
     const details = compact
       ? [
@@ -134,6 +137,7 @@ function candidateTable(candidates, options = {}) {
           heroQuality,
           dimensions,
           hardGate,
+          semanticGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
         ].filter(Boolean).join('<br>')
@@ -145,6 +149,7 @@ function candidateTable(candidates, options = {}) {
           heuristic,
           dimensions,
           hardGate,
+          semanticGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
             ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
