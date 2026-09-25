@@ -33,22 +33,22 @@ search_queries:
   - query: Wie modelliert man ein Pokémon-Kampfsystem objektorientiert?
     maxRank: 1
 cover_query: pokemon game handheld battle
-cover_subject: >-
-  Pokémon game scene or handheld Pokémon game with clear franchise context
+cover_subject: Pokémon game scene or handheld Pokémon game with clear franchise context
 cover_intent: pokemon-oop-domain-model
-cover_avoid: >-
-  logo trading cards phone laptop office keyboard code screenshot text
-cover_provider: wikimedia-commons
-cover_provider_id: pokemon-oop-commons-rby-back
-cover_image: /assets/posts/pokemon-oop/01-pokemon-cartridges.jpg
-cover_alt: Rückseiten der europäischen Game-Boy-Cartridges Pokémon Rot, Blau und Gelb
+cover_avoid: logo trading cards phone laptop office keyboard code screenshot text
+cover_provider: pixabay
+cover_provider_id: '1593048'
+cover_image: /assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.jpg
+cover_alt: >-
+  pokemon, smartphone, pokemon go, virtual, game, iphone, reality, rendering,
+  3d, pokemon, pokemon, pokemon, pokemon, pokemon
 cover_focus: center
-cover_score: 100
-cover_credit: Kigsz via Wikimedia Commons
-cover_credit_url: 'https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg'
-cover_source_url: 'https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg'
-cover_license: CC BY-SA 3.0
-cover_license_url: 'https://creativecommons.org/licenses/by-sa/3.0'
+cover_score: 91
+cover_credit: by PIRO4D via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/pokemon-smartphone-pokemon-go-1593048/'
+cover_source_url: 'https://pixabay.com/illustrations/pokemon-smartphone-pokemon-go-1593048/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Autos. Tiere. Bankkonten.
