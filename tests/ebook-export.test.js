@@ -169,6 +169,7 @@ describe('article ebook export helpers', () => {
       await fs.mkdir(coverDir, { recursive: true });
       await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
 
+      const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const deckblatt = await createDeckblatt({
         slug: 'demo',
         title: 'Long article title',
@@ -178,10 +179,13 @@ describe('article ebook export helpers', () => {
         category: 'DevOps',
         date: '2026-09-24',
         coverImage: '/assets/covers/demo.jpg'
-      }, assetRoot, 'https://blog.obivan.org');
+      }, assetRoot, 'https://blog.obivan.org', {
+        rasterizeSvg: async () => fakePng
+      });
 
       expect(deckblatt.html).toContain('book-deckblatt--editorial');
       expect(deckblatt.html).toContain('<img src="file://');
+      expect(deckblatt.html).toContain('deckblatt.png');
       expect(deckblatt.html).toContain('alt="Deckblatt: Short cover title"');
       expect(deckblatt.html).not.toContain('<svg');
       await deckblatt.cleanup();
@@ -288,17 +292,18 @@ describe('article ebook export helpers', () => {
     expect(patched).toContain('<itemref idref="article" />');
   });
 
-  it('keeps the deckblatt on one responsive viewport without fixed pixel dimensions', () => {
-    const xhtml = '<html><head><title>Deckblatt</title></head><body><div class="book-deckblatt"><img src="cover.svg" /></div></body></html>';
+  it('keeps the 1600x2560 raster deckblatt full-width without vh or flex sizing', () => {
+    const xhtml = '<html><head><title>Deckblatt</title></head><body><div class="book-deckblatt"><img src="cover.png" /></div></body></html>';
     const patched = ensureDeckblattFixedLayout(xhtml);
 
     expect(patched).toContain('width=device-width, initial-scale=1.0');
     expect(patched).toContain('margin: 0 !important');
-    expect(patched).toContain('height: 100vh !important');
-    expect(patched).toContain('max-height: 100vh !important');
-    expect(patched).toContain('object-fit: contain !important');
-    expect(patched).not.toContain('width: 1600px !important');
-    expect(patched).not.toContain('height: 2560px !important');
+    expect(patched).toContain('width: 100% !important');
+    expect(patched).toContain('height: auto !important');
+    expect(patched).toContain('max-height: none !important');
+    expect(patched).not.toContain('100vh');
+    expect(patched).not.toContain('display: flex');
+    expect(patched).not.toContain('object-fit');
   });
 
   it('rewrites local article assets to file URLs for offline EPUB embedding', () => {
