@@ -817,10 +817,10 @@ function queryCandidates(data, explicitQuery = '') {
     : [];
   const candidates = explicitQuery
     ? (intent
-      ? [primary, ...subjectQueries, ...intentQueries, visual || fallback]
-      : [primary, ...subjectQueries, visual, fallback])
+      ? [primary, ...intentQueries, ...subjectQueries, visual || fallback]
+      : [primary, visual, fallback])
     : (intent
-      ? [...subjectQueries, ...intentQueries, primary, visual || fallback]
+      ? [...intentQueries, ...subjectQueries, primary, visual || fallback]
       : [primary, ...subjectQueries, title, visual || fallback]);
 
   const queryLimit = Math.max(1, Number(intent?.queryLimit || (intent ? 8 : 6)));
