@@ -57,6 +57,14 @@ const VISUAL_INTENTS = [
     pixabayImageType: 'all',
     markers: ['pokémon', 'pokemon', 'pikachu', 'oop', 'domain-modeling', 'domain modeling'],
     query: 'handheld monster battle rpg creature combat fantasy game',
+    queryVariants: [
+      'fantasy monster battle landscape rpg game',
+      'two monsters fighting fantasy game battle',
+      'creature duel rpg fantasy combat game',
+      'handheld rpg monster battle fantasy',
+      'fantasy creatures versus battle game'
+    ],
+    queryLimit: 7,
     positive: [
       'handheld', 'console', 'game', 'gaming', 'rpg',
       'creature', 'monster', 'dragon', 'fantasy',
@@ -476,15 +484,19 @@ function queryCandidates(data, explicitQuery = '') {
     .slice(0, 100);
   const title = String(data.title || '').trim().slice(0, 100);
 
+  const intentQueries = intent
+    ? [intent.query, ...(Array.isArray(intent.queryVariants) ? intent.queryVariants : [])]
+    : [];
   const candidates = explicitQuery
     ? (intent
-      ? [primary, intent.query, visual || fallback]
+      ? [primary, ...intentQueries, visual || fallback]
       : [primary, visual, fallback])
     : (intent
-      ? [intent.query, primary, visual || fallback]
+      ? [...intentQueries, primary, visual || fallback]
       : [primary, title, visual || fallback]);
 
-  return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, 3);
+  const queryLimit = Math.max(1, Number(intent?.queryLimit || 3));
+  return [...new Set(candidates.filter(Boolean).map((value) => String(value).slice(0, 100)))].slice(0, queryLimit);
 }
 
 function articleProfile(data, query = '') {

@@ -171,6 +171,27 @@ describe('series-aware cover diversity', () => {
     expect(selection.skipReason).toContain('semantically acceptable');
   });
 
+  it('can select a valid semantic candidate beyond the old top-5 window', () => {
+    const candidates = [
+      { ...candidate(1, 1, 99, 'wrong one'), semanticMismatch: true },
+      { ...candidate(2, 2, 98, 'wrong two'), semanticMismatch: true },
+      { ...candidate(3, 3, 97, 'wrong three'), semanticMismatch: true },
+      { ...candidate(4, 4, 96, 'wrong four'), semanticMismatch: true },
+      { ...candidate(5, 5, 95, 'wrong five'), semanticMismatch: true },
+      { ...candidate(6, 6, 90, 'monster, battle, rpg, game'), semanticMismatch: false }
+    ];
+
+    const [selection] = chooseDiverseCovers([{
+      postPath: 'posts/pokemon.md',
+      title: 'Pokémon OOP',
+      series: '',
+      candidates
+    }]);
+
+    expect(selection.skipped).not.toBe(true);
+    expect(selection.id).toBe('6');
+  });
+
   it('does not choose a semantic mismatch merely to gain diversity', () => {
     const reports = [
       {

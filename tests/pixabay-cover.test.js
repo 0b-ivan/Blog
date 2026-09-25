@@ -257,6 +257,22 @@ describe('Pixabay cover resolver', () => {
     })[0]).toBe('monkey ape primate chimpanzee macaque');
   });
 
+  it('expands a strict intent into multiple focused search variants', () => {
+    const article = {
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      category: 'Engineering',
+      tags: ['Pokémon', 'Java', 'OOP', 'Domain-Modeling'],
+      cover_intent: 'pokemon-oop-domain-model',
+      cover_query: 'handheld monster battle rpg creature combat fantasy game'
+    };
+
+    const queries = queryCandidates(article);
+    expect(queries.length).toBeGreaterThan(3);
+    expect(queries[0]).toBe('handheld monster battle rpg creature combat fantasy game');
+    expect(queries).toContain('two monsters fighting fantasy game battle');
+    expect(queries).toContain('creature duel rpg fantasy combat game');
+  });
+
   it('uses a Pac-Man-specific arcade intent instead of generic retro hardware', () => {
     const article = {
       title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
