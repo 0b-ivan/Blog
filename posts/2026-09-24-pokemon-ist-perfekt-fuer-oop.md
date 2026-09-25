@@ -32,7 +32,7 @@ search_queries:
     maxRank: 1
   - query: Wie modelliert man ein Pokémon-Kampfsystem objektorientiert?
     maxRank: 1
-cover_query: handheld monster battle rpg creature combat fantasy game
+cover_query: fantasy monster battle landscape rpg game
 cover_subject: >-
   turn based handheld game battle with two fantasy creatures facing each other
 cover_intent: pokemon-oop-domain-model
