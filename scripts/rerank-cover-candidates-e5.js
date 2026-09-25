@@ -34,15 +34,18 @@ const COVER_CONCEPT_PROTOTYPES = {
     minHeroQuality: 65
   },
   'writing-proofreading': {
-    positive: 'writing proofreading spelling grammar text editing document keyboard manuscript corrected text language tool',
-    negative: 'secretary office sales telephone call center business meeting portrait person'
+    positive: 'writing proofreading spelling grammar text editing document manuscript correction corrected text language tool',
+    negative: 'secretary office sales telephone call center business meeting portrait person analytics big data cyber security',
+    heroPreferred: ['writing', 'proofreading', 'spelling', 'grammar', 'text', 'editing', 'document', 'correction', 'correcting'],
+    heroAvoid: ['analytics', 'big data', 'cyber', 'security', 'office', 'business'],
+    minHeroQuality: 55
   },
   'rss-reader': {
     positive: 'RSS feed reader dashboard web feed subscription aggregator syndication browser feed list unread articles feed application',
-    negative: 'internet speed speedometer download upload broadband performance RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi account registration sign up login password membership user account',
-    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'feed'],
+    negative: 'internet speed speedometer download upload broadband performance RSS logo RSS icon icon symbol button isolated journalist press photographer newspaper reporter television news camera paparazzi ebook e-book kobo tablet reading novel account registration sign up login password membership user account',
+    heroPreferred: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'feed', 'articles'],
     heroRequired: ['dashboard', 'reader', 'aggregator', 'browser', 'subscription', 'interface', 'feed list'],
-    heroAvoid: ['speed', 'speedometer', 'download', 'upload', 'icon', 'logo', 'symbol', 'button', 'isolated'],
+    heroAvoid: ['speed', 'speedometer', 'download', 'upload', 'icon', 'logo', 'symbol', 'button', 'isolated', 'ebook', 'e-book', 'kobo', 'tablet', 'reading'],
     minHeroQuality: 55
   },
   'dependency-updates': {
@@ -51,10 +54,10 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'systemd-service': {
     positive: 'Linux systemd service daemon journalctl service logs process server administration monitoring unit file operations',
-    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
+    negative: 'generic server room datacenter empty terminal screenshot terminal window command prompt cmd console scroll minimize train station airport transport office workspace desktop sorting classification report database decision computer repair electronics hardware turtle animal nature wooden log timber wallpaper',
     heroPreferred: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration', 'server'],
     heroRequired: ['service', 'logs', 'monitoring', 'daemon', 'process', 'administration'],
-    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize'],
+    heroAvoid: ['server room', 'datacenter', 'screenshot', 'window', 'terminal', 'cmd', 'console', 'prompt', 'scroll', 'minimize', 'office', 'workspace', 'sorting', 'classification', 'database'],
     minHeroQuality: 55
   },
   'docker-compose': {
@@ -67,9 +70,9 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'semantic-search': {
     positive: 'semantic search embeddings vector database vector search similarity ranking nearest neighbor retrieval index query search results knowledge graph',
-    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media search engine smartphone robot portrait human',
+    negative: 'generic programmer software engineer coding laptop source code screen terminal screenshot social media search engine smartphone robot portrait human cyber security hacker',
     heroPreferred: ['search', 'magnifying', 'vector', 'graph', 'data', 'index', 'retrieval'],
-    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot']
+    heroAvoid: ['programmer', 'coding', 'screen', 'terminal', 'screenshot', 'cyber', 'security', 'hacker']
   },
   'vpc-networking': {
     positive: 'cloud network topology subnet routing route table router internet gateway private network architecture diagram',
@@ -91,15 +94,25 @@ const COVER_CONCEPT_PROTOTYPES = {
   },
   'regression-testing': {
     positive: 'software regression testing automated tests bug quality assurance test suite continuous integration code failure',
-    negative: 'school exam laboratory medical test car crash business meeting'
+    negative: 'school pupil student teaching education exam classroom laboratory medical electrical engineer vehicle automotive mechanical manufacturing business meeting',
+    heroPreferred: ['testing', 'test', 'bug', 'software', 'automation', 'quality', 'code'],
+    heroAvoid: ['school', 'pupil', 'student', 'teaching', 'education', 'electrical', 'vehicle', 'automotive', 'mechanical'],
+    minHeroQuality: 50
   },
   'logging-observability': {
     positive: 'software logs observability metrics monitoring alerts dashboard log lines terminal server application telemetry',
-    negative: 'car dashboard speedometer vehicle smartphone photography game'
+    negative: 'wood timber firewood forest tree lumber space spacex rocket nasa cape canaveral car dashboard speedometer vehicle smartphone photography game',
+    heroPreferred: ['logs', 'logging', 'monitoring', 'metrics', 'observability', 'alerts', 'telemetry'],
+    heroAvoid: ['wood', 'timber', 'firewood', 'forest', 'tree', 'space', 'spacex', 'rocket', 'nasa'],
+    minHeroQuality: 55
   },
   'photo-storage-sync': {
     positive: 'photo library gallery cloud sync backup files images photo management storage synchronization',
-    negative: 'airplane fighter aircraft warehouse self storage tourist photographer music business'
+    negative: 'airplane fighter aircraft warehouse self storage tourist photographer music business',
+    heroPreferred: ['photo', 'gallery', 'image', 'cloud', 'sync', 'backup', 'files', 'library'],
+    heroRequired: ['photo', 'gallery', 'image', 'cloud', 'sync', 'backup', 'files'],
+    heroAvoid: ['airplane', 'fighter', 'aircraft', 'warehouse', 'music', 'business'],
+    minHeroQuality: 50
   }
 };
 
