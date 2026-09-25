@@ -437,5 +437,38 @@
     "author": "Barbiere1138",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "pokemon-oop-devjava-oop": {
+    "title": "Objects, Classes, Interfaces, Packages, and Inheritance",
+    "publisher": "Dev.java",
+    "url": "https://dev.java/learn/language/oop/classes/",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-baeldung-composition": {
+    "title": "Inheritance and Composition (Is-a vs Has-a relationship) in Java",
+    "publisher": "Baeldung",
+    "url": "https://www.baeldung.com/java-inheritance-composition",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-okhravi-video": {
+    "title": "Rebuilding Pokémon with Object Oriented Programming",
+    "publisher": "Christopher Okhravi / YouTube",
+    "url": "https://www.youtube.com/watch?v=CyRtTwKeulE",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-pyconau-teaching": {
+    "title": "Catching them all: teaching fundamental OOP concepts with Pokemon",
+    "publisher": "PyCon AU 2025",
+    "url": "https://2025.pycon.org.au/program/XXXRFG/",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-commons-rby-back": {
+    "title": "PokemonRedBlueYellowBack.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Kigsz",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
   }
 }
