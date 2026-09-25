@@ -1,4 +1,9 @@
-FROM node:26-alpine AS deps
+FROM debian:bookworm-slim AS cover-fonts
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends fonts-dejavu-core fonts-noto-cjk \
+  && rm -rf /var/lib/apt/lists/*
+
+FROM node:26-alpine AS app-deps
 
 WORKDIR /app
 
@@ -21,7 +26,12 @@ RUN npm install --omit=dev --no-save --package-lock=false --no-audit --no-fund \
 		@highlightjs/cdn-assets@11.11.1 \
 		epub-gen-memory@1.1.2 \
 		jszip@3.10.2 \
+		@resvg/resvg-wasm@2.6.2 \
 	&& npm cache clean --force
+
+# Fail the image build if the WASM renderer cannot actually initialize and
+# produce a PNG. Unit tests mock rasterization, so this is the runtime contract.
+RUN node -e "const fs=require('fs'),path=require('path'),r=require('@resvg/resvg-wasm');(async()=>{const entry=require.resolve('@resvg/resvg-wasm');await r.initWasm(fs.readFileSync(path.join(path.dirname(entry),'index_bg.wasm')));const png=new r.Resvg('<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><rect width=\"16\" height=\"16\" fill=\"white\"/></svg>').render().asPng();if(!png.length)process.exit(1)})().catch(e=>{console.error(e);process.exit(1)})"
 
 ARG BUILD_VERSION
 RUN FILE_VERSION="$(tr -d '[:space:]' < VERSION)" && \
@@ -34,8 +44,10 @@ FROM gcr.io/distroless/nodejs22-debian13:nonroot
 
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/build-info.json ./build-info.json
+COPY --from=app-deps /app/node_modules ./node_modules
+COPY --from=app-deps /app/build-info.json ./build-info.json
+COPY --from=cover-fonts /usr/share/fonts/truetype/dejavu /usr/share/fonts/truetype/dejavu
+COPY --from=cover-fonts /usr/share/fonts/opentype/noto /usr/share/fonts/opentype/noto
 COPY index.html about.html grep.html sources.html status.html analytics.html impressum.html datenschutz.html script.js ./
 COPY styles.css image-viewer.css ./
 COPY assets ./assets

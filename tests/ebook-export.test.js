@@ -60,13 +60,14 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('DIGITAL EDITION');
   });
 
-  it('uses editorial cover metadata only when a post opts in', () => {
+  it('uses the editorial Kernel Notes cover for every article', () => {
     expect(hasEditorialCoverMetadata({
       title: 'Long title'
-    })).toBe(false);
+    })).toBe(true);
     expect(hasEditorialCoverMetadata({
       title: 'Long title',
-      coverTitle: 'Short title'
+      cover_title: 'Short title',
+      cover_subtitle: 'Readable subtitle'
     })).toBe(true);
 
     const svg = buildEditorialCoverSvg({
@@ -124,13 +125,15 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('cover-monkey');
   });
 
-  it('uses the real raster image as the EPUB library cover for editorial posts', async () => {
+  it('rasterizes the portrait editorial artwork for the EPUB library cover', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-cover-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
       await fs.mkdir(coverDir, { recursive: true });
       await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
 
+      let capturedSvg = '';
+      const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const cover = await createEpubCover({
         slug: 'demo',
         title: 'A very long article title',
@@ -140,23 +143,33 @@ describe('article ebook export helpers', () => {
         category: 'DevOps',
         date: '2026-09-24',
         coverImage: '/assets/covers/demo.jpg'
-      }, assetRoot);
+      }, assetRoot, {
+        rasterizeSvg: async (svg) => {
+          capturedSvg = svg;
+          return fakePng;
+        }
+      });
 
-      expect(cover.name).toBe('demo-cover.jpg');
-      expect(cover.type).toBe('image/jpeg');
-      expect(Buffer.from(await cover.arrayBuffer())).toEqual(Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+      expect(cover.name).toBe('demo-cover.png');
+      expect(cover.type).toBe('image/png');
+      expect(Buffer.from(await cover.arrayBuffer())).toEqual(fakePng);
+      expect(capturedSvg).toContain('Short cover title');
+      expect(capturedSvg).toContain('Readable subtitle');
+      expect(capturedSvg).toContain('data:image/jpeg;base64,');
+      expect(capturedSvg).toContain('fill="url(#imageFade)"');
     } finally {
       await fs.rm(assetRoot, { recursive: true, force: true });
     }
   });
 
-  it('uses a full-page editorial deckblatt only for opted-in posts', async () => {
+  it('uses a full-page editorial deckblatt for normal articles', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-editorial-deckblatt-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
       await fs.mkdir(coverDir, { recursive: true });
       await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
 
+      const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
       const deckblatt = await createDeckblatt({
         slug: 'demo',
         title: 'Long article title',
@@ -166,10 +179,13 @@ describe('article ebook export helpers', () => {
         category: 'DevOps',
         date: '2026-09-24',
         coverImage: '/assets/covers/demo.jpg'
-      }, assetRoot, 'https://blog.obivan.org');
+      }, assetRoot, 'https://blog.obivan.org', {
+        rasterizeSvg: async () => fakePng
+      });
 
       expect(deckblatt.html).toContain('book-deckblatt--editorial');
       expect(deckblatt.html).toContain('<img src="file://');
+      expect(deckblatt.html).toContain('deckblatt.png');
       expect(deckblatt.html).toContain('alt="Deckblatt: Short cover title"');
       expect(deckblatt.html).not.toContain('<svg');
       await deckblatt.cleanup();
@@ -178,7 +194,66 @@ describe('article ebook export helpers', () => {
     }
   });
 
-  it('uses the existing raster article image as the pragmatic EPUB library cover', async () => {
+  it('uses title and excerpt fallbacks for ordinary articles with a cover image', async () => {
+    const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-default-editorial-cover-'));
+    try {
+      const coverDir = path.join(assetRoot, 'assets', 'covers');
+      await fs.mkdir(coverDir, { recursive: true });
+      await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+
+      let capturedSvg = '';
+      const cover = await createEpubCover({
+        slug: 'ordinary',
+        title: 'Ordinary blog article',
+        excerpt: 'This excerpt becomes the cover subtitle automatically.',
+        author: 'obivan',
+        category: 'IT',
+        tags: ['Linux', 'Self-Hosting'],
+        date: '2026-09-25',
+        coverImage: '/assets/covers/demo.jpg'
+      }, assetRoot, {
+        rasterizeSvg: async (svg) => {
+          capturedSvg = svg;
+          return Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+        }
+      });
+
+      expect(cover.name).toBe('ordinary-cover.png');
+      expect(cover.type).toBe('image/png');
+      expect(capturedSvg).toContain('Ordinary blog article');
+      expect(capturedSvg).toContain('This excerpt becomes the cover');
+      expect(capturedSvg).toContain('LINUX');
+      expect(capturedSvg).toContain('SELF HOSTING');
+      expect(capturedSvg).toContain('Ivan Babayev');
+    } finally {
+      await fs.rm(assetRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('rasterizes generated covers when no article photo exists', async () => {
+    const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    let capturedSvg = '';
+
+    const cover = await createEpubCover({
+      slug: 'generated',
+      title: 'Generated Cover',
+      author: 'obivan',
+      category: 'DevOps',
+      date: '2026-09-24'
+    }, '/tmp/does-not-matter', {
+      rasterizeSvg: async (svg) => {
+        capturedSvg = svg;
+        return fakePng;
+      }
+    });
+
+    expect(cover.name).toBe('generated-cover.png');
+    expect(cover.type).toBe('image/png');
+    expect(Buffer.from(await cover.arrayBuffer())).toEqual(fakePng);
+    expect(capturedSvg).toContain('Generated Cover');
+  });
+
+  it('keeps a raw raster fallback only for titleless non-article inputs', async () => {
     const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-cover-'));
     try {
       const coverDir = path.join(assetRoot, 'assets', 'covers');
@@ -188,7 +263,6 @@ describe('article ebook export helpers', () => {
 
       const cover = await createEpubCover({
         slug: 'demo',
-        title: 'Demo',
         coverImage: '/assets/covers/demo.jpg'
       }, assetRoot);
 
@@ -208,22 +282,28 @@ describe('article ebook export helpers', () => {
     expect(ensureCoverImageProperty(patched)).toBe(patched);
   });
 
-  it('marks only the deckblatt spine item as fixed layout', () => {
-    const opf = '<package><manifest><item id="deckblatt" href="deckblatt.xhtml" media-type="application/xhtml+xml" /><item id="article" href="article.xhtml" media-type="application/xhtml+xml" /></manifest><spine><itemref idref="deckblatt" /><itemref idref="article" /></spine></package>';
+  it('keeps the deckblatt spine item reflow-safe for Apple Books', () => {
+    const opf = '<package><manifest><item id="deckblatt" href="deckblatt.xhtml" media-type="application/xhtml+xml" /><item id="article" href="article.xhtml" media-type="application/xhtml+xml" /></manifest><spine><itemref idref="deckblatt" properties="rendition:layout-pre-paginated rendition:spread-none" /><itemref idref="article" /></spine></package>';
     const patched = ensureDeckblattItemrefProperties(opf);
 
-    expect(patched).toContain('idref="deckblatt" properties="rendition:layout-pre-paginated rendition:spread-none"');
+    expect(patched).toContain('<itemref idref="deckblatt" />');
+    expect(patched).not.toContain('rendition:layout-pre-paginated');
+    expect(patched).not.toContain('rendition:spread-none');
     expect(patched).toContain('<itemref idref="article" />');
   });
 
-  it('forces the deckblatt XHTML to the 1600x2560 viewport without reader margins', () => {
-    const xhtml = '<html><head><title>Deckblatt</title></head><body><div class="book-deckblatt"><img src="cover.svg" /></div></body></html>';
+  it('keeps the 1600x2560 raster deckblatt full-width without vh or flex sizing', () => {
+    const xhtml = '<html><head><title>Deckblatt</title></head><body><div class="book-deckblatt"><img src="cover.png" /></div></body></html>';
     const patched = ensureDeckblattFixedLayout(xhtml);
 
-    expect(patched).toContain('width=1600,height=2560');
+    expect(patched).toContain('width=device-width, initial-scale=1.0');
     expect(patched).toContain('margin: 0 !important');
-    expect(patched).toContain('height: 2560px !important');
-    expect(patched).toContain('object-fit: cover');
+    expect(patched).toContain('width: 100% !important');
+    expect(patched).toContain('height: auto !important');
+    expect(patched).toContain('max-height: none !important');
+    expect(patched).not.toContain('100vh');
+    expect(patched).not.toContain('display: flex');
+    expect(patched).not.toContain('object-fit');
   });
 
   it('rewrites local article assets to file URLs for offline EPUB embedding', () => {
