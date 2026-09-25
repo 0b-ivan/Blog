@@ -57,33 +57,28 @@ const VISUAL_INTENTS = [
     priority: 35,
     pixabayImageType: 'all',
     markers: ['pokémon', 'pokemon', 'pikachu', 'oop', 'domain-modeling', 'domain modeling'],
-    query: 'handheld monster battle rpg creature combat fantasy game',
+    query: 'pokemon game handheld battle',
     queryVariants: [
-      'fantasy monster battle landscape rpg game',
-      'two monsters fighting fantasy game battle',
-      'creature duel rpg fantasy combat game',
-      'handheld rpg monster battle fantasy',
-      'fantasy creatures versus battle game'
+      'pokemon pikachu game',
+      'pokemon pokeball game',
+      'pokemon handheld game',
+      'pokemon gameboy cartridge',
+      'pokemon battle game'
     ],
-    queryLimit: 7,
+    queryLimit: 6,
     positive: [
-      'handheld', 'console', 'game', 'gaming', 'rpg',
-      'creature', 'monster', 'dragon', 'fantasy',
-      'battle', 'combat', 'fight', 'fighting', 'versus', 'duel', 'turn based'
+      'pokemon', 'pokémon', 'pikachu', 'pokeball',
+      'game', 'gaming', 'handheld', 'console', 'cartridge',
+      'battle', 'rpg', 'creature', 'monster'
     ],
-    minMatches: 3,
+    minMatches: 2,
     requiredGroups: [
-      ['handheld', 'console', 'game', 'gaming', 'rpg'],
-      ['creature', 'monster', 'dragon', 'fantasy'],
-      ['battle', 'combat', 'fight', 'fighting', 'versus', 'duel']
+      ['pokemon', 'pokémon', 'pikachu', 'pokeball']
     ],
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
-      'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card',
-      'cassette', 'tape', 'recorder', 'music', 'album',
-      'dnd', 'dungeons', 'warhammer', 'xbox', 'ninja turtle',
-      'alien', 'ufo', 'spaceship', 'marine', 'soldier', 'warrior', 'knight',
-      'paladin', 'weapon', 'axe', 'hammer', 'rifle', 'gun'
+      'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'album',
+      'office', 'laptop', 'keyboard', 'terminal', 'screenshot'
     ]
   },
   {
