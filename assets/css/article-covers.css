@@ -146,3 +146,10 @@
   --article-cover-focus: center;
 }
 /* cover:2026-09-24-doom-shareware-internet:end */
+
+/* cover:2026-09-24-pokemon-ist-perfekt-fuer-oop:start */
+.post-page[data-post-slug="2026-09-24-pokemon-ist-perfekt-fuer-oop"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-09-24-pokemon-ist-perfekt-fuer-oop.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-09-24-pokemon-ist-perfekt-fuer-oop:end */
