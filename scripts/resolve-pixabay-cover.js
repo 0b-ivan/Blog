@@ -318,20 +318,27 @@ function subjectAnchors(data = {}, query = '') {
   const queryTokens = tokensFrom(query || data.cover_query);
   if (!queryTokens.length) return [];
 
-  const identityTokens = [
-    ...tokensFrom(data.title),
-    ...normalizedTags(data).flatMap(tokensFrom),
-    ...tokensFrom(data.cover_subject)
-  ];
-  const identity = new Set(identityTokens.map(canonicalSubjectToken).filter(Boolean));
+  const candidatesFor = (identityTokens) => {
+    const identity = new Set(identityTokens.map(canonicalSubjectToken).filter(Boolean));
+    return [...new Set(
+      queryTokens
+        .filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token))
+        .filter((token) => identity.has(canonicalSubjectToken(token)))
+        .map(canonicalSubjectToken)
+        .filter((token) => token.length >= 3)
+    )].slice(0, 8);
+  };
 
-  return [...new Set(
-    queryTokens
-      .filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token))
-      .filter((token) => identity.has(canonicalSubjectToken(token)))
-      .map(canonicalSubjectToken)
-      .filter((token) => token.length >= 3)
-  )].slice(0, 8);
+  // The article's own identity is stronger than the visual brief. A word that
+  // only appears in cover_subject (for example "smartphone" in an NFC scene)
+  // is context, not automatically the subject of the article.
+  const articleIdentity = candidatesFor([
+    ...tokensFrom(data.title),
+    ...normalizedTags(data).flatMap(tokensFrom)
+  ]);
+  if (articleIdentity.length) return articleIdentity;
+
+  return candidatesFor(tokensFrom(data.cover_subject));
 }
 
 function markerMatches(value, markers) {
