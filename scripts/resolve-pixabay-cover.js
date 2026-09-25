@@ -61,7 +61,7 @@ const VISUAL_INTENTS = [
     minMatches: 2,
     requiredGroups: [
       ['handheld', 'console', 'retro', 'game', 'gaming'],
-      ['creature', 'monster', 'battle', 'rpg', 'pixel']
+      ['creature', 'monster', 'battle', 'combat', 'rpg']
     ],
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
