@@ -21,6 +21,11 @@ RUN apt-get update \
     lmodern \
   && rm -rf /var/lib/apt/lists/*
 
+# LuaLaTeX otherwise builds its font database on the first PDF request.
+# With Noto CJK installed that cold-start scan can exceed the renderer timeout.
+# Build the cache into the image once so runtime rendering stays deterministic.
+RUN luaotfload-tool --update --force
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
