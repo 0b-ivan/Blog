@@ -52,6 +52,23 @@ const VISUAL_INTENTS = [
     avoid: ['computer', 'keyboard', 'monitor', 'space invaders', 'atari', 'sega', 'console', 'controller', 'hardware', 'laptop', 'terminal', 'screenshot', 'office', 'desk']
   },
   {
+    key: 'pokemon-oop-domain-model',
+    priority: 35,
+    pixabayImageType: 'all',
+    markers: ['pokémon', 'pokemon', 'pikachu', 'oop', 'domain-modeling', 'domain modeling'],
+    query: 'retro handheld creature battle pixel game turn based',
+    positive: ['handheld', 'retro', 'game', 'gaming', 'creature', 'monster', 'battle', 'turn based', 'pixel', 'rpg'],
+    minMatches: 2,
+    requiredGroups: [
+      ['handheld', 'console', 'retro', 'game', 'gaming'],
+      ['creature', 'monster', 'battle', 'rpg', 'pixel']
+    ],
+    avoid: [
+      'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
+      'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card'
+    ]
+  },
+  {
     key: 'writing-proofreading',
     markers: ['legasthenie', 'rechtschreib', 'cspell', 'languagetool', 'proofread', 'spelling', 'grammar'],
     query: 'writing proofreading text document keyboard spelling grammar',
@@ -313,13 +330,15 @@ function visualIntent(data = {}) {
   const explicitKey = String(data.cover_intent || '').trim().toLowerCase();
   if (explicitKey) {
     const explicit = VISUAL_INTENTS.find((intent) => intent.key === explicitKey);
-    if (explicit) {
-      return {
-        ...explicit,
-        ...visualIntentEvidence(data, explicit),
-        explicit: true
-      };
+    if (!explicit) {
+      const supported = VISUAL_INTENTS.map((intent) => intent.key).sort().join(', ');
+      throw new Error(`Unknown cover_intent "${explicitKey}". Supported intents: ${supported}`);
     }
+    return {
+      ...explicit,
+      ...visualIntentEvidence(data, explicit),
+      explicit: true
+    };
   }
 
   const matches = VISUAL_INTENTS
@@ -483,12 +502,16 @@ function articleProfile(data, query = '') {
     contextualAvoid.push(...(TOPIC_AVOID[token] || []));
   }
 
+  const explicitAvoid = [
+    ...(intent?.avoid || []),
+    ...listFrom(data.cover_avoid)
+  ];
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
     ...contextualAvoid,
-    ...(intent?.avoid || []),
-    ...listFrom(data.cover_avoid)
+    ...explicitAvoid
   ].flatMap((value) => tokensFrom(value)));
+  const hardAvoid = new Set(explicitAvoid.flatMap((value) => tokensFrom(value)));
 
   const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
   const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
@@ -500,6 +523,7 @@ function articleProfile(data, query = '') {
     primary,
     expanded,
     avoid,
+    hardAvoid,
     intent,
     intentPositive,
     intentAvoid,
@@ -570,6 +594,7 @@ function scoreHit(hit, data = {}, query = '') {
   );
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
+  const hardAvoidMatches = [...hitTokens].filter((token) => profile.hardAvoid.has(token));
   const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
   const requiredGroupMatches = profile.intentRequiredGroups.map(
@@ -660,6 +685,7 @@ function scoreHit(hit, data = {}, query = '') {
     directMatches,
     expandedMatches,
     avoidMatches,
+    hardAvoidMatches,
     intentKey: profile.intent?.key || '',
     intentMatches,
     intentAvoidMatches,
@@ -672,6 +698,8 @@ function scoreHit(hit, data = {}, query = '') {
     heroLogoLike: gate.logoLike,
     semanticMismatch: Boolean(
       gate.rejected
+      || hardAvoidMatches.length > 0
+      || intentAvoidMatches.length > 0
       || (
         profile.intent && (
           intentMatches.length < Math.max(1, Number(profile.intent.minMatches || 1))
@@ -945,6 +973,7 @@ function reportCandidate(entry, index) {
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
     intentMatches: entry.intentMatches || [],
+    hardAvoidMatches: entry.hardAvoidMatches || [],
     requiredGroupMatches: entry.requiredGroupMatches || [],
     semanticMismatch: Boolean(entry.semanticMismatch),
     reasons: entry.reasons
