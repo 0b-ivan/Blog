@@ -18,12 +18,12 @@ const GENERIC_SCREEN_TERMS = ['screenshot', 'screen', 'window', 'terminal', 'cmd
 
 const COVER_CONCEPT_PROTOTYPES = {
   'pokemon-oop-domain-model': {
-    positive: 'handheld role playing game creature monster fantasy battle combat duel versus turn based game scene two creatures facing each other',
-    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite Dungeons Dragons DND Warhammer Xbox ninja turtle alien UFO spaceship marine soldier warrior knight paladin weapon axe hammer rifle gun branded character toy figure doll plush trading card cassette tape recorder music album unrelated object unrelated franchise mascot',
-    heroPreferred: ['handheld', 'console', 'game', 'rpg', 'creature', 'monster', 'battle', 'combat', 'fight', 'duel', 'versus'],
-    heroRequired: ['battle', 'combat', 'fight', 'fighting', 'duel', 'versus'],
-    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'dnd', 'dungeons', 'warhammer', 'xbox', 'ninja turtle', 'alien', 'ufo', 'spaceship', 'marine', 'soldier', 'warrior', 'knight', 'paladin', 'weapon', 'axe', 'hammer', 'rifle', 'gun', 'figure', 'toy', 'plush', 'doll', 'trading card', 'cassette', 'tape', 'recorder', 'music', 'album'],
-    minHeroQuality: 70
+    positive: 'Pokemon game handheld Pikachu Pokeball cartridge battle role playing game creature monster gaming scene',
+    negative: 'Mario Super Mario Zelda Link Sonic Kirby Minecraft Fortnite cassette tape recorder music office laptop keyboard terminal screenshot unrelated franchise unrelated object',
+    heroPreferred: ['pokemon', 'pikachu', 'pokeball', 'game', 'handheld', 'console', 'cartridge', 'battle'],
+    heroRequired: ['pokemon', 'pikachu', 'pokeball'],
+    heroAvoid: ['mario', 'super mario', 'zelda', 'link', 'sonic', 'kirby', 'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'office', 'laptop', 'keyboard', 'terminal', 'screenshot'],
+    minHeroQuality: 65
   },
   'writing-proofreading': {
     positive: 'writing proofreading spelling grammar text editing document keyboard manuscript corrected text language tool',

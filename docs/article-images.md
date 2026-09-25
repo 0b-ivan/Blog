@@ -64,6 +64,19 @@ Die Cover-Auswahl arbeitet fail-closed:
 
 Damit reicht eine grobe Nähe wie `retro + game + console` nicht aus, wenn das konkrete Motiv zum falschen Produkt, Franchise oder Gegenstand gehört.
 
+### Subject-first statt Keyword-Suppe
+
+Wenn ein konkreter Begriff sowohl im Artikelgegenstand als auch in der Cover-Suche vorkommt, behandelt die Pipeline ihn als **Subject Anchor**. Solche Anker werden vor Stil- und Kontextbegriffen bewertet.
+
+Beispiele:
+
+- `Pokémon + game + retro`: Ein Kandidat ohne Pokémon-Bezug darf nicht allein mit `game + retro` gewinnen.
+- `Pac-Man + arcade + maze`: Ein generischer Arcade-Automat ersetzt Pac-Man nicht automatisch.
+- `NFC + smartphone + tag`: Ein beliebiger Sticker mit Smartphone-Bezug ist kein NFC-Motiv.
+- Bei abstrakteren Themen ohne belastbaren Subject Anchor (z. B. Netzwerk-Topologien) bleibt die semantische E5-Bewertung maßgeblich.
+
+`cover_avoid` beschreibt unerwünschte Bildmotive. Ein erkannter Subject Anchor wird deshalb nicht versehentlich als Hard-Avoid gegen den Artikelgegenstand selbst verwendet. Für ein Logo-Verbot also `logo` bzw. `icon` angeben, nicht den eigentlichen Artikelgegenstand ausschließen.
+
 ## Inline-Bilder
 
 Inline-Bilder werden lokal gespeichert:

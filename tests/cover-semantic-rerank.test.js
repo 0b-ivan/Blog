@@ -127,45 +127,35 @@ systemctl status example
     expect(prototype.negative).toContain('Generic unrelated stock photography');
   });
 
-  it('defines a strict Pokémon domain-model prototype that rejects Mario imagery', () => {
+  it('defines a Pokémon franchise-aware prototype instead of generic fantasy', () => {
     const prototype = conceptPrototype({
       visualIntent: 'pokemon-oop-domain-model',
-      visualBriefPositive: 'Pokémon OOP article with a retro handheld creature battle.',
-      visualBriefNegative: 'Wrong franchise or branded character.'
+      visualBriefPositive: 'Pokémon OOP article with a handheld Pokémon game scene.',
+      visualBriefNegative: 'Wrong franchise or unrelated object.'
     });
 
     expect(prototype.key).toBe('pokemon-oop-domain-model');
-    expect(prototype.positive).toContain('creature battle');
+    expect(prototype.positive).toContain('Pokemon game');
     expect(prototype.negative).toContain('Mario');
     expect(prototype.heroAvoid).toContain('mario');
 
     const mario = heroQuality({
       tags: 'mario, figure, nintendo, super mario bros, retro, game'
     }, prototype);
-    const battle = heroQuality({
-      tags: 'retro, handheld, pixel, creature, monster, battle, game, rpg'
+    const pokemon = heroQuality({
+      tags: 'pokemon, pikachu, handheld, game, battle, pokeball'
     }, prototype);
-
-    expect(battle.score).toBeGreaterThan(mario.score);
-    expect(mario.avoided).toContain('mario');
-
+    const genericFantasy = heroQuality({
+      tags: 'retro, handheld, creature, monster, fantasy, battle, game, rpg'
+    }, prototype);
     const cassette = heroQuality({
       tags: 'cassette, tape, pixel art, retro, dragon, creature, fantasy, music'
     }, prototype);
-    expect(cassette.score).toBeLessThan(battle.score);
+
+    expect(pokemon.score).toBeGreaterThan(mario.score);
+    expect(pokemon.score).toBeGreaterThan(genericFantasy.score);
+    expect(mario.avoided).toContain('mario');
     expect(cassette.avoided).toEqual(expect.arrayContaining(['cassette', 'tape', 'music']));
-
-    const dnd = heroQuality({
-      tags: 'dnd, rpg, dragon, creature, monster, warrior, knight, soldier, battle'
-    }, prototype);
-    const alien = heroQuality({
-      tags: 'alien, ufo, spaceship, fantasy, fight, game, ninja turtle'
-    }, prototype);
-
-    expect(dnd.score).toBeLessThan(battle.score);
-    expect(dnd.avoided).toEqual(expect.arrayContaining(['dnd', 'warrior', 'knight']));
-    expect(alien.score).toBeLessThan(battle.score);
-    expect(alien.avoided).toEqual(expect.arrayContaining(['alien', 'ufo', 'spaceship']));
   });
 
   it('uses positive and negative concept prototypes to reject adjacent RSS concepts', async () => {

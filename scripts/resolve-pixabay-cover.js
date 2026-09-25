@@ -28,6 +28,14 @@ const WEAK_DIRECT_TERMS = new Set([
   'architecture', 'deployment', 'engineering', 'operations'
 ]);
 
+const GENERIC_SUBJECT_CONTEXT_TERMS = new Set([
+  'article', 'blog', 'technical', 'technology', 'software', 'programming', 'code',
+  'engineering', 'architecture', 'system', 'service', 'application', 'automation',
+  'game', 'gaming', 'retro', 'handheld', 'console', 'battle', 'combat', 'fight',
+  'creature', 'monster', 'fantasy', 'rpg', 'cloud', 'server', 'network', 'data',
+  'image', 'photo', 'illustration', 'scene', 'workflow', 'computer'
+]);
+
 const TOPIC_AVOID = {
   kubernetes: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
   k3s: ['train', 'railway', 'railroad', 'locomotive', 'mongolia'],
@@ -57,33 +65,28 @@ const VISUAL_INTENTS = [
     priority: 35,
     pixabayImageType: 'all',
     markers: ['pokémon', 'pokemon', 'pikachu', 'oop', 'domain-modeling', 'domain modeling'],
-    query: 'handheld monster battle rpg creature combat fantasy game',
+    query: 'pokemon game handheld battle',
     queryVariants: [
-      'fantasy monster battle landscape rpg game',
-      'two monsters fighting fantasy game battle',
-      'creature duel rpg fantasy combat game',
-      'handheld rpg monster battle fantasy',
-      'fantasy creatures versus battle game'
+      'pokemon pikachu game',
+      'pokemon pokeball game',
+      'pokemon handheld game',
+      'pokemon gameboy cartridge',
+      'pokemon battle game'
     ],
-    queryLimit: 7,
+    queryLimit: 6,
     positive: [
-      'handheld', 'console', 'game', 'gaming', 'rpg',
-      'creature', 'monster', 'dragon', 'fantasy',
-      'battle', 'combat', 'fight', 'fighting', 'versus', 'duel', 'turn based'
+      'pokemon', 'pokémon', 'pikachu', 'pokeball',
+      'game', 'gaming', 'handheld', 'console', 'cartridge',
+      'battle', 'rpg', 'creature', 'monster'
     ],
-    minMatches: 3,
+    minMatches: 2,
     requiredGroups: [
-      ['handheld', 'console', 'game', 'gaming', 'rpg'],
-      ['creature', 'monster', 'dragon', 'fantasy'],
-      ['battle', 'combat', 'fight', 'fighting', 'versus', 'duel']
+      ['pokemon', 'pokémon', 'pikachu', 'pokeball']
     ],
     avoid: [
       'mario', 'super mario', 'marios', 'zelda', 'link', 'sonic', 'kirby',
-      'minecraft', 'fortnite', 'figure', 'toy', 'plush', 'doll', 'trading card',
-      'cassette', 'tape', 'recorder', 'music', 'album',
-      'dnd', 'dungeons', 'warhammer', 'xbox', 'ninja turtle',
-      'alien', 'ufo', 'spaceship', 'marine', 'soldier', 'warrior', 'knight',
-      'paladin', 'weapon', 'axe', 'hammer', 'rifle', 'gun'
+      'minecraft', 'fortnite', 'cassette', 'tape', 'recorder', 'music', 'album',
+      'office', 'laptop', 'keyboard', 'terminal', 'screenshot'
     ]
   },
   {
@@ -307,6 +310,37 @@ function listFrom(value) {
   return String(value || '').split(/[,;]+/).flatMap((item) => tokensFrom(item));
 }
 
+function canonicalSubjectToken(value) {
+  return normalizeText(value).replace(/[^a-z0-9+#]+/g, '');
+}
+
+function subjectAnchors(data = {}, query = '') {
+  const queryTokens = tokensFrom(query || data.cover_query);
+  if (!queryTokens.length) return [];
+
+  const candidatesFor = (identityTokens) => {
+    const identity = new Set(identityTokens.map(canonicalSubjectToken).filter(Boolean));
+    return [...new Set(
+      queryTokens
+        .filter((token) => !GENERIC_SUBJECT_CONTEXT_TERMS.has(token))
+        .filter((token) => identity.has(canonicalSubjectToken(token)))
+        .map(canonicalSubjectToken)
+        .filter((token) => token.length >= 3)
+    )].slice(0, 8);
+  };
+
+  // The article's own identity is stronger than the visual brief. A word that
+  // only appears in cover_subject (for example "smartphone" in an NFC scene)
+  // is context, not automatically the subject of the article.
+  const articleIdentity = candidatesFor([
+    ...tokensFrom(data.title),
+    ...normalizedTags(data).flatMap(tokensFrom)
+  ]);
+  if (articleIdentity.length) return articleIdentity;
+
+  return candidatesFor(tokensFrom(data.cover_subject));
+}
+
 function markerMatches(value, markers) {
   const haystack = normalizeText(value);
   if (!haystack) return [];
@@ -505,6 +539,8 @@ function queryCandidates(data, explicitQuery = '') {
 
 function articleProfile(data, query = '') {
   const intent = visualIntent(data);
+  const subject = subjectAnchors(data, query);
+  const subjectSet = new Set(subject);
   const primary = new Set([
     ...tokensFrom(data.cover_subject),
     ...tokensFrom(data.cover_query),
@@ -528,12 +564,15 @@ function articleProfile(data, query = '') {
     ...(intent?.avoid || []),
     ...listFrom(data.cover_avoid)
   ];
+  const explicitAvoidTokens = explicitAvoid
+    .flatMap((value) => tokensFrom(value))
+    .filter((token) => !subjectSet.has(canonicalSubjectToken(token)));
   const avoid = new Set([
     ...DEFAULT_AVOID_TERMS,
-    ...contextualAvoid,
-    ...explicitAvoid
-  ].flatMap((value) => tokensFrom(value)));
-  const hardAvoid = new Set(explicitAvoid.flatMap((value) => tokensFrom(value)));
+    ...contextualAvoid.flatMap((value) => tokensFrom(value)),
+    ...explicitAvoidTokens
+  ]);
+  const hardAvoid = new Set(explicitAvoidTokens);
 
   const intentPositive = new Set((intent?.positive || []).flatMap((value) => tokensFrom(value)));
   const intentAvoid = new Set((intent?.avoid || []).flatMap((value) => tokensFrom(value)));
@@ -544,6 +583,7 @@ function articleProfile(data, query = '') {
   return {
     primary,
     expanded,
+    subjectAnchors: subject,
     avoid,
     hardAvoid,
     intent,
@@ -617,12 +657,25 @@ function scoreHit(hit, data = {}, query = '') {
   const expandedMatches = [...hitTokens].filter((token) => !profile.primary.has(token) && profile.expanded.has(token));
   const avoidMatches = [...hitTokens].filter((token) => profile.avoid.has(token));
   const hardAvoidMatches = [...hitTokens].filter((token) => profile.hardAvoid.has(token));
+  const canonicalHitTokens = new Set([...hitTokens].map(canonicalSubjectToken));
+  const subjectAnchorMatches = profile.subjectAnchors.filter((token) => canonicalHitTokens.has(token));
+  const subjectAnchorRequired = profile.subjectAnchors.length > 0;
   const intentMatches = [...hitTokens].filter((token) => profile.intentPositive.has(token));
   const intentAvoidMatches = [...hitTokens].filter((token) => profile.intentAvoid.has(token));
   const requiredGroupMatches = profile.intentRequiredGroups.map(
     (group) => [...hitTokens].filter((token) => group.has(token))
   );
   const requiredGroupsMet = requiredGroupMatches.every((matches) => matches.length > 0);
+
+  if (subjectAnchorRequired) {
+    if (subjectAnchorMatches.length) {
+      score += 24;
+      reasons.push(`+24 subject anchor: ${subjectAnchorMatches.slice(0, 3).join(', ')}`);
+    } else {
+      score -= 45;
+      reasons.push(`-45 missing subject anchor: ${profile.subjectAnchors.slice(0, 4).join(', ')}`);
+    }
+  }
 
   if (profile.intent) {
     const minIntentMatches = Math.max(1, Number(profile.intent.minMatches || 1));
@@ -708,6 +761,9 @@ function scoreHit(hit, data = {}, query = '') {
     expandedMatches,
     avoidMatches,
     hardAvoidMatches,
+    subjectAnchors: profile.subjectAnchors,
+    subjectAnchorMatches,
+    subjectAnchorRequired,
     intentKey: profile.intent?.key || '',
     intentMatches,
     intentAvoidMatches,
@@ -720,6 +776,7 @@ function scoreHit(hit, data = {}, query = '') {
     heroLogoLike: gate.logoLike,
     semanticMismatch: Boolean(
       gate.rejected
+      || (subjectAnchorRequired && subjectAnchorMatches.length === 0)
       || hardAvoidMatches.length > 0
       || intentAvoidMatches.length > 0
       || (
@@ -1018,6 +1075,9 @@ function reportCandidate(entry, index) {
     searchQueries: hit.__coverQueries || (hit.__coverQuery ? [hit.__coverQuery] : []),
     intentKey: entry.intentKey || '',
     intentMatches: entry.intentMatches || [],
+    subjectAnchors: entry.subjectAnchors || [],
+    subjectAnchorMatches: entry.subjectAnchorMatches || [],
+    subjectAnchorRequired: Boolean(entry.subjectAnchorRequired),
     hardAvoidMatches: entry.hardAvoidMatches || [],
     requiredGroupMatches: entry.requiredGroupMatches || [],
     semanticMismatch: Boolean(entry.semanticMismatch),
@@ -1068,6 +1128,7 @@ async function main() {
     series: detectSeries(parsed.data),
     visualIntent: intent?.key || '',
     visualIntentEvidence: intent?.evidenceScore || 0,
+    subjectAnchors: subjectAnchors(parsed.data, rankingQuery),
     visualBriefPositive: visualBrief.positive,
     visualBriefNegative: visualBrief.negative,
     pixabayCategory,
@@ -1173,5 +1234,6 @@ module.exports = {
   scoreHit,
   searchPixabay,
   searchPixabayCached,
+  subjectAnchors,
   updateCoverStylesheet
 };
