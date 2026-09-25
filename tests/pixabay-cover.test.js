@@ -130,6 +130,37 @@ describe('Pixabay cover resolver', () => {
     expect(fetchImpl).toHaveBeenCalledOnce();
   });
 
+  it('retries transient Pixabay throttling with backoff', async () => {
+    let attempt = 0;
+    const sleep = globalThis.vi.fn(async () => {});
+    const fetchImpl = globalThis.vi.fn(async () => {
+      attempt += 1;
+      if (attempt === 1) {
+        return {
+          ok: false,
+          status: 429,
+          headers: { get: () => null }
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({ hits: [{ id: 77, tags: 'rss, feed, reader' }] })
+      };
+    });
+
+    const hits = await searchPixabay('rss feed reader', 'test-key', fetchImpl, {
+      maxAttempts: 3,
+      sleep
+    });
+
+    expect(hits).toHaveLength(1);
+    expect(hits[0].id).toBe(77);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledWith(500);
+  });
+
   it('hard-rejects undersized and logo-like hero candidates', () => {
     const small = heroHardGate({
       type: 'photo',
@@ -386,6 +417,69 @@ describe('Pixabay cover resolver', () => {
     expect(['topology', 'subnet', 'router', 'routing', 'ethernet']).toContain(
       vpc.subjectAnchorEvidence.vpc
     );
+  });
+
+  it('requires technical context for ambiguous subject aliases such as cluster and container', () => {
+    const article = {
+      title: 'K3s auf Proxmox – Teil II: GitOps',
+      tags: ['Kubernetes', 'K3s', 'Proxmox', 'GitOps'],
+      cover_query: 'server datacenter infrastructure network cloud container cluster kubernetes'
+    };
+
+    const fruitCluster = scoreHit({
+      type: 'photo',
+      tags: 'currant, fruits, berries, cluster, harvest, produce, organic',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const metalContainer = scoreHit({
+      type: 'photo',
+      tags: 'yellow, blue, container, window, color, metal, geometry',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const kubernetesCluster = scoreHit({
+      type: 'illustration',
+      tags: 'kubernetes, cluster, container, orchestration, server, cloud, infrastructure',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(fruitCluster.subjectAnchors).toContain('k3s');
+    expect(fruitCluster.subjectAnchorMatches).toHaveLength(0);
+    expect(fruitCluster.semanticMismatch).toBe(true);
+
+    expect(metalContainer.subjectAnchorMatches).toHaveLength(0);
+    expect(metalContainer.semanticMismatch).toBe(true);
+
+    expect(kubernetesCluster.subjectAnchorMatches).toContain('k3s');
+    expect(kubernetesCluster.semanticMismatch).toBe(false);
+  });
+
+  it('turns a blog topic into a concrete website/publishing subject instead of generic analytics', () => {
+    const article = {
+      title: 'Wie dieser Blog gebaut ist',
+      tags: ['Blog', 'Architecture', 'DevOps', 'Node'],
+      cover_query: 'website code server publishing deployment automation infrastructure cloud'
+    };
+
+    const analytics = scoreHit({
+      type: 'illustration',
+      tags: 'analytics, information, innovation, communication, big data, cyber security',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+    const publishing = scoreHit({
+      type: 'illustration',
+      tags: 'website, publishing, web, code, server, deployment',
+      imageWidth: 1920,
+      imageHeight: 1080
+    }, article);
+
+    expect(analytics.subjectAnchors).toContain('blog');
+    expect(analytics.semanticMismatch).toBe(true);
+    expect(publishing.subjectAnchorMatches).toContain('blog');
+    expect(publishing.semanticMismatch).toBe(false);
   });
 
   it('keeps concrete subjects strict when no visual alias is defined', () => {
