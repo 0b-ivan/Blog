@@ -563,22 +563,42 @@ jobs:
           echo 'Waiting for the cached PDF to become ready.'
           pdf_ready=false
           for attempt in $(seq 1 30); do
-            state="$(curl -fsS --max-time 10 \
-              "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/status?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            state_file="$(mktemp)"
+            status_code="$(curl -sS --max-time 10 \
+              -o "$state_file" \
+              -w '%{http_code}' \
+              "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/status?deploy=${GITHUB_SHA}" || true)"
+            state="$(cat "$state_file")"
+            rm -f "$state_file"
+
             ready="$(printf '%s' "$state" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("ready", False)).lower())' 2>/dev/null || true)"
             preparing="$(printf '%s' "$state" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("preparing", False)).lower())' 2>/dev/null || true)"
 
-            if [ "$ready" = true ]; then
+            if [ "$status_code" = 200 ] && [ "$ready" = true ]; then
               pdf_ready=true
               echo "PDF cache is ready after ${attempt} status check(s)."
               break
             fi
 
-            echo "PDF state: ready=${ready:-unknown}, preparing=${preparing:-unknown} (attempt ${attempt}/30)"
+            blog_health="$(curl -fsS --max-time 5 "${STAGING_URL}/healthz?pdf-status=${GITHUB_SHA}" 2>/dev/null || true)"
+            echo "PDF state: http=${status_code:-000}, ready=${ready:-unknown}, preparing=${preparing:-unknown}, blog_health=${blog_health:-unavailable} (attempt ${attempt}/30)"
+
+            if [ "$status_code" = 200 ] && [ "$preparing" = false ]; then
+              echo 'PDF renderer is reachable but no render is active; requesting preparation again.'
+              curl -fsS --max-time 10 -X POST \
+                "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/prepare?retry=${attempt}&deploy=${GITHUB_SHA}" \
+                >/dev/null || true
+            fi
+
             sleep 5
           done
 
-          test "$pdf_ready" = true
+          if [ "$pdf_ready" != true ]; then
+            echo 'PDF cache did not become ready; final public diagnostics:' >&2
+            curl -sS --max-time 10 -i "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/status?diagnostic=${GITHUB_SHA}" >&2 || true
+            curl -sS --max-time 10 -i "${STAGING_URL}/healthz?diagnostic=${GITHUB_SHA}" >&2 || true
+            exit 1
+          fi
 
           curl -fsS --max-time 20 \
             "${STAGING_URL}/download/${PDF_SMOKE_SLUG}.pdf?deploy=${GITHUB_SHA}" \
