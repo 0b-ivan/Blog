@@ -6,6 +6,7 @@ const {
   GitHubPublisher,
   StableTracker,
   branchForFile,
+  productionUnpublishBranchForFile,
   modeTitle,
   parseFrontmatter,
   parsePositiveInteger,
@@ -25,8 +26,9 @@ describe('obsidian publisher', () => {
     expect(parseFrontmatter('---\nstatus: publish\n')).toEqual({});
   });
 
-  it('creates one deterministic branch per article', () => {
+  it('creates deterministic publisher and production-unpublish branches per article', () => {
     expect(branchForFile('2026-08-23-Mein Artikel.md')).toBe('obsidian/2026-08-23-mein-artikel');
+    expect(productionUnpublishBranchForFile('2026-08-23-Mein Artikel.md')).toBe('obsidian-unpublish/main/2026-08-23-mein-artikel');
   });
 
   it('uses distinct PR titles for each publication state', () => {
@@ -62,7 +64,7 @@ describe('obsidian publisher', () => {
       publish: vi.fn(),
       archive: vi.fn(),
       unpublish: vi.fn().mockResolvedValue({
-        action: 'created-unpublish-pr',
+        action: 'fast-track-unpublish',
         branch: 'obsidian/2026-08-23-test',
         pullRequest: { html_url: 'https://example.invalid/pr/1' }
       })
@@ -109,40 +111,108 @@ describe('obsidian publisher', () => {
     }
   });
 
-  it('creates a deletion PR when a published article returns to draft', async () => {
-    const publisher = new GitHubPublisher({ token: 'x', repository: '0b-ivan/Blog', baseBranch: 'main' });
+  it('creates separate unpublish PRs for staging and production and closes a stale promotion PR', async () => {
+    const publisher = new GitHubPublisher({
+      token: 'x',
+      repository: '0b-ivan/Blog',
+      baseBranch: 'staging',
+      productionBranch: 'main',
+      promotionBranch: 'promotion/staging-verified'
+    });
+
     publisher.file = vi.fn(async (filePath, ref) => {
-      if (ref === 'main' && filePath.startsWith('posts/')) {
-        return { sha: 'main-file-sha', content: 'published' };
+      if ((ref === 'staging' || ref === 'main') && filePath.startsWith('posts/')) {
+        return { sha: `${ref}-file-sha`, content: 'published' };
+      }
+      return null;
+    });
+
+    const promotionPr = { number: 99, html_url: 'https://example.invalid/pr/99' };
+    publisher.openPullRequest = vi.fn(async (branch, base) => {
+      if (branch === 'promotion/staging-verified' && base === 'main') {
+        return promotionPr;
+      }
+      return null;
+    });
+    publisher.closePullRequest = vi.fn();
+    publisher.ensureBranch = vi.fn();
+    publisher.deleteFile = vi.fn().mockResolvedValue(true);
+    publisher.createPullRequest = vi.fn(async (branch, title, filePath, mode, base) => ({
+      number: base === 'main' ? 102 : 101,
+      html_url: `https://example.invalid/pr/${base === 'main' ? 102 : 101}`,
+      branch,
+      title,
+      filePath,
+      mode,
+      base
+    }));
+
+    const result = await publisher.unpublish({ fileName: '2026-08-23-test.md', title: 'Test' });
+
+    expect(publisher.closePullRequest).toHaveBeenCalledWith(promotionPr);
+    expect(publisher.createPullRequest).toHaveBeenCalledWith(
+      'obsidian/2026-08-23-test',
+      'Test',
+      'posts/2026-08-23-test.md',
+      'unpublish',
+      'staging'
+    );
+    expect(publisher.createPullRequest).toHaveBeenCalledWith(
+      'obsidian-unpublish/main/2026-08-23-test',
+      'Test',
+      'posts/2026-08-23-test.md',
+      'unpublish',
+      'main'
+    );
+    expect(publisher.deleteFile).toHaveBeenCalledWith(
+      'posts/2026-08-23-test.md',
+      'obsidian/2026-08-23-test',
+      'Test',
+      'unpublish'
+    );
+    expect(publisher.deleteFile).toHaveBeenCalledWith(
+      'posts/2026-08-23-test.md',
+      'obsidian-unpublish/main/2026-08-23-test',
+      'Test',
+      'unpublish'
+    );
+    expect(result.action).toBe('fast-track-unpublish');
+    expect(result.staging.action).toBe('created-unpublish-pr');
+    expect(result.production.action).toBe('created-unpublish-pr');
+  });
+
+  it('does not create a production unpublish PR for an article that never reached production', async () => {
+    const publisher = new GitHubPublisher({
+      token: 'x',
+      repository: '0b-ivan/Blog',
+      baseBranch: 'staging',
+      productionBranch: 'main'
+    });
+
+    publisher.file = vi.fn(async (filePath, ref) => {
+      if (ref === 'staging' && filePath.startsWith('posts/')) {
+        return { sha: 'staging-file-sha', content: 'published' };
       }
       return null;
     });
     publisher.openPullRequest = vi.fn().mockResolvedValue(null);
     publisher.ensureBranch = vi.fn();
     publisher.deleteFile = vi.fn().mockResolvedValue(true);
-    publisher.createPullRequest = vi.fn().mockResolvedValue({ number: 42, html_url: 'https://example.invalid/pr/42' });
+    publisher.createPullRequest = vi.fn().mockResolvedValue({ number: 103, html_url: 'https://example.invalid/pr/103' });
 
     const result = await publisher.unpublish({ fileName: '2026-08-23-test.md', title: 'Test' });
-    expect(publisher.deleteFile).toHaveBeenCalledWith(
-      'posts/2026-08-23-test.md',
-      'obsidian/2026-08-23-test',
-      'Test',
-      'unpublish'
-    );
-    expect(publisher.deleteFile).toHaveBeenCalledWith(
-      'archive/2026-08-23-test.md',
-      'obsidian/2026-08-23-test',
-      'Test',
-      'unpublish'
-    );
+
+    expect(publisher.createPullRequest).toHaveBeenCalledTimes(1);
     expect(publisher.createPullRequest).toHaveBeenCalledWith(
       'obsidian/2026-08-23-test',
       'Test',
       'posts/2026-08-23-test.md',
-      'unpublish'
+      'unpublish',
+      'staging'
     );
-    expect(result.action).toBe('created-unpublish-pr');
+    expect(result.production.action).toBe('already-offline');
   });
+
 
   it('moves a published article into archive when status becomes archived', async () => {
     const publisher = new GitHubPublisher({ token: 'x', repository: '0b-ivan/Blog', baseBranch: 'main' });
@@ -215,10 +285,10 @@ describe('obsidian publisher', () => {
   });
 
   it('closes a pending publish PR when a never-published article returns to draft', async () => {
-    const publisher = new GitHubPublisher({ token: 'x', repository: '0b-ivan/Blog', baseBranch: 'main' });
+    const publisher = new GitHubPublisher({ token: 'x', repository: '0b-ivan/Blog', baseBranch: 'staging', productionBranch: 'main' });
     const pullRequest = { number: 7, html_url: 'https://example.invalid/pr/7' };
     publisher.file = vi.fn().mockResolvedValue(null);
-    publisher.openPullRequest = vi.fn().mockResolvedValue(pullRequest);
+    publisher.openPullRequest = vi.fn(async (branch, base) => branch === 'obsidian/2026-08-23-test' && base === 'staging' ? pullRequest : null);
     publisher.closePullRequest = vi.fn();
 
     const result = await publisher.unpublish({ fileName: '2026-08-23-test.md', title: 'Test' });

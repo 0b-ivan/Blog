@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: obsidian-production
+  group: obsidian-content-sync
   cancel-in-progress: false
 
 jobs:

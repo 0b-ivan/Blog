@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      - staging
+  schedule:
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -30,12 +33,15 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Open or update main to staging sync PR
+      - name: Reconcile main back into staging
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
           git fetch origin main staging
 
@@ -55,6 +61,11 @@ jobs:
               --jq '.[0].number // empty'
           )"
 
+          current_sync_sha="$(
+            git ls-remote --heads origin "refs/heads/${SYNC_BRANCH}" |
+              awk 'NR == 1 { print $1 }'
+          )"
+
           if git merge-base --is-ancestor "$MAIN_SHA" "$STAGING_SHA"; then
             echo 'staging already contains the current main commit; no sync PR is required.'
 
@@ -64,30 +75,92 @@ jobs:
                 --comment 'Closing automatically because staging already contains the current main commit.'
             fi
 
+            if [ -n "$current_sync_sha" ]; then
+              git push \
+                --force-with-lease="refs/heads/${SYNC_BRANCH}:${current_sync_sha}" \
+                origin ":refs/heads/${SYNC_BRANCH}" || true
+            fi
+
             exit 0
           fi
 
-          current_sync_sha="$(
-            git ls-remote --heads origin "refs/heads/${SYNC_BRANCH}" |
-              awk '{print $1}'
-          )"
+          branch_changed=true
+          conflict_files='none'
 
           if [ -n "$current_sync_sha" ]; then
-            git push \
-              --force-with-lease="refs/heads/${SYNC_BRANCH}:${current_sync_sha}" \
-              origin "${MAIN_SHA}:refs/heads/${SYNC_BRANCH}"
-          else
-            git push origin "${MAIN_SHA}:refs/heads/${SYNC_BRANCH}"
+            git fetch origin "refs/heads/${SYNC_BRANCH}:refs/remotes/origin/${SYNC_BRANCH}"
+            current_parents="$(git show -s --format='%P' "refs/remotes/origin/${SYNC_BRANCH}" 2>/dev/null || true)"
+
+            if [ "$current_parents" = "${STAGING_SHA} ${MAIN_SHA}" ]; then
+              echo 'The sync branch already reconciles the current staging and main heads.'
+              branch_changed=false
+              SYNC_SHA="$current_sync_sha"
+            fi
+          fi
+
+          if [ "$branch_changed" = true ]; then
+            git switch -C sync-candidate "$STAGING_SHA"
+
+            if ! git merge --no-ff --no-commit "$MAIN_SHA"; then
+              conflict_files="$(
+                git diff --name-only --diff-filter=U |
+                  paste -sd ',' -
+              )"
+
+              echo "Detected back-sync conflicts: ${conflict_files:-unknown}"
+              echo 'Retrying with the explicit staging-wins conflict policy.'
+              git merge --abort
+
+              # Back-sync exists to converge history without rolling staging
+              # backwards. Non-conflicting main changes are imported, while
+              # conflicting hunks keep the newer staging-side content.
+              git merge \
+                --no-ff \
+                --strategy=ort \
+                -X ours \
+                -m "chore(sync): reconcile main into staging" \
+                "$MAIN_SHA"
+            else
+              git commit -m "chore(sync): reconcile main into staging"
+            fi
+
+            unresolved="$(git diff --name-only --diff-filter=U)"
+            if [ -n "$unresolved" ]; then
+              echo 'Unresolved conflicts remain after the staging-wins retry:' >&2
+              printf '%s\n' "$unresolved" >&2
+              exit 1
+            fi
+
+            parents="$(git show -s --format='%P' HEAD)"
+            if [ "$parents" != "${STAGING_SHA} ${MAIN_SHA}" ]; then
+              echo "Unexpected sync merge parents: ${parents}" >&2
+              exit 1
+            fi
+
+            SYNC_SHA="$(git rev-parse HEAD)"
+
+            if [ -n "$current_sync_sha" ]; then
+              git push \
+                --force-with-lease="refs/heads/${SYNC_BRANCH}:${current_sync_sha}" \
+                origin "${SYNC_SHA}:refs/heads/${SYNC_BRANCH}"
+            else
+              git push origin "${SYNC_SHA}:refs/heads/${SYNC_BRANCH}"
+            fi
+
+            echo "Reconciled ${SYNC_BRANCH} -> ${SYNC_SHA}"
           fi
 
           body="$(
-            printf '%s\n\n%s\n%s\n\n%s\n' \
-              'This PR is maintained automatically after every commit to `main`.' \
+            printf '%s\n\n%s\n%s\n%s\n%s\n\n%s\n' \
+              'This PR is maintained automatically to converge `main` back into `staging`.' \
               "Current main commit: \`${MAIN_SHA}\`" \
-              'Target branch: `staging`' \
-              'Merge this PR to feed main-only changes back into staging. Conflicts stay manual so staging changes are never overwritten silently.'
+              "Current staging commit: \`${STAGING_SHA}\`" \
+              "Reconciled sync commit: \`${SYNC_SHA}\`" \
+              "Auto-resolved conflict files: \`${conflict_files}\`" \
+              'If both branches changed the same hunk, staging wins deliberately so a back-sync can never roll newer staging content backwards. Non-conflicting main changes and main history are still merged.'
           )"
 
+          created=false
           if [ -n "$existing" ]; then
             gh api \
               --method PATCH \
@@ -115,14 +188,19 @@ jobs:
             )"
 
             test -n "$pr_number"
+            created=true
             echo "Created main -> staging sync PR #${pr_number}."
           fi
 
-          # PRs opened with GITHUB_TOKEN do not recursively trigger pull_request
-          # workflows. Dispatch the repository's PR checks explicitly on the
-          # exact sync branch instead.
-          gh workflow run ci.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref "$SYNC_BRANCH"
+          if [ "$branch_changed" = true ] || [ "$created" = true ]; then
+            # PRs opened with GITHUB_TOKEN do not recursively trigger
+            # pull_request workflows. Dispatch the existing PR checks on the
+            # reconciled sync branch explicitly.
+            gh workflow run ci.yml \
+              --repo "$GITHUB_REPOSITORY" \
+              --ref "$SYNC_BRANCH"
 
-          echo "Triggered PR checks for sync PR #${pr_number} at ${MAIN_SHA}."
+            echo "Triggered PR checks for sync PR #${pr_number} at ${SYNC_SHA}."
+          else
+            echo "Sync PR #${pr_number} is already reconciled; no duplicate CI run needed."
+          fi

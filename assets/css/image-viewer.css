@@ -16,6 +16,22 @@
   cursor: zoom-in;
 }
 
+.terminal-content .article-image--small {
+  width: 35%;
+}
+
+.terminal-content .article-image--medium {
+  width: 55%;
+}
+
+.terminal-content .article-image--large {
+  width: 75%;
+}
+
+.terminal-content .article-image--full {
+  width: 100%;
+}
+
 .terminal-content .post-figure figcaption {
   max-width: 76ch;
   margin: 0 auto;

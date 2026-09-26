@@ -1,0 +1,185 @@
+name: Fast-track Unpublish
+
+on:
+  workflow_run:
+    workflows:
+      - PR Checks
+    types:
+      - completed
+  schedule:
+    - cron: '37 * * * *'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: fast-track-unpublish
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      GH_TOKEN: ${{ secrets.OBSIDIAN_PUBLISHER_GITHUB_TOKEN }}
+      REPOSITORY: ${{ github.repository }}
+
+    steps:
+      - name: Merge safe unpublish PRs after required checks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo 'OBSIDIAN_PUBLISHER_GITHUB_TOKEN is required for the unpublish fast-track.' >&2
+            exit 1
+          fi
+
+          candidate_file="$(mktemp)"
+
+          if [ "${{ github.event_name }}" = workflow_run ]; then
+            jq -r '.workflow_run.pull_requests[]?.number' "$GITHUB_EVENT_PATH" > "$candidate_file"
+          else
+            gh pr list \
+              --repo "$REPOSITORY" \
+              --state open \
+              --limit 100 \
+              --json number,title \
+              --jq '.[] | select(.title | startswith("Unpublish: ")) | .number' \
+              > "$candidate_file"
+          fi
+
+          sort -nu "$candidate_file" -o "$candidate_file"
+
+          if [ ! -s "$candidate_file" ]; then
+            echo 'No unpublish PR needs reconciliation.'
+            exit 0
+          fi
+
+          latest_check_conclusion() {
+            local sha="$1"
+            local name="$2"
+
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/commits/${sha}/check-runs?per_page=100" \
+              --jq "[.check_runs[] | select(.name == \"${name}\" and .app.slug == \"github-actions\")] | sort_by(.id) | reverse | .[0].conclusion // \"missing\""
+          }
+
+          latest_check_status() {
+            local sha="$1"
+            local name="$2"
+
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/commits/${sha}/check-runs?per_page=100" \
+              --jq "[.check_runs[] | select(.name == \"${name}\" and .app.slug == \"github-actions\")] | sort_by(.id) | reverse | .[0].status // \"missing\""
+          }
+
+          while IFS= read -r pr_number; do
+            [ -n "$pr_number" ] || continue
+
+            pr_json="$(gh api "/repos/${REPOSITORY}/pulls/${pr_number}")"
+            state="$(printf '%s' "$pr_json" | jq -r '.state')"
+            title="$(printf '%s' "$pr_json" | jq -r '.title')"
+            base="$(printf '%s' "$pr_json" | jq -r '.base.ref')"
+            head="$(printf '%s' "$pr_json" | jq -r '.head.ref')"
+            head_repo="$(printf '%s' "$pr_json" | jq -r '.head.repo.full_name')"
+            head_sha="$(printf '%s' "$pr_json" | jq -r '.head.sha')"
+
+            if [ "$state" != open ] || [[ "$title" != "Unpublish: "* ]]; then
+              continue
+            fi
+
+            if [ "$head_repo" != "$REPOSITORY" ]; then
+              echo "PR #${pr_number}: refusing external head repository ${head_repo}."
+              continue
+            fi
+
+            case "$base:$head" in
+              staging:obsidian/*)
+                ;;
+              main:obsidian-unpublish/main/*)
+                ;;
+              *)
+                echo "PR #${pr_number}: refusing unexpected unpublish route ${head} -> ${base}."
+                continue
+                ;;
+            esac
+
+            files_json="$(
+              gh api \
+                --paginate \
+                "/repos/${REPOSITORY}/pulls/${pr_number}/files?per_page=100" \
+                --slurp
+            )"
+
+            file_count="$(
+              printf '%s' "$files_json" |
+                jq '[.[][]] | length'
+            )"
+            unsafe_count="$(
+              printf '%s' "$files_json" |
+                jq '[.[][] | select(
+                  .status != "removed"
+                  or (.filename | test("^(posts|archive)/[^/]+\\.md$") | not)
+                )] | length'
+            )"
+
+            if [ "$file_count" -lt 1 ] || [ "$file_count" -gt 2 ] || [ "$unsafe_count" -ne 0 ]; then
+              echo "PR #${pr_number}: refusing unsafe diff (files=${file_count}, unsafe=${unsafe_count})."
+              continue
+            fi
+
+            checks_status="$(latest_check_status "$head_sha" checks)"
+            checks_conclusion="$(latest_check_conclusion "$head_sha" checks)"
+            assets_status="$(latest_check_status "$head_sha" 'Local assets')"
+            assets_conclusion="$(latest_check_conclusion "$head_sha" 'Local assets')"
+            pinned_status="$(latest_check_status "$head_sha" 'Pinned actions')"
+            pinned_conclusion="$(latest_check_conclusion "$head_sha" 'Pinned actions')"
+
+            if [ "$checks_status" != completed ] || [ "$checks_conclusion" != success ] \
+              || [ "$assets_status" != completed ] || [ "$assets_conclusion" != success ]; then
+              echo "PR #${pr_number}: required checks are not green yet; leaving it for the next reconciliation."
+              continue
+            fi
+
+            if [ "$pinned_status" != missing ] \
+              && { [ "$pinned_status" != completed ] || [ "$pinned_conclusion" != success ]; }; then
+              echo "PR #${pr_number}: Action Integrity is not green yet."
+              continue
+            fi
+
+            if [ "$base" = main ]; then
+              stale_promotion="$(
+                gh pr list \
+                  --repo "$REPOSITORY" \
+                  --state open \
+                  --base main \
+                  --head promotion/staging-verified \
+                  --json number \
+                  --jq '.[0].number // empty'
+              )"
+
+              if [ -n "$stale_promotion" ] && [ "$stale_promotion" != "$pr_number" ]; then
+                gh pr close "$stale_promotion" \
+                  --repo "$REPOSITORY" \
+                  --comment "Closed automatically before production unpublish PR #${pr_number} so an older promotion cannot republish the removed article."
+                echo "Closed stale promotion PR #${stale_promotion} before production takedown."
+              fi
+            fi
+
+            echo "PR #${pr_number}: checks are green and diff is deletion-only; merging ${head} -> ${base}."
+            if gh pr merge "$pr_number" \
+              --repo "$REPOSITORY" \
+              --merge \
+              --delete-branch; then
+              echo "PR #${pr_number}: unpublish merged into ${base}."
+            else
+              echo "PR #${pr_number}: merge is not ready yet; the scheduled reconciler will retry."
+            fi
+          done < "$candidate_file"
