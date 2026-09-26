@@ -29,5 +29,6 @@ describe('staging promotion workflow', () => {
     expect(workflow).toContain('Trigger required checks for production promotion');
     expect(workflow).toContain('gh workflow run ci.yml');
     expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');
+    expect(workflow).toContain('-f pr_number="$promotion_pr"');
   });
 });
