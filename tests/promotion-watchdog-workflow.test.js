@@ -8,7 +8,7 @@ describe('promotion watchdog workflow', () => {
       'utf8'
     );
 
-    expect(workflow).toContain("cron: '*/5 * * * *'");
+    expect(workflow).toContain("cron: '27 * * * *'");
     expect(workflow).toContain('workflows:');
     expect(workflow).toContain('- PR Checks');
     expect(workflow).toContain('checks: write');
