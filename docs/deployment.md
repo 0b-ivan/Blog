@@ -1,36 +1,58 @@
-# Deployment und Promotion
+# Publication und Release
 
-Kernel Notes trennt Entwicklung, Staging-Freigabe und Production bewusst voneinander.
+Kernel Notes behandelt **Article Publication** und **Software Release** als zwei unabhängige Lebenszyklen. Eine Publication verändert genau einen Artikelzustand und niemals die Software-Version. Ein Release bündelt Software-/Runtime-/Infra-Änderungen und verändert SemVer, transportiert aber keine unveröffentlichten Artikel nach Production.
 
 ## Branch-Modell
 
-Der normale Veröffentlichungsweg ist:
+Beide Pfade verwenden `staging` zum Testen, trennen sich danach aber bewusst.
+
+### Article Publication
 
 ```text
-feature/*
-   |
-   | Pull Request + CI
-   v
-staging
-   |
-   | Deploy Staging
-   v
-K3s Staging
-   |
-   | öffentlicher Staging-Gate
-   v
-promotion/staging-verified
-   |
-   | manueller Merge
-   v
-main
-   |
-   | automatischer Sync-PR
-   v
-sync/main-to-staging -> staging
+Obsidian / content PR
+        |
+        v
+     staging
+        |
+        | Deploy Staging + öffentlicher Gate
+        v
+publish-article.yml
+        |
+        | genau 1 Artikel + Runtime-Assets
+        v
+publication/<slug> -> main
+        |
+        | manueller Merge
+        v
+kernel-notes-content:<publication-sha>
+        |
+        v
+production-gitops content pin
 ```
 
-Direkte Änderungen an `staging` oder `main` sind nicht der normale Veröffentlichungsweg. Die Deployment-Workflows prüfen bei automatischen Runs, ob der auslösende Commit zu einem gemergten Pull Request auf den jeweiligen Zielbranch gehört.
+### Software Release
+
+```text
+feature PRs
+    |
+    v
+ staging
+    |
+    | mehrere Features/Fixes sammeln
+    v
+release-production.yml
+    |
+    | manueller Release-Cut: patch/minor/major
+    | Content-Pfade werden ausgeschlossen
+    v
+release/vX.Y.Z -> main
+    |
+    | manueller Merge
+    v
+cd-k8s-production.yml
+```
+
+Ein Software-Release und eine Article Publication können zeitlich unabhängig voneinander stattfinden. `main` enthält sowohl veröffentlichte Artikelstände als auch freigegebene Softwarestände; die Production-Runtime verwendet dafür jedoch getrennte immutable Images.
 
 ## Pull Requests
 
@@ -69,7 +91,7 @@ Beim Schreiben dieses generierten GitOps-Commits kann `staging` zwischen Checkou
 
 Flux reconciliert diesen Git-Zustand in den Staging-Cluster. GitHub Actions benötigt dafür keinen direkten Zugriff auf die private K3s-API.
 
-Reine GitOps-, Workflow-, Test- und Dokumentationsänderungen können die bereits gepinnten Images wiederverwenden. Der Staging-Workflow läuft trotzdem auf **jedem** Push nach `staging` und führt für solche Control-Plane-Änderungen den öffentlichen Availability-Gate aus. Ein bereits offener Production-Release-PR wird dabei bewusst **nicht** verändert: sein Head bleibt eingefroren, damit GitHub nicht fortlaufend neue synthetische Merge-Commits erzeugt und bereits bestandene Required Checks wieder verwirft.
+Reine GitOps-, Workflow-, Test- und Dokumentationsänderungen können die bereits gepinnten Images wiederverwenden. Der Staging-Workflow führt weiterhin den öffentlichen Availability-Gate aus. Nach erfolgreicher Verifikation erzeugt er selbst **keinen** Production-Release mehr. Er übergibt lediglich den verifizierten Source-SHA und den auslösenden Staging-PR an `.github/workflows/publish-article.yml`; dieser Workflow entscheidet, ob es sich um eine zulässige Ein-Artikel-Publication handelt.
 
 ## Staging-Gate
 
@@ -82,25 +104,19 @@ Der Gate prüft unter anderem:
 - die erwartete Staging-Version
 - die sichtbare Staging-Kennzeichnung
 
-Erst nach erfolgreicher Prüfung darf ein neuer eingefrorener Production-Kandidat entstehen. Existiert bereits ein offener Production-PR, bleibt dieser unverändert und neue Staging-Commits warten auf den nächsten Zyklus.
+Nach erfolgreicher Prüfung sind zwei getrennte Aktionen möglich:
 
-Die Versionsregel unterscheidet Content und Software:
+**Article Publication:** `.github/workflows/publish-article.yml` akzeptiert nur Content-PRs, die genau einen Artikel unter `posts/` oder `archive/` betreffen. Aus dem aktuellen `main` wird ein Branch `publication/<slug>` erstellt und ausschließlich der verifizierte Artikelzustand plus zugehörige Assets aus Staging übernommen. `VERSION` darf dabei nicht verändert werden. Der resultierende PR trägt `publish: <Titel>`.
 
-- Reine Artikel-/Content-Änderungen unter `posts/**`, `archive/**`, `snippets/**`, `assets/posts/**`, `assets/covers/**`, `assets/css/article-covers.css` und `media/photos/**` **erhöhen `VERSION` nicht**. Der Kandidat übernimmt exakt die aktuelle Production-Version aus `main`; ein Content-Publish kann deshalb zum Beispiel weiter `v2.2.1` ausliefern.
-- Enthält der Kandidat zusätzlich Anwendungs-, Runtime-, Workflow-, Infrastruktur- oder sonstige Produktänderungen, wird die Patch-Version genau einmal erhöht, zum Beispiel von `2.2.1` auf `2.2.2`.
+**Software Release:** `.github/workflows/release-production.yml` wird bewusst separat als Release-Cut gestartet. Er sammelt die Software-Differenz zwischen `main` und `staging`, schließt Content-Pfade sowie Staging-only-GitOps aus und erhöht SemVer wahlweise als `patch`, `minor` oder `major`. Der resultierende Branch heißt `release/vX.Y.Z`.
 
-Damit wird ein normaler Artikel-Publish als `publish: content to production` geöffnet, während ein Software-Release den Titel `release: vX.Y.Z` erhält. `promotion/staging-verified` zeigt jeweils mit `--force-with-lease` auf genau den eingefrorenen Kandidaten.
+Es gibt keinen beweglichen `promotion/staging-verified`-Branch mehr und keinen Promotion-Watchdog. Required Checks laufen jeweils auf dem konkreten Publication- oder Release-PR.
 
-Der Merge bleibt manuell. Reine Änderungen unter `infra/kubernetes/staging/**` erzeugen keinen Production-Kandidaten.
-
-Die für `main` verpflichtenden Checks `checks` und `Local assets` werden beim Promotion-Pfad auf dem synthetischen Merge-Commit des Promotion-PRs gespiegelt. Der vollständige PR-Checks-Workflow läuft weiterhin auf dem verifizierten Promotion-SHA. Ein nachgelagerter Job liest den aktuellen `merge_commit_sha` des offenen Promotion-PRs und veröffentlicht dort Check-Runs mit denselben erforderlichen Namen. Damit erfüllt der strikte `main`-Ruleset die Checks auf genau dem Commit, den GitHub tatsächlich mergen würde. Bei einem fehlgeschlagenen Quell-Check wird auch der gespiegelte Check als fehlgeschlagen markiert.
-
-Zusätzlich läuft `.github/workflows/promotion-watchdog.yml` als selbstheilender Reconciler. Er wird nach abgeschlossenen PR-Checks, nach Änderungen an `main`, manuell und mit einem stündlichen Fallback gestartet. Regeneriert GitHub den synthetischen Merge-Commit des Promotion-PRs, veröffentlicht der Watchdog die bereits erfolgreichen Required Checks erneut auf dem aktuellen Merge-SHA. Fehlen die Quellchecks auf dem Promotion-SHA, startet er `ci.yml` erneut. Echte Branch-Konflikte werden nicht im Promotion-Watchdog überschrieben, sondern durch den separaten `main -> staging`-Rücksync konvergiert.
 
 
 ## Production
 
-Ein Merge nach `main` bedient zwei getrennte Production-Pfade.
+Ein Merge nach `main` kann entweder eine Article Publication oder einen Software Release darstellen. Die Workflows reagieren anhand klar getrennter Pfade.
 
 ### Rücksync von main nach staging
 
@@ -121,7 +137,7 @@ Der Sync-PR wird weiterhin **nicht automatisch gemergt**. Der Workflow hält ihn
 - Kernel Grep
 - Kubernetes-Status
 
-Die Datei `VERSION` bleibt reines SemVer und ist zugleich die sichtbare Production-Version. Staging ergänzt lediglich eine technische Pre-Release-Kennung wie `2.2.1-staging.163`; Production zeigt nach dem Release-Merge ausschließlich `2.2.1`.
+Die Datei `VERSION` gehört ausschließlich zum Software-Release. Eine Article Publication darf sie nicht verändern. Staging kann weiterhin technische Pre-Release-Kennungen wie `2.2.1-staging.163` anzeigen; Production zeigt die zuletzt freigegebene SemVer-Version unabhängig davon, wie viele Artikel seitdem publiziert wurden.
 
 Git-SHAs bleiben für technische Rückverfolgbarkeit erhalten, aber nicht als Produktversion: die Production-Images werden weiterhin unveränderlich auf den exakten `main`-SHA getaggt und in GitOps gepinnt.
 
@@ -155,30 +171,33 @@ Kernel Grep läuft in Production mit einer Replica. Wegen des hohen RAM-Bedarfs 
 
 Nach dem GitOps-Publish prüft der Production-Workflow `/healthz` im Sekundentakt. Bereits ein einzelner fehlgeschlagener Healthcheck markiert den Rollout als Downtime. Bei einem Blog-Image-Wechsel muss die neue Build-Version außerdem mehrfach hintereinander beobachtet werden, damit der Canary nicht schon beim ersten neuen Pod beendet wird.
 
-## Content-Änderungen
+## Article Publication Runtime
 
-Die beiden Production-Pfade behandeln Content bewusst unterschiedlich.
-
-K3s:
+K3s verwendet für veröffentlichte Inhalte ein eigenes immutable Artefakt:
 
 ```text
-Content-Änderung
-  -> neues immutable Image
-  -> Git-SHA-Pin
-  -> Flux Rolling Deployment
+kernel-notes-content:<publication-sha>
 ```
 
-Hetzner:
+Das Content-Image enthält den veröffentlichten Snapshot aus `posts/`, `archive/`, `snippets/`, Artikel-Assets, Cover und Post-History. Die Production-Deployments von Blog, Kernel Grep und PDF besitzen jeweils einen Init-Container, der dieses Artefakt in ein `emptyDir` kopiert. Die eigentlichen Software-Container mounten nur die benötigten Content-Unterpfade.
+
+Damit sind die Pins getrennt:
 
 ```text
-Content-Änderung
-  -> Content-Paket
-  -> persistente Volumes
-  -> Live-Reindex
-  -> Smokechecks
+Software Release:
+  kernel-notes-blog:<release-sha>
+  kernel-notes-search:<release-sha>
+  kernel-notes-pdf:<release-sha>
+
+Article Publication:
+  kernel-notes-content:<publication-sha>
 ```
 
-Beide Wege werden erst aus dem nach `main` promoteten Stand gespeist.
+`.github/workflows/publish-content-production.yml` baut das Content-Image nach dem Merge eines Publication-PRs und verändert in `production-gitops` ausschließlich den `kernel-notes-content`-Pin. Die sichtbare Software-Version muss während dieser Publication unverändert bleiben.
+
+Ein Software-Release übernimmt dagegen den bereits aktiven Content-Pin aus `production-gitops`. Nur beim ersten Rollout dieser Architektur wird das Content-Artefakt einmalig gebootstrapped.
+
+Hetzner bleibt als Standby-Origin erhalten. Sein bestehender Content-Sync kann Content weiterhin ohne Software-Rebuild aktualisieren.
 
 ## Rollback
 
@@ -190,7 +209,7 @@ Ein automatischer Failover zwischen K3s und Hetzner ist aktuell noch nicht imple
 
 ## Manuelle Deployments
 
-Die Workflows besitzen `workflow_dispatch` für kontrollierte manuelle Ausführungen. Das ist ein Betriebswerkzeug, ersetzt aber nicht den normalen Promotion-Pfad für reguläre Veröffentlichungen.
+Die Workflows besitzen `workflow_dispatch` für kontrollierte manuelle Ausführungen. Ein Software-Release wird über den dedizierten Release-Cut gestartet; Article Publications entstehen aus verifizierten Ein-Artikel-Staging-PRs.
 
 ## Secrets
 
