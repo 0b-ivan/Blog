@@ -165,6 +165,22 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('>CHAOS ENGINEERING</text>');
   });
 
+  it('blends cover artwork behind tags and author metadata without hard white cards', () => {
+    const svg = buildEditorialCoverSvg({
+      title: 'DOOM veränderte mehr als Shooter',
+      excerpt: 'Von Commander Keen über Shareware und Deathmatch bis DOOM auf Embedded-Hardware',
+      author: 'obivan',
+      category: 'Gaming',
+      tags: ['DOOM', 'id-Software', 'Shareware', 'Retro-Gaming', 'Open-Source'],
+      date: '2026-09-24'
+    }, 'data:image/png;base64,ZmFrZQ==');
+
+    expect(svg).toContain('mask="url(#imageBlendMask)"');
+    expect(svg).toContain('id="imageBlend"');
+    expect(svg).not.toContain('opacity="0.82" preserveAspectRatio');
+    expect(svg).not.toContain('<rect x="0" y="2110" width="650" height="450"');
+  });
+
   it('creates a generated Kernel Notes cover when no photo exists', () => {
     const svg = buildCoverSvg({
       title: 'Kubernetes ohne Magie',
