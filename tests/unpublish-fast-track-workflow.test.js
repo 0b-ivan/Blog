@@ -8,7 +8,8 @@ describe('unpublish fast-track workflow', () => {
       'utf8'
     );
 
-    expect(workflow).toContain("cron: '*/5 * * * *'");
+    expect(workflow).toContain("cron: '37 * * * *'");
+    expect(workflow).toContain('[[ "$title" != "Unpublish: "* ]]');
     expect(workflow).toContain('OBSIDIAN_PUBLISHER_GITHUB_TOKEN');
     expect(workflow).toContain('environment: production');
     expect(workflow).toContain('staging:obsidian/*');

@@ -10,7 +10,7 @@ describe('main to staging sync workflow', () => {
 
     expect(workflow).toContain('- main');
     expect(workflow).toContain('- staging');
-    expect(workflow).toContain("cron: '*/5 * * * *'");
+    expect(workflow).toContain("cron: '17 * * * *'");
     expect(workflow).toContain('contents: write');
     expect(workflow).toContain('pull-requests: write');
     expect(workflow).toContain('actions: write');
