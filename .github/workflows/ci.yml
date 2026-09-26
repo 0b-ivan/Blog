@@ -16,11 +16,12 @@ env:
   SEARCH_IMAGE: kernel-notes-search:ci
   STATUS_IMAGE: kernel-notes-status:ci
   CHAOS_IMAGE: kernel-notes-chaos:ci
+  PDF_IMAGE: kernel-notes-pdf:ci
 
 jobs:
   checks:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
 
     steps:
       - name: Checkout full history
@@ -51,7 +52,7 @@ jobs:
 
           while IFS= read -r file; do
             case "$file" in
-              package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|Dockerfile.status|Dockerfile.chaos|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
+              package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|Dockerfile.status|Dockerfile.chaos|Dockerfile.pdf|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
                 security=true
                 ;;
             esac
@@ -70,7 +71,7 @@ jobs:
             esac
 
             case "$file" in
-              posts/*|archive/*|snippets/*|assets/posts/*|config/proofread-words.txt|cspell.json|scripts/spellcheck-posts.js|scripts/proofread-posts.js|README*|docs/*|.github/workflows/*)
+              posts/*|archive/*|snippets/*|assets/posts/*|config/proofread-words.txt|cspell.json|scripts/spellcheck-posts.js|scripts/proofread-posts.js|scripts/list-missing-cover-posts.js|scripts/render-cover-review.js|scripts/rerank-cover-candidates-e5.js|scripts/resolve-pixabay-cover.js|scripts/select-diverse-cover-candidates.js|tests/cover-backfill.test.js|tests/cover-diversity.test.js|tests/cover-review.test.js|tests/cover-semantic-rerank.test.js|tests/pixabay-cover.test.js|README*|docs/*|.github/workflows/*)
                 ;;
               *)
                 heavy=true
@@ -160,6 +161,7 @@ jobs:
         env:
           BLOG_IMAGE: ghcr.io/0b-ivan/kernel-notes-blog:ci
           SEARCH_IMAGE: ghcr.io/0b-ivan/kernel-notes-search:ci
+          PDF_IMAGE: ghcr.io/0b-ivan/kernel-notes-pdf:ci
         run: docker compose -f docker-compose.prod.yml config
 
       - name: Validate Obsidian LiveSync Docker Compose
@@ -178,11 +180,11 @@ jobs:
 
       - name: Setup Docker Buildx
         if: steps.changes.outputs.heavy == 'true'
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: Build blog image once
         if: steps.changes.outputs.heavy == 'true'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: ./Dockerfile
@@ -193,7 +195,7 @@ jobs:
 
       - name: Build Kernel Grep image once
         if: steps.changes.outputs.heavy == 'true'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: ./Dockerfile.search
@@ -204,7 +206,7 @@ jobs:
 
       - name: Build Kubernetes status image once
         if: steps.changes.outputs.heavy == 'true'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: ./Dockerfile.status
@@ -215,7 +217,7 @@ jobs:
 
       - name: Build Chaos Monkey image once
         if: steps.changes.outputs.heavy == 'true'
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: ./Dockerfile.chaos
@@ -223,6 +225,17 @@ jobs:
           tags: ${{ env.CHAOS_IMAGE }}
           cache-from: type=gha,scope=pr-chaos
           cache-to: type=gha,mode=max,scope=pr-chaos
+
+      - name: Build LaTeX PDF image once
+        if: steps.changes.outputs.heavy == 'true'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: ./Dockerfile.pdf
+          load: true
+          tags: ${{ env.PDF_IMAGE }}
+          cache-from: type=gha,scope=pr-pdf
+          cache-to: type=gha,mode=max,scope=pr-pdf
 
       - name: Start stack without rebuilding images
         if: steps.changes.outputs.heavy == 'true'
@@ -241,7 +254,7 @@ jobs:
             sleep 2
           done
           docker compose ps
-          docker compose logs --tail=100 search blog || true
+          docker compose logs --tail=100 search pdf blog || true
           exit 1
 
       - name: Install Chromium smoke-test runtime
@@ -254,6 +267,38 @@ jobs:
           npm install --prefix "$PLAYWRIGHT_RUNTIME" --no-package-lock --no-audit --no-fund playwright@1.55.0
           "$PLAYWRIGHT_RUNTIME/node_modules/.bin/playwright" install --with-deps chromium
           echo "NODE_PATH=$PLAYWRIGHT_RUNTIME/node_modules" >> "$GITHUB_ENV"
+
+      - name: LaTeX PDF smoke test
+        if: steps.changes.outputs.heavy == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for slug in \
+            2026-09-20-chaos-engineering-chaos-monkey-kubernetes \
+            2026-09-24-pac-man-puck-man-paku-paku
+          do
+            output="/tmp/kernel-notes-${slug}.pdf"
+            if ! curl -fsS --max-time 150 \
+              "http://127.0.0.1:8080/download/${slug}.pdf" \
+              -o "$output"; then
+              echo "LaTeX PDF smoke test failed for ${slug}; renderer logs follow:" >&2
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            fi
+            test "$(head -c 5 "$output")" = '%PDF-' || {
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            }
+            test "$(wc -c < "$output")" -gt 10000 || {
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            }
+            curl -fsS http://127.0.0.1:8080/healthz >/dev/null || {
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            }
+          done
 
       - name: Browser click smoke test
         if: steps.changes.outputs.heavy == 'true'
@@ -301,6 +346,17 @@ jobs:
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.SEARCH_IMAGE }}
+          format: table
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Trivy LaTeX PDF image scan
+        if: steps.changes.outputs.security == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.PDF_IMAGE }}
           format: table
           ignore-unfixed: true
           vuln-type: os,library

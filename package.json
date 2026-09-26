@@ -17,6 +17,8 @@
     "covers:missing": "node scripts/list-missing-cover-posts.js",
     "covers:review": "node scripts/render-cover-review.js",
     "covers:select-diverse": "node scripts/select-diverse-cover-candidates.js",
+    "covers:rerank-semantic": "node scripts/rerank-cover-candidates-e5.js",
+    "photos:ingest": "node scripts/ingest-article-photos.js",
     "post:archive": "node scripts/archive-post.js archive",
     "post:restore": "node scripts/archive-post.js restore",
     "posts:build-history": "node scripts/build-post-history.js",
@@ -49,7 +51,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@vitest/coverage-v8": "^5.0.1",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "supertest": "^7.0.0",
     "vitest": "^5.0.1"
   }

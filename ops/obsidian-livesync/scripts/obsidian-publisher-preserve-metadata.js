@@ -123,14 +123,18 @@ function normalizeEmptyListField(raw, key) {
 
 class PreservingGitHubPublisher extends GitHubPublisher {
   async preserveSearchQueries(fileName, raw) {
-    if (topLevelBlock(raw, 'search_queries')) {
-      return raw;
-    }
-
     const current = await this.file(`posts/${fileName}`, this.baseBranch)
       || await this.file(`archive/${fileName}`, this.baseBranch);
 
-    return preserveTopLevelBlock(raw, current?.content, 'search_queries');
+    return [
+      'search_queries',
+      'cover_title',
+      'cover_subtitle',
+      'cover_intent'
+    ].reduce(
+      (prepared, key) => preserveTopLevelBlock(prepared, current?.content, key),
+      raw
+    );
   }
 
   async preparedContent(fileName, raw) {
@@ -192,7 +196,7 @@ async function main() {
 
   console.log(`[publisher] watching ${vaultPath}`);
   console.log(`[publisher] repository ${repository}, base ${baseBranch}`);
-  console.log('[publisher] preserving search_queries from base when absent in Obsidian');
+  console.log('[publisher] preserving search_queries and cover publication metadata from base when absent in Obsidian');
   console.log('[publisher] normalizing tag whitespace to hyphens before publishing');
   console.log('[publisher] normalizing empty snippets metadata before publishing');
 

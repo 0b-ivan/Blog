@@ -24,6 +24,10 @@ promotion/staging-verified
    | manueller Merge
    v
 main
+   |
+   | automatischer Sync-PR
+   v
+sync/main-to-staging -> staging
 ```
 
 Direkte Änderungen an `staging` oder `main` sind nicht der normale Veröffentlichungsweg. Die Deployment-Workflows prüfen bei automatischen Runs, ob der auslösende Commit zu einem gemergten Pull Request auf den jeweiligen Zielbranch gehört.
@@ -84,9 +88,25 @@ Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verif
 
 Der Merge dieses Promotion-PRs bleibt manuell.
 
+Die für `main` verpflichtenden Statuskontexte `checks` und `Local assets` werden beim Promotion-Pfad besonders behandelt. Der Staging-Workflow stellt zunächst sicher, dass beide Prüfungen auf dem aktuellen verifizierten Promotion-SHA erfolgreich waren.
+
+Zusätzlich läuft `.github/workflows/promotion-watchdog.yml` als selbstheilender Reconciler. Er wird nach abgeschlossenen PR-Checks, nach Änderungen an `main`, manuell und spätestens alle fünf Minuten gestartet. Der Watchdog sucht ausschließlich den internen PR `promotion/staging-verified -> main`, liest GitHubs **aktuellen synthetischen Merge-Commit** und veröffentlicht dort die bereits erfolgreichen erforderlichen GitHub-Actions-Checks erneut. Regeneriert GitHub diesen Merge-Commit während der Reparatur, beginnt der Watchdog mit dem neuen SHA erneut. Fehlen die Quellchecks auf dem Promotion-SHA, startet er `ci.yml` erneut. Echte Merge-Konflikte werden dagegen nicht automatisch überschrieben; dafür bleibt der kontrollierte `main -> staging`-Rücksync zuständig.
+
+Dadurch ist das System eventual-consistent: Ein durch GitHub neu erzeugter Merge-SHA kann den Promotion-PR kurzzeitig blockieren, der Watchdog stellt die erforderlichen Checks anschließend ohne manuelles Eingreifen wieder her.
+
+
 ## Production
 
 Ein Merge nach `main` bedient zwei getrennte Production-Pfade.
+
+### Rücksync von main nach staging
+
+Jeder neue Commit auf `main` startet zusätzlich `.github/workflows/sync-main-to-staging.yml`. Der Workflow prüft, ob der aktuelle `main`-Commit bereits in der Historie von `staging` enthalten ist. Falls nicht, setzt er den beweglichen Branch `sync/main-to-staging` race-safe auf den aktuellen `main`-Stand und öffnet beziehungsweise aktualisiert einen Pull Request nach `staging`.
+
+Der Sync-PR wird **nicht automatisch gemergt**. Konflikte bleiben sichtbar und müssen bewusst aufgelöst werden, damit neuere Staging-Änderungen nicht durch einen Rücksync überschrieben werden. Weil mit `GITHUB_TOKEN` erzeugte Pull Requests keine rekursiven `pull_request`-Workflows auslösen, startet der Sync-Workflow die bestehenden PR-Checks explizit für `sync/main-to-staging`.
+
+Sobald `staging` den aktuellen `main`-Commit bereits enthält, ist kein weiterer Sync-PR nötig; ein noch offener veralteter Sync-PR wird geschlossen. Damit fließen auch Änderungen, die direkt über administrative oder Dependency-PRs nach `main` gelangt sind, kontrolliert zurück in die Staging-Historie.
+
 
 ### K3s Production
 

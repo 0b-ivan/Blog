@@ -99,21 +99,21 @@ snippets:
     language: bash
 cover_query: server datacenter infrastructure network cloud container cluster kubernetes
 cover_provider: pixabay
-cover_provider_id: '8598424'
+cover_provider_id: '2001090'
 cover_image: /assets/covers/2026-09-16-k3s-proxmox-flux-gitops-part-2.jpg
 cover_alt: >-
-  cloud, server, cloud computing, secure, digital, network, business,
-  application, connect, modernization, global, privacy, hardware,
-  infrastructure, database, security, cloudscape, smart, computer, design,
-  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
-  cloud computing, cloud computing, cloud computing, cloud computing
+  cloud computing, network, internet, cloud computing concept, communication,
+  networking, virtual, cloud technology, black computer, black technology, black
+  laptop, black clouds, black network, black community, black internet, black
+  communication, cloud computing, cloud computing, cloud computing, cloud
+  computing, cloud computing
 cover_focus: center
-cover_credit: by kumar111aakashin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
-cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_credit: by wynpnt via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/cloud-computing-network-internet-2001090/'
+cover_source_url: 'https://pixabay.com/illustrations/cloud-computing-network-internet-2001090/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 93
+cover_score: 82
 ---
 Teil I war der Teil, in dem ich den Blog überhaupt erstmal sauber auf K3s bekommen habe: VM auf Proxmox, K3s, interne Services und der Cloudflare Tunnel bis zum öffentlichen Healthcheck.
 

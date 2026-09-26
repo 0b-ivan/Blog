@@ -26,6 +26,10 @@ describe('missing article covers', () => {
       limit: 12,
       includeCovered: true
     });
+    expect(parseArgs(['--all', '--include-covered'])).toEqual({
+      limit: null,
+      includeCovered: true
+    });
     expect(() => parseArgs(['--limit', '0'])).toThrow();
     expect(() => parseArgs(['--limit', '21'])).toThrow();
   });
@@ -44,6 +48,30 @@ describe('missing article covers', () => {
         'posts/2026-03-01-covered.md',
         'posts/2026-02-01-missing.md'
       ]);
+    } finally {
+      await fs.rm(postsDir, { recursive: true, force: true });
+    }
+  });
+
+  it('can return every published article for a full refresh', async () => {
+    const postsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'cover-refresh-all-'));
+    try {
+      for (let index = 1; index <= 24; index += 1) {
+        await fs.writeFile(
+          path.join(postsDir, `2026-03-${String(index).padStart(2, '0')}-post.md`),
+          '---\nstatus: publish\ncover_image: /assets/covers/x.jpg\n---\nBody'
+        );
+      }
+      await fs.writeFile(path.join(postsDir, '2026-04-01-draft.md'), '---\nstatus: draft\n---\nDraft');
+
+      const result = await listMissingCoverPosts({
+        postsDir,
+        limit: null,
+        includeCovered: true
+      });
+
+      expect(result).toHaveLength(24);
+      expect(result.every((entry) => entry.startsWith('posts/'))).toBe(true);
     } finally {
       await fs.rm(postsDir, { recursive: true, force: true });
     }

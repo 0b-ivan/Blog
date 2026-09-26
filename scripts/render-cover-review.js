@@ -1,5 +1,8 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const matter = require('gray-matter');
+
+const root = path.join(__dirname, '..');
 
 function parseArgs(args) {
   const options = {
@@ -47,6 +50,44 @@ function markdownText(value) {
     .trim();
 }
 
+function selectedFromPost(report, raw) {
+  if (report.selected) return report.selected;
+
+  const parsed = matter(String(raw || ''));
+  const providerId = String(parsed.data.cover_provider_id || '').trim();
+  const coverImage = String(parsed.data.cover_image || '').trim();
+  if (!providerId || !coverImage) return null;
+
+  const candidate = (report.candidates || []).find(
+    (entry) => String(entry.id || '') === providerId
+  );
+  if (!candidate) return null;
+
+  const storedScore = Number(parsed.data.cover_score);
+  return {
+    ...candidate,
+    score: Number.isFinite(storedScore) ? storedScore : candidate.score,
+    coverImage
+  };
+}
+
+async function enrichSelectedFromWorkingTree(report) {
+  if (report.selected || !report.postPath) return report;
+
+  const postsRoot = path.resolve(root, 'posts');
+  const target = path.resolve(root, report.postPath);
+  if (!target.startsWith(`${postsRoot}${path.sep}`)) return report;
+
+  try {
+    const raw = await fs.readFile(target, 'utf8');
+    const selected = selectedFromPost(report, raw);
+    return selected ? { ...report, selected } : report;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return report;
+    throw error;
+  }
+}
+
 function rawGithubUrl(repository, commit, assetPath) {
   const cleanPath = String(assetPath || '').replace(/^\/+/, '');
   if (!repository || !commit || !cleanPath) return '';
@@ -66,14 +107,58 @@ function candidateTable(candidates, options = {}) {
       ? `[Pixabay](${candidate.pageURL})`
       : 'Pixabay';
     const reasons = markdownText((candidate.reasons || []).join(' · ')) || 'keine zusätzlichen Signale';
+    const semantic = Number.isFinite(Number(candidate.semanticSimilarity))
+      ? `E5 Artikel: ${Number(candidate.semanticSimilarity).toFixed(4)}`
+      : '';
+    const prototype = Number.isFinite(Number(candidate.prototypeMargin))
+      ? `Konzept: ${Number(candidate.prototypeMargin) >= 0 ? '+' : ''}${Number(candidate.prototypeMargin).toFixed(4)}`
+      : '';
+    const heroQuality = Number.isFinite(Number(candidate.heroQualityScore))
+      ? `Hero: ${Math.round(Number(candidate.heroQualityScore))}/100`
+      : '';
+    const heuristic = Number.isFinite(Number(candidate.heuristicScore))
+      ? `Heuristik: ${Math.round(Number(candidate.heuristicScore))}/100`
+      : '';
+    const dimensions = Number(candidate.imageWidth) > 0 && Number(candidate.imageHeight) > 0
+      ? `${Number(candidate.imageWidth)}×${Number(candidate.imageHeight)}`
+      : '';
+    const hardGate = candidate.heroRejected
+      ? `⛔ Hero-Gate: ${markdownText((candidate.heroRejectReasons || []).join(' · '))}`
+      : '';
+    const semanticGate = candidate.semanticMismatch
+      ? '⛔ Semantic-Gate: Motiv passt nicht zuverlässig zum Artikel'
+      : '';
+    const subjectGate = candidate.subjectAnchorRequired
+      ? (
+          (candidate.subjectAnchorMatches || []).length
+            ? `Subject: ${markdownText((candidate.subjectAnchorMatches || []).join(', '))}`
+            : `⛔ Subject fehlt: ${markdownText((candidate.subjectAnchors || []).join(', '))}`
+        )
+      : '';
+
     const details = compact
       ? [
           markdownText(candidate.tags).slice(0, 180),
+          semantic,
+          prototype,
+          heroQuality,
+          dimensions,
+          hardGate,
+          subjectGate,
+          semanticGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           source
         ].filter(Boolean).join('<br>')
       : [
           markdownText(candidate.tags),
+          semantic,
+          prototype,
+          heroQuality,
+          heuristic,
+          dimensions,
+          hardGate,
+          subjectGate,
+          semanticGate,
           candidate.user ? `by ${markdownText(candidate.user)}` : '',
           candidate.searchQueries?.length
             ? `Suchpfad: ${candidate.searchQueries.map(markdownText).join(' · ')}`
@@ -99,12 +184,23 @@ function renderReport(report, options = {}) {
   const queries = Array.isArray(report.queries)
     ? report.queries.map(markdownText).filter(Boolean)
     : [];
-  const selected = report.selected || null;
+  const selected = diversity?.skipped ? null : (report.selected || null);
   const lines = [
     `## ${title}`,
     '',
     `**Artikel:** \`${markdownText(report.postPath || '')}\``,
     report.series ? `**Serie:** \`${markdownText(report.series)}\`` : '**Serie:** keine',
+    report.visualIntent
+      ? `**Bildidee:** \`${markdownText(report.visualIntent)}\``
+      : '**Bildidee:** automatisch aus Artikelinhalt',
+    report.visualIntent ? `**Intent-Evidenz:** ${Number(report.visualIntentEvidence || 0)}` : '',
+    report.pixabayCategory ? `**Pixabay-Kategorie:** \`${markdownText(report.pixabayCategory)}\`` : '',
+    report.pixabayImageType ? `**Pixabay-Bildtyp:** \`${markdownText(report.pixabayImageType)}\`` : '',
+    report.semanticModel ? `**Semantisches Ranking:** \`${markdownText(report.semanticModel)}\` · E5 ${Math.round(Number(report.semanticWeight || 0) * 100)}%` : '',
+    report.semanticPrototype ? `**Konzept-Prototyp:** \`${markdownText(report.semanticPrototype)}\`` : '',
+    report.semanticPrototypeSource
+      ? `**Konzept-Quelle:** ${report.semanticPrototypeSource === 'article' ? 'Artikelinhalt' : 'Artikelinhalt + Intent-Override'}`
+      : '',
     options.compact
       ? ''
       : (queries.length
@@ -112,7 +208,12 @@ function renderReport(report, options = {}) {
         : (query ? `**Pixabay-Query:** \`${query}\`` : ''))
   ].filter(Boolean);
 
-  if (diversity) {
+  if (diversity?.skipped) {
+    lines.push(
+      `**Cover-Auswahl:** ⏭ übersprungen – ${markdownText(diversity.skipReason || 'kein geeigneter Hero-Kandidat')}`,
+      '**Bestehendes Cover:** bleibt unverändert'
+    );
+  } else if (diversity) {
     lines.push(
       `**Vielfalt:** Motiv \`${markdownText(diversity.motif)}\` · Score ${diversity.baseScore} → ${diversity.adjustedScore}`,
       diversity.sameSeriesReuse
@@ -130,6 +231,15 @@ function renderReport(report, options = {}) {
     const imageUrl = rawGithubUrl(options.repository, options.commit, selected.coverImage);
     lines.push(
       `**Ausgewählt:** Rang ${selected.rank} · **${selected.score}/100**`,
+      Number.isFinite(Number(selected.semanticSimilarity))
+        ? `**E5 Artikel-Ähnlichkeit:** ${Number(selected.semanticSimilarity).toFixed(5)}`
+        : '',
+      Number.isFinite(Number(selected.prototypeMargin))
+        ? `**E5 Konzept-Marge:** ${Number(selected.prototypeMargin) >= 0 ? '+' : ''}${Number(selected.prototypeMargin).toFixed(5)}`
+        : '',
+      Number.isFinite(Number(selected.heroQualityScore))
+        ? `**Hero-Qualität:** ${Math.round(Number(selected.heroQualityScore))}/100`
+        : '',
       selected.pageURL ? `**Quelle:** [Pixabay – ${markdownText(selected.tags || 'Bild')}](${selected.pageURL})` : '',
       '',
       '### Ausgewähltes Cover',
@@ -167,7 +277,8 @@ async function loadReports(options) {
   const unique = [...new Set(files)].sort();
   const reports = [];
   for (const file of unique) {
-    reports.push(JSON.parse(await fs.readFile(file, 'utf8')));
+    const report = JSON.parse(await fs.readFile(file, 'utf8'));
+    reports.push(await enrichSelectedFromWorkingTree(report));
   }
   return reports.sort((left, right) =>
     String(left.postPath || '').localeCompare(String(right.postPath || ''), 'en')
@@ -216,9 +327,11 @@ if (require.main === module) {
 
 module.exports = {
   candidateTable,
+  enrichSelectedFromWorkingTree,
   loadReports,
   markdownText,
   parseArgs,
   rawGithubUrl,
-  renderReport
+  renderReport,
+  selectedFromPost
 };

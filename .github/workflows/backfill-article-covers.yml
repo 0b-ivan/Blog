@@ -17,7 +17,7 @@ on:
           - missing
           - all
       batch_size:
-        description: Number of existing published articles to process
+        description: Batch size for missing-cover mode; scope=all processes every published article
         required: true
         type: choice
         default: "8"
@@ -39,9 +39,11 @@ jobs:
   backfill:
     name: Pixabay cover backfill
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+      PIXABAY_REQUEST_DELAY_MS: "850"
+      RAG_MODEL_CACHE: ${{ github.workspace }}/.cache/kernel-grep-models
       COVER_SCOPE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'all' }}
       BATCH_SIZE: ${{ github.event_name == 'workflow_dispatch' && inputs.batch_size || '20' }}
 
@@ -61,6 +63,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install semantic ranking dependencies
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund --onnxruntime-node-install=skip
+
+      - name: Cache Kernel Grep embedding model
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kernel-grep-models
+          key: kernel-grep-e5-${{ runner.os }}-${{ hashFiles('rag/package.json') }}
+          restore-keys: |
+            kernel-grep-e5-${{ runner.os }}-
+
 
       - name: Validate Pixabay secret
         shell: bash
@@ -89,9 +103,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          args=(--limit "$BATCH_SIZE")
           if [ "$COVER_SCOPE" = "all" ]; then
-            args+=(--include-covered)
+            args=(--include-covered --all)
+          else
+            args=(--limit "$BATCH_SIZE")
           fi
           node scripts/list-missing-cover-posts.js "${args[@]}" > /tmp/pixabay-cover-posts.txt
 
@@ -116,29 +131,77 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/cover-candidates /tmp/cover-reports
+          mkdir -p /tmp/cover-candidates /tmp/cover-reports /tmp/cover-logs
 
           while IFS= read -r post; do
             [ -n "$post" ] || continue
             echo "Collecting ranked candidates for $post"
             slug="$(basename "$post" .md)"
-            npm run covers:resolve -- "$post" --preview --report "/tmp/cover-candidates/${slug}.json"
+            report="/tmp/cover-candidates/${slug}.json"
+            log="/tmp/cover-logs/${slug}.log"
+
+            if npm run covers:resolve -- "$post" --preview --report "$report" >"$log" 2>&1; then
+              cat "$log"
+            else
+              cat "$log"
+              error_message="$(tail -n 1 "$log" | sed -E 's/\x1B\[[0-9;]*[mK]//g')"
+              echo "Cover resolver failed closed for $post: $error_message"
+
+              POST_PATH="$post" REPORT_PATH="$report" RESOLVER_ERROR="$error_message" node -e '
+                const fs = require("node:fs");
+                const matter = require("gray-matter");
+                const { subjectAnchors } = require("./scripts/resolve-pixabay-cover");
+                const postPath = process.env.POST_PATH;
+                const parsed = matter(fs.readFileSync(postPath, "utf8"));
+                const data = parsed.data || {};
+                const report = {
+                  postPath,
+                  title: data.title || postPath,
+                  series: data.series || "",
+                  visualIntent: data.cover_intent || "",
+                  subjectAnchors: subjectAnchors(data, data.cover_query || ""),
+                  query: data.cover_query || "",
+                  queries: [],
+                  candidates: [],
+                  resolverError: process.env.RESOLVER_ERROR || "cover resolver failed"
+                };
+                fs.writeFileSync(process.env.REPORT_PATH, JSON.stringify(report, null, 2));
+              '
+
+              # A first-query 429 usually means the shared API window is hot.
+              # Cool down before the next article instead of cascading failures.
+              if printf '%s' "$error_message" | grep -q 'HTTP 429'; then
+                sleep 15
+              fi
+            fi
+
+            # Separate article processes share the same Pixabay quota.
+            sleep 1
           done < /tmp/pixabay-cover-posts.txt
+
+          node scripts/rerank-cover-candidates-e5.js \
+            --reports-dir /tmp/cover-candidates \
+            --posts-dir posts \
+            --cache-dir "$RAG_MODEL_CACHE"
 
           node scripts/select-diverse-cover-candidates.js \
             --reports-dir /tmp/cover-candidates \
             --output /tmp/cover-selection.json \
             --selection-list /tmp/cover-selection.list
 
-          while IFS='|' read -r post image_id; do
+          while IFS='|' read -r post image_id semantic_score; do
             [ -n "$post" ] || continue
             [ -n "$image_id" ] || {
               echo "Missing selected Pixabay image id for $post" >&2
               exit 1
             }
-            echo "Applying diversified Pixabay image $image_id for $post"
+            [ -n "$semantic_score" ] || {
+              echo "Missing semantic cover score for $post" >&2
+              exit 1
+            }
+            echo "Applying diversified Pixabay image $image_id for $post (semantic score $semantic_score)"
             slug="$(basename "$post" .md)"
-            npm run covers:resolve -- "$post" --select-id "$image_id" --report "/tmp/cover-reports/${slug}.json"
+            npm run covers:resolve -- "$post" --select-id "$image_id" --score "$semantic_score"
           done < /tmp/cover-selection.list
 
       - name: Validate generated changes
@@ -149,7 +212,7 @@ jobs:
           git diff --check
           npm run posts:validate-meta
           npm run lint
-          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-diversity.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
+          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-diversity.test.js tests/cover-semantic-rerank.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
 
       - name: Create backfill pull request
         if: steps.candidates.outputs.needed == 'true'
@@ -181,7 +244,7 @@ jobs:
           cover_commit="$(git rev-parse HEAD)"
           body_file="$(mktemp)"
           node scripts/render-cover-review.js \
-            --reports-dir /tmp/cover-reports \
+            --reports-dir /tmp/cover-candidates \
             --selection-manifest /tmp/cover-selection.json \
             --repository "$GITHUB_REPOSITORY" \
             --commit "$cover_commit" \

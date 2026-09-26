@@ -2,6 +2,8 @@
 id: 2026-09-20-chaos-engineering-chaos-monkey-kubernetes
 version: 2
 title: 'Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen'
+cover_title: 'Chaos Engineering systematisch testen'
+cover_subtitle: 'Warum Chaos Monkey kein Zufall ist'
 status: publish
 date: 2026-09-20T00:00:00.000Z
 created_at: 2026-09-20T00:00:00.000Z
@@ -32,6 +34,7 @@ search_queries:
       Conditions?
     maxRank: 1
 cover_query: server datacenter infrastructure network cloud container cluster deployment
+cover_intent: chaos-engineering
 cover_provider: pixabay
 cover_provider_id: '1235959'
 cover_image: /assets/covers/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.jpg

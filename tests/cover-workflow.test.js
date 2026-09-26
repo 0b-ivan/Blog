@@ -22,19 +22,25 @@ describe('cover review workflows', () => {
     );
 
     expect(workflow).toContain('/tmp/cover-candidates/${slug}.json');
-    expect(workflow).toContain('/tmp/cover-reports/${slug}.json');
+    expect(workflow).toContain('Install semantic ranking dependencies');
+    expect(workflow).toContain('Cache Kernel Grep embedding model');
+    expect(workflow).toContain('scripts/rerank-cover-candidates-e5.js');
+    expect(workflow).toContain('--reports-dir /tmp/cover-candidates');
+    expect(workflow).toContain('--cache-dir "$RAG_MODEL_CACHE"');
     expect(workflow).toContain('scripts/select-diverse-cover-candidates.js');
     expect(workflow).toContain('--output /tmp/cover-selection.json');
     expect(workflow).toContain('--selection-list /tmp/cover-selection.list');
-    expect(workflow).toContain('--select-id "$image_id"');
+    expect(workflow).toContain('--select-id "$image_id" --score "$semantic_score"');
     expect(workflow).toContain('--selection-manifest /tmp/cover-selection.json');
     expect(workflow).toContain('scripts/render-cover-review.js');
-    expect(workflow).toContain('--reports-dir /tmp/cover-reports');
+    expect(workflow).toContain('--reports-dir /tmp/cover-candidates');
     expect(workflow).toContain('--commit "$cover_commit"');
     expect(workflow).toContain('--compact > "$body_file"');
     expect(workflow).toContain("<<'EOF'");
     expect(workflow).toContain('scope:');
     expect(workflow).toContain('--include-covered');
+    expect(workflow).toContain('args=(--include-covered --all)');
+    expect(workflow).toContain('args=(--limit "$BATCH_SIZE")');
     expect(workflow).toContain("pr_title='feat: review existing article covers'");
     expect(workflow).toContain("'.github/cover-backfill-request.txt'");
     expect(workflow).toContain("github.event_name == 'workflow_dispatch' && inputs.scope || 'all'");

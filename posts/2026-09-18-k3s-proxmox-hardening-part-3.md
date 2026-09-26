@@ -73,21 +73,20 @@ snippets:
     language: bash
 cover_query: server datacenter infrastructure network cloud container cluster kubernetes
 cover_provider: pixabay
-cover_provider_id: '8598424'
+cover_provider_id: '6532831'
 cover_image: /assets/covers/2026-09-18-k3s-proxmox-hardening-part-3.jpg
 cover_alt: >-
-  cloud, server, cloud computing, secure, digital, network, business,
-  application, connect, modernization, global, privacy, hardware,
-  infrastructure, database, security, cloudscape, smart, computer, design,
-  backup, automation, internet, cloud data, block chain, cloud, cloud computing,
-  cloud computing, cloud computing, cloud computing, cloud computing
+  cloud, computer, circuit board, cpu, data, digital, information, data
+  processing, cloud computing, technology, internet, connection, network,
+  server, database, networking, cloud computing, cloud computing, cloud
+  computing, cloud computing, cloud computing, database, database
 cover_focus: center
-cover_credit: by kumar111aakashin via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
-cover_source_url: 'https://pixabay.com/photos/cloud-server-cloud-computing-secure-8598424/'
+cover_credit: by akitada31 via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/cloud-computer-circuit-board-cpu-6532831/'
+cover_source_url: 'https://pixabay.com/illustrations/cloud-computer-circuit-board-cpu-6532831/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 93
+cover_score: 81
 ---
 Teil I: Der Blog läuft auf K3s.
 

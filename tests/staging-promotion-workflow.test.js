@@ -8,10 +8,12 @@ describe('staging promotion workflow', () => {
       'utf8'
     );
 
-    expect(workflow).toContain('Detect changed and existing published posts without covers');
+    expect(workflow).toContain('Detect changed posts needing Pixabay cover resolution');
     expect(workflow).toContain('COVER_BACKFILL_LIMIT: "20"');
     expect(workflow).toContain('scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT"');
     expect(workflow).toContain('Resolve missing Pixabay covers');
+    expect(workflow).toContain('cover_query|cover_subject|cover_avoid|cover_intent');
+    expect(workflow).toContain('Cover brief changed for $post; refreshing Pixabay cover');
     expect(workflow).toContain('--report "/tmp/cover-reports/${slug}.json"');
     expect(workflow).toContain('scripts/render-cover-review.js');
     expect(workflow).toContain('--reports-dir /tmp/cover-reports');
@@ -24,8 +26,15 @@ describe('staging promotion workflow', () => {
     expect(workflow).not.toContain('git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}"');
     expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
     expect(workflow).toContain('actions: write');
-    expect(workflow).toContain('Trigger required checks for production promotion');
+    expect(workflow).toContain('Run and bridge required checks for production promotion');
+    expect(workflow).toContain('statuses: write');
     expect(workflow).toContain('gh workflow run ci.yml');
     expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');
+    expect(workflow).toContain('gh run watch "$run_id"');
+    expect(workflow).toContain('/statuses/${promotion_sha}');
+    expect(workflow).toContain("-f state='pending'");
+    expect(workflow).toContain("-f state='success'");
+    expect(workflow).toContain("-f state='failure'");
+    expect(workflow).toContain("for context in 'checks' 'Local assets'");
   });
 });

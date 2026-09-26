@@ -128,6 +128,24 @@ async function main() {
       violations.push(`${displayPath}: manual 'reading_time' is not allowed; it is calculated from article content`);
     }
 
+    for (const [field, maxLength] of [
+      ['cover_title', 80],
+      ['cover_subtitle', 160]
+    ]) {
+      if (!Object.prototype.hasOwnProperty.call(data, field)) continue;
+      if (typeof data[field] !== 'string') {
+        violations.push(`${displayPath}: '${field}' must be a string`);
+        continue;
+      }
+
+      const value = data[field].trim();
+      if (!value) {
+        violations.push(`${displayPath}: '${field}' must not be empty when present`);
+      } else if (value.length > maxLength) {
+        violations.push(`${displayPath}: '${field}' is too long (${value.length} > ${maxLength})`);
+      }
+    }
+
     for (const field of requiredFields) {
       if (!isPresent(data[field])) {
         violations.push(`${displayPath}: missing required field '${field}'`);

@@ -64,6 +64,7 @@ module.exports = [
       'assets/status.js',
       'assets/analytics.js',
       'assets/article-analytics.js',
+      'assets/pdf-download.js',
       'assets/home-status.js'
     ],
     languageOptions: {

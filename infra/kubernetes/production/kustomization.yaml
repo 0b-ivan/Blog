@@ -9,6 +9,8 @@ images:
     newTag: 227fbe6f417799ab1ff8928dc6820910861a3bfb
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 227fbe6f417799ab1ff8928dc6820910861a3bfb
+  - name: ghcr.io/0b-ivan/kernel-notes-pdf
+    newTag: 227fbe6f417799ab1ff8928dc6820910861a3bfb
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: UNPINNED
 replicas:

@@ -36,7 +36,8 @@ const k3s = read(k3sPath);
 
 for (const [key, imageName] of [
   ['blog_image', 'blog'],
-  ['search_image', 'search']
+  ['search_image', 'search'],
+  ['pdf_image', 'pdf']
 ]) {
   const hetznerTag = outputValue(hetzner, key, 'cd.yml');
   const k3sTag = outputValue(k3s, key, 'cd-k8s-production.yml');

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "post": "posts/2026-09-24-pac-man-puck-man-paku-paku.md",
+  "photos": [
+    {
+      "source_id": "pacman-commons-iwatani-gdc",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:Toru_Iwatani,_creator_of_Pac-Man,_at_GDC_2011.jpg",
+      "output": "assets/posts/pac-man-puck-man/05-toru-iwatani.jpg",
+      "alt": "Tōru Iwatani, der Schöpfer von Pac-Man, bei der Game Developers Conference 2011",
+      "expected_license": "CC BY 2.0",
+      "width": 1200
+    },
+    {
+      "source_id": "pacman-commons-puckman-handheld",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:TOMY_LSI_PACMAN_handheld_electronic_game.jpg",
+      "output": "assets/posts/pac-man-puck-man/06-puck-man-handheld.jpg",
+      "alt": "TOMY-Handheld von 1981 mit dem Schriftzug PUCK MAN",
+      "expected_license": "CC BY-SA 4.0",
+      "width": 1400
+    }
+  ],
+  "connection_revision": 5
+}
