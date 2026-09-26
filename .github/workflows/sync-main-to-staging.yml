@@ -1,0 +1,127 @@
+name: Sync Main to Staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: main-to-staging-sync
+  cancel-in-progress: true
+
+env:
+  SYNC_BRANCH: sync/main-to-staging
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Open or update main to staging sync PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin main staging
+
+          MAIN_SHA="$(git rev-parse origin/main)"
+          STAGING_SHA="$(git rev-parse origin/staging)"
+
+          echo "main:    ${MAIN_SHA}"
+          echo "staging: ${STAGING_SHA}"
+
+          existing="$(
+            gh pr list \
+              --repo "$GITHUB_REPOSITORY" \
+              --state open \
+              --base staging \
+              --head "$SYNC_BRANCH" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if git merge-base --is-ancestor "$MAIN_SHA" "$STAGING_SHA"; then
+            echo 'staging already contains the current main commit; no sync PR is required.'
+
+            if [ -n "$existing" ]; then
+              gh pr close "$existing" \
+                --repo "$GITHUB_REPOSITORY" \
+                --comment 'Closing automatically because staging already contains the current main commit.'
+            fi
+
+            exit 0
+          fi
+
+          current_sync_sha="$(
+            git ls-remote --heads origin "refs/heads/${SYNC_BRANCH}" |
+              awk '{print $1}'
+          )"
+
+          if [ -n "$current_sync_sha" ]; then
+            git push \
+              --force-with-lease="refs/heads/${SYNC_BRANCH}:${current_sync_sha}" \
+              origin "${MAIN_SHA}:refs/heads/${SYNC_BRANCH}"
+          else
+            git push origin "${MAIN_SHA}:refs/heads/${SYNC_BRANCH}"
+          fi
+
+          body="$(
+            printf '%s\n\n%s\n%s\n\n%s\n' \
+              'This PR is maintained automatically after every commit to `main`.' \
+              "Current main commit: \`${MAIN_SHA}\`" \
+              'Target branch: `staging`' \
+              'Merge this PR to feed main-only changes back into staging. Conflicts stay manual so staging changes are never overwritten silently.'
+          )"
+
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title 'sync: main back into staging' \
+              --body "$body"
+            pr_number="$existing"
+            echo "Updated main -> staging sync PR #${pr_number}."
+          else
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base staging \
+              --head "$SYNC_BRANCH" \
+              --title 'sync: main back into staging' \
+              --body "$body"
+
+            pr_number="$(
+              gh pr list \
+                --repo "$GITHUB_REPOSITORY" \
+                --state open \
+                --base staging \
+                --head "$SYNC_BRANCH" \
+                --json number \
+                --jq '.[0].number // empty'
+            )"
+
+            test -n "$pr_number"
+            echo "Created main -> staging sync PR #${pr_number}."
+          fi
+
+          # PRs opened with GITHUB_TOKEN do not recursively trigger pull_request
+          # workflows. Dispatch the repository's PR checks explicitly on the
+          # exact sync branch instead.
+          gh workflow run ci.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$SYNC_BRANCH"
+
+          echo "Triggered PR checks for sync PR #${pr_number} at ${MAIN_SHA}."
