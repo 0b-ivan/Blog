@@ -1,12 +1,13 @@
 # Headless LiveSync fuer Blog-Posts
 
-Der optionale `livesync-cli`-Service spiegelt den Obsidian-LiveSync-Vault auf das lokale `posts/`-Verzeichnis. Der zusaetzliche `publisher`-Service uebernimmt Artikel anhand ihres Frontmatter-Status und haelt GitHub als Publishing-Grenze bei.
+Der optionale `livesync-cli`-Service spiegelt den Obsidian-LiveSync-Vault auf das lokale `posts/`-Verzeichnis. Zusätzlich wird `assets/posts/` als `assets/posts/` in denselben Vault eingehängt, damit lokale Artikelbilder auf Mobilgeräten verfügbar sind. Der zusaetzliche `publisher`-Service uebernimmt Artikel anhand ihres Frontmatter-Status und haelt GitHub als Publishing-Grenze bei.
 
 ```text
 Obsidian
   -> CouchDB
   -> livesync-cli
   -> posts/*.md
+  -> assets/posts/**  (als Vault-Pfad assets/posts/**)
   -> publisher
   -> Artikel-Branch + PR nach staging
   -> CI
@@ -31,7 +32,7 @@ Für `publish` und `archived` bleibt Staging die Freigabegrenze: Der Zustand wir
 ## Voraussetzungen
 
 - CouchDB + Self-hosted LiveSync funktionieren bereits auf mindestens einem Obsidian-Geraet.
-- Der Repository-Checkout liegt so, dass `ops/obsidian-livesync/../../posts` auf das gewuenschte `posts/`-Verzeichnis zeigt. Alternativ `OBSIDIAN_VAULT_PATH` in `.env` setzen.
+- Der Repository-Checkout liegt so, dass `ops/obsidian-livesync/../../posts` auf das gewuenschte `posts/`-Verzeichnis und `ops/obsidian-livesync/../../assets/posts` auf die Artikelbilder zeigt. Alternativ `OBSIDIAN_VAULT_PATH` und `OBSIDIAN_ASSETS_PATH` in `.env` setzen.
 - Vor dem ersten Mirror muss `posts/` einen sauberen Git-Status haben.
 - Testdateien wie `test.md` sollten vor dem Bootstrap in Obsidian geloescht werden, wenn sie nicht in das Repository uebernommen werden sollen.
 
@@ -59,7 +60,7 @@ Danach fuehrt es in dieser Reihenfolge aus:
 
 1. Setup URI in das persistente CLI-Datenvolume importieren.
 2. Einen Remote-Sync mit CouchDB ausfuehren.
-3. Remote-Vault und lokales `posts/` bidirektional spiegeln.
+3. Remote-Vault und lokales `posts/` bidirektional spiegeln; `assets/posts/` wird als verschachtelter Vault-Pfad mitgespiegelt.
 4. Den dauerhaften `livesync-cli`-Daemon starten.
 5. Den Git-Status von `posts/` anzeigen.
 
@@ -83,6 +84,14 @@ Dateien im lokalen LiveSync-Datenbestand auflisten:
 ```bash
 docker compose --profile headless run --rm livesync-cli ls
 ```
+
+Artikelbilder prüfen:
+
+```bash
+docker compose --profile headless exec livesync-cli sh -lc 'find /vault/assets/posts -maxdepth 2 -type f | head -50'
+```
+
+Ein Markdown-Pfad wie `/assets/posts/doom-shareware-internet/01-doom-logo.png` ist dadurch im Obsidian-Vault tatsächlich vorhanden und kann auf iOS/Android/desktop gerendert werden. Beim ersten Lauf nach Aktivierung werden bestehende Artikelbilder nach CouchDB hochgeladen; abhängig von der Bildmenge kann dieser Sync etwas dauern.
 
 Git-Aenderungen aus Obsidian anzeigen:
 
@@ -265,7 +274,7 @@ CouchDB bleibt dabei aktiv.
 ## Wichtige Hinweise
 
 - Nicht gleichzeitig einen zweiten Datei-Sync wie iCloud, Dropbox oder Obsidian Sync auf dasselbe Vault-Verzeichnis loslassen.
-- Der Publisher arbeitet nur mit Markdown-Dateien direkt unter `posts/`.
+- Der Publisher arbeitet nur mit Markdown-Dateien direkt unter `posts/`; die Bilder unter `assets/posts/` werden von LiveSync für die Vorschau synchronisiert, aber nicht vom Publisher als eigene Artikel behandelt.
 - `status: draft` bedeutet nicht oeffentlich.
 - `status: publish` bedeutet normale Veroeffentlichung unter `posts/`.
 - `status: archived` bedeutet oeffentliche Archivierung unter `archive/`.
