@@ -1,0 +1,220 @@
+name: Publish Article Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'posts/**'
+      - 'archive/**'
+      - 'snippets/**'
+      - 'assets/posts/**'
+      - 'assets/covers/**'
+      - 'assets/css/article-covers.css'
+      - 'media/photos/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: read
+
+concurrency:
+  group: production-article-publication
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  CONTENT_IMAGE_NAME: kernel-notes-content
+  GITOPS_BRANCH: production-gitops
+  PRODUCTION_URL: https://blog.obivan.org
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Validate publication commit
+        id: publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            before="${{ github.sha }}^"
+          else
+            before="${{ github.event.before }}"
+          fi
+
+          git diff --name-only "$before" "${{ github.sha }}" > /tmp/publication-files.txt
+          echo 'Production Publication files:'
+          cat /tmp/publication-files.txt
+
+          if grep -qx 'VERSION' /tmp/publication-files.txt; then
+            echo 'Article Publication must not modify VERSION.' >&2
+            exit 1
+          fi
+
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            case "$file" in
+              posts/*.md|archive/*.md|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
+                ;;
+              *)
+                echo "Non-publication file in Article Publication commit: $file" >&2
+                exit 1
+                ;;
+            esac
+          done < /tmp/publication-files.txt
+
+          mapfile -t articles < <(
+            sed -n -E 's#^(posts|archive)/([^/]+\.md)$#\2#p' /tmp/publication-files.txt |
+              sort -u
+          )
+
+          if [ "${#articles[@]}" -ne 1 ]; then
+            echo "Production Publication must contain exactly one article; found ${#articles[@]}." >&2
+            exit 1
+          fi
+
+          file_name="${articles[0]}"
+          slug="${file_name%.md}"
+          if [ -f "posts/$file_name" ]; then
+            state=published
+          elif [ -f "archive/$file_name" ]; then
+            state=archived
+          else
+            state=unpublished
+          fi
+
+          expected_version="$(tr -d '[:space:]' < VERSION)"
+          echo "file_name=$file_name" >> "$GITHUB_OUTPUT"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "state=$state" >> "$GITHUB_OUTPUT"
+          echo "expected_version=$expected_version" >> "$GITHUB_OUTPUT"
+
+      - name: Build article version history
+        run: node scripts/build-post-history.js
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set content image name
+        id: meta
+        run: |
+          set -euo pipefail
+          owner_lower="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "image=${REGISTRY}/${owner_lower}/${CONTENT_IMAGE_NAME}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "owner_lower=$owner_lower" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push immutable content image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: ./Dockerfile.content
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.CONTENT_IMAGE_NAME }}:production-content
+          cache-from: type=gha,scope=production-content
+          cache-to: type=gha,mode=max,scope=production-content,ignore-error=true
+
+      - name: Pin production content artifact
+        run: |
+          set -euo pipefail
+          worktree=/tmp/kernel-notes-production-content-gitops
+          rm -rf "$worktree"
+          git fetch origin "$GITOPS_BRANCH"
+          git worktree add --detach "$worktree" "origin/$GITOPS_BRANCH"
+
+          gitops_file="$worktree/infra/kubernetes/production/kustomization.yaml"
+          if ! grep -q 'kernel-notes-content' "$gitops_file"; then
+            echo 'production-gitops does not contain the independent content runtime yet.' >&2
+            exit 1
+          fi
+
+          GITOPS_FILE="$gitops_file" PUBLICATION_SHA="$GITHUB_SHA" python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path(os.environ['GITOPS_FILE'])
+          text = path.read_text(encoding='utf-8')
+          sha = os.environ['PUBLICATION_SHA']
+          pattern = (
+              r'(  - name: ghcr\.io/0b-ivan/kernel-notes-content\n'
+              r'    newTag: )[A-Za-z0-9._-]+'
+          )
+          text, count = re.subn(pattern, rf'\g<1>{sha}', text)
+          if count != 1:
+              raise SystemExit(f'Expected one content image pin, found {count}')
+          path.write_text(text, encoding='utf-8')
+          PY
+
+          git -C "$worktree" checkout -B "$GITOPS_BRANCH" "origin/$GITOPS_BRANCH"
+          git -C "$worktree" config user.name 'github-actions[bot]'
+          git -C "$worktree" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$worktree" add infra/kubernetes/production/kustomization.yaml
+          git -C "$worktree" diff --cached --check
+
+          if git -C "$worktree" diff --cached --quiet; then
+            echo 'Production content pin is already current.'
+          else
+            git -C "$worktree" commit -m "publish(article): ${{ steps.publication.outputs.slug }} ${GITHUB_SHA::12} [skip ci]"
+            git -C "$worktree" push origin "HEAD:$GITOPS_BRANCH"
+          fi
+
+      - name: Verify independent production publication
+        env:
+          SLUG: ${{ steps.publication.outputs.slug }}
+          STATE: ${{ steps.publication.outputs.state }}
+          EXPECTED_VERSION: ${{ steps.publication.outputs.expected_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Waiting for content artifact ${GITHUB_SHA} without changing software version ${EXPECTED_VERSION}."
+
+          for attempt in $(seq 1 90); do
+            health="$(curl -fsS --max-time 5 "${PRODUCTION_URL}/healthz?publication=${GITHUB_SHA}&attempt=${attempt}" 2>/dev/null || true)"
+            build_info="$(curl -fsS --max-time 5 "${PRODUCTION_URL}/build-info.json?publication=${GITHUB_SHA}&attempt=${attempt}" 2>/dev/null || true)"
+            version="$(printf '%s' "$build_info" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("version", ""))' 2>/dev/null || true)"
+
+            if [ "$health" != ok ] || [ "$version" != "$EXPECTED_VERSION" ]; then
+              echo "Attempt ${attempt}/90: health=${health:-unavailable} version=${version:-unavailable}"
+              sleep 5
+              continue
+            fi
+
+            code="$(curl -sS --max-time 5 -o /tmp/article.html -w '%{http_code}' "${PRODUCTION_URL}/posts/${SLUG}?publication=${GITHUB_SHA}" || true)"
+            if [ "$STATE" = published ] && [ "$code" = 200 ]; then
+              echo "Article ${SLUG} is published on Production at unchanged software version ${EXPECTED_VERSION}."
+              exit 0
+            fi
+            if [ "$STATE" != published ] && [ "$code" = 404 ]; then
+              echo "Article ${SLUG} is ${STATE} on Production at unchanged software version ${EXPECTED_VERSION}."
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}/90: article state=${STATE} http=${code}"
+            sleep 5
+          done
+
+          echo 'Production did not converge to the expected Article Publication state.' >&2
+          exit 1
