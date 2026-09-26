@@ -26,6 +26,12 @@ describe('staging promotion workflow', () => {
     expect(workflow).not.toContain('git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}"');
     expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
     expect(workflow).toContain('actions: write');
+    expect(workflow).not.toContain("    paths:\n      - 'posts/**'");
+    expect(workflow).toContain('.github/workflows/*|.github/workflows/**/*|docs/*|docs/**/*|tests/*|tests/**/*');
+    expect(workflow).toContain("- name: Publish verified promotion candidate\n        if: github.event_name == 'push'");
+    expect(workflow).toContain("- name: Open or update production promotion PR\n        if: github.event_name == 'push'");
+    expect(workflow).toContain('Staging control-plane/GitOps state');
+    expect(workflow).toContain('the promotion pointer was advanced to the current staging history');
     expect(workflow).toContain('Trigger required checks for production promotion');
     expect(workflow).toContain('gh workflow run ci.yml');
     expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');

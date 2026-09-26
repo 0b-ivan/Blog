@@ -4,34 +4,6 @@ on:
   push:
     branches:
       - staging
-    paths:
-      - 'posts/**'
-      - 'archive/**'
-      - 'snippets/**'
-      - 'assets/**'
-      - 'config/**'
-      - 'lib/**'
-      - '*.html'
-      - '*.js'
-      - 'rag/**'
-      - 'Dockerfile'
-      - 'Dockerfile.search'
-      - 'Dockerfile.status'
-      - 'Dockerfile.chaos'
-      - 'Dockerfile.pdf'
-      - 'templates/**'
-      - 'status-monitor/**'
-      - 'chaos-monkey/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'VERSION'
-      - '.dockerignore'
-      - '.github/workflows/cd-staging.yml'
-      - 'infra/kubernetes/base/**'
-      - 'infra/kubernetes/staging/**'
-      - 'infra/kubernetes/production/**'
-      - 'scripts/verify-staging-scaling.sh'
-      - 'scripts/verify-production-k8s.sh'
   workflow_dispatch:
 
 permissions:
@@ -302,7 +274,7 @@ jobs:
           build_images=false
           while IFS= read -r file; do
             case "$file" in
-              infra/kubernetes/base/*|infra/kubernetes/base/**/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|infra/kubernetes/production/*|infra/kubernetes/production/**/*|scripts/verify-staging-scaling.sh|scripts/verify-production-k8s.sh|.github/workflows/cd-staging.yml)
+              infra/kubernetes/base/*|infra/kubernetes/base/**/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|infra/kubernetes/production/*|infra/kubernetes/production/**/*|scripts/verify-staging-scaling.sh|scripts/verify-production-k8s.sh|.github/workflows/*|.github/workflows/**/*|docs/*|docs/**/*|tests/*|tests/**/*|README.md|CONTRIBUTING.md)
                 ;;
               *)
                 build_images=true
@@ -635,7 +607,7 @@ jobs:
           exit 1
 
       - name: Publish verified promotion candidate
-        if: github.event_name == 'push' && steps.deploy_mode.outputs.build_images == 'true'
+        if: github.event_name == 'push'
         env:
           VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
         run: |
@@ -660,7 +632,7 @@ jobs:
           echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
 
       - name: Open or update production promotion PR
-        if: github.event_name == 'push' && steps.deploy_mode.outputs.build_images == 'true'
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -669,11 +641,17 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [ -n "${BUILD_VERSION:-}" ]; then
+            validation_summary="Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org."
+          else
+            validation_summary="Staging control-plane/GitOps state \`${VERIFIED_SHA}\` passed the public availability gate at https://staging-blog.obivan.org without rebuilding application images."
+          fi
+
           body="$(printf '%s\n\n%s\n%s\n\n%s\n' \
-            "Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org." \
+            "$validation_summary" \
             "Verified GitOps commit: \`${VERIFIED_SHA}\`" \
             "Promotion branch: \`${PROMOTION_BRANCH}\`" \
-            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
+            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the applicable public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
 
           if [ -d /tmp/cover-reports ] && find /tmp/cover-reports -maxdepth 1 -name '*.json' -print -quit | grep -q .; then
             cover_review_file="$(mktemp)"
@@ -757,7 +735,7 @@ jobs:
             echo 'The public staging build was verified before promotion/staging-verified was advanced.'
             echo 'The production promotion PR targets the verified candidate branch and still requires a manual merge.'
           else
-            echo 'GitOps-only change: existing images were reused and no promotion candidate was advanced.'
+            echo 'Control-plane/GitOps-only change: existing images were reused.'
+            echo 'Public staging availability was verified and the promotion pointer was advanced to the current staging history.'
             echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
-            echo 'Run scripts/verify-staging-scaling.sh from a host with cluster access for in-cluster replica verification.'
           fi
