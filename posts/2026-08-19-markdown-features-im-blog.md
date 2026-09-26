@@ -3,13 +3,15 @@ id: 2026-08-19-markdown-features-im-blog
 version: 1
 title: Markdown-Features im Blog nutzen
 status: publish
-date: 2026-08-19
-created_at: 2026-08-19
-updated_at: 2026-08-19
+date: 2026-08-19T00:00:00.000Z
+created_at: 2026-08-19T00:00:00.000Z
+updated_at: 2026-08-19T00:00:00.000Z
 author: obivan
 reviewed_by: pending
 category: Engineering
-excerpt: So nutzt du Tags, Wiki-Links, Footnotes, Admonitions und Mermaid in deinen Blogposts.
+excerpt: >-
+  So nutzt du Tags, Wiki-Links, Footnotes, Admonitions und Mermaid in deinen
+  Blogposts.
 tags:
   - Markdown
   - Docs
@@ -20,6 +22,20 @@ search_queries:
     maxRank: 1
   - query: Wie kann ich Warnhinweise in Markdown anzeigen?
     maxRank: 1
+cover_query: Markdown Docs Mermaid Engineering
+cover_provider: pixabay
+cover_provider_id: '2491258'
+cover_image: /assets/covers/2026-08-19-markdown-features-im-blog.jpg
+cover_alt: >-
+  mermaid, siren, sea fantasy, mermaid, mermaid, mermaid, mermaid, mermaid,
+  siren, siren
+cover_focus: center
+cover_score: 87
+cover_credit: by AndyFaeth via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/mermaid-siren-sea-fantasy-2491258/'
+cover_source_url: 'https://pixabay.com/photos/mermaid-siren-sea-fantasy-2491258/'
+cover_license: Pixabay Content License
+cover_license_url: 'https://pixabay.com/service/license-summary/'
 ---
 
 Wenn du Inhalte schnell schreiben willst, ist Markdown genau richtig.

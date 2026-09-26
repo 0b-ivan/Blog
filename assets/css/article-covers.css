@@ -153,3 +153,10 @@
   --article-cover-focus: center;
 }
 /* cover:2026-09-24-pokemon-ist-perfekt-fuer-oop:end */
+
+/* cover:2026-08-19-markdown-features-im-blog:start */
+.post-page[data-post-slug="2026-08-19-markdown-features-im-blog"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-08-19-markdown-features-im-blog.jpg");
+  --article-cover-focus: center;
+}
+/* cover:2026-08-19-markdown-features-im-blog:end */
