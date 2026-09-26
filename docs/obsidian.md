@@ -166,7 +166,32 @@ git commit -m "Update blog posts"
 git push -u origin HEAD
 ```
 
-Anschliessend einen Pull Request gegen `staging` erstellen. Nach erfolgreicher CI und Merge wird der Stand automatisch auf `staging-blog.obivan.org` deployed. Sobald der neue Build dort gesund und als Staging-Build verifiziert ist, erzeugt GitHub Actions automatisch einen Promotion-PR von `staging` nach `main`. Erst dessen manueller Merge veroeffentlicht den Stand in Production.
+Anschliessend einen Pull Request gegen `staging` erstellen. Nach erfolgreicher CI und Merge wird der Stand automatisch auf `staging-blog.obivan.org` deployed. Sobald der neue Build dort gesund und als Staging-Build verifiziert ist, erzeugt GitHub Actions automatisch einen Promotion-PR von `staging` nach `main`. Erst dessen manueller Merge veroeffentlicht einen **neuen oder wieder veröffentlichten** Artikel in Production.
+
+### Publish und Unpublish sind bewusst asymmetrisch
+
+Für neue Inhalte gilt weiterhin:
+
+```text
+publish
+  -> PR nach staging
+  -> Staging deployen + verifizieren
+  -> Promotion-PR
+  -> manueller Merge nach main
+  -> Production
+```
+
+Für `status: draft` eines bereits veröffentlichten Artikels gilt dagegen der Fast-Track:
+
+```text
+unpublish
+  ├─ deletion-only PR -> staging
+  └─ deletion-only PR -> main
+       -> Required Checks
+       -> automatischer Merge
+```
+
+Damit kann ein Takedown nicht durch den normalen Release-Zyklus verzögert werden. Der Fast-Track akzeptiert ausschließlich Löschungen von Artikeldateien; er kann deshalb nicht dazu benutzt werden, neue Inhalte oder sonstige Änderungen an der manuellen Production-Freigabe vorbeizuschleusen. Ein späteres `status: publish` folgt wieder vollständig dem normalen Staging- und Promotion-Pfad.
 
 ## Bilder
 
