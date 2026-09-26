@@ -664,7 +664,38 @@ jobs:
           fi
 
           BASE_VERSION="$(git show origin/main:VERSION | tr -d '[:space:]')"
-          if ! printf '%s' "$BASE_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+
+          if ! printf '%s' "$BASE_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid main VERSION: $BASE_VERSION" >&2
+            exit 1
+          fi
+
+          if [ "$version_bump" = true ]; then
+            IFS='.' read -r major minor patch <<< "$BASE_VERSION"
+            RELEASE_VERSION="$major.$minor.$((patch + 1))"
+            CANDIDATE_KIND=release
+            PR_TITLE="release: v$RELEASE_VERSION"
+            COMMIT_MESSAGE="release: v$RELEASE_VERSION"
+          else
+            RELEASE_VERSION="$BASE_VERSION"
+            CANDIDATE_KIND=content
+            PR_TITLE="publish: content to production"
+            COMMIT_MESSAGE="publish: content for v$RELEASE_VERSION"
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout --detach "$VERIFIED_SHA"
+
+          # VERSION is owned by the release flow. A content-only publish must
+          # preserve the current main version even when staging has not yet
+          # received the latest main -> staging sync.
+          printf '%s\n' "$RELEASE_VERSION" > VERSION
+          git add VERSION
+          if ! git diff --cached --quiet; then
+            git commit -m "$COMMIT_MESSAGE"
+          fi
+
+          RELEASE_SHA="$(git rev-parse HEAD)"
           current_promotion_sha="$(
             git ls-remote --heads origin "refs/heads/$PROMOTION_BRANCH" |
               awk 'NR == 1 { print $1 }'
