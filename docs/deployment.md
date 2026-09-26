@@ -82,11 +82,16 @@ Der Gate prüft unter anderem:
 - die erwartete Staging-Version
 - die sichtbare Staging-Kennzeichnung
 
-Erst nach erfolgreicher Prüfung darf ein neuer Production-Release-Kandidat entstehen. Existiert bereits ein offener Release-PR, bleibt dieser unverändert und neue Staging-Commits warten auf den nächsten Release-Zyklus.
+Erst nach erfolgreicher Prüfung darf ein neuer eingefrorener Production-Kandidat entstehen. Existiert bereits ein offener Production-PR, bleibt dieser unverändert und neue Staging-Commits warten auf den nächsten Zyklus.
 
-Für einen neuen Kandidaten wird die aktuelle `VERSION` aus `main` gelesen und die Patch-Version genau einmal erhöht, zum Beispiel von `2.2.0` auf `2.2.1`. Auf dem verifizierten Staging-Commit entsteht dafür ein eigener Release-Commit `release: v2.2.1`. `promotion/staging-verified` zeigt anschließend mit `--force-with-lease` auf genau diesen eingefrorenen Commit und der PR trägt den Titel `release: v2.2.1`.
+Die Versionsregel unterscheidet Content und Software:
 
-Der Merge dieses Release-PRs bleibt manuell. Reine Änderungen unter `infra/kubernetes/staging/**` erzeugen keinen neuen Production-Release.
+- Reine Artikel-/Content-Änderungen unter `posts/**`, `archive/**`, `snippets/**`, `assets/posts/**`, `assets/covers/**`, `assets/css/article-covers.css` und `media/photos/**` **erhöhen `VERSION` nicht**. Der Kandidat übernimmt exakt die aktuelle Production-Version aus `main`; ein Content-Publish kann deshalb zum Beispiel weiter `v2.2.1` ausliefern.
+- Enthält der Kandidat zusätzlich Anwendungs-, Runtime-, Workflow-, Infrastruktur- oder sonstige Produktänderungen, wird die Patch-Version genau einmal erhöht, zum Beispiel von `2.2.1` auf `2.2.2`.
+
+Damit wird ein normaler Artikel-Publish als `publish: content to production` geöffnet, während ein Software-Release den Titel `release: vX.Y.Z` erhält. `promotion/staging-verified` zeigt jeweils mit `--force-with-lease` auf genau den eingefrorenen Kandidaten.
+
+Der Merge bleibt manuell. Reine Änderungen unter `infra/kubernetes/staging/**` erzeugen keinen Production-Kandidaten.
 
 Die für `main` verpflichtenden Checks `checks` und `Local assets` werden beim Promotion-Pfad auf dem synthetischen Merge-Commit des Promotion-PRs gespiegelt. Der vollständige PR-Checks-Workflow läuft weiterhin auf dem verifizierten Promotion-SHA. Ein nachgelagerter Job liest den aktuellen `merge_commit_sha` des offenen Promotion-PRs und veröffentlicht dort Check-Runs mit denselben erforderlichen Namen. Damit erfüllt der strikte `main`-Ruleset die Checks auf genau dem Commit, den GitHub tatsächlich mergen würde. Bei einem fehlgeschlagenen Quell-Check wird auch der gespiegelte Check als fehlgeschlagen markiert.
 

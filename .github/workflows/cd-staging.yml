@@ -641,21 +641,25 @@ jobs:
           fi
 
           releaseable=false
+          version_bump=false
           while IFS= read -r file; do
             [ -n "$file" ] || continue
             case "$file" in
-              infra/kubernetes/staging/*|infra/kubernetes/staging/**/*)
+              infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|VERSION)
+                ;;
+              posts/*|archive/*|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
+                releaseable=true
                 ;;
               *)
                 releaseable=true
-                break
+                version_bump=true
                 ;;
             esac
           done < <(git diff --name-only origin/main..."$VERIFIED_SHA")
 
           if [ "$releaseable" != true ]; then
             echo "created=false" >> "$GITHUB_OUTPUT"
-            echo 'No releaseable delta outside staging-only GitOps state; no production release candidate created.'
+            echo 'No releaseable delta outside staging-only GitOps state; no production candidate created.'
             exit 0
           fi
 
@@ -665,15 +669,31 @@ jobs:
             exit 1
           fi
 
-          IFS='.' read -r major minor patch <<< "$BASE_VERSION"
-          RELEASE_VERSION="$major.$minor.$((patch + 1))"
+          if [ "$version_bump" = true ]; then
+            IFS='.' read -r major minor patch <<< "$BASE_VERSION"
+            RELEASE_VERSION="$major.$minor.$((patch + 1))"
+            CANDIDATE_KIND=release
+            PR_TITLE="release: v$RELEASE_VERSION"
+            COMMIT_MESSAGE="release: v$RELEASE_VERSION"
+          else
+            RELEASE_VERSION="$BASE_VERSION"
+            CANDIDATE_KIND=content
+            PR_TITLE="publish: content to production"
+            COMMIT_MESSAGE="publish: content for v$RELEASE_VERSION"
+          fi
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git checkout --detach "$VERIFIED_SHA"
+
+          # VERSION is owned by the release flow. A content-only publish must
+          # preserve the current main version even when staging has not yet
+          # received the latest main -> staging sync.
           printf '%s\n' "$RELEASE_VERSION" > VERSION
           git add VERSION
-          git commit -m "release: v$RELEASE_VERSION"
+          if ! git diff --cached --quiet; then
+            git commit -m "$COMMIT_MESSAGE"
+          fi
 
           RELEASE_SHA="$(git rev-parse HEAD)"
           current_promotion_sha="$(
@@ -689,7 +709,9 @@ jobs:
           echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
           echo "verified_sha=$VERIFIED_SHA" >> "$GITHUB_OUTPUT"
-          echo "Frozen release candidate v$RELEASE_VERSION: $PROMOTION_BRANCH -> $RELEASE_SHA"
+          echo "candidate_kind=$CANDIDATE_KIND" >> "$GITHUB_OUTPUT"
+          echo "pr_title=$PR_TITLE" >> "$GITHUB_OUTPUT"
+          echo "Frozen $CANDIDATE_KIND candidate for v$RELEASE_VERSION: $PROMOTION_BRANCH -> $RELEASE_SHA"
 
       - name: Open production release PR
         if: github.event_name == 'push' && steps.promotion.outputs.created == 'true'
@@ -700,6 +722,8 @@ jobs:
           VERIFIED_SHA: ${{ steps.promotion.outputs.verified_sha }}
           RELEASE_SHA: ${{ steps.promotion.outputs.release_sha }}
           RELEASE_VERSION: ${{ steps.promotion.outputs.release_version }}
+          CANDIDATE_KIND: ${{ steps.promotion.outputs.candidate_kind }}
+          PR_TITLE: ${{ steps.promotion.outputs.pr_title }}
         run: |
           set -euo pipefail
 
@@ -709,12 +733,18 @@ jobs:
             validation_summary="Staging control-plane/GitOps state \`${VERIFIED_SHA}\` passed the public availability gate at https://staging-blog.obivan.org without rebuilding application images."
           fi
 
+          if [ "$CANDIDATE_KIND" = content ]; then
+            version_summary="Production version: \`v${RELEASE_VERSION}\` (unchanged; content-only publish)"
+          else
+            version_summary="Production version: \`v${RELEASE_VERSION}\` (patch release)"
+          fi
+
           body="$(printf '%s\n\n%s\n%s\n%s\n\n%s\n' \
             "$validation_summary" \
-            "Production release: \`v${RELEASE_VERSION}\`" \
+            "$version_summary" \
             "Verified staging commit: \`${VERIFIED_SHA}\`" \
-            "Frozen release commit: \`${RELEASE_SHA}\`" \
-            'This release candidate is immutable while the PR is open. New staging commits do not move this PR or invalidate its required checks. Merge remains manual.')"
+            "Frozen candidate commit: \`${RELEASE_SHA}\`" \
+            'This production candidate is immutable while the PR is open. New staging commits do not move this PR or invalidate its required checks. Merge remains manual.')"
 
           if [ -d /tmp/cover-reports ] && find /tmp/cover-reports -maxdepth 1 -name '*.json' -print -quit | grep -q .; then
             cover_review_file="$(mktemp)"
@@ -729,7 +759,7 @@ jobs:
             --repo "$REPOSITORY" \
             --base main \
             --head "$PROMOTION_BRANCH" \
-            --title "release: v${RELEASE_VERSION}" \
+            --title "$PR_TITLE" \
             --body "$body"
 
       - name: Trigger required checks for frozen release
