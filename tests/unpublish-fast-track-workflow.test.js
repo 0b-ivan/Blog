@@ -15,7 +15,16 @@ describe('unpublish fast-track workflow', () => {
     expect(workflow).toContain('main:obsidian-unpublish/main/*');
     expect(workflow).toContain('startswith("Unpublish: ")');
     expect(workflow).toContain('.status != "removed"');
-    expect(workflow).toContain('^(posts|archive)/[^/]+\\.md$');
+    expect(workflow).toContain('^(posts|archive)/[^/]+\\\\.md
+    expect(workflow).toContain('latest_check_conclusion "$head_sha" checks');
+    expect(workflow).toContain("latest_check_conclusion \"$head_sha\" 'Local assets'");
+    expect(workflow).toContain('gh pr close "$stale_promotion"');
+    expect(workflow).toContain('gh pr merge "$pr_number"');
+    expect(workflow).toContain('--merge');
+    expect(workflow).not.toContain('--admin');
+  });
+});
+);
     expect(workflow).toContain('latest_check_conclusion "$head_sha" checks');
     expect(workflow).toContain("latest_check_conclusion \"$head_sha\" 'Local assets'");
     expect(workflow).toContain('gh pr close "$stale_promotion"');
