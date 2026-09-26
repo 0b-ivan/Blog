@@ -68,7 +68,7 @@ jobs:
           while IFS= read -r file; do
             [ -n "$file" ] || continue
             case "$file" in
-              posts/*.md|archive/*.md|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
+              posts/*.md|posts/_sources.json|archive/*.md|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
                 ;;
               *)
                 echo "Non-publication file in Article Publication commit: $file" >&2
