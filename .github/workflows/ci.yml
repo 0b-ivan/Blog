@@ -273,22 +273,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output=/tmp/kernel-notes-smoke.pdf
-          if ! curl -fsS --max-time 90 \
-            http://127.0.0.1:8080/download/2026-09-20-chaos-engineering-chaos-monkey-kubernetes.pdf \
-            -o "$output"; then
-            echo 'LaTeX PDF smoke test failed; renderer logs follow:' >&2
-            docker compose logs --no-color --tail=250 pdf blog || true
-            exit 1
-          fi
-          test "$(head -c 5 "$output")" = '%PDF-' || {
-            docker compose logs --no-color --tail=250 pdf blog || true
-            exit 1
-          }
-          test "$(wc -c < "$output")" -gt 10000 || {
-            docker compose logs --no-color --tail=250 pdf blog || true
-            exit 1
-          }
+
+          for slug in \
+            2026-09-20-chaos-engineering-chaos-monkey-kubernetes \
+            2026-09-24-pac-man-puck-man-paku-paku
+          do
+            output="/tmp/kernel-notes-${slug}.pdf"
+            if ! curl -fsS --max-time 150 \
+              "http://127.0.0.1:8080/download/${slug}.pdf" \
+              -o "$output"; then
+              echo "LaTeX PDF smoke test failed for ${slug}; renderer logs follow:" >&2
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            fi
+            test "$(head -c 5 "$output")" = '%PDF-' || {
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            }
+            test "$(wc -c < "$output")" -gt 10000 || {
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            }
+            curl -fsS http://127.0.0.1:8080/healthz >/dev/null || {
+              docker compose logs --no-color --tail=300 pdf blog || true
+              exit 1
+            }
+          done
 
       - name: Browser click smoke test
         if: steps.changes.outputs.heavy == 'true'
