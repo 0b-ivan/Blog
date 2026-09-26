@@ -665,9 +665,7 @@ jobs:
             exit 1
           fi
 
-          IFS='.' read -r major minor patch <<EOF
-$BASE_VERSION
-EOF
+          IFS='.' read -r major minor patch <<< "$BASE_VERSION"
           RELEASE_VERSION="$major.$minor.$((patch + 1))"
 
           git config user.name 'github-actions[bot]'
