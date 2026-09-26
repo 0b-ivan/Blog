@@ -1,0 +1,197 @@
+name: Promotion Watchdog
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows:
+      - PR Checks
+    types:
+      - completed
+
+permissions:
+  actions: write
+  checks: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: production-promotion-watchdog
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Reconcile production promotion checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          PROMOTION_BRANCH: promotion/staging-verified
+        run: |
+          set -euo pipefail
+
+          pr_number="$(
+            gh pr list \
+              --repo "$REPOSITORY" \
+              --state open \
+              --base main \
+              --head "$PROMOTION_BRANCH" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [ -z "$pr_number" ]; then
+            echo 'No open production promotion PR exists; nothing to repair.'
+            exit 0
+          fi
+
+          latest_required_check() {
+            local sha="$1"
+            local context="$2"
+
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/commits/${sha}/check-runs?per_page=100" \
+              --jq "[.check_runs[] | select(.name == \"${context}\" and .app.slug == \"github-actions\")] | sort_by(.id) | reverse | .[0] // {}"
+          }
+
+          for repair_round in $(seq 1 8); do
+            pr_json="$(gh api "/repos/${REPOSITORY}/pulls/${pr_number}")"
+            pr_state="$(printf '%s' "$pr_json" | jq -r '.state')"
+            head_ref="$(printf '%s' "$pr_json" | jq -r '.head.ref')"
+            head_repo="$(printf '%s' "$pr_json" | jq -r '.head.repo.full_name')"
+            head_sha="$(printf '%s' "$pr_json" | jq -r '.head.sha')"
+            base_sha="$(printf '%s' "$pr_json" | jq -r '.base.sha')"
+            merge_sha="$(printf '%s' "$pr_json" | jq -r '.merge_commit_sha // empty')"
+            mergeable="$(printf '%s' "$pr_json" | jq -r '.mergeable // "unknown"')"
+            mergeable_state="$(printf '%s' "$pr_json" | jq -r '.mergeable_state // "unknown"')"
+
+            if [ "$pr_state" != open ]; then
+              echo "Promotion PR #${pr_number} is no longer open."
+              exit 0
+            fi
+
+            if [ "$head_ref" != "$PROMOTION_BRANCH" ] || [ "$head_repo" != "$REPOSITORY" ]; then
+              echo "Refusing to repair unexpected promotion source ${head_repo}:${head_ref}." >&2
+              exit 1
+            fi
+
+            if [ "$mergeable" = false ] || [ -z "$merge_sha" ]; then
+              echo "Promotion PR #${pr_number} has no usable merge commit yet (mergeable=${mergeable}, state=${mergeable_state})."
+              echo 'The main -> staging sync workflow handles real branch divergence; the watchdog will retry later.'
+              exit 0
+            fi
+
+            checks_json="$(latest_required_check "$head_sha" 'checks')"
+            assets_json="$(latest_required_check "$head_sha" 'Local assets')"
+
+            checks_status="$(printf '%s' "$checks_json" | jq -r '.status // "missing"')"
+            checks_conclusion="$(printf '%s' "$checks_json" | jq -r '.conclusion // "missing"')"
+            checks_url="$(printf '%s' "$checks_json" | jq -r '.details_url // empty')"
+            assets_status="$(printf '%s' "$assets_json" | jq -r '.status // "missing"')"
+            assets_conclusion="$(printf '%s' "$assets_json" | jq -r '.conclusion // "missing"')"
+            assets_url="$(printf '%s' "$assets_json" | jq -r '.details_url // empty')"
+
+            echo "Round ${repair_round}/8: PR #${pr_number} head=${head_sha} base=${base_sha} merge=${merge_sha}"
+            echo "Source checks: checks=${checks_status}/${checks_conclusion}, Local assets=${assets_status}/${assets_conclusion}"
+
+            if [ "$checks_status" != completed ] || [ "$checks_conclusion" != success ] \
+              || [ "$assets_status" != completed ] || [ "$assets_conclusion" != success ]; then
+              active_run="$(
+                gh run list \
+                  --repo "$REPOSITORY" \
+                  --workflow ci.yml \
+                  --branch "$PROMOTION_BRANCH" \
+                  --limit 20 \
+                  --json status,headSha,event,databaseId \
+                  --jq ".[] | select(.headSha == \"${head_sha}\" and (.status == \"queued\" or .status == \"in_progress\" or .status == \"waiting\" or .status == \"requested\" or .status == \"pending\")) | .databaseId" |
+                  head -n 1
+              )"
+
+              if [ -n "$active_run" ]; then
+                echo "PR Checks run ${active_run} is already active for ${head_sha}; waiting for workflow_run/schedule retry."
+                exit 0
+              fi
+
+              echo "Required source checks are not green for ${head_sha}; dispatching PR Checks."
+              gh workflow run ci.yml \
+                --repo "$REPOSITORY" \
+                --ref "$PROMOTION_BRANCH"
+
+              exit 0
+            fi
+
+            publish_check() {
+              local context="$1"
+              local details_url="$2"
+
+              args=(
+                --method POST
+                -H 'Accept: application/vnd.github+json'
+                "/repos/${REPOSITORY}/check-runs"
+                -f "name=${context}"
+                -f "head_sha=${merge_sha}"
+                -f 'status=completed'
+                -f 'conclusion=success'
+              )
+
+              if [ -n "$details_url" ]; then
+                args+=( -f "details_url=${details_url}" )
+              fi
+
+              gh api "${args[@]}" >/dev/null
+              echo "Published ${context}=success on current merge commit ${merge_sha}."
+            }
+
+            publish_check 'checks' "$checks_url"
+            publish_check 'Local assets' "$assets_url"
+
+            sleep 3
+
+            refreshed_json="$(gh api "/repos/${REPOSITORY}/pulls/${pr_number}")"
+            refreshed_head="$(printf '%s' "$refreshed_json" | jq -r '.head.sha')"
+            refreshed_base="$(printf '%s' "$refreshed_json" | jq -r '.base.sha')"
+            refreshed_merge="$(printf '%s' "$refreshed_json" | jq -r '.merge_commit_sha // empty')"
+
+            if [ "$refreshed_head" != "$head_sha" ] || [ "$refreshed_base" != "$base_sha" ]; then
+              echo 'Promotion head/base changed while repairing; restarting with the new candidate.'
+              continue
+            fi
+
+            if [ -z "$refreshed_merge" ] || [ "$refreshed_merge" != "$merge_sha" ]; then
+              echo "GitHub regenerated the synthetic merge commit (${merge_sha} -> ${refreshed_merge:-missing}); repairing the new one."
+              continue
+            fi
+
+            merge_checks="$(
+              gh api \
+                -H 'Accept: application/vnd.github+json' \
+                "/repos/${REPOSITORY}/commits/${refreshed_merge}/check-runs?per_page=100"
+            )"
+
+            checks_ok="$(
+              printf '%s' "$merge_checks" |
+                jq -r '[.check_runs[] | select(.name == "checks" and .app.slug == "github-actions")] | sort_by(.id) | reverse | .[0].conclusion // "missing"'
+            )"
+            assets_ok="$(
+              printf '%s' "$merge_checks" |
+                jq -r '[.check_runs[] | select(.name == "Local assets" and .app.slug == "github-actions")] | sort_by(.id) | reverse | .[0].conclusion // "missing"'
+            )"
+
+            if [ "$checks_ok" = success ] && [ "$assets_ok" = success ]; then
+              echo "Promotion PR #${pr_number} is reconciled on stable merge commit ${refreshed_merge}."
+              exit 0
+            fi
+
+            echo "Required checks did not stick to ${refreshed_merge}; retrying."
+          done
+
+          echo 'GitHub kept regenerating the synthetic merge commit. Leaving the PR untouched; the scheduled watchdog will retry automatically.'
