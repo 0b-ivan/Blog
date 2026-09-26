@@ -3,6 +3,11 @@ name: PR Checks
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number whose synthetic merge commit should receive required check results
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -467,3 +472,79 @@ jobs:
 
       - name: Check local image and media references
         run: node scripts/check-local-assets.js
+
+  mirror-required-pr-checks:
+    name: Mirror required PR checks
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.pr_number != '' }}
+    needs:
+      - checks
+      - local-assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Mirror required checks to PR merge commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          LOCAL_ASSETS_RESULT: ${{ needs.local-assets.result }}
+          DISPATCH_SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          pr_json="$(gh api "/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          pr_state="$(printf '%s' "$pr_json" | jq -r '.state')"
+          pr_base="$(printf '%s' "$pr_json" | jq -r '.base.ref')"
+          pr_head_sha="$(printf '%s' "$pr_json" | jq -r '.head.sha')"
+          merge_sha="$(printf '%s' "$pr_json" | jq -r '.merge_commit_sha // empty')"
+
+          test "$pr_state" = open
+          test "$pr_base" = main
+
+          if [ "$pr_head_sha" != "$DISPATCH_SHA" ]; then
+            echo "Refusing to mirror stale results: dispatched SHA ${DISPATCH_SHA} != PR head ${pr_head_sha}." >&2
+            exit 1
+          fi
+
+          if [ -z "$merge_sha" ]; then
+            echo 'GitHub has not produced a synthetic merge commit for the PR.' >&2
+            exit 1
+          fi
+
+          publish_check() {
+            local name="$1"
+            local result="$2"
+            local conclusion=failure
+
+            if [ "$result" = success ]; then
+              conclusion=success
+            fi
+
+            gh api \
+              --method POST \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${GITHUB_REPOSITORY}/check-runs" \
+              -f name="$name" \
+              -f head_sha="$merge_sha" \
+              -f status=completed \
+              -f conclusion="$conclusion" \
+              -f details_url="$RUN_URL" >/dev/null
+
+            echo "Mirrored ${name}=${conclusion} to ${merge_sha}."
+          }
+
+          publish_check checks "$CHECKS_RESULT"
+          publish_check 'Local assets' "$LOCAL_ASSETS_RESULT"
+
+          if [ "$CHECKS_RESULT" != success ] || [ "$LOCAL_ASSETS_RESULT" != success ]; then
+            echo 'One or more required checks failed; mirrored failure to the PR merge commit.' >&2
+            exit 1
+          fi
+
