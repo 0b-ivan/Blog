@@ -21,6 +21,11 @@ function parseArgs(args) {
       continue;
     }
 
+    if (arg === '--all') {
+      limit = null;
+      continue;
+    }
+
     if (arg === '--include-covered') {
       includeCovered = true;
       continue;
@@ -64,7 +69,7 @@ function isPublishedWithoutCover(raw) {
 
 async function listMissingCoverPosts(options = {}) {
   const postsDir = options.postsDir || path.join(root, 'posts');
-  const limit = options.limit ?? DEFAULT_LIMIT;
+  const limit = options.limit === null ? null : (options.limit ?? DEFAULT_LIMIT);
   const includeCovered = options.includeCovered === true;
   const entries = await fs.readdir(postsDir, { withFileTypes: true });
   const markdownFiles = entries
@@ -79,7 +84,7 @@ async function listMissingCoverPosts(options = {}) {
     if (includeCovered ? !isPublishedPost(raw) : !isPublishedWithoutCover(raw)) continue;
 
     missing.push(`posts/${filename}`);
-    if (missing.length >= limit) break;
+    if (limit !== null && missing.length >= limit) break;
   }
 
   return missing;

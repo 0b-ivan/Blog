@@ -18,6 +18,8 @@ on:
       - 'Dockerfile.search'
       - 'Dockerfile.status'
       - 'Dockerfile.chaos'
+      - 'Dockerfile.pdf'
+      - 'templates/**'
       - 'status-monitor/**'
       - 'chaos-monkey/**'
       - 'package.json'
@@ -37,6 +39,7 @@ permissions:
   contents: write
   pull-requests: write
   packages: write
+  statuses: write
 
 concurrency:
   group: staging-deploy
@@ -48,13 +51,15 @@ env:
   SEARCH_IMAGE_NAME: kernel-notes-search
   STATUS_IMAGE_NAME: kernel-notes-status
   CHAOS_IMAGE_NAME: kernel-notes-chaos
+  PDF_IMAGE_NAME: kernel-notes-pdf
   PROMOTION_BRANCH: promotion/staging-verified
   COVER_BACKFILL_LIMIT: "20"
+  RAG_MODEL_CACHE: ${{ github.workspace }}/.cache/kernel-grep-models
 
 jobs:
   deploy-staging:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout staging
@@ -85,7 +90,7 @@ jobs:
           echo 'Refusing staging deployment: commit is not associated with a merged PR into staging.'
           exit 1
 
-      - name: Detect changed and existing published posts without covers
+      - name: Detect changed posts needing Pixabay cover resolution
         if: github.event_name == 'push'
         id: cover_candidates
         shell: bash
@@ -110,11 +115,20 @@ jobs:
               case "$cover_value" in
                 ""|'""'|"''"|null|~)
                   echo "$post" >> /tmp/pixabay-cover-posts.txt
-                  ;;
-                *)
-                  echo "Keeping existing cover for $post"
+                  continue
                   ;;
               esac
+
+              previous_post="$(git show "${{ github.event.before }}:$post" 2>/dev/null || true)"
+              current_cover_brief="$(sed -n -E '/^[[:space:]]*(cover_query|cover_subject|cover_avoid|cover_intent):/p' "$post")"
+              previous_cover_brief="$(printf '%s\n' "$previous_post" | sed -n -E '/^[[:space:]]*(cover_query|cover_subject|cover_avoid|cover_intent):/p')"
+
+              if [ -n "$previous_post" ] && [ "$current_cover_brief" != "$previous_cover_brief" ]; then
+                echo "Cover brief changed for $post; refreshing Pixabay cover"
+                echo "$post" >> /tmp/pixabay-cover-posts.txt
+              else
+                echo "Keeping existing cover for $post"
+              fi
             done
 
           node scripts/list-missing-cover-posts.js --limit "$COVER_BACKFILL_LIMIT" > /tmp/pixabay-cover-backfill.txt
@@ -128,7 +142,7 @@ jobs:
             cat /tmp/pixabay-cover-posts.txt
           else
             echo "needed=false" >> "$GITHUB_OUTPUT"
-            echo 'No changed or existing published post needs a generated cover.'
+            echo 'No changed or existing published post needs generated or refreshed cover resolution.'
           fi
 
       - name: Setup Node.js for cover generation
@@ -142,6 +156,19 @@ jobs:
       - name: Install cover generation dependencies
         if: steps.cover_candidates.outputs.needed == 'true'
         run: npm ci
+
+      - name: Install semantic cover ranking dependencies
+        if: steps.cover_candidates.outputs.needed == 'true'
+        run: npm install --prefix rag --package-lock=false --no-audit --no-fund --onnxruntime-node-install=skip
+
+      - name: Cache semantic cover ranking model
+        if: steps.cover_candidates.outputs.needed == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/kernel-grep-models
+          key: cover-e5-${{ runner.os }}-${{ hashFiles('rag/package.json') }}
+          restore-keys: |
+            cover-e5-${{ runner.os }}-
 
       - name: Build Pixabay cache key
         if: steps.cover_candidates.outputs.needed == 'true'
@@ -171,15 +198,41 @@ jobs:
           }
 
           mkdir -p /tmp/cover-reports
+
           while IFS= read -r post; do
-            echo "Resolving local cover for $post"
+            [ -n "$post" ] || continue
+            echo "Collecting cover candidates for $post"
             slug="$(basename "$post" .md)"
-            npm run covers:resolve -- "$post" --select 1 --report "/tmp/cover-reports/${slug}.json"
+            npm run covers:resolve -- "$post" --preview --report "/tmp/cover-reports/${slug}.json"
           done < /tmp/pixabay-cover-posts.txt
+
+          node scripts/rerank-cover-candidates-e5.js \
+            --reports-dir /tmp/cover-reports \
+            --posts-dir posts \
+            --cache-dir "$RAG_MODEL_CACHE"
+
+          node scripts/select-diverse-cover-candidates.js \
+            --reports-dir /tmp/cover-reports \
+            --output /tmp/cover-selection.json \
+            --selection-list /tmp/cover-selection.list
+
+          selected_count="$(wc -l < /tmp/cover-selection.list | tr -d ' ')"
+          requested_count="$(wc -l < /tmp/pixabay-cover-posts.txt | tr -d ' ')"
+          if [ "$selected_count" -ne "$requested_count" ]; then
+            echo "Refusing automatic cover fallback: selected ${selected_count}/${requested_count} posts after semantic guardrails." >&2
+            cat /tmp/cover-selection.json >&2
+            exit 1
+          fi
+
+          while IFS='|' read -r post image_id semantic_score; do
+            [ -n "$post" ] || continue
+            echo "Applying semantic cover $image_id for $post (score $semantic_score)"
+            npm run covers:resolve -- "$post" --select-id "$image_id" --score "$semantic_score"
+          done < /tmp/cover-selection.list
 
           git diff --check
           npm run posts:validate-meta
-          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
+          npx vitest run tests/cover-backfill.test.js tests/pixabay-cover.test.js tests/cover-diversity.test.js tests/cover-semantic-rerank.test.js tests/cover-review.test.js tests/ebook-export.test.js tests/server.test.js
 
       - name: Finalize staging source
         id: source
@@ -290,6 +343,7 @@ jobs:
           echo "search_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.SEARCH_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
           echo "status_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.STATUS_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
           echo "chaos_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.CHAOS_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
+          echo "pdf_image=${{ env.REGISTRY }}/${OWNER_LOWER}/${{ env.PDF_IMAGE_NAME }}:${{ steps.source.outputs.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
         if: steps.deploy_mode.outputs.build_images == 'true'
@@ -357,6 +411,19 @@ jobs:
           cache-from: type=gha,scope=staging-chaos
           cache-to: type=gha,mode=max,scope=staging-chaos
 
+      - name: Build and push staging LaTeX PDF image
+        if: steps.deploy_mode.outputs.build_images == 'true'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: ./Dockerfile.pdf
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.pdf_image }}
+            ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.PDF_IMAGE_NAME }}:staging
+          cache-from: type=gha,scope=staging-pdf
+          cache-to: type=gha,mode=max,scope=staging-pdf
+
       - name: Pin staging GitOps state to built images
         if: steps.deploy_mode.outputs.build_images == 'true'
         env:
@@ -374,7 +441,7 @@ jobs:
           sha = os.environ['DEPLOY_SHA']
           owner = os.environ['OWNER_LOWER']
 
-          for image in ('kernel-notes-blog', 'kernel-notes-search', 'kernel-notes-status', 'kernel-notes-chaos'):
+          for image in ('kernel-notes-blog', 'kernel-notes-search', 'kernel-notes-status', 'kernel-notes-chaos', 'kernel-notes-pdf'):
               pattern = (
                   rf'(  - name: ghcr\.io/{re.escape(owner)}/{image}\n'
                   rf'    newTag: )[A-Za-z0-9._-]+'
@@ -463,6 +530,83 @@ jobs:
 
           echo "Timed out waiting for ${EXPECTED_VERSION} to be published on staging." >&2
           exit 1
+
+      - name: Verify public LaTeX PDF export
+        if: steps.deploy_mode.outputs.build_images == 'true'
+        env:
+          STAGING_URL: https://staging-blog.obivan.org
+          PDF_SMOKE_SLUG: 2026-09-20-chaos-engineering-chaos-monkey-kubernetes
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=/tmp/staging-chaos-engineering.pdf
+
+          echo 'Starting PDF preparation through the public API without holding a long Cloudflare request.'
+          accepted=false
+          for attempt in $(seq 1 24); do
+            response="$(curl -fsS --max-time 10 -X POST \
+              "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/prepare?deploy=${GITHUB_SHA}" 2>/dev/null || true)"
+            ready="$(printf '%s' "$response" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("ready", False)).lower())' 2>/dev/null || true)"
+            preparing="$(printf '%s' "$response" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("preparing", False)).lower())' 2>/dev/null || true)"
+
+            if [ "$ready" = true ] || [ "$preparing" = true ]; then
+              accepted=true
+              echo "PDF preparation accepted on attempt ${attempt}."
+              break
+            fi
+
+            echo "PDF service not ready for preparation yet (attempt ${attempt}/24)."
+            sleep 5
+          done
+
+          test "$accepted" = true
+
+          echo 'Waiting for the cached PDF to become ready.'
+          pdf_ready=false
+          for attempt in $(seq 1 30); do
+            state_file="$(mktemp)"
+            status_code="$(curl -sS --max-time 10 \
+              -o "$state_file" \
+              -w '%{http_code}' \
+              "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/status?deploy=${GITHUB_SHA}" || true)"
+            state="$(cat "$state_file")"
+            rm -f "$state_file"
+
+            ready="$(printf '%s' "$state" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("ready", False)).lower())' 2>/dev/null || true)"
+            preparing="$(printf '%s' "$state" | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("preparing", False)).lower())' 2>/dev/null || true)"
+
+            if [ "$status_code" = 200 ] && [ "$ready" = true ]; then
+              pdf_ready=true
+              echo "PDF cache is ready after ${attempt} status check(s)."
+              break
+            fi
+
+            blog_health="$(curl -fsS --max-time 5 "${STAGING_URL}/healthz?pdf-status=${GITHUB_SHA}" 2>/dev/null || true)"
+            echo "PDF state: http=${status_code:-000}, ready=${ready:-unknown}, preparing=${preparing:-unknown}, blog_health=${blog_health:-unavailable} (attempt ${attempt}/30)"
+
+            if [ "$status_code" = 200 ] && [ "$preparing" = false ]; then
+              echo 'PDF renderer is reachable but no render is active; requesting preparation again.'
+              curl -fsS --max-time 10 -X POST \
+                "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/prepare?retry=${attempt}&deploy=${GITHUB_SHA}" \
+                >/dev/null || true
+            fi
+
+            sleep 5
+          done
+
+          if [ "$pdf_ready" != true ]; then
+            echo 'PDF cache did not become ready; final public diagnostics:' >&2
+            curl -sS --max-time 10 -i "${STAGING_URL}/api/pdf/${PDF_SMOKE_SLUG}/status?diagnostic=${GITHUB_SHA}" >&2 || true
+            curl -sS --max-time 10 -i "${STAGING_URL}/healthz?diagnostic=${GITHUB_SHA}" >&2 || true
+            exit 1
+          fi
+
+          curl -fsS --max-time 20 \
+            "${STAGING_URL}/download/${PDF_SMOKE_SLUG}.pdf?deploy=${GITHUB_SHA}" \
+            -o "$output"
+          test "$(head -c 5 "$output")" = '%PDF-'
+          test "$(wc -c < "$output")" -gt 10000
+          echo 'Public staging LaTeX PDF export is healthy and served from the prepared cache.'
 
       - name: Check public staging after GitOps-only change
         if: steps.deploy_mode.outputs.gitops_only == 'true'
@@ -565,7 +709,7 @@ jobs:
             --title 'promote: verified staging to production' \
             --body "$body"
 
-      - name: Trigger required checks for production promotion
+      - name: Run and bridge required checks for production promotion
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -598,11 +742,96 @@ jobs:
             exit 0
           fi
 
+          # GitHub does not count check runs from workflow_dispatch toward
+          # required PR status checks. Publish commit statuses with the same
+          # required contexts after the dispatched CI run finishes.
+          for context in 'checks' 'Local assets'; do
+            gh api \
+              --method POST \
+              "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+              -f state='pending' \
+              -f context="$context" \
+              -f description='Promotion validation is running.' >/dev/null
+          done
+
+          previous_run_id="$(
+            gh run list \
+              --repo "$REPOSITORY" \
+              --workflow ci.yml \
+              --branch "$PROMOTION_BRANCH" \
+              --event workflow_dispatch \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId // empty'
+          )"
+
           gh workflow run ci.yml \
             --repo "$REPOSITORY" \
             --ref "$PROMOTION_BRANCH"
 
-          echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
+          run_id=''
+          for attempt in $(seq 1 30); do
+            candidate="$(
+              gh run list \
+                --repo "$REPOSITORY" \
+                --workflow ci.yml \
+                --branch "$PROMOTION_BRANCH" \
+                --event workflow_dispatch \
+                --limit 10 \
+                --json databaseId,headSha \
+                --jq ".[] | select(.headSha == \"${promotion_sha}\") | .databaseId" |
+                head -n 1
+            )"
+
+            if [ -n "$candidate" ] && [ "$candidate" != "$previous_run_id" ]; then
+              run_id="$candidate"
+              break
+            fi
+
+            echo "Waiting for dispatched PR Checks run (attempt ${attempt}/30)."
+            sleep 2
+          done
+
+          if [ -z "$run_id" ]; then
+            echo 'Could not identify the dispatched PR Checks run.' >&2
+            for context in 'checks' 'Local assets'; do
+              gh api \
+                --method POST \
+                "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+                -f state='failure' \
+                -f context="$context" \
+                -f description='Promotion validation run could not be identified.' >/dev/null
+            done
+            exit 1
+          fi
+
+          run_url="https://github.com/${REPOSITORY}/actions/runs/${run_id}"
+          echo "Watching PR Checks run ${run_id} for promotion PR #${promotion_pr}."
+
+          if ! gh run watch "$run_id" --repo "$REPOSITORY" --exit-status; then
+            for context in 'checks' 'Local assets'; do
+              gh api \
+                --method POST \
+                "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+                -f state='failure' \
+                -f context="$context" \
+                -f description='Promotion validation failed.' \
+                -f target_url="$run_url" >/dev/null
+            done
+            exit 1
+          fi
+
+          for context in 'checks' 'Local assets'; do
+            gh api \
+              --method POST \
+              "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+              -f state='success' \
+              -f context="$context" \
+              -f description='Promotion validation passed.' \
+              -f target_url="$run_url" >/dev/null
+          done
+
+          echo "Promotion PR #${promotion_pr} is validated at ${promotion_sha}; required statuses were bridged from run ${run_id}."
 
       - name: Deployment handoff
         env:

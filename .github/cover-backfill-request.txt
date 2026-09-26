@@ -2,8 +2,8 @@ Smart Pixabay cover review request
 
 scope=all
 batch_size=20
-ranking=d1e31bf1c86acb42ef6c14b6fc620d0337844ab5
-attempt=5
+ranking=75896a4cbee1b35f94181dd7756836e2ca5f9a04
+attempt=18
 
 Changing this file on staging triggers the Backfill Article Covers workflow.
 The push trigger is intentionally fixed to scope=all and batch_size=20.

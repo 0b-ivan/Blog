@@ -18,8 +18,15 @@
       return true;
     }
 
-    return [source.id, source.title, source.publisher, source.url]
-      .some((value) => normalized(value).includes(query));
+    return [
+      source.id,
+      source.title,
+      source.publisher,
+      source.url,
+      source.author,
+      source.credit,
+      source.license
+    ].some((value) => normalized(value).includes(query));
   }
 
   function createSourceCard(source) {
@@ -41,8 +48,11 @@
 
     const details = document.createElement('p');
     details.className = 'source-details';
-    details.textContent = source.accessed_at
-      ? `Abgerufen am ${source.accessed_at}`
+    const detailParts = [];
+    if (source.author || source.credit) detailParts.push(`Urheber: ${source.author || source.credit}`);
+    if (source.accessed_at) detailParts.push(`Abgerufen am ${source.accessed_at}`);
+    details.textContent = detailParts.length
+      ? detailParts.join(' · ')
       : 'Abrufdatum nicht hinterlegt';
 
     const url = document.createElement('p');
@@ -50,6 +60,23 @@
     url.textContent = source.url;
 
     article.append(meta, title, details, url);
+
+    if (source.license) {
+      const license = document.createElement('p');
+      license.className = 'source-details';
+      license.append('Lizenz: ');
+      if (source.license_url) {
+        const licenseLink = document.createElement('a');
+        licenseLink.href = source.license_url;
+        licenseLink.target = '_blank';
+        licenseLink.rel = 'noopener noreferrer';
+        licenseLink.textContent = source.license;
+        license.append(licenseLink);
+      } else {
+        license.append(source.license);
+      }
+      article.append(license);
+    }
     return article;
   }
 
@@ -69,7 +96,7 @@
     }
   }
 
-  fetch('/posts/_sources.json', { headers: { Accept: 'application/json' } })
+  fetch('/api/sources', { headers: { Accept: 'application/json' } })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

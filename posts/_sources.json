@@ -274,5 +274,201 @@
     "publisher": "Chaos Mesh",
     "url": "https://chaos-mesh.org/docs/",
     "accessed_at": "2026-09-20"
+  },
+  "pacman-official-history-1980": {
+    "title": "PAC-MAN History: 1980",
+    "publisher": "PAC-MAN Official Site / Bandai Namco Entertainment",
+    "url": "https://www.pacman.com/en/history/popup/y1980.php",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-bandai-creation-interview": {
+    "title": "Untold Stories of the Creation of PAC-MAN - Part 1",
+    "publisher": "Bandai Namco Entertainment / Funfare",
+    "url": "https://funfare.bandainamcoent.co.jp/8681/",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-iwatani-openers-40th": {
+    "title": "Pac-Man Turns 40: An Interview with Creator Toru Iwatani",
+    "publisher": "OPENERS",
+    "url": "https://openers.jp/en/design/design_features/4CoXi",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-smithsonian-history": {
+    "title": "Why Players Around the World Gobbled Up Pac-Man",
+    "publisher": "Smithsonian Magazine",
+    "url": "https://www.smithsonianmag.com/innovation/why-players-around-world-gobbled-up-pac-man-180974902/",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-strong-museum": {
+    "title": "Pac-Man",
+    "publisher": "The Strong National Museum of Play",
+    "url": "https://www.museumofplay.org/games/pac-man/",
+    "accessed_at": "2026-09-24"
+  },
+  "pacman-commons-iwatani-gdc": {
+    "title": "Toru Iwatani, creator of Pac-Man, at GDC 2011.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Toru_Iwatani,_creator_of_Pac-Man,_at_GDC_2011.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Official GDC",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "pacman-commons-puckman-handheld": {
+    "title": "TOMY LSI PACMAN handheld electronic game.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:TOMY_LSI_PACMAN_handheld_electronic_game.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "うぃき野郎",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "pacman-commons-atari-cartridge": {
+    "title": "Pac-man computer game for Atari 8-bit computers 1982.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Pac-man_computer_game_for_Atari_8-bit_computers_1982.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Hedning",
+    "license": "CC BY-SA 3.0"
+  },
+  "pacman-commons-arcade-machine": {
+    "title": "Pac-Man arcade machine, De Notaris Schaijk.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Pac-Man_arcade_machine,_De_Notaris_Schaijk.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "YosemiteYamper",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "doom-doomwiki": {
+    "title": "Doom",
+    "publisher": "DoomWiki",
+    "url": "https://doomwiki.org/wiki/Doom",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-doomwiki-shareware": {
+    "title": "Shareware",
+    "publisher": "DoomWiki",
+    "url": "https://doomwiki.org/wiki/Shareware",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-romero-interview": {
+    "title": "John Romero — The Path to Doom and the Birth of the First-Person Shooter",
+    "publisher": "The Tim Ferriss Show",
+    "url": "https://tim.blog/2023/07/15/john-romero-transcript/",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-sanglard-ega": {
+    "title": "How id Software's Commander Keen used EGA",
+    "publisher": "Fabien Sanglard",
+    "url": "https://fabiensanglard.net/ega/",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-id-source": {
+    "title": "DOOM source code",
+    "publisher": "id Software / GitHub",
+    "url": "https://github.com/id-Software/DOOM",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-ikea-golem": {
+    "title": "Doom läuft auf einer Ikea-Lampe",
+    "publisher": "Golem.de",
+    "url": "https://www.golem.de/news/tradfri-doom-laeuft-auf-einer-ikea-lampe-2106-157279.html",
+    "accessed_at": "2026-09-24"
+  },
+  "doom-commons-logo": {
+    "title": "Doom logo.png",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Doom_logo.png",
+    "accessed_at": "2026-09-24",
+    "author": "Id Software",
+    "license": "Public domain"
+  },
+  "doom-commons-carmack": {
+    "title": "John Carmack 2025.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:John_Carmack_2025.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "RoboSabs",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en"
+  },
+  "doom-commons-romero": {
+    "title": "John Romero - GDC 2022.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:John_Romero_-_GDC_2022.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Official GDC",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0"
+  },
+  "doom-commons-american-mcgee-id-1995": {
+    "title": "American McGee at id Software, 6 October 1995 (by Ian Mapleson, administrator of the Doom Help Service).jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:American_McGee_at_id_Software,_6_October_1995_(by_Ian_Mapleson,_administrator_of_the_Doom_Help_Service).jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Ian Mapleson",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "doom-commons-freedoom-view": {
+    "title": "In-game-view-doom.png",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:In-game-view-doom.png",
+    "accessed_at": "2026-09-24",
+    "author": "Freedoom community, Fredrik , user:Milasudril",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  "doom-commons-spider-mastermind": {
+    "title": "Spider Mastermind model crop.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:Spider_Mastermind_model_crop.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "User Fredrik on en.wikipedia",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  "doom-commons-shareware-disks": {
+    "title": "VIGAMUS Doom Shareware Demo Disks.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:VIGAMUS_Doom_Shareware_Demo_Disks.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Barbiere1138",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "pokemon-oop-devjava-oop": {
+    "title": "Objects, Classes, Interfaces, Packages, and Inheritance",
+    "publisher": "Dev.java",
+    "url": "https://dev.java/learn/language/oop/classes/",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-baeldung-composition": {
+    "title": "Inheritance and Composition (Is-a vs Has-a relationship) in Java",
+    "publisher": "Baeldung",
+    "url": "https://www.baeldung.com/java-inheritance-composition",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-okhravi-video": {
+    "title": "Rebuilding Pokémon with Object Oriented Programming",
+    "publisher": "Christopher Okhravi / YouTube",
+    "url": "https://www.youtube.com/watch?v=CyRtTwKeulE",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-pyconau-teaching": {
+    "title": "Catching them all: teaching fundamental OOP concepts with Pokemon",
+    "publisher": "PyCon AU 2025",
+    "url": "https://2025.pycon.org.au/program/XXXRFG/",
+    "accessed_at": "2026-09-24"
+  },
+  "pokemon-oop-commons-rby-back": {
+    "title": "PokemonRedBlueYellowBack.jpg",
+    "publisher": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg",
+    "accessed_at": "2026-09-24",
+    "author": "Kigsz",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
   }
 }

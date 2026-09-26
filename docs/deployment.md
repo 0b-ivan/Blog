@@ -88,6 +88,9 @@ Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verif
 
 Der Merge dieses Promotion-PRs bleibt manuell.
 
+Die für `main` verpflichtenden Statuskontexte `checks` und `Local assets` werden beim Promotion-Pfad besonders behandelt. GitHub wertet Check-Runs aus einem per `workflow_dispatch` gestarteten Workflow nicht als erforderliche PR-Statuschecks. Der Staging-Workflow startet deshalb weiterhin den vollständigen PR-Checks-Workflow auf dem verifizierten Promotion-SHA, wartet auf dessen Ergebnis und spiegelt das Resultat anschließend als Commit-Status auf genau diesem SHA. Nur ein vollständig erfolgreicher Lauf setzt beide erforderlichen Kontexte auf `success`; bei einem Fehler bleiben sie blockierend.
+
+
 ## Production
 
 Ein Merge nach `main` bedient zwei getrennte Production-Pfade.

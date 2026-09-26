@@ -33,25 +33,21 @@ search_queries:
   - query: Wie halte ich Hetzner parallel zu K3s als Rollback Standby aktuell?
     maxRank: 1
 cover_provider: pixabay
-cover_provider_id: '2891812'
+cover_provider_id: '2001090'
 cover_image: /assets/covers/2026-09-19-k3s-proxmox-production-part-4.jpg
 cover_alt: >-
-  server, technology, web, data, internet, network, computer, digital,
-  communication, business, hardware, information, connection, database, cloud,
-  system, computing, storage, security, center, equipment, infrastructure,
-  global, design, hosting, tech, icon, service, rack, line, datacenter, connect,
-  room, 3d, gray business, gray computer, gray technology, gray laptop, gray
-  data, gray clouds, gray network, gray community, gray room, gray internet,
-  gray digital, gray communication, gray tech, gray security, gray company, gray
-  information, gray web, gray global, gray server, gray service, server, server,
-  database, hosting, hosting, hosting, hosting, hosting
+  cloud computing, network, internet, cloud computing concept, communication,
+  networking, virtual, cloud technology, black computer, black technology, black
+  laptop, black clouds, black network, black community, black internet, black
+  communication, cloud computing, cloud computing, cloud computing, cloud
+  computing, cloud computing
 cover_focus: center
-cover_credit: by QuinceCreative via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/server-technology-web-data-2891812/'
-cover_source_url: 'https://pixabay.com/photos/server-technology-web-data-2891812/'
+cover_credit: by wynpnt via Pixabay
+cover_credit_url: 'https://pixabay.com/illustrations/cloud-computing-network-internet-2001090/'
+cover_source_url: 'https://pixabay.com/illustrations/cloud-computing-network-internet-2001090/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 98
+cover_score: 81
 ---
 
 Teil I hat den Blog auf K3s gebracht, Teil II daraus GitOps gemacht und Teil III feste Versionen sowie verschlüsselte Secrets ergänzt.

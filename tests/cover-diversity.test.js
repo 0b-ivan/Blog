@@ -1,6 +1,7 @@
 const {
   candidateAdjustment,
   chooseDiverseCovers,
+  containsTerm,
   motifCluster
 } = require('../scripts/select-diverse-cover-candidates');
 
@@ -9,6 +10,12 @@ function candidate(rank, id, score, tags, user = 'photographer') {
 }
 
 describe('series-aware cover diversity', () => {
+  it('matches motif terms as whole words instead of substrings', () => {
+    expect(containsTerm('feedback, development, software', 'feed')).toBe(false);
+    expect(motifCluster('feedback, development, software')).not.toBe('feed-news');
+    expect(motifCluster('rss, feed, reader')).toBe('feed-news');
+  });
+
   it('classifies common infrastructure motifs', () => {
     expect(motifCluster('server, rack, datacenter, infrastructure')).toBe('server-infra');
     expect(motifCluster('network, router, ethernet, cable')).toBe('network');
@@ -45,7 +52,7 @@ describe('series-aware cover diversity', () => {
     expect(ids.some((id) => id !== '10')).toBe(true);
   });
 
-  it('allows exact image reuse inside the same series', () => {
+  it('prefers distinct images inside the same series when a relevant alternative exists', () => {
     const reports = [
       {
         postPath: 'posts/part-1.md',
@@ -68,8 +75,8 @@ describe('series-aware cover diversity', () => {
     ];
 
     const selections = chooseDiverseCovers(reports);
-    expect(selections.map((selection) => selection.id)).toEqual(['42', '42']);
-    expect(selections[1].sameSeriesReuse).toBe(true);
+    expect(selections.map((selection) => selection.id)).toEqual(['42', '44']);
+    expect(selections[1].sameSeriesReuse).toBe(false);
   });
 
   it('penalizes repeated motifs outside a series even when image ids differ', () => {
@@ -100,6 +107,120 @@ describe('series-aware cover diversity', () => {
     expect(second.id).toBe('4');
     expect(second.motif).toBe('security');
     expect(second.diversityPenalty).toBe(0);
+  });
+
+  it('keeps diversity inside a topical relevance window', () => {
+    const reports = [
+      {
+        postPath: 'posts/first.md',
+        title: 'First article',
+        series: '',
+        candidates: [
+          { ...candidate(1, 50, 92, 'server, rack, datacenter'), semanticMismatch: false }
+        ]
+      },
+      {
+        postPath: 'posts/second.md',
+        title: 'Second article',
+        series: '',
+        candidates: [
+          { ...candidate(1, 50, 90, 'server, rack, datacenter'), semanticMismatch: false },
+          { ...candidate(2, 51, 58, 'security, firewall, padlock'), semanticMismatch: false },
+          { ...candidate(3, 52, 95, 'office, meeting, business'), semanticMismatch: true }
+        ]
+      }
+    ];
+
+    const selections = chooseDiverseCovers(reports);
+    const second = selections.find((selection) => selection.postPath === 'posts/second.md');
+
+    expect(second.id).toBe('50');
+    expect(second.forcedDuplicate).toBe(true);
+    expect(second.relevanceFloor).toBe(72);
+  });
+
+  it('preserves resolver failures in the selection report', () => {
+    const [selection] = chooseDiverseCovers([{
+      postPath: 'posts/rss.md',
+      title: 'RSS article',
+      series: '',
+      resolverError: 'Pixabay search failed with HTTP 429',
+      candidates: []
+    }]);
+
+    expect(selection.skipped).toBe(true);
+    expect(selection.skipReason).toBe('Pixabay search failed with HTTP 429');
+  });
+
+  it('skips an article when every candidate fails the hero hard gate', () => {
+    const reports = [{
+      postPath: 'posts/rss.md',
+      title: 'RSS article',
+      series: '',
+      candidates: [
+        { ...candidate(1, 1, 95, 'rss, logo, icon'), heroRejected: true, semanticMismatch: true },
+        { ...candidate(2, 2, 90, 'rss, symbol, button'), heroRejected: true, semanticMismatch: true }
+      ]
+    }];
+
+    const [selection] = chooseDiverseCovers(reports);
+    expect(selection.skipped).toBe(true);
+    expect(selection.skipReason).toContain('hero size/logo hard gates');
+    expect(selection.id).toBeUndefined();
+  });
+
+  it('skips an article instead of falling back to semantically wrong imagery', () => {
+    const reports = [{
+      postPath: 'posts/systemd.md',
+      title: 'systemd',
+      series: '',
+      candidates: [
+        { ...candidate(1, 1, 95, 'generic server room'), heroRejected: false, semanticMismatch: true }
+      ]
+    }];
+
+    const [selection] = chooseDiverseCovers(reports);
+    expect(selection.skipped).toBe(true);
+    expect(selection.skipReason).toContain('semantically acceptable');
+  });
+
+  it('can select a valid semantic candidate beyond the old top-5 window', () => {
+    const candidates = [
+      { ...candidate(1, 1, 99, 'wrong one'), semanticMismatch: true },
+      { ...candidate(2, 2, 98, 'wrong two'), semanticMismatch: true },
+      { ...candidate(3, 3, 97, 'wrong three'), semanticMismatch: true },
+      { ...candidate(4, 4, 96, 'wrong four'), semanticMismatch: true },
+      { ...candidate(5, 5, 95, 'wrong five'), semanticMismatch: true },
+      { ...candidate(6, 6, 90, 'monster, battle, rpg, game'), semanticMismatch: false }
+    ];
+
+    const [selection] = chooseDiverseCovers([{
+      postPath: 'posts/pokemon.md',
+      title: 'Pokémon OOP',
+      series: '',
+      candidates
+    }]);
+
+    expect(selection.skipped).not.toBe(true);
+    expect(selection.id).toBe('6');
+  });
+
+  it('does not choose a semantic mismatch merely to gain diversity', () => {
+    const reports = [
+      {
+        postPath: 'posts/article.md',
+        title: 'Writing pipeline',
+        series: '',
+        candidates: [
+          { ...candidate(1, 1, 82, 'writing, keyboard, document'), semanticMismatch: false },
+          { ...candidate(2, 2, 99, 'secretary, office, automation'), semanticMismatch: true }
+        ]
+      }
+    ];
+
+    const [selection] = chooseDiverseCovers(reports);
+    expect(selection.id).toBe('1');
+    expect(selection.semanticFallback).toBe(false);
   });
 
   it('records motif and photographer penalties deterministically', () => {

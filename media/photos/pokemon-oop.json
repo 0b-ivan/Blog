@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "post": "posts/2026-09-24-pokemon-ist-perfekt-fuer-oop.md",
+  "photos": [
+    {
+      "source_id": "pokemon-oop-commons-rby-back",
+      "provider": "wikimedia-commons",
+      "source": "https://commons.wikimedia.org/wiki/File:PokemonRedBlueYellowBack.jpg",
+      "output": "assets/posts/pokemon-oop/01-pokemon-cartridges.jpg",
+      "alt": "Rückseiten der europäischen Game-Boy-Cartridges Pokémon Rot, Blau und Gelb",
+      "expected_license": "CC BY-SA 3.0",
+      "width": 2400
+    }
+  ]
+}

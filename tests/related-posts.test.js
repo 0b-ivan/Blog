@@ -93,6 +93,38 @@ describe('related posts', () => {
     ]);
   });
 
+  it('does not treat generic question words as evidence of relatedness', () => {
+    const current = {
+      slug: 'pac-man-puck-man',
+      title: 'Warum Pac-Man zuerst Puck Man hieß – und was paku paku damit zu tun hat',
+      date: '2026-09-24',
+      category: 'Gaming',
+      tags: ['Pac-Man', 'Arcade', 'Retro-Gaming']
+    };
+
+    const posts = [
+      current,
+      {
+        slug: 'golden-images',
+        title: 'Gold glänzt nicht immer: Warum ich Golden Images trotzdem mag',
+        date: '2026-09-04',
+        category: 'AWS',
+        tags: ['AWS', 'EC2', 'AMI', 'DevOps']
+      },
+      {
+        slug: 'immich-webdav',
+        title: 'Warum ich Immich nicht synchronisiere: WebDAV, rclone und Provisionierung statt Dateikopien',
+        date: '2026-08-27',
+        category: 'Self-Hosting',
+        tags: ['Immich', 'Nextcloud', 'WebDAV']
+      }
+    ];
+
+    expect(relatedPostScore(current, posts[1])).toBe(0);
+    expect(relatedPostScore(current, posts[2])).toBe(0);
+    expect(findRelatedPosts(posts, current, 3)).toEqual([]);
+  });
+
   it('renders related posts below an article', () => {
     const html = renderPostPage(
       {
