@@ -1,6 +1,7 @@
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { setTimeout: delay } = require('node:timers/promises');
 const request = require('supertest');
 
 const {
@@ -262,6 +263,111 @@ Body
     expect(pdf.headers['content-type']).toMatch(/application\/pdf/);
     expect(pdf.headers['content-disposition']).toContain('download-me.pdf');
     expect(buildArticlePdf).toHaveBeenCalledOnce();
+  });
+
+  it('reuses a cached EPUB for repeated downloads of the same article', async () => {
+    await writePost(
+      tmpDir,
+      'cache-me.md',
+      '---\ntitle: Cache Me\ndate: 2026-09-26\ncategory: Docs\nversion: 3\nupdated_at: 2026-09-26T00:00:00.000Z\n---\nBody'
+    );
+
+    const buildArticleEpub = globalThis.vi.fn(async () => Buffer.from('cached-epub'));
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub,
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    const first = await request(app).get('/download/cache-me.epub');
+    const second = await request(app).get('/download/cache-me.epub');
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares one in-flight EPUB build across concurrent requests for the same article', async () => {
+    await writePost(
+      tmpDir,
+      'singleflight.md',
+      '---\ntitle: Singleflight\ndate: 2026-09-26\ncategory: Docs\n---\nBody'
+    );
+
+    let releaseBuild;
+    const buildGate = new Promise((resolve) => {
+      releaseBuild = resolve;
+    });
+    const buildArticleEpub = globalThis.vi.fn(async () => {
+      await buildGate;
+      return Buffer.from('singleflight-epub');
+    });
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub,
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    const firstRequest = request(app)
+      .get('/download/singleflight.epub')
+      .then((response) => response);
+    const secondRequest = request(app)
+      .get('/download/singleflight.epub')
+      .then((response) => response);
+
+    await delay(20);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(1);
+
+    releaseBuild();
+    const [first, second] = await Promise.all([firstRequest, secondRequest]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(1);
+  });
+
+  it('serializes uncached EPUB builds to cap renderer memory pressure', async () => {
+    await writePost(
+      tmpDir,
+      'first-book.md',
+      '---\ntitle: First Book\ndate: 2026-09-26\ncategory: Docs\n---\nBody'
+    );
+    await writePost(
+      tmpDir,
+      'second-book.md',
+      '---\ntitle: Second Book\ndate: 2026-09-26\ncategory: Docs\n---\nBody'
+    );
+
+    let activeBuilds = 0;
+    let maximumActiveBuilds = 0;
+    const buildArticleEpub = globalThis.vi.fn(async (post) => {
+      activeBuilds += 1;
+      maximumActiveBuilds = Math.max(maximumActiveBuilds, activeBuilds);
+      await delay(25);
+      activeBuilds -= 1;
+      return Buffer.from(`epub-${post.slug}`);
+    });
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub,
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    const [first, second] = await Promise.all([
+      request(app).get('/download/first-book.epub'),
+      request(app).get('/download/second-book.epub')
+    ]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(2);
+    expect(maximumActiveBuilds).toBe(1);
   });
 
   it('download route returns 404 for unknown articles and formats', async () => {
