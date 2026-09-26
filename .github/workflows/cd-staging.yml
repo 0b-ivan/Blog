@@ -606,38 +606,102 @@ jobs:
           echo 'Public staging did not become healthy after the GitOps-only change.' >&2
           exit 1
 
-      - name: Publish verified promotion candidate
+      - name: Prepare frozen production release candidate
         if: github.event_name == 'push'
+        id: promotion
         env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
           VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
         run: |
           set -euo pipefail
           test -n "$VERIFIED_SHA"
 
-          git fetch origin staging
+          existing="$(
+            gh pr list \
+              --repo "$REPOSITORY" \
+              --state open \
+              --base main \
+              --head "$PROMOTION_BRANCH" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [ -n "$existing" ]; then
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            echo "pr_number=$existing" >> "$GITHUB_OUTPUT"
+            echo "Open production release PR #$existing is frozen; leaving $PROMOTION_BRANCH unchanged."
+            exit 0
+          fi
+
+          git fetch origin main staging
           if ! git merge-base --is-ancestor "$VERIFIED_SHA" origin/staging; then
-            echo "Refusing to publish promotion candidate: ${VERIFIED_SHA} is not part of current staging history." >&2
+            echo "Refusing release candidate: $VERIFIED_SHA is not part of current staging history." >&2
             exit 1
           fi
 
+          releaseable=false
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            case "$file" in
+              infra/kubernetes/staging/*|infra/kubernetes/staging/**/*)
+                ;;
+              *)
+                releaseable=true
+                break
+                ;;
+            esac
+          done < <(git diff --name-only origin/main..."$VERIFIED_SHA")
+
+          if [ "$releaseable" != true ]; then
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            echo 'No releaseable delta outside staging-only GitOps state; no production release candidate created.'
+            exit 0
+          fi
+
+          BASE_VERSION="$(git show origin/main:VERSION | tr -d '[:space:]')"
+          if ! printf '%s' "$BASE_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid main VERSION: $BASE_VERSION" >&2
+            exit 1
+          fi
+
+          IFS='.' read -r major minor patch <<EOF
+$BASE_VERSION
+EOF
+          RELEASE_VERSION="$major.$minor.$((patch + 1))"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout --detach "$VERIFIED_SHA"
+          printf '%s\n' "$RELEASE_VERSION" > VERSION
+          git add VERSION
+          git commit -m "release: v$RELEASE_VERSION"
+
+          RELEASE_SHA="$(git rev-parse HEAD)"
           current_promotion_sha="$(
-            git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}" |
+            git ls-remote --heads origin "refs/heads/$PROMOTION_BRANCH" |
               awk 'NR == 1 { print $1 }'
           )"
 
           git push \
-            --force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}" \
-            origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"
+            --force-with-lease="refs/heads/$PROMOTION_BRANCH:$current_promotion_sha" \
+            origin "$RELEASE_SHA:refs/heads/$PROMOTION_BRANCH"
 
-          echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+          echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "verified_sha=$VERIFIED_SHA" >> "$GITHUB_OUTPUT"
+          echo "Frozen release candidate v$RELEASE_VERSION: $PROMOTION_BRANCH -> $RELEASE_SHA"
 
-      - name: Open or update production promotion PR
-        if: github.event_name == 'push'
+      - name: Open production release PR
+        if: github.event_name == 'push' && steps.promotion.outputs.created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           BUILD_VERSION: ${{ steps.meta.outputs.build_version }}
-          VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
+          VERIFIED_SHA: ${{ steps.promotion.outputs.verified_sha }}
+          RELEASE_SHA: ${{ steps.promotion.outputs.release_sha }}
+          RELEASE_VERSION: ${{ steps.promotion.outputs.release_version }}
         run: |
           set -euo pipefail
 
@@ -647,11 +711,12 @@ jobs:
             validation_summary="Staging control-plane/GitOps state \`${VERIFIED_SHA}\` passed the public availability gate at https://staging-blog.obivan.org without rebuilding application images."
           fi
 
-          body="$(printf '%s\n\n%s\n%s\n\n%s\n' \
+          body="$(printf '%s\n\n%s\n%s\n%s\n\n%s\n' \
             "$validation_summary" \
-            "Verified GitOps commit: \`${VERIFIED_SHA}\`" \
-            "Promotion branch: \`${PROMOTION_BRANCH}\`" \
-            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the applicable public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
+            "Production release: \`v${RELEASE_VERSION}\`" \
+            "Verified staging commit: \`${VERIFIED_SHA}\`" \
+            "Frozen release commit: \`${RELEASE_SHA}\`" \
+            'This release candidate is immutable while the PR is open. New staging commits do not move this PR or invalidate its required checks. Merge remains manual.')"
 
           if [ -d /tmp/cover-reports ] && find /tmp/cover-reports -maxdepth 1 -name '*.json' -print -quit | grep -q .; then
             cover_review_file="$(mktemp)"
@@ -662,47 +727,21 @@ jobs:
             body="$(printf '%s\n\n%s' "$body" "$(cat "$cover_review_file")")"
           fi
 
-          existing="$(gh pr list \
-            --repo "$REPOSITORY" \
-            --state open \
-            --base main \
-            --head "$PROMOTION_BRANCH" \
-            --json number \
-            --jq '.[0].number // empty')"
-
-          if [ -n "$existing" ]; then
-            gh api \
-              --method PATCH \
-              "/repos/${REPOSITORY}/pulls/${existing}" \
-              -f body="$body" >/dev/null
-            echo "Updated production promotion PR #${existing} to verified candidate ${VERIFIED_SHA}."
-            exit 0
-          fi
-
           gh pr create \
             --repo "$REPOSITORY" \
             --base main \
             --head "$PROMOTION_BRANCH" \
-            --title 'promote: verified staging to production' \
+            --title "release: v${RELEASE_VERSION}" \
             --body "$body"
 
-      - name: Trigger required checks for production promotion
-        if: github.event_name == 'push'
+      - name: Trigger required checks for frozen release
+        if: github.event_name == 'push' && steps.promotion.outputs.created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
+          RELEASE_SHA: ${{ steps.promotion.outputs.release_sha }}
         run: |
           set -euo pipefail
-
-          promotion_sha="$(
-            git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}" |
-              awk 'NR == 1 { print $1 }'
-          )"
-
-          if [ -z "$promotion_sha" ]; then
-            echo 'No promotion branch exists yet; nothing to validate.'
-            exit 0
-          fi
 
           promotion_pr="$(
             gh pr list \
@@ -715,8 +754,8 @@ jobs:
           )"
 
           if [ -z "$promotion_pr" ]; then
-            echo 'No open production promotion PR exists; nothing to validate.'
-            exit 0
+            echo 'Frozen production release PR was not found.' >&2
+            exit 1
           fi
 
           gh workflow run ci.yml \
@@ -724,7 +763,7 @@ jobs:
             --ref "$PROMOTION_BRANCH" \
             -f pr_number="$promotion_pr"
 
-          echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
+          echo "Triggered PR Checks for frozen release PR #$promotion_pr at $RELEASE_SHA."
 
       - name: Deployment handoff
         env:
