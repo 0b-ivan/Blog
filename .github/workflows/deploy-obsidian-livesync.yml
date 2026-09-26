@@ -125,6 +125,8 @@ jobs:
             printf 'COUCHDB_USER=%s\n' "$OBSIDIAN_COUCHDB_USER"
             printf 'COUCHDB_PASSWORD=%s\n' "$OBSIDIAN_COUCHDB_PASSWORD"
             printf 'COUCHDB_DATABASE=kernelnotes\n'
+            printf 'OBSIDIAN_VAULT_PATH=../../posts\n'
+            printf 'OBSIDIAN_ASSETS_PATH=../../assets/posts\n'
             if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
               printf 'CF_TUNNEL_TOKEN=%s\n' "$OBSIDIAN_CF_TUNNEL_TOKEN"
             else
@@ -186,6 +188,21 @@ jobs:
           if ! timeout 5 bash -c '</dev/tcp/127.0.0.1/5984'; then
             echo "CouchDB host loopback port 127.0.0.1:5984 is not reachable"
             exit 1
+          fi
+
+          headless_exists="$(docker inspect -f '{{.Name}}' kernel-notes-livesync-cli 2>/dev/null || true)"
+          if [ -n "$headless_exists" ]; then
+            docker compose --env-file .env --profile headless config >/dev/null
+            docker compose --env-file .env --profile headless up -d --force-recreate livesync-cli
+
+            if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)" != "true" ]; then
+              echo "Headless LiveSync client is not running after recreation"
+              docker compose --env-file .env --profile headless ps
+              docker compose --env-file .env --profile headless logs --tail=100 livesync-cli || true
+              exit 1
+            fi
+
+            docker compose --env-file .env --profile headless ps livesync-cli
           fi
 
           if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
