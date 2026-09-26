@@ -88,6 +88,9 @@ Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verif
 
 Der Merge dieses Promotion-PRs bleibt manuell.
 
+Die für `main` verpflichtenden Checks `checks` und `Local assets` werden beim Promotion-Pfad auf dem synthetischen Merge-Commit des Promotion-PRs gespiegelt. Der vollständige PR-Checks-Workflow läuft weiterhin auf dem verifizierten Promotion-SHA. Ein nachgelagerter Job liest den aktuellen `merge_commit_sha` des offenen Promotion-PRs und veröffentlicht dort Check-Runs mit denselben erforderlichen Namen. Damit erfüllt der strikte `main`-Ruleset die Checks auf genau dem Commit, den GitHub tatsächlich mergen würde. Bei einem fehlgeschlagenen Quell-Check wird auch der gespiegelte Check als fehlgeschlagen markiert.
+
+
 ## Production
 
 Ein Merge nach `main` bedient zwei getrennte Production-Pfade.

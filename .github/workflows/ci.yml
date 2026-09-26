@@ -473,6 +473,7 @@ jobs:
       - name: Check local image and media references
         run: node scripts/check-local-assets.js
 
+
   mirror-required-pr-checks:
     name: Mirror required PR checks
     if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.pr_number != '' }}
@@ -547,4 +548,3 @@ jobs:
             echo 'One or more required checks failed; mirrored failure to the PR merge commit.' >&2
             exit 1
           fi
-
