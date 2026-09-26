@@ -2,7 +2,7 @@ name: Promotion Watchdog
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '27 * * * *'
   workflow_dispatch:
   push:
     branches:
