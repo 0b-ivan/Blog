@@ -24,7 +24,9 @@ publish   -> posts/, normale Artikelliste
 archived  -> archive/, nur im oeffentlichen Archiv
 ```
 
-Auf Staging aendert sich dieser Zustand erst nach Merge des entsprechenden PR nach `staging`. Production folgt erst nach dem verifizierten Promotion-PR nach `main`.
+Für `publish` und `archived` bleibt Staging die Freigabegrenze: Der Zustand wird zuerst nach `staging` gemergt und erreicht Production erst über den verifizierten Promotion-PR nach `main`.
+
+`draft` ist absichtlich asymmetrisch: Ein Unpublish ist ein Fast-Track-Takedown und wird parallel als deletion-only PR nach `staging` **und** `main` vorbereitet. Sobald die normalen Required Checks grün sind, darf der spezielle Unpublish-Workflow diese beiden PRs automatisch mergen. Dadurch verschwindet ein zurückgezogener Artikel auch aus Production, ohne auf eine spätere Promotion zu warten.
 
 ## Voraussetzungen
 
@@ -127,16 +129,26 @@ Bei einem bereits oeffentlichen Artikel wird:
 status: draft
 ```
 
-als bewusster Unpublish-Wunsch behandelt. Der Publisher entfernt den Artikel im PR sowohl aus `posts/` als auch aus `archive/`:
+als bewusster **Fast-Track-Unpublish** behandelt. Der Publisher erzeugt zwei voneinander getrennte, deletion-only PRs, damit kein noch nicht freigegebener Staging-Inhalt nach Production getragen werden kann:
 
 ```text
 status: draft
-  -> obsidian/<artikel-slug>
-  -> posts/<artikel>.md und archive/<artikel>.md werden entfernt
-  -> PR "Unpublish: <Titel>"
-  -> Merge
-  -> Artikel nicht mehr oeffentlich
+  ├─ obsidian/<artikel-slug>              -> staging
+  │    └─ posts/<artikel>.md + archive/<artikel>.md entfernen
+  │
+  └─ obsidian-unpublish/main/<artikel>    -> main
+       └─ posts/<artikel>.md + archive/<artikel>.md entfernen
 ```
+
+Der Workflow `.github/workflows/auto-merge-unpublish.yml` prüft vor jedem automatischen Merge:
+
+- PR-Titel beginnt mit `Unpublish:`
+- Head-Branch gehört zum Repository und entspricht der erlaubten Route
+- Diff enthält ausschließlich Löschungen von höchstens zwei Markdown-Dateien unter `posts/` bzw. `archive/`
+- `checks` und `Local assets` sind erfolgreich
+- `Pinned actions` ist ebenfalls erfolgreich, sofern der Check vorhanden ist
+
+Der Workflow nutzt das bestehende `OBSIDIAN_PUBLISHER_GITHUB_TOKEN`, damit der resultierende Merge-Push die normalen Staging-/Production-Deployments auslöst. Vor dem Production-Unpublish wird ein noch offener `promotion/staging-verified -> main` PR geschlossen, damit kein älterer Promotion-Stand den gerade entfernten Artikel wieder veröffentlichen kann. Der Reconciler läuft nach PR-Checks und zusätzlich alle fünf Minuten, falls GitHub einen Merge kurzfristig noch blockiert.
 
 Die Markdown-Datei bleibt im Obsidian-Vault erhalten. Git verliert den Inhalt nicht, weil die bisherigen Versionen in der Git-Historie bleiben.
 
@@ -257,5 +269,6 @@ CouchDB bleibt dabei aktiv.
 - `status: draft` bedeutet nicht oeffentlich.
 - `status: publish` bedeutet normale Veroeffentlichung unter `posts/`.
 - `status: archived` bedeutet oeffentliche Archivierung unter `archive/`.
-- Statuswechsel werden nach dem PR-Merge zuerst auf Staging wirksam; Production folgt erst nach Promotion nach `main`.
+- `publish` und `archived` werden zuerst auf Staging wirksam; Production folgt erst nach Promotion nach `main`.
+- `draft`/Unpublish ist die Ausnahme: deletion-only PRs nach `staging` und `main` werden nach grünen Required Checks automatisch gemergt.
 - Ein erster bidirektionaler Mirror kann Dateien aus CouchDB nach `posts/` importieren. Deshalb den ersten Sync kontrollieren, bevor Artikel auf `status: publish` oder `status: archived` gesetzt werden.
