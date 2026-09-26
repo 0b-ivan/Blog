@@ -505,6 +505,9 @@ Body
     expect(html).toContain('Herunterladen');
     expect(html).toContain('/download/meta-test.epub');
     expect(html).toContain('/download/meta-test.pdf');
+    expect(html).toContain('data-pdf-download');
+    expect(html).toContain('data-pdf-slug="meta-test"');
+    expect(html).toContain('/assets/pdf-download.js?v=20260926-1');
     expect(html).toContain('data-article-share');
     expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');
