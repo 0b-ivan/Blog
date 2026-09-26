@@ -52,7 +52,7 @@ jobs:
           non_content=false
           while IFS= read -r file; do
             case "$file" in
-              posts/*.md|archive/*.md|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
+              posts/*.md|posts/_sources.json|archive/*.md|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
                 ;;
               *)
                 non_content=true
