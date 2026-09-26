@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" role="img" aria-labelledby="title desc">
+  <title id="title">Paku paku – Mund auf, Mund zu</title>
+  <desc id="desc">Vier stilisierte Phasen zeigen einen Mund, der sich beim Essen wiederholt öffnet und schließt. Daneben stehen die japanische Schreibweise パクパク und die Umschrift paku paku.</desc>
+  <style>
+    text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+    .eyebrow{font-size:24px;font-weight:700;letter-spacing:4px;fill:#64748b}
+    .title{font-size:54px;font-weight:800}
+    .jp{font-size:74px;font-weight:800}
+    .label{font-size:25px;font-weight:700}
+    .small{font-size:22px;fill:#64748b}
+    .panel{fill:#f8fafc;stroke:#cbd5e1;stroke-width:2}
+    .mouth{fill:#facc15;stroke:#ca8a04;stroke-width:4}
+    .food{fill:#0f766e}
+    .arrow{stroke:#64748b;stroke-width:4;fill:none;marker-end:url(#arrow)}
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L0,8 L11,4 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="720" rx="28" fill="#ffffff"/>
+  <text x="72" y="78" class="eyebrow">WORTURSPRUNG</text>
+  <text x="72" y="148" class="jp">パクパク</text>
+  <text x="72" y="205" class="title">paku paku</text>
+  <text x="72" y="252" class="small">wiederholt den Mund öffnen und schließen · besonders beim Essen</text>
+
+  <g transform="translate(72 320)">
+    <rect width="270" height="260" rx="24" class="panel"/>
+    <circle cx="115" cy="105" r="66" class="mouth"/>
+    <rect x="49" y="101" width="132" height="8" fill="#172033" rx="4"/>
+    <circle cx="213" cy="105" r="10" class="food"/>
+    <text x="135" y="214" text-anchor="middle" class="label">zu</text>
+  </g>
+
+  <path d="M365 450 H425" class="arrow"/>
+
+  <g transform="translate(448 320)">
+    <rect width="270" height="260" rx="24" class="panel"/>
+    <path d="M115 105 L177 58 A66 66 0 1 0 177 152 Z" class="mouth"/>
+    <circle cx="213" cy="105" r="10" class="food"/>
+    <text x="135" y="214" text-anchor="middle" class="label">auf</text>
+  </g>
+
+  <path d="M741 450 H801" class="arrow"/>
+
+  <g transform="translate(824 320)">
+    <rect width="270" height="260" rx="24" class="panel"/>
+    <circle cx="115" cy="105" r="66" class="mouth"/>
+    <rect x="49" y="101" width="132" height="8" fill="#172033" rx="4"/>
+    <circle cx="213" cy="105" r="10" class="food"/>
+    <text x="135" y="214" text-anchor="middle" class="label">zu</text>
+  </g>
+
+  <path d="M1117 450 H1177" class="arrow"/>
+
+  <g transform="translate(1200 320)">
+    <rect width="128" height="260" rx="24" class="panel"/>
+    <path d="M64 105 L116 66 A64 64 0 1 0 116 144 Z" class="mouth"/>
+    <text x="64" y="214" text-anchor="middle" class="label">auf</text>
+  </g>
+
+  <text x="72" y="655" class="small">Die Lautmalerei beschreibt genau die Bewegung, die die Spielfigur permanent macht.</text>
+</svg>

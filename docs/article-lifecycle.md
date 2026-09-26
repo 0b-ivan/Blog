@@ -40,6 +40,8 @@ Die sichtbare Artikelversion wird automatisch aus der Git-Historie erzeugt. Eine
 - ein im Artikel referenziertes Snippet unter `snippets/`
 - ein im Artikel referenziertes Bild unter `assets/posts/`
 
+Die Ablage-, Quellen- und Qualitätsregeln für diese Bilder stehen in [`docs/article-images.md`](article-images.md).
+
 Vor CI/CD wird ausgeführt:
 
 ```bash

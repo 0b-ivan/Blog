@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pdf
+  template:
+    metadata:
+      labels:
+        app: pdf
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      containers:
+        - name: pdf
+          image: ghcr.io/0b-ivan/kernel-notes-pdf:UNPINNED
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8092
+          env:
+            - name: SITE_URL
+              value: https://blog.obivan.org
+            - name: PDF_COMPILE_TIMEOUT_MS
+              value: "120000"
+            - name: PDF_CACHE_MAX_ENTRIES
+              value: "4"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 8
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 8
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              memory: 1536Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf
+spec:
+  selector:
+    app: pdf
+  ports:
+    - name: http
+      port: 8092
+      targetPort: http

@@ -319,6 +319,10 @@ h1 {
   margin: 0.8rem 0;
 }
 
+.tag-chip[hidden] {
+  display: none !important;
+}
+
 .tag-chip {
   display: inline-flex;
   align-items: center;

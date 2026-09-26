@@ -122,6 +122,8 @@ spec:
               value: /content/post-history
             - name: SEARCH_SERVICE_URL
               value: http://search:8090/search
+            - name: PDF_SERVICE_URL
+              value: http://pdf:8092
             - name: STATUS_SERVICE_URL
               value: http://kube-status:8080/status
             - name: ANALYTICS_SERVICE_URL

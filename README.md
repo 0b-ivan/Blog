@@ -72,7 +72,7 @@ npm run rag:test:regression
 
 ## Content
 
-Aktive Artikel liegen unter `posts/`, archivierte unter `archive/`. Artikelbilder gehören unter `assets/posts/`, damit Versionierung und Deployment sie eindeutig dem Content-Lifecycle zuordnen können.
+Aktive Artikel liegen unter `posts/`, archivierte unter `archive/`. Inline-Artikelbilder gehören lokal unter `assets/posts/<asset-scope>/`; Cover werden separat über die Pixabay-Pipeline unter `assets/covers/` gepflegt. Die Bild-Policy priorisiert echte Fotos/Screenshots vor bloßer Dekoration, verlangt Alt-Texte und verbietet externe Hotlinks. Details stehen in `docs/article-images.md`.
 
 Die Artikelhistorie wird automatisch aus Git erzeugt. Änderungen an Markdown, referenzierten Snippets oder Bildern erzeugen eine neue Artikelversion.
 
@@ -162,6 +162,8 @@ docker-compose.prod.yml  Hetzner-Standby
 - `docs/deployment.md` – Branches, Staging, Promotion und Production
 - `docs/reliability.md` – Status, Chaos Engineering und Guardrails
 - `docs/article-lifecycle.md` – Archiv und Artikel-Versionierung
+- `docs/article-images.md` – Cover, Inline-Bilder, Quellen, Ablage und CI-Regeln
+- `docs/photo-connection.md` – lizenzierte Drittbilder materialisieren, validieren und versionieren
 - `docs/analytics.md` – Artikelmetriken, Likes, Favoriten und Datenschutzmodell
 - `docs/glossary.md` – Glossar und Tooltips
 - `docs/knowledge-graph.md` – Wissensnetz und GraphRAG

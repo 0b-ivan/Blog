@@ -1,6 +1,7 @@
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { setTimeout: delay } = require('node:timers/promises');
 const request = require('supertest');
 
 const {
@@ -88,6 +89,58 @@ describe('blog server', () => {
     expect(posts[0].readingTime).toBe(1);
   });
 
+  it('reads optional cover title metadata without changing the canonical title', async () => {
+    await writePost(
+      tmpDir,
+      'cover-title.md',
+      `---
+title: "Long canonical article title"
+cover_title: "Short cover title"
+cover_subtitle: "Readable cover subtitle"
+date: 2026-09-24
+category: DevOps
+---
+Body
+`
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts[0]).toMatchObject({
+      title: 'Long canonical article title',
+      coverTitle: 'Short cover title',
+      coverSubtitle: 'Readable cover subtitle'
+    });
+  });
+
+  it('moves cover attribution into the article sources section', async () => {
+    await writePost(
+      tmpDir,
+      'cover-source.md',
+      `---
+title: Cover Source
+date: 2026-09-23
+category: DevOps
+cover_image: /assets/covers/cover-source.jpg
+cover_credit: by Example via Pixabay
+cover_credit_url: https://pixabay.com/photos/example-42/
+cover_source_url: https://pixabay.com/photos/example-42/
+cover_license: Pixabay Content License
+cover_license_url: https://pixabay.com/service/license-summary/
+---
+Body
+
+## Quellen
+
+- [Docker Docs](/sources.html#docker-compose)
+`
+    );
+
+    const posts = await readPosts(tmpDir);
+    expect(posts[0].html).toContain('/sources.html#cover-cover-source');
+    expect(posts[0].html).toContain('Coverbild: Example via Pixabay');
+    expect(posts[0].html).not.toContain('https://pixabay.com/photos/example-42/');
+  });
+
   it('api returns post list dto', async () => {
     await writePost(
       tmpDir,
@@ -123,6 +176,50 @@ describe('blog server', () => {
     });
   });
 
+  it('proxies PDF preparation state and warms the PDF when an article is opened', async () => {
+    await writePost(
+      tmpDir,
+      'warm-me.md',
+      '---\ntitle: Warm Me\ndate: 2026-05-01\ncategory: Docs\n---\nBody'
+    );
+
+    const fetchMock = globalThis.vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, options = {}) => ({
+      status: options.method === 'POST' ? 202 : 200,
+      json: async () => options.method === 'POST'
+        ? { ready: false, preparing: true }
+        : { ready: true, preparing: false }
+    }));
+
+    try {
+      const app = createApp({
+        postsDir: tmpDir,
+        pdfServiceUrl: 'http://pdf:8092'
+      });
+
+      const prepare = await request(app).post('/api/pdf/warm-me/prepare');
+      expect(prepare.status).toBe(202);
+      expect(prepare.body).toMatchObject({ ready: false, preparing: true });
+
+      const status = await request(app).get('/api/pdf/warm-me/status');
+      expect(status.status).toBe(200);
+      expect(status.body).toMatchObject({ ready: true, preparing: false });
+
+      const article = await request(app).get('/posts/warm-me');
+      expect(article.status).toBe(200);
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://pdf:8092/prepare/warm-me',
+        expect.objectContaining({ method: 'POST' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://pdf:8092/status/warm-me',
+        expect.objectContaining({ method: 'GET' })
+      );
+    } finally {
+      fetchMock.mockRestore();
+    }
+  });
+
   it('post detail route renders html and 404 for missing slug', async () => {
     await writePost(
       tmpDir,
@@ -141,7 +238,7 @@ describe('blog server', () => {
     expect(notFound.status).toBe(404);
   });
 
-  it('download routes return EPUB and EPUB-derived PDF with attachment headers', async () => {
+  it('download routes return EPUB and LaTeX-rendered PDF with attachment headers', async () => {
     await writePost(
       tmpDir,
       'download-me.md',
@@ -166,6 +263,111 @@ describe('blog server', () => {
     expect(pdf.headers['content-type']).toMatch(/application\/pdf/);
     expect(pdf.headers['content-disposition']).toContain('download-me.pdf');
     expect(buildArticlePdf).toHaveBeenCalledOnce();
+  });
+
+  it('reuses a cached EPUB for repeated downloads of the same article', async () => {
+    await writePost(
+      tmpDir,
+      'cache-me.md',
+      '---\ntitle: Cache Me\ndate: 2026-09-26\ncategory: Docs\nversion: 3\nupdated_at: 2026-09-26T00:00:00.000Z\n---\nBody'
+    );
+
+    const buildArticleEpub = globalThis.vi.fn(async () => Buffer.from('cached-epub'));
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub,
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    const first = await request(app).get('/download/cache-me.epub');
+    const second = await request(app).get('/download/cache-me.epub');
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares one in-flight EPUB build across concurrent requests for the same article', async () => {
+    await writePost(
+      tmpDir,
+      'singleflight.md',
+      '---\ntitle: Singleflight\ndate: 2026-09-26\ncategory: Docs\n---\nBody'
+    );
+
+    let releaseBuild;
+    const buildGate = new Promise((resolve) => {
+      releaseBuild = resolve;
+    });
+    const buildArticleEpub = globalThis.vi.fn(async () => {
+      await buildGate;
+      return Buffer.from('singleflight-epub');
+    });
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub,
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    const firstRequest = request(app)
+      .get('/download/singleflight.epub')
+      .then((response) => response);
+    const secondRequest = request(app)
+      .get('/download/singleflight.epub')
+      .then((response) => response);
+
+    await delay(20);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(1);
+
+    releaseBuild();
+    const [first, second] = await Promise.all([firstRequest, secondRequest]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(1);
+  });
+
+  it('serializes uncached EPUB builds to cap renderer memory pressure', async () => {
+    await writePost(
+      tmpDir,
+      'first-book.md',
+      '---\ntitle: First Book\ndate: 2026-09-26\ncategory: Docs\n---\nBody'
+    );
+    await writePost(
+      tmpDir,
+      'second-book.md',
+      '---\ntitle: Second Book\ndate: 2026-09-26\ncategory: Docs\n---\nBody'
+    );
+
+    let activeBuilds = 0;
+    let maximumActiveBuilds = 0;
+    const buildArticleEpub = globalThis.vi.fn(async (post) => {
+      activeBuilds += 1;
+      maximumActiveBuilds = Math.max(maximumActiveBuilds, activeBuilds);
+      await delay(25);
+      activeBuilds -= 1;
+      return Buffer.from(`epub-${post.slug}`);
+    });
+    const app = createApp({
+      postsDir: tmpDir,
+      ebookExporterLoader: () => ({
+        buildArticleEpub,
+        buildArticlePdf: globalThis.vi.fn()
+      })
+    });
+
+    const [first, second] = await Promise.all([
+      request(app).get('/download/first-book.epub'),
+      request(app).get('/download/second-book.epub')
+    ]);
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(buildArticleEpub).toHaveBeenCalledTimes(2);
+    expect(maximumActiveBuilds).toBe(1);
   });
 
   it('download route returns 404 for unknown articles and formats', async () => {
@@ -279,10 +481,9 @@ describe('blog server', () => {
     expect(html).toContain('<svg viewBox="0 0 64 48" focusable="false">');
     expect(html).toContain('article-hero__excerpt');
     expect(html).toContain('>Excerpt<');
-    expect(html).toContain('by Example via Pixabay');
-    expect(html).toContain('https://pixabay.com/photos/example-42/');
-    expect(html).toContain('Pixabay Content License');
-    expect(html).toContain('https://pixabay.com/service/license-summary/');
+    expect(html).not.toContain('article-hero__credit');
+    expect(html).not.toContain('by Example via Pixabay');
+    expect(html).not.toContain('Pixabay Content License');
     expect(html).toMatch(/terminal-post terminal-post--article[\s\S]*article-hero[\s\S]*terminal-content[\s\S]*<\/section>[\s\S]*article-post-meta/);
     expect(html).not.toContain('article-terminal__meta-strip');
     expect(html).toMatch(/\/assets\/css\/article-metrics\.css\?v=[^"]+/);
@@ -304,6 +505,9 @@ describe('blog server', () => {
     expect(html).toContain('Herunterladen');
     expect(html).toContain('/download/meta-test.epub');
     expect(html).toContain('/download/meta-test.pdf');
+    expect(html).toContain('data-pdf-download');
+    expect(html).toContain('data-pdf-slug="meta-test"');
+    expect(html).toContain('/assets/pdf-download.js?v=20260926-1');
     expect(html).toContain('data-article-share');
     expect(html).toContain('>Linux<');
     expect(html).toContain('<p>Rendered</p>');

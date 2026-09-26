@@ -1,0 +1,159 @@
+\documentclass[11pt,a4paper,parskip=half]{scrartcl}
+
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{Latin Modern Mono}
+$if(cjk)$
+% Loading luatexja + Noto CJK is intentionally conditional. Reuse one CJK
+% family for serif/sans contexts so Japanese articles do not load two large
+% font collections into the constrained PDF worker.
+\usepackage{luatexja-fontspec}
+\setmainjfont{Noto Sans CJK JP}
+\setsansjfont{Noto Sans CJK JP}
+$endif$
+
+\usepackage[ngerman]{babel}
+\usepackage[a4paper,top=23mm,bottom=26mm,left=27mm,right=27mm]{geometry}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{calc}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{xurl}
+\usepackage{bookmark}
+\usepackage{fancyhdr}
+\usepackage{ragged2e}
+
+\definecolor{KernelGreen}{HTML}{0B5B50}
+\definecolor{KernelDark}{HTML}{17202A}
+\definecolor{KernelMuted}{HTML}{59646B}
+\definecolor{KernelCode}{HTML}{F4F6F7}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=KernelGreen,
+  urlcolor=KernelGreen,
+  citecolor=KernelGreen,
+  pdftitle={$title$},
+  pdfauthor={$author$}
+}
+
+\setcounter{secnumdepth}{3}
+\KOMAoptions{headsepline=true}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily Kernel Notes}
+\fancyhead[R]{\small\sffamily $category$}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{15pt}
+
+\setkomafont{section}{\sffamily\bfseries\Large\color{KernelDark}}
+\setkomafont{subsection}{\sffamily\bfseries\large\color{KernelDark}}
+\setkomafont{subsubsection}{\sffamily\bfseries\normalsize\color{KernelDark}}
+
+\captionsetup{
+  font=small,
+  labelfont=bf,
+  justification=raggedright,
+  singlelinecheck=false,
+  skip=5pt
+}
+\setlength{\textfloatsep}{14pt plus 2pt minus 3pt}
+\setlength{\floatsep}{12pt plus 2pt minus 2pt}
+\setlength{\intextsep}{12pt plus 2pt minus 2pt}
+\setkeys{Gin}{keepaspectratio}
+
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{KernelCode},
+  frame=single,
+  rulecolor=\color{black!12},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  tabsize=2,
+  xleftmargin=0.4em,
+  xrightmargin=0.4em,
+  aboveskip=0.9em,
+  belowskip=0.9em
+}
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\providecommand{\passthrough}[1]{#1}
+\providecommand{\pandocbounded}[1]{%
+  \begin{adjustbox}{max width=\linewidth,max totalheight=.52\textheight,keepaspectratio}
+    #1
+  \end{adjustbox}%
+}
+
+% Kept for compatibility with Pandoc documents that contain CSL blocks.
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newenvironment{CSLReferences}[2]
+ {%
+  \setlength{\parindent}{0pt}%
+  \ifodd #1%
+    \let\oldpar\par%
+    \def\par{\hangindent=\cslhangindent\oldpar}%
+  \fi%
+  \setlength{\parskip}{#2\baselineskip}%
+ }{}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+\begin{document}
+
+\thispagestyle{plain}
+\begin{center}
+  {\sffamily\small\bfseries\color{KernelGreen} KERNEL NOTES \quad\textbullet\quad $category$\par}
+  \vspace{7mm}
+  {\sffamily\bfseries\LARGE $title$\par}
+  \vspace{5mm}
+  {\large $author$\par}
+  \vspace{1.5mm}
+  {\small\color{KernelMuted} $date$\par}
+\end{center}
+
+\vspace{5mm}
+\begin{abstract}
+$abstract$
+\end{abstract}
+
+$if(keywords)$
+\noindent\textbf{Schlüsselwörter:} $keywords$
+\par
+$endif$
+
+\vspace{2mm}
+{\small
+\noindent\textbf{Lesezeit:} ca. $readingTime$ Min.\\
+\textbf{Originalfassung:} \url{$sourceUrl$}
+\par}
+
+\vspace{5mm}
+\hrule
+\vspace{7mm}
+
+$body$
+
+\end{document}

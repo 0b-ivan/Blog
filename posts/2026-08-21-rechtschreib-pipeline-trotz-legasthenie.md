@@ -21,20 +21,24 @@ search_queries:
     maxRank: 1
   - query: Codeblöcke sollen von der Rechtschreibprüfung ignoriert werden
     maxRank: 1
-cover_query: GitHub-Actions Automation CSpell Automation
+cover_query: proofreading correction paper spelling grammar
 cover_provider: pixabay
-cover_provider_id: '544180'
+cover_provider_id: '1351629'
 cover_image: /assets/covers/2026-08-21-rechtschreib-pipeline-trotz-legasthenie.jpg
 cover_alt: >-
-  secretary, desk, sales, office automation, telephony, call, screen, telephone,
-  secretary, secretary, secretary, secretary, secretary, call
+  correcting, papers, english teacher, teacher, english, coffee, work, working,
+  correct, mistake, red, pen, red pen, edit, fix, wrong, document, review,
+  error, correction, editor, wood, wooden, table, proofread, check, grammar,
+  test, editing, reviewing, education, school, accuracy, proofreading, revising,
+  revise, proofread, proofread, grammar, proofreading, proofreading,
+  proofreading, proofreading, proofreading
 cover_focus: center
-cover_credit: by Patrice_Audet via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
-cover_source_url: 'https://pixabay.com/photos/secretary-desk-sales-544180/'
+cover_credit: by 1139623 via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/correcting-papers-english-teacher-1351629/'
+cover_source_url: 'https://pixabay.com/photos/correcting-papers-english-teacher-1351629/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 60
+cover_score: 91
 ---
 
 Ich habe Legasthenie und übersehe beim Schreiben regelmäßig Rechtschreib- und Interpunktionsfehler.

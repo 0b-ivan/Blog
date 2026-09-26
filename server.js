@@ -1,5 +1,6 @@
 const { resolveSnippets, installSnippetRenderer } = require('./lib/snippets');
 const express = require('express');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
@@ -81,6 +82,102 @@ function normalizeTags(value) {
   return [];
 }
 
+
+function coverSourceId(post) {
+  const slug = slugFromWikiName(post && post.slug);
+  return slug ? `cover-${slug}` : '';
+}
+
+function coverAuthorFromCredit(value) {
+  return String(value || '')
+    .trim()
+    .replace(/^by\s+/i, '')
+    .replace(/\s+via\s+Pixabay$/i, '')
+    .trim();
+}
+
+function coverSourceRecord(post) {
+  const sourceUrl = String((post && (post.coverSourceUrl || post.coverCreditUrl)) || '').trim();
+  const credit = String((post && post.coverCredit) || '').trim();
+  const license = String((post && post.coverLicense) || '').trim();
+  const licenseUrl = String((post && post.coverLicenseUrl) || '').trim();
+  const author = coverAuthorFromCredit(credit);
+
+  if (!sourceUrl && !credit && !license) {
+    return null;
+  }
+
+  return {
+    title: `Coverbild: ${String((post && (post.title || post.slug)) || 'Kernel Notes')}`,
+    publisher: 'Pixabay',
+    url: sourceUrl || licenseUrl || 'https://pixabay.com/',
+    author,
+    credit,
+    license,
+    license_url: licenseUrl
+  };
+}
+
+function appendCoverSourceReference(html, post) {
+  const record = coverSourceRecord(post);
+  const sourceId = coverSourceId(post);
+  if (!record || !sourceId) return String(html || '');
+
+  const label = record.author
+    ? `Coverbild: ${record.author} via Pixabay`
+    : 'Coverbild: Pixabay';
+  const item = `<li class="cover-source-reference"><a href="/sources.html#${sourceId}">${escapeXml(label)}</a></li>`;
+  const sourceHtml = String(html || '');
+  const headingMatch = /<h2[^>]*>Quellen<\/h2>/i.exec(sourceHtml);
+
+  if (!headingMatch) {
+    return `${sourceHtml}\n<h2>Quellen</h2>\n<ul>\n${item}\n</ul>\n`;
+  }
+
+  const sectionStart = headingMatch.index + headingMatch[0].length;
+  const nextHeading = sourceHtml.slice(sectionStart).search(/<h2[^>]*>/i);
+  const sectionEnd = nextHeading >= 0 ? sectionStart + nextHeading : sourceHtml.length;
+  const section = sourceHtml.slice(sectionStart, sectionEnd);
+  const listEnd = section.indexOf('</ul>');
+
+  if (listEnd < 0) {
+    return `${sourceHtml.slice(0, sectionEnd)}\n<ul>\n${item}\n</ul>\n${sourceHtml.slice(sectionEnd)}`;
+  }
+
+  const insertAt = sectionStart + listEnd;
+  return `${sourceHtml.slice(0, insertAt)}${item}\n${sourceHtml.slice(insertAt)}`;
+}
+
+function mergeCoverSources(catalog, posts) {
+  const merged = { ...(catalog || {}) };
+
+  for (const post of posts || []) {
+    const id = coverSourceId(post);
+    const record = coverSourceRecord(post);
+    if (id && record) merged[id] = record;
+  }
+
+  return merged;
+}
+
+async function readSourceCatalog(explicitPostsDir) {
+  const configuredPostsDir = path.resolve(getPostsDir(explicitPostsDir));
+  const candidates = [
+    path.join(configuredPostsDir, '_sources.json'),
+    path.join(root, 'posts', '_sources.json')
+  ];
+
+  for (const candidate of [...new Set(candidates)]) {
+    try {
+      return JSON.parse(await fs.readFile(candidate, 'utf8'));
+    } catch (error) {
+      if (!error || error.code !== 'ENOENT') throw error;
+    }
+  }
+
+  return {};
+}
+
 function slugFromWikiName(name) {
   return String(name || '')
     .trim()
@@ -125,7 +222,7 @@ function parseMetadataLine(line) {
 
 function recoverMetadata(raw, parsed) {
   const fallbackData = {};
-  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'series', 'cover_query', 'cover_subject', 'cover_avoid', 'cover_provider', 'cover_provider_id', 'cover_image', 'cover_alt', 'cover_focus', 'cover_score', 'cover_credit', 'cover_credit_url', 'cover_source_url', 'cover_license', 'cover_license_url']);
+  const knownKeys = new Set(['id', 'version', 'title', 'date', 'published_at', 'created_at', 'updated_at', 'author', 'reviewed_by', 'category', 'excerpt', 'tags', 'series', 'cover_query', 'cover_subject', 'cover_avoid', 'cover_intent', 'cover_provider', 'cover_provider_id', 'cover_title', 'cover_subtitle', 'cover_image', 'cover_alt', 'cover_focus', 'cover_score', 'cover_credit', 'cover_credit_url', 'cover_source_url', 'cover_license', 'cover_license_url']);
 
   const hasParsedData = parsed && parsed.data && Object.keys(parsed.data).length > 0;
   if (hasParsedData) {
@@ -309,6 +406,8 @@ async function loadPosts(postsDir) {
       const category = recovered.data.category || 'IT';
       const tags = normalizeTags(recovered.data.tags);
       const excerpt = recovered.data.excerpt || excerptFromBody(recovered.content);
+      const coverTitle = String(recovered.data.cover_title || '').trim();
+      const coverSubtitle = String(recovered.data.cover_subtitle || '').trim();
       const coverImage = String(recovered.data.cover_image || '').trim();
       const coverFocus = String(recovered.data.cover_focus || 'center').trim();
       const coverCredit = String(recovered.data.cover_credit || '').trim();
@@ -321,6 +420,18 @@ async function loadPosts(postsDir) {
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
       const snippets = resolveSnippets({ slug, title, data: recovered.data, markdown: recovered.content, legacy });
+      const renderedHtml = appendCoverSourceReference(
+        md.render(markdownContent, { snippets }),
+        {
+          slug,
+          title,
+          coverCredit,
+          coverCreditUrl,
+          coverSourceUrl,
+          coverLicense,
+          coverLicenseUrl
+        }
+      );
       return {
         snippets,
         slug,
@@ -333,6 +444,8 @@ async function loadPosts(postsDir) {
         category,
         tags,
         excerpt,
+        coverTitle,
+        coverSubtitle,
         coverImage,
         coverFocus,
         coverCredit,
@@ -342,7 +455,7 @@ async function loadPosts(postsDir) {
         coverLicenseUrl,
         wordCount,
         readingTime,
-        html: md.render(markdownContent, { snippets })
+        html: renderedHtml
       };
     })
   );
@@ -476,8 +589,8 @@ function resolvePostBySlug(posts, requestedSlug) {
 }
 
 const RELATED_TITLE_STOP_WORDS = new Set([
-  'aber', 'auch', 'das', 'dem', 'den', 'der', 'die', 'ein', 'eine', 'einer', 'eines',
-  'fuer', 'ist', 'mit', 'nicht', 'oder', 'sich', 'und', 'von', 'was', 'wie', 'zu', 'zum', 'zur'
+  'aber', 'auch', 'das', 'dass', 'dem', 'den', 'der', 'die', 'ein', 'eine', 'einer', 'eines',
+  'fuer', 'ist', 'man', 'mit', 'nicht', 'oder', 'sich', 'und', 'von', 'warum', 'was', 'wie', 'zu', 'zum', 'zur'
 ]);
 
 function normalizeComparable(value) {
@@ -535,7 +648,7 @@ function findRelatedPosts(posts, currentPost, limit = 3) {
       post: candidate,
       score: relatedPostScore(currentPost, candidate)
     }))
-    .filter(({ score }) => score > 0)
+    .filter(({ score }) => score >= 3)
     .sort((a, b) => {
       if (b.score !== a.score) {
         return b.score - a.score;
@@ -620,20 +733,6 @@ function renderPostPage(post, relatedPosts = []) {
       ? `<button class="tag-chip tag-toggle" type="button" data-tag-toggle data-hidden-count="${hiddenTagCount}" aria-expanded="false" aria-label="${hiddenTagCount} weitere Tags anzeigen">+${hiddenTagCount}</button>`
       : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
-  const coverCreditParts = [];
-  if (post.coverCredit) {
-    coverCreditParts.push(post.coverCreditUrl
-      ? `<a href="${md.utils.escapeHtml(String(post.coverCreditUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverCredit))}</a>`
-      : md.utils.escapeHtml(String(post.coverCredit)));
-  }
-  if (post.coverLicense) {
-    coverCreditParts.push(post.coverLicenseUrl
-      ? `<a href="${md.utils.escapeHtml(String(post.coverLicenseUrl))}" target="_blank" rel="noopener noreferrer">${md.utils.escapeHtml(String(post.coverLicense))}</a>`
-      : md.utils.escapeHtml(String(post.coverLicense)));
-  }
-  const coverCreditHtml = coverCreditParts.length
-    ? `<p class="article-hero__credit">${coverCreditParts.join(' · ')}</p>`
-    : '';
   const coverStyle = articleCoverStyle(post);
 
   return `<!doctype html>
@@ -729,7 +828,6 @@ function renderPostPage(post, relatedPosts = []) {
             </div>
 
             ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
-            ${coverCreditHtml}
           </header>
           <div class="post-content terminal-content">${post.html}</div>
         </section>
@@ -765,9 +863,9 @@ function renderPostPage(post, relatedPosts = []) {
                   <strong>EPUB</strong>
                   <span>E-Book mit Cover & Metadaten</span>
                 </a>
-                <a href="/download/${encodeURIComponent(post.slug)}.pdf" download>
+                <a href="/download/${encodeURIComponent(post.slug)}.pdf" download data-pdf-download data-pdf-slug="${md.utils.escapeHtml(String(post.slug || ''))}">
                   <strong>PDF</strong>
-                  <span>aus dem EPUB erzeugt</span>
+                  <span>als LaTeX-Publikation gesetzt</span>
                 </a>
               </div>
             </details>
@@ -803,6 +901,7 @@ function renderPostPage(post, relatedPosts = []) {
     <script src="/assets/nav-scroll-cue.js" defer></script>
     <script src="/assets/glossary.js" defer></script>
     <script src="/assets/article-analytics.js?v=20260922-1" defer></script>
+    <script src="/assets/pdf-download.js?v=20260926-1" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
@@ -825,6 +924,116 @@ function createApp(options = {}) {
   const postsDir = options.postsDir;
   const siteUrl = options.siteUrl;
   const ebookExporterLoader = options.ebookExporterLoader || (() => require('./lib/ebook-export'));
+  const epubCache = new Map();
+  const epubPending = new Map();
+  const epubCacheMaxEntries = Math.max(
+    0,
+    Number.parseInt(
+      String(options.epubCacheMaxEntries ?? process.env.EPUB_CACHE_MAX_ENTRIES ?? '4'),
+      10
+    ) || 0
+  );
+  let epubBuildTail = Promise.resolve();
+
+  function epubCacheKey(post) {
+    const payload = JSON.stringify({
+      slug: post.slug,
+      version: post.version,
+      updatedAt: post.updatedAt,
+      title: post.title,
+      excerpt: post.excerpt,
+      coverTitle: post.coverTitle,
+      coverSubtitle: post.coverSubtitle,
+      coverImage: post.coverImage,
+      category: post.category,
+      tags: post.tags,
+      date: post.date,
+      html: post.html
+    });
+
+    return createHash('sha256').update(payload).digest('hex');
+  }
+
+  function rememberEpub(key, content) {
+    if (epubCacheMaxEntries <= 0) return;
+
+    epubCache.delete(key);
+    epubCache.set(key, content);
+
+    while (epubCache.size > epubCacheMaxEntries) {
+      const oldestKey = epubCache.keys().next().value;
+      epubCache.delete(oldestKey);
+    }
+  }
+
+  function enqueueEpubBuild(task) {
+    const run = epubBuildTail
+      .catch(() => undefined)
+      .then(task);
+
+    epubBuildTail = run.catch(() => undefined);
+    return run;
+  }
+
+  function buildArticleEpubCached(post, exporter, exportOptions) {
+    const key = epubCacheKey(post);
+    const cached = epubCache.get(key);
+
+    if (cached) {
+      epubCache.delete(key);
+      epubCache.set(key, cached);
+      return Promise.resolve(cached);
+    }
+
+    const pending = epubPending.get(key);
+    if (pending) return pending;
+
+    const build = enqueueEpubBuild(async () => {
+      const content = await exporter.buildArticleEpub(post, exportOptions);
+      const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+      rememberEpub(key, buffer);
+      return buffer;
+    }).finally(() => {
+      epubPending.delete(key);
+    });
+
+    epubPending.set(key, build);
+    return build;
+  }
+  const pdfServiceUrl = String(
+    options.pdfServiceUrl
+      || process.env.PDF_SERVICE_URL
+      || ''
+  ).replace(/\/+$/, '');
+
+  async function proxyPdfControl(slug, action, method = 'GET') {
+    if (!pdfServiceUrl) {
+      return { status: 503, body: { ready: false, preparing: false, message: 'PDF service unavailable' } };
+    }
+
+    const response = await globalThis.fetch(
+      `${pdfServiceUrl}/${action}/${encodeURIComponent(slug)}`,
+      {
+        method,
+        headers: { Accept: 'application/json' },
+        signal: globalThis.AbortSignal.timeout(5000)
+      }
+    );
+
+    const body = await response.json().catch(() => ({
+      ready: false,
+      preparing: false
+    }));
+
+    return { status: response.status, body };
+  }
+
+  function warmPdfInBackground(slug) {
+    if (!pdfServiceUrl) return;
+    void proxyPdfControl(slug, 'prepare', 'POST').catch((error) => {
+      console.warn(`Could not prewarm PDF for ${slug}: ${error.message}`);
+    });
+  }
 
   app.use('/assets', express.static(path.join(root, 'assets')));
   app.get('/snippets/manifest.json', async (_req, res) => {
@@ -840,6 +1049,19 @@ function createApp(options = {}) {
 
   app.get('/api/legal-info', (_req, res) => {
     res.json(getLegalInfo());
+  });
+
+  app.get('/api/sources', async (_req, res) => {
+    try {
+      const [catalog, posts] = await Promise.all([
+        readSourceCatalog(postsDir),
+        readPosts(postsDir)
+      ]);
+      res.json(mergeCoverSources(catalog, posts));
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Could not load source catalog' });
+    }
   });
 
   app.get('/api/posts', async (_req, res) => {
@@ -858,6 +1080,42 @@ function createApp(options = {}) {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: 'Could not load posts' });
+    }
+  });
+
+  app.post('/api/pdf/:slug/prepare', async (req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      const post = resolvePostBySlug(posts, req.params.slug);
+      if (!post) {
+        res.status(404).json({ ready: false, preparing: false, message: 'Post not found' });
+        return;
+      }
+
+      const result = await proxyPdfControl(post.slug, 'prepare', 'POST');
+      res.set('Cache-Control', 'no-store');
+      res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error(error);
+      res.status(503).json({ ready: false, preparing: false });
+    }
+  });
+
+  app.get('/api/pdf/:slug/status', async (req, res) => {
+    try {
+      const posts = await readPosts(postsDir);
+      const post = resolvePostBySlug(posts, req.params.slug);
+      if (!post) {
+        res.status(404).json({ ready: false, preparing: false, message: 'Post not found' });
+        return;
+      }
+
+      const result = await proxyPdfControl(post.slug, 'status');
+      res.set('Cache-Control', 'no-store');
+      res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error(error);
+      res.status(503).json({ ready: false, preparing: false });
     }
   });
 
@@ -902,7 +1160,7 @@ function createApp(options = {}) {
         assetRoot: root
       };
       const content = format === 'epub'
-        ? await exporter.buildArticleEpub(post, exportOptions)
+        ? await buildArticleEpubCached(post, exporter, exportOptions)
         : await exporter.buildArticlePdf(post, exportOptions);
 
       res.set('Content-Type', format === 'epub' ? 'application/epub+zip' : 'application/pdf');
@@ -925,6 +1183,7 @@ function createApp(options = {}) {
         return;
       }
 
+      warmPdfInBackground(post.slug);
       const relatedPosts = findRelatedPosts(posts, post, 3);
       res.type('html').send(renderPostPage(post, relatedPosts));
     } catch (error) {
@@ -961,6 +1220,11 @@ module.exports = {
   startServer,
   getPostsDir,
   getSiteUrl,
+  coverSourceId,
+  coverAuthorFromCredit,
+  coverSourceRecord,
+  appendCoverSourceReference,
+  mergeCoverSources,
   slugify,
   excerptFromBody,
   parseDate,

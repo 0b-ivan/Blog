@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="t d">
+<title id="t">Von Commander Keen zu Quake</title><desc id="d">Zeitleiste von Commander Keen 1990 über Wolfenstein 3D 1992 und DOOM 1993 zu Quake 1996.</desc>
+<rect width="1200" height="300" rx="24" fill="#151515"/><path d="M140 150H1060" stroke="#b8b8b8" stroke-width="6"/>
+<g fill="#f2f2f2" font-family="system-ui,sans-serif" text-anchor="middle">
+<circle cx="160" cy="150" r="18" fill="#f2f2f2"/><text x="160" y="105" font-size="28" font-weight="700">Commander Keen</text><text x="160" y="205" font-size="24">1990</text>
+<circle cx="455" cy="150" r="18" fill="#f2f2f2"/><text x="455" y="105" font-size="28" font-weight="700">Wolfenstein 3D</text><text x="455" y="205" font-size="24">1992</text>
+<circle cx="745" cy="150" r="22" fill="#f2f2f2"/><text x="745" y="100" font-size="34" font-weight="800">DOOM</text><text x="745" y="205" font-size="24">1993</text>
+<circle cx="1040" cy="150" r="18" fill="#f2f2f2"/><text x="1040" y="105" font-size="28" font-weight="700">Quake</text><text x="1040" y="205" font-size="24">1996</text>
+</g></svg>

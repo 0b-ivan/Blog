@@ -24,21 +24,21 @@ search_queries:
     maxRank: 1
 cover_query: website code server publishing deployment automation infrastructure cloud
 cover_provider: pixabay
-cover_provider_id: '2784907'
+cover_provider_id: '3637299'
 cover_image: /assets/covers/2026-08-19-wie-dieser-blog-gebaut-ist.jpg
 cover_alt: >-
-  cyberspace, data, wire, electronic, electric, ethernet, infrastructure, cable,
-  computer, communication, panel, connection, to combine, the industry, router,
-  server, network, equipment, system, broadband, technology, telecommunication,
-  service provider, plug, node, dam, connector, link, lan, server, server,
-  server, server, server, network, broadband
+  code, html, technology, programming, computer, coding, digital, development,
+  internet, web, it, programmer, css, developer, www, software, website, data,
+  script, computer programming, computer science, server, binary code, byte,
+  code, html, programming, coding, coding, programmer, software, software,
+  computer science, computer science, server, server, server, server, server
 cover_focus: center
-cover_credit: by jarmoluk via Pixabay
-cover_credit_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
-cover_source_url: 'https://pixabay.com/photos/cyberspace-data-wire-electronic-2784907/'
+cover_credit: by markusspiske via Pixabay
+cover_credit_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
+cover_source_url: 'https://pixabay.com/photos/code-html-technology-programming-3637299/'
 cover_license: Pixabay Content License
 cover_license_url: 'https://pixabay.com/service/license-summary/'
-cover_score: 84
+cover_score: 86
 ---
 
 Dieser Post ist der technische Einstieg in den Blog selbst: Was läuft hier, warum genau dieser Stack und welche Trade-offs wurden bewusst akzeptiert.

@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Kompositionsmodell für ein Pokémon-Kampfsystem</title>
+  <desc id="desc">Pokemon besitzt eine Species und mehrere Moves. Species besitzt Types. Move besitzt Type und Effect. Battle verwendet Pokemon und koordiniert Regeln.</desc>
+  <style>
+    text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#172033}
+    .title{font-size:44px;font-weight:800}
+    .box{fill:#f8fafc;stroke:#cbd5e1;stroke-width:3}
+    .main{fill:#ecfeff;stroke:#0f766e;stroke-width:4}
+    .behavior{fill:#fefce8;stroke:#ca8a04;stroke-width:3}
+    .orchestrator{fill:#eff6ff;stroke:#2563eb;stroke-width:3}
+    .label{font-size:28px;font-weight:800}
+    .small{font-size:20px;fill:#475569}
+    .rel{font-size:18px;font-weight:700;fill:#64748b}
+    .line{stroke:#64748b;stroke-width:4;fill:none}
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="1400" height="900" rx="28" fill="#ffffff"/>
+  <text x="70" y="82" class="title">Komposition: Daten und Verhalten getrennt modellieren</text>
+
+  <rect x="520" y="150" width="360" height="120" rx="22" class="main"/>
+  <text x="700" y="202" text-anchor="middle" class="label">Pokemon</text>
+  <text x="700" y="238" text-anchor="middle" class="small">HP · Moves · Kampfzustand</text>
+
+  <rect x="90" y="360" width="340" height="120" rx="22" class="box"/>
+  <text x="260" y="412" text-anchor="middle" class="label">Species</text>
+  <text x="260" y="448" text-anchor="middle" class="small">Name · BaseStats · Types</text>
+
+  <rect x="530" y="360" width="340" height="120" rx="22" class="behavior"/>
+  <text x="700" y="412" text-anchor="middle" class="label">Move</text>
+  <text x="700" y="448" text-anchor="middle" class="small">Name · Type · Power · Effect</text>
+
+  <rect x="970" y="360" width="340" height="120" rx="22" class="orchestrator"/>
+  <text x="1140" y="412" text-anchor="middle" class="label">Battle</text>
+  <text x="1140" y="448" text-anchor="middle" class="small">validiert und orchestriert</text>
+
+  <rect x="90" y="650" width="340" height="110" rx="22" class="box"/>
+  <text x="260" y="700" text-anchor="middle" class="label">Type</text>
+  <text x="260" y="735" text-anchor="middle" class="small">FIRE · WATER · ELECTRIC …</text>
+
+  <rect x="530" y="650" width="340" height="110" rx="22" class="behavior"/>
+  <text x="700" y="700" text-anchor="middle" class="label">Effect</text>
+  <text x="700" y="735" text-anchor="middle" class="small">Damage · Status · Chance …</text>
+
+  <rect x="970" y="650" width="340" height="110" rx="22" class="box"/>
+  <text x="1140" y="700" text-anchor="middle" class="label">StatusCondition</text>
+  <text x="1140" y="735" text-anchor="middle" class="small">z. B. PARALYZED</text>
+
+  <path d="M560 270 C470 300, 360 315, 300 360" class="line" marker-end="url(#arrow)"/>
+  <text x="385" y="318" class="rel">hat eine</text>
+
+  <path d="M700 270 V360" class="line" marker-end="url(#arrow)"/>
+  <text x="716" y="320" class="rel">hat 1..n</text>
+
+  <path d="M880 210 C1000 220, 1080 275, 1120 360" class="line" marker-end="url(#arrow)"/>
+  <text x="1020" y="250" class="rel">wird verwendet von</text>
+
+  <path d="M260 480 V650" class="line" marker-end="url(#arrow)"/>
+  <text x="277" y="570" class="rel">hat 1..2</text>
+
+  <path d="M700 480 V650" class="line" marker-end="url(#arrow)"/>
+  <text x="717" y="570" class="rel">delegiert an</text>
+
+  <path d="M870 705 H970" class="line" marker-end="url(#arrow)"/>
+  <text x="886" y="684" class="rel">kann setzen</text>
+</svg>
