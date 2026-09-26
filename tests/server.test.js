@@ -1,6 +1,7 @@
 const fs = require('node:fs/promises');
 const os = require('node:os');
 const path = require('node:path');
+const { setTimeout: delay } = require('node:timers/promises');
 const request = require('supertest');
 
 const {
@@ -318,7 +319,7 @@ Body
       .get('/download/singleflight.epub')
       .then((response) => response);
 
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    await delay(20);
     expect(buildArticleEpub).toHaveBeenCalledTimes(1);
 
     releaseBuild();
@@ -346,7 +347,7 @@ Body
     const buildArticleEpub = globalThis.vi.fn(async (post) => {
       activeBuilds += 1;
       maximumActiveBuilds = Math.max(maximumActiveBuilds, activeBuilds);
-      await new Promise((resolve) => setTimeout(resolve, 25));
+      await delay(25);
       activeBuilds -= 1;
       return Buffer.from(`epub-${post.slug}`);
     });
