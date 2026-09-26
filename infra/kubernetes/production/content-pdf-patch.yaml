@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: published-content
+          image: ghcr.io/0b-ivan/kernel-notes-content:UNPINNED
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              rm -rf /published/*
+              cp -a /content/. /published/
+          volumeMounts:
+            - name: published-content
+              mountPath: /published
+      containers:
+        - name: pdf
+          volumeMounts:
+            - name: published-content
+              mountPath: /app/posts
+              subPath: posts
+              readOnly: true
+            - name: published-content
+              mountPath: /app/snippets
+              subPath: snippets
+              readOnly: true
+            - name: published-content
+              mountPath: /app/assets/posts
+              subPath: assets/posts
+              readOnly: true
+            - name: published-content
+              mountPath: /app/assets/covers
+              subPath: assets/covers
+              readOnly: true
+            - name: published-content
+              mountPath: /app/assets/css/article-covers.css
+              subPath: assets/css/article-covers.css
+              readOnly: true
+      volumes:
+        - name: published-content
+          emptyDir: {}
