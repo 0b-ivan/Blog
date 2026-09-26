@@ -17,7 +17,6 @@ tags:
   - Docs
   - Mermaid
 search_queries:
-  - DevEx
   - query: Architekturdiagramm direkt im Markdown schreiben
     maxRank: 1
   - query: Wie kann ich Warnhinweise in Markdown anzeigen?
