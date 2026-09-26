@@ -311,8 +311,12 @@ Body
       })
     });
 
-    const firstRequest = request(app).get('/download/singleflight.epub');
-    const secondRequest = request(app).get('/download/singleflight.epub');
+    const firstRequest = request(app)
+      .get('/download/singleflight.epub')
+      .then((response) => response);
+    const secondRequest = request(app)
+      .get('/download/singleflight.epub')
+      .then((response) => response);
 
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(buildArticleEpub).toHaveBeenCalledTimes(1);
