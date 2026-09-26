@@ -6,7 +6,9 @@ const {
   buildCoverSvg,
   buildEditorialCoverSvg,
   buildPhotoCoverSvg,
+  containsCjkText,
   createDeckblatt,
+  createEditorialCoverAssets,
   createEpubCover,
   displayAuthor,
   ensureCoverImageProperty,
@@ -196,6 +198,45 @@ describe('article ebook export helpers', () => {
     expect(svg).toContain('Ivan Babayev');
     expect(svg).toContain('Courier New');
     expect(svg).not.toContain('cover-monkey');
+  });
+
+  it('rasterizes one editorial PNG and reuses it for cover and deckblatt', async () => {
+    const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'kernel-notes-shared-cover-'));
+    try {
+      const coverDir = path.join(assetRoot, 'assets', 'covers');
+      await fs.mkdir(coverDir, { recursive: true });
+      await fs.writeFile(path.join(coverDir, 'demo.jpg'), Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+
+      let rasterizeCalls = 0;
+      const fakePng = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x01]);
+      const assets = await createEditorialCoverAssets({
+        slug: 'demo',
+        title: 'Shared editorial cover',
+        author: 'obivan',
+        category: 'DevOps',
+        date: '2026-09-26',
+        coverImage: '/assets/covers/demo.jpg'
+      }, assetRoot, {
+        rasterizeSvg: async () => {
+          rasterizeCalls += 1;
+          return fakePng;
+        }
+      });
+
+      expect(rasterizeCalls).toBe(1);
+      expect(assets.cover.name).toBe('demo-cover.png');
+      expect(Buffer.from(await assets.cover.arrayBuffer())).toEqual(fakePng);
+      expect(assets.deckblatt.html).toContain('deckblatt.png');
+      expect(assets.deckblatt.html).toContain('book-deckblatt--editorial');
+      await assets.deckblatt.cleanup();
+    } finally {
+      await fs.rm(assetRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('loads the large CJK cover font only for covers that contain CJK text', () => {
+    expect(containsCjkText('Kernel Notes für Kubernetes')).toBe(false);
+    expect(containsCjkText('Pac-Man und パクパク')).toBe(true);
   });
 
   it('rasterizes the portrait editorial artwork for the EPUB library cover', async () => {
