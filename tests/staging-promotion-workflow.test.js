@@ -26,15 +26,10 @@ describe('staging promotion workflow', () => {
     expect(workflow).not.toContain('git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}"');
     expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
     expect(workflow).toContain('actions: write');
-    expect(workflow).toContain('Run and bridge required checks for production promotion');
-    expect(workflow).toContain('statuses: write');
+    expect(workflow).toContain('Trigger required checks for production promotion');
     expect(workflow).toContain('gh workflow run ci.yml');
     expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');
-    expect(workflow).toContain('gh run watch "$run_id"');
-    expect(workflow).toContain('/statuses/${promotion_sha}');
-    expect(workflow).toContain("-f state='pending'");
-    expect(workflow).toContain("-f state='success'");
-    expect(workflow).toContain("-f state='failure'");
-    expect(workflow).toContain("for context in 'checks' 'Local assets'");
+    expect(workflow).toContain('-f pr_number="$promotion_pr"');
+    expect(workflow).not.toContain('statuses: write');
   });
 });
