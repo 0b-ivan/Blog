@@ -6,11 +6,11 @@ resources:
   - ../base
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 8e33588e267522db47e8444b6255a7758e085c5e
+    newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
   - name: ghcr.io/0b-ivan/kernel-notes-search
-    newTag: 8e33588e267522db47e8444b6255a7758e085c5e
+    newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
   - name: ghcr.io/0b-ivan/kernel-notes-pdf
-    newTag: 8e33588e267522db47e8444b6255a7758e085c5e
+    newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
 replicas:
