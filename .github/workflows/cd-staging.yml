@@ -743,7 +743,8 @@ jobs:
 
           gh workflow run ci.yml \
             --repo "$REPOSITORY" \
-            --ref "$PROMOTION_BRANCH"
+            --ref "$PROMOTION_BRANCH" \
+            -f pr_number="$promotion_pr"
 
           echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
 
