@@ -10,6 +10,7 @@ on:
       - 'fix/**'
     paths:
       - 'media/photos/*.json'
+      - 'posts/*.md'
   workflow_dispatch:
     inputs:
       manifest:
@@ -46,6 +47,44 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Resolve changed article posts
+        id: posts
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          : > /tmp/photo-posts.txt
+
+          before='${{ github.event.before }}'
+          sha='${{ github.sha }}'
+
+          if [ -n "$before" ] && [[ ! "$before" =~ ^0+$ ]] && git cat-file -e "${before}^{commit}" 2>/dev/null; then
+            git diff --name-only "$before" "$sha" -- 'posts/*.md'
+          else
+            git diff-tree --no-commit-id --name-only -r "$sha" -- 'posts/*.md'
+          fi | while IFS= read -r post; do
+            if [ -f "$post" ]; then
+              printf '%s\n' "$post"
+            fi
+          done | sort -u > /tmp/photo-posts.txt
+
+          if [ -s /tmp/photo-posts.txt ]; then
+            echo 'has_posts=true' >> "$GITHUB_OUTPUT"
+            echo 'Changed article posts:'
+            cat /tmp/photo-posts.txt
+          else
+            echo 'has_posts=false' >> "$GITHUB_OUTPUT"
+            echo 'No changed article posts.'
+          fi
+
+      - name: Convert external Commons image links
+        if: github.event_name == 'push' && steps.posts.outputs.has_posts == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t posts < /tmp/photo-posts.txt
+          npm run photos:materialize-links -- "${posts[@]}"
+
       - name: Resolve manifests
         id: manifests
         shell: bash
@@ -65,10 +104,21 @@ jobs:
             esac
             printf '%s\n' "$MANUAL_MANIFEST" >> /tmp/photo-manifests.txt
           else
-            git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" -- 'media/photos/*.json'               | grep -E '^media/photos/[^/]+\.json$'               >> /tmp/photo-manifests.txt || true
+            before='${{ github.event.before }}'
+            sha='${{ github.sha }}'
+
+            if [ -n "$before" ] && [[ ! "$before" =~ ^0+$ ]] && git cat-file -e "${before}^{commit}" 2>/dev/null; then
+              git diff --name-only "$before" "$sha" -- 'media/photos/*.json'
+            else
+              git diff-tree --no-commit-id --name-only -r "$sha" -- 'media/photos/*.json'
+            fi >> /tmp/photo-manifests.txt || true
+
+            git diff --name-only -- 'media/photos/*.json' >> /tmp/photo-manifests.txt || true
+            git ls-files --others --exclude-standard -- 'media/photos/*.json' >> /tmp/photo-manifests.txt || true
           fi
 
-          sort -u -o /tmp/photo-manifests.txt /tmp/photo-manifests.txt
+          grep -E '^media/photos/[^/]+\.json$' /tmp/photo-manifests.txt | sort -u > /tmp/photo-manifests.filtered || true
+          mv /tmp/photo-manifests.filtered /tmp/photo-manifests.txt
 
           if [ ! -s /tmp/photo-manifests.txt ]; then
             echo 'No changed article-photo manifest; nothing to materialize.'
@@ -113,7 +163,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          git add assets/posts posts/_sources.json
+          git add -- assets/posts posts media/photos
 
           if git diff --cached --quiet; then
             echo 'Photo Connection already materialized this manifest.'

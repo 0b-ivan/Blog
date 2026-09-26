@@ -191,7 +191,13 @@ Beispiel:
 
 Root-relative Pfade funktionieren auf Website, RSS, EPUB/PDF und in der Artikelhistorie reproduzierbar.
 
-Für fremde, rechteklar wiederverwendbare Fotos gibt es zusätzlich die [Photo Connection](photo-connection.md). Sie materialisiert Bilder aus einem Manifest unter `media/photos/` lokal nach `assets/posts/` und übernimmt Quellen-/Lizenzmetadaten. Der aktuelle automatische LiveSync-Publisher erzeugt solche Manifeste noch nicht selbst; dieser Unterschied ist in der Photo-Connection-Doku beschrieben.
+Für fremde, rechteklar wiederverwendbare Fotos gibt es zusätzlich die [Photo Connection](photo-connection.md). Bei Wikimedia Commons kann in Obsidian zunächst einfach die externe Bild-URL als normales Markdown-Bild eingefügt werden:
+
+```md
+![Aussagekräftiger Alt-Text](https://upload.wikimedia.org/wikipedia/commons/.../bild.jpg)
+```
+
+Nach dem Push auf einen `obsidian/**`-, `post/**`-, `feat/**`- oder `fix/**`-Branch erzeugt die Pipeline automatisch das Manifest, lädt und validiert das Bild, ergänzt den Quellenverweis und ersetzt den Hotlink im Artikel durch einen Root-relativen Pfad unter `/assets/posts/`. Andere externe Provider bleiben blockiert, solange kein lizenzbewusster Adapter dafür existiert.
 
 ## Was nicht ins Repository gehoert
 

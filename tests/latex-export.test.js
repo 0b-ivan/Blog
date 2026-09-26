@@ -91,6 +91,18 @@ describe('LaTeX publication export', () => {
     expect(html).not.toContain('<p><em>');
   });
 
+
+  it('preserves an explicit Markdown image width in the PDF figure', () => {
+    const html = normalizeFiguresForPdf(
+      '<p><img src="/assets/posts/pac-man/timeline.svg" alt="Timeline" data-image-width="42" style="width:42%;max-width:100%;height:auto;" /></p>'
+    );
+
+    expect(html).toContain('width="42%"');
+    expect(html).not.toContain('height="52%"');
+    expect(html).not.toContain('data-image-width=');
+    expect(html).not.toContain('style="width:42%');
+  });
+
   it('generates bibliography records for the sources used by the paper', () => {
     const bib = buildBibTeX([{
       id: 'kubernetes-probes',
