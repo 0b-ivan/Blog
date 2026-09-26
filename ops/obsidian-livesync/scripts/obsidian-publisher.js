@@ -5,6 +5,8 @@ const path = require('node:path');
 const DEFAULT_VAULT_PATH = '/vault';
 const DEFAULT_REPOSITORY = '0b-ivan/Blog';
 const DEFAULT_BASE_BRANCH = 'staging';
+const DEFAULT_PRODUCTION_BRANCH = 'main';
+const DEFAULT_PROMOTION_BRANCH = 'promotion/staging-verified';
 const DEFAULT_DEBOUNCE_SECONDS = 300;
 const DEFAULT_POLL_SECONDS = 30;
 
@@ -60,7 +62,7 @@ function contentHash(raw) {
   return crypto.createHash('sha256').update(String(raw || ''), 'utf8').digest('hex');
 }
 
-function branchForFile(fileName) {
+function slugForFile(fileName) {
   const slug = String(fileName || '')
     .replace(/\.md$/i, '')
     .toLowerCase()
@@ -72,7 +74,15 @@ function branchForFile(fileName) {
     throw new Error(`Cannot build publisher branch for '${fileName}'`);
   }
 
-  return `obsidian/${slug}`;
+  return slug;
+}
+
+function branchForFile(fileName) {
+  return `obsidian/${slugForFile(fileName)}`;
+}
+
+function productionUnpublishBranchForFile(fileName) {
+  return `obsidian-unpublish/main/${slugForFile(fileName)}`;
 }
 
 function encodePath(value) {
@@ -125,10 +135,12 @@ class StableTracker {
 }
 
 class GitHubPublisher {
-  constructor({ token, repository, baseBranch }) {
+  constructor({ token, repository, baseBranch, productionBranch = DEFAULT_PRODUCTION_BRANCH, promotionBranch = DEFAULT_PROMOTION_BRANCH }) {
     this.token = token;
     this.repository = repository;
     this.baseBranch = baseBranch;
+    this.productionBranch = productionBranch;
+    this.promotionBranch = promotionBranch;
     this.owner = repository.split('/')[0];
   }
 
@@ -204,9 +216,9 @@ class GitHubPublisher {
     };
   }
 
-  async openPullRequest(branch) {
+  async openPullRequest(branch, baseBranch = this.baseBranch) {
     const head = encodeURIComponent(`${this.owner}:${branch}`);
-    const base = encodeURIComponent(this.baseBranch);
+    const base = encodeURIComponent(baseBranch);
     const pulls = await this.request(
       `/repos/${this.repository}/pulls?state=open&head=${head}&base=${base}&per_page=10`
     );
@@ -250,17 +262,21 @@ class GitHubPublisher {
     return true;
   }
 
-  pullRequestBody(mode, title, filePath) {
+  pullRequestBody(mode, title, filePath, baseBranch = this.baseBranch) {
     if (mode === 'unpublish') {
       return [
         'Automatisch aus Obsidian erstellt.',
         '',
         `- Artikel: \`${filePath}\``,
         '- Status: `draft`',
+        `- Zielbranch: \`${baseBranch}\``,
         '- Der Artikel wird aus `posts/` und `archive/` entfernt und dadurch vollstaendig privat.',
+        '- Unpublish ist ein Fast-Track: dieser PR darf nach erfolgreichen Required Checks automatisch gemergt werden.',
         '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter erneut auf `publish` oder `archived` gesetzt werden.',
         '',
-        'Der Artikel wird erst nach Merge dieses PR offline genommen.'
+        baseBranch === this.productionBranch
+          ? 'Production wird bewusst direkt entfernt; ein spaeteres Publish laeuft wieder ueber staging und den manuellen Promotion-Merge.'
+          : 'Staging wird parallel entfernt, damit der Artikel dort ebenfalls nicht mehr sichtbar ist.'
       ].join('\n');
     }
 
@@ -292,24 +308,24 @@ class GitHubPublisher {
     ].join('\n');
   }
 
-  async createPullRequest(branch, title, filePath, mode = 'publish') {
+  async createPullRequest(branch, title, filePath, mode = 'publish', baseBranch = this.baseBranch) {
     return this.request(`/repos/${this.repository}/pulls`, {
       method: 'POST',
       body: {
         title: modeTitle(mode, title),
         head: branch,
-        base: this.baseBranch,
-        body: this.pullRequestBody(mode, title, filePath)
+        base: baseBranch,
+        body: this.pullRequestBody(mode, title, filePath, baseBranch)
       }
     });
   }
 
-  async updatePullRequest(pullRequest, title, filePath, mode) {
+  async updatePullRequest(pullRequest, title, filePath, mode, baseBranch = this.baseBranch) {
     return this.request(`/repos/${this.repository}/pulls/${pullRequest.number}`, {
       method: 'PATCH',
       body: {
         title: modeTitle(mode, title),
-        body: this.pullRequestBody(mode, title, filePath)
+        body: this.pullRequestBody(mode, title, filePath, baseBranch)
       }
     });
   }
@@ -321,10 +337,10 @@ class GitHubPublisher {
     });
   }
 
-  async ensureBranch(branch, pullRequest) {
-    const baseSha = await this.branchSha(this.baseBranch);
+  async ensureBranch(branch, pullRequest, baseBranch = this.baseBranch) {
+    const baseSha = await this.branchSha(baseBranch);
     if (!baseSha) {
-      throw new Error(`Base branch '${this.baseBranch}' not found`);
+      throw new Error(`Base branch '${baseBranch}' not found`);
     }
 
     const branchSha = await this.branchSha(branch);
@@ -337,6 +353,41 @@ class GitHubPublisher {
     } else if (!branchSha) {
       await this.createBranch(branch, baseSha);
     }
+  }
+
+  async closeOpenPromotionPullRequest() {
+    const pullRequest = await this.openPullRequest(this.promotionBranch, this.productionBranch);
+    if (!pullRequest) {
+      return null;
+    }
+
+    await this.closePullRequest(pullRequest);
+    return pullRequest;
+  }
+
+  async ensureUnpublishPullRequest({ fileName, filePath, archivePath, title, baseBranch, branch }) {
+    const activeFile = await this.file(filePath, baseBranch);
+    const archivedFile = await this.file(archivePath, baseBranch);
+    let pullRequest = await this.openPullRequest(branch, baseBranch);
+
+    if (!activeFile && !archivedFile) {
+      if (pullRequest) {
+        await this.closePullRequest(pullRequest);
+      }
+      return { action: 'already-offline', branch, pullRequest: null };
+    }
+
+    await this.ensureBranch(branch, pullRequest, baseBranch);
+    await this.deleteFile(filePath, branch, title, 'unpublish');
+    await this.deleteFile(archivePath, branch, title, 'unpublish');
+
+    if (!pullRequest) {
+      pullRequest = await this.createPullRequest(branch, title, filePath, 'unpublish', baseBranch);
+      return { action: 'created-unpublish-pr', branch, pullRequest };
+    }
+
+    pullRequest = await this.updatePullRequest(pullRequest, title, filePath, 'unpublish', baseBranch);
+    return { action: 'updated-unpublish-pr', branch, pullRequest };
   }
 
   async publish({ fileName, raw, title }) {
@@ -375,30 +426,59 @@ class GitHubPublisher {
   async unpublish({ fileName, title }) {
     const filePath = `posts/${fileName}`;
     const archivePath = `archive/${fileName}`;
-    const branch = branchForFile(fileName);
-    const mainFile = await this.file(filePath, this.baseBranch);
-    const mainArchiveFile = await this.file(archivePath, this.baseBranch);
-    let pullRequest = await this.openPullRequest(branch);
+    const stagingBranch = branchForFile(fileName);
+    const productionBranch = productionUnpublishBranchForFile(fileName);
 
-    if (!mainFile && !mainArchiveFile) {
-      if (pullRequest) {
-        await this.closePullRequest(pullRequest);
-        return { action: 'closed-pending-publish', branch, pullRequest };
+    const stagingFile = await this.file(filePath, this.baseBranch);
+    const stagingArchiveFile = await this.file(archivePath, this.baseBranch);
+    const productionFile = this.productionBranch === this.baseBranch
+      ? stagingFile
+      : await this.file(filePath, this.productionBranch);
+    const productionArchiveFile = this.productionBranch === this.baseBranch
+      ? stagingArchiveFile
+      : await this.file(archivePath, this.productionBranch);
+
+    if (!stagingFile && !stagingArchiveFile && !productionFile && !productionArchiveFile) {
+      const pendingPublish = await this.openPullRequest(stagingBranch, this.baseBranch);
+      if (pendingPublish) {
+        await this.closePullRequest(pendingPublish);
+        return { action: 'closed-pending-publish', branch: stagingBranch, pullRequest: pendingPublish };
       }
-      return { action: 'already-offline', branch, pullRequest: null };
+      return { action: 'already-offline', branch: stagingBranch, pullRequest: null };
     }
 
-    await this.ensureBranch(branch, pullRequest);
-    await this.deleteFile(filePath, branch, title, 'unpublish');
-    await this.deleteFile(archivePath, branch, title, 'unpublish');
-
-    if (!pullRequest) {
-      pullRequest = await this.createPullRequest(branch, title, filePath, 'unpublish');
-      return { action: 'created-unpublish-pr', branch, pullRequest };
+    if (productionFile || productionArchiveFile) {
+      await this.closeOpenPromotionPullRequest();
     }
 
-    pullRequest = await this.updatePullRequest(pullRequest, title, filePath, 'unpublish');
-    return { action: 'updated-unpublish-pr', branch, pullRequest };
+    const staging = await this.ensureUnpublishPullRequest({
+      fileName,
+      filePath,
+      archivePath,
+      title,
+      baseBranch: this.baseBranch,
+      branch: stagingBranch
+    });
+
+    let production = staging;
+    if (this.productionBranch !== this.baseBranch) {
+      production = await this.ensureUnpublishPullRequest({
+        fileName,
+        filePath,
+        archivePath,
+        title,
+        baseBranch: this.productionBranch,
+        branch: productionBranch
+      });
+    }
+
+    return {
+      action: 'fast-track-unpublish',
+      branch: staging.branch,
+      pullRequest: staging.pullRequest,
+      staging,
+      production
+    };
   }
 
   async archive({ fileName, raw, title }) {
@@ -540,6 +620,8 @@ async function main() {
   const vaultPath = process.env.PUBLISHER_VAULT_PATH || DEFAULT_VAULT_PATH;
   const repository = process.env.PUBLISHER_GITHUB_REPOSITORY || DEFAULT_REPOSITORY;
   const baseBranch = process.env.PUBLISHER_BASE_BRANCH || DEFAULT_BASE_BRANCH;
+  const productionBranch = process.env.PUBLISHER_PRODUCTION_BRANCH || DEFAULT_PRODUCTION_BRANCH;
+  const promotionBranch = process.env.PUBLISHER_PROMOTION_BRANCH || DEFAULT_PROMOTION_BRANCH;
   const debounceSeconds = parsePositiveInteger(
     process.env.PUBLISHER_DEBOUNCE_SECONDS,
     DEFAULT_DEBOUNCE_SECONDS
@@ -547,10 +629,10 @@ async function main() {
   const pollSeconds = parsePositiveInteger(process.env.PUBLISHER_POLL_SECONDS, DEFAULT_POLL_SECONDS);
 
   const tracker = new StableTracker(debounceSeconds * 1000);
-  const publisher = new GitHubPublisher({ token, repository, baseBranch });
+  const publisher = new GitHubPublisher({ token, repository, baseBranch, productionBranch, promotionBranch });
 
   console.log(`[publisher] watching ${vaultPath}`);
-  console.log(`[publisher] repository ${repository}, base ${baseBranch}`);
+  console.log(`[publisher] repository ${repository}, staging ${baseBranch}, production ${productionBranch}`);
   console.log(`[publisher] debounce ${debounceSeconds}s, poll ${pollSeconds}s`);
 
   while (true) {
@@ -570,6 +652,7 @@ module.exports = {
   GitHubPublisher,
   StableTracker,
   branchForFile,
+  productionUnpublishBranchForFile,
   contentHash,
   frontmatterLines,
   modeTitle,
