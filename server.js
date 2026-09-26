@@ -17,6 +17,7 @@ const {
 } = require('./lib/glossary');
 const { countWords, calculateReadingTime } = require('./lib/reading-time');
 const { articleCoverStyle } = require('./lib/post-cover');
+const { installArticleImageSizing } = require('./lib/article-image-sizing');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -300,6 +301,7 @@ const md = new MarkdownIt({
 });
 
 installSnippetRenderer(md);
+installArticleImageSizing(md);
 md.use(mdFootnote);
 md.use(mdAbbr);
 
