@@ -36,58 +36,10 @@ jobs:
 
       - name: Classify changed files
         id: changes
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "heavy=true" >> "$GITHUB_OUTPUT"
-            echo "security=true" >> "$GITHUB_OUTPUT"
-            echo "semantic=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          git diff --name-only "${{ github.event.pull_request.base.sha }}"...HEAD > /tmp/changed-files.txt
-          echo "Changed files:"
-          cat /tmp/changed-files.txt
-
-          heavy=false
-          security=false
-          semantic=false
-
-          while IFS= read -r file; do
-            case "$file" in
-              package.json|package-lock.json|rag/package.json|rag/package-lock.json|Dockerfile|Dockerfile.search|Dockerfile.status|Dockerfile.chaos|Dockerfile.pdf|docker-compose.yml|docker-compose.prod.yml|ops/*/docker-compose.yml)
-                security=true
-                ;;
-            esac
-
-            case "$file" in
-              .github/workflows/ci.yml)
-                heavy=true
-                security=true
-                ;;
-            esac
-
-            case "$file" in
-              posts/*|archive/*|rag/*)
-                semantic=true
-                ;;
-            esac
-
-            case "$file" in
-              posts/*|archive/*|snippets/*|assets/posts/*|config/proofread-words.txt|cspell.json|scripts/spellcheck-posts.js|scripts/proofread-posts.js|scripts/list-missing-cover-posts.js|scripts/render-cover-review.js|scripts/rerank-cover-candidates-e5.js|scripts/resolve-pixabay-cover.js|scripts/select-diverse-cover-candidates.js|tests/cover-backfill.test.js|tests/cover-diversity.test.js|tests/cover-review.test.js|tests/cover-semantic-rerank.test.js|tests/pixabay-cover.test.js|README*|docs/*|.github/workflows/*)
-                ;;
-              *)
-                heavy=true
-                ;;
-            esac
-          done < /tmp/changed-files.txt
-
-          echo "heavy=$heavy" >> "$GITHUB_OUTPUT"
-          echo "security=$security" >> "$GITHUB_OUTPUT"
-          echo "semantic=$semantic" >> "$GITHUB_OUTPUT"
-          echo "Classification: heavy=$heavy security=$security semantic=$semantic"
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash scripts/workflows/ci/classify-changes.sh
 
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -275,69 +227,7 @@ jobs:
 
       - name: LaTeX PDF smoke test
         if: steps.changes.outputs.heavy == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          preferred_slugs=(
-            2026-09-20-chaos-engineering-chaos-monkey-kubernetes
-            2026-09-24-pac-man-puck-man-paku-paku
-          )
-          smoke_slugs=()
-
-          add_slug_if_published() {
-            local slug="$1"
-            local post="posts/${slug}.md"
-
-            [ -f "$post" ] || return 0
-            grep -Eq '^status:[[:space:]]*publish[[:space:]]*$' "$post" || return 0
-
-            for existing in "${smoke_slugs[@]:-}"; do
-              [ "$existing" = "$slug" ] && return 0
-            done
-
-            smoke_slugs+=("$slug")
-          }
-
-          for slug in "${preferred_slugs[@]}"; do
-            add_slug_if_published "$slug"
-          done
-
-          while IFS= read -r post; do
-            [ "${#smoke_slugs[@]}" -ge 2 ] && break
-            slug="$(basename "$post" .md)"
-            add_slug_if_published "$slug"
-          done < <(find posts -maxdepth 1 -type f -name '*.md' -print | sort)
-
-          if [ "${#smoke_slugs[@]}" -lt 2 ]; then
-            echo "Need at least two published posts for the LaTeX PDF smoke test; found ${#smoke_slugs[@]}." >&2
-            exit 1
-          fi
-
-          printf 'LaTeX PDF smoke slugs: %s\n' "${smoke_slugs[*]}"
-
-          for slug in "${smoke_slugs[@]:0:2}"; do
-            output="/tmp/kernel-notes-${slug}.pdf"
-            if ! curl -fsS --max-time 150 \
-              "http://127.0.0.1:8080/download/${slug}.pdf" \
-              -o "$output"; then
-              echo "LaTeX PDF smoke test failed for ${slug}; renderer logs follow:" >&2
-              docker compose logs --no-color --tail=300 pdf blog || true
-              exit 1
-            fi
-            test "$(head -c 5 "$output")" = '%PDF-' || {
-              docker compose logs --no-color --tail=300 pdf blog || true
-              exit 1
-            }
-            test "$(wc -c < "$output")" -gt 10000 || {
-              docker compose logs --no-color --tail=300 pdf blog || true
-              exit 1
-            }
-            curl -fsS http://127.0.0.1:8080/healthz >/dev/null || {
-              docker compose logs --no-color --tail=300 pdf blog || true
-              exit 1
-            }
-          done
+        run: bash scripts/workflows/ci/pdf-smoke.sh
 
       - name: Browser click smoke test
         if: steps.changes.outputs.heavy == 'true'
@@ -416,37 +306,7 @@ jobs:
 
       - name: Enforce blog CRITICAL gate
         if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import json
-          import sys
-          from pathlib import Path
-
-          report = json.loads(Path('trivy-blog-critical.json').read_text(encoding='utf-8'))
-          vulnerabilities = []
-          for result in report.get('Results') or []:
-              target = result.get('Target', '')
-              for vuln in result.get('Vulnerabilities') or []:
-                  vulnerabilities.append((
-                      target,
-                      vuln.get('VulnerabilityID', ''),
-                      vuln.get('PkgName', ''),
-                      vuln.get('InstalledVersion', ''),
-                      vuln.get('FixedVersion', ''),
-                  ))
-
-          if not vulnerabilities:
-              print('No CRITICAL vulnerabilities found in blog image.')
-              sys.exit(0)
-
-          print('CRITICAL vulnerabilities in blog image:')
-          for target, vuln_id, package, installed, fixed in vulnerabilities:
-              fixed_display = fixed or '<none>'
-              print(f'{vuln_id} | {package} | installed={installed} | fixed={fixed_display} | target={target}')
-              print(f'::error title={vuln_id}::{package} installed={installed} fixed={fixed_display} target={target}')
-          sys.exit(1)
-          PY
+        run: python3 scripts/workflows/ci/enforce-trivy-critical.py trivy-blog-critical.json 'blog image'
 
       - name: Create Kernel Grep CRITICAL report
         if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
@@ -462,37 +322,8 @@ jobs:
 
       - name: Enforce Kernel Grep CRITICAL gate
         if: ${{ steps.changes.outputs.security == 'true' && vars.TRIVY_STRICT != 'false' }}
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import json
-          import sys
-          from pathlib import Path
+        run: python3 scripts/workflows/ci/enforce-trivy-critical.py trivy-search-critical.json 'Kernel Grep image'
 
-          report = json.loads(Path('trivy-search-critical.json').read_text(encoding='utf-8'))
-          vulnerabilities = []
-          for result in report.get('Results') or []:
-              target = result.get('Target', '')
-              for vuln in result.get('Vulnerabilities') or []:
-                  vulnerabilities.append((
-                      target,
-                      vuln.get('VulnerabilityID', ''),
-                      vuln.get('PkgName', ''),
-                      vuln.get('InstalledVersion', ''),
-                      vuln.get('FixedVersion', ''),
-                  ))
-
-          if not vulnerabilities:
-              print('No CRITICAL vulnerabilities found in Kernel Grep image.')
-              sys.exit(0)
-
-          print('CRITICAL vulnerabilities in Kernel Grep image:')
-          for target, vuln_id, package, installed, fixed in vulnerabilities:
-              fixed_display = fixed or '<none>'
-              print(f'{vuln_id} | {package} | installed={installed} fixed={fixed_display} target={target}')
-              print(f'::error title={vuln_id}::{package} installed={installed} fixed={fixed_display} target={target}')
-          sys.exit(1)
-          PY
 
 
   local-assets:
@@ -531,54 +362,4 @@ jobs:
           LOCAL_ASSETS_RESULT: ${{ needs.local-assets.result }}
           DISPATCH_SHA: ${{ github.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          set -euo pipefail
-
-          pr_json="$(gh api "/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
-          pr_state="$(printf '%s' "$pr_json" | jq -r '.state')"
-          pr_base="$(printf '%s' "$pr_json" | jq -r '.base.ref')"
-          pr_head_sha="$(printf '%s' "$pr_json" | jq -r '.head.sha')"
-          merge_sha="$(printf '%s' "$pr_json" | jq -r '.merge_commit_sha // empty')"
-
-          test "$pr_state" = open
-          test "$pr_base" = main
-
-          if [ "$pr_head_sha" != "$DISPATCH_SHA" ]; then
-            echo "Refusing to mirror stale results: dispatched SHA ${DISPATCH_SHA} != PR head ${pr_head_sha}." >&2
-            exit 1
-          fi
-
-          if [ -z "$merge_sha" ]; then
-            echo 'GitHub has not produced a synthetic merge commit for the PR.' >&2
-            exit 1
-          fi
-
-          publish_check() {
-            local name="$1"
-            local result="$2"
-            local conclusion=failure
-
-            if [ "$result" = success ]; then
-              conclusion=success
-            fi
-
-            gh api \
-              --method POST \
-              -H 'Accept: application/vnd.github+json' \
-              "/repos/${GITHUB_REPOSITORY}/check-runs" \
-              -f name="$name" \
-              -f head_sha="$merge_sha" \
-              -f status=completed \
-              -f conclusion="$conclusion" \
-              -f details_url="$RUN_URL" >/dev/null
-
-            echo "Mirrored ${name}=${conclusion} to ${merge_sha}."
-          }
-
-          publish_check checks "$CHECKS_RESULT"
-          publish_check 'Local assets' "$LOCAL_ASSETS_RESULT"
-
-          if [ "$CHECKS_RESULT" != success ] || [ "$LOCAL_ASSETS_RESULT" != success ]; then
-            echo 'One or more required checks failed; mirrored failure to the PR merge commit.' >&2
-            exit 1
-          fi
+        run: bash scripts/workflows/ci/mirror-required-checks.sh
