@@ -69,7 +69,7 @@ Beim Schreiben dieses generierten GitOps-Commits kann `staging` zwischen Checkou
 
 Flux reconciliert diesen Git-Zustand in den Staging-Cluster. GitHub Actions benötigt dafür keinen direkten Zugriff auf die private K3s-API.
 
-Reine GitOps-, Workflow-, Test- und Dokumentationsänderungen können die bereits gepinnten Images wiederverwenden. Der Staging-Workflow läuft trotzdem auf **jedem** Push nach `staging`, führt für solche Control-Plane-Änderungen den öffentlichen Availability-Gate aus und darf anschließend den verifizierten Promotion-Zeiger auf den aktuellen Staging-Commit weiterziehen. Damit bleibt `promotion/staging-verified` auch historisch mit `main`/dem Rücksync konvergent und kann nicht allein wegen ausgelassener No-Image-Deployments wieder in Merge-Konflikte laufen.
+Reine GitOps-, Workflow-, Test- und Dokumentationsänderungen können die bereits gepinnten Images wiederverwenden. Der Staging-Workflow läuft trotzdem auf **jedem** Push nach `staging` und führt für solche Control-Plane-Änderungen den öffentlichen Availability-Gate aus. Ein bereits offener Production-Release-PR wird dabei bewusst **nicht** verändert: sein Head bleibt eingefroren, damit GitHub nicht fortlaufend neue synthetische Merge-Commits erzeugt und bereits bestandene Required Checks wieder verwirft.
 
 ## Staging-Gate
 
@@ -82,15 +82,15 @@ Der Gate prüft unter anderem:
 - die erwartete Staging-Version
 - die sichtbare Staging-Kennzeichnung
 
-Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verifizierten Stand gebracht und der Promotion-PR nach `main` geöffnet bzw. aktualisiert.
+Erst nach erfolgreicher Prüfung darf ein neuer Production-Release-Kandidat entstehen. Existiert bereits ein offener Release-PR, bleibt dieser unverändert und neue Staging-Commits warten auf den nächsten Release-Zyklus.
 
-`promotion/staging-verified` ist dabei bewusst **kein Entwicklungsbranch**, sondern ein beweglicher Zeiger auf den zuletzt öffentlich verifizierten Staging-Commit. Der Workflow aktualisiert diesen Zeiger mit `--force-with-lease`, damit auch eine zuvor divergierte Promotion-Historie sicher ersetzt werden kann, ohne parallele Änderungen unbemerkt zu überschreiben.
+Für einen neuen Kandidaten wird die aktuelle `VERSION` aus `main` gelesen und die Patch-Version genau einmal erhöht, zum Beispiel von `2.2.0` auf `2.2.1`. Auf dem verifizierten Staging-Commit entsteht dafür ein eigener Release-Commit `release: v2.2.1`. `promotion/staging-verified` zeigt anschließend mit `--force-with-lease` auf genau diesen eingefrorenen Commit und der PR trägt den Titel `release: v2.2.1`.
 
-Der Merge dieses Promotion-PRs bleibt manuell.
+Der Merge dieses Release-PRs bleibt manuell. Reine Änderungen unter `infra/kubernetes/staging/**` erzeugen keinen neuen Production-Release.
 
 Die für `main` verpflichtenden Checks `checks` und `Local assets` werden beim Promotion-Pfad auf dem synthetischen Merge-Commit des Promotion-PRs gespiegelt. Der vollständige PR-Checks-Workflow läuft weiterhin auf dem verifizierten Promotion-SHA. Ein nachgelagerter Job liest den aktuellen `merge_commit_sha` des offenen Promotion-PRs und veröffentlicht dort Check-Runs mit denselben erforderlichen Namen. Damit erfüllt der strikte `main`-Ruleset die Checks auf genau dem Commit, den GitHub tatsächlich mergen würde. Bei einem fehlgeschlagenen Quell-Check wird auch der gespiegelte Check als fehlgeschlagen markiert.
 
-Zusätzlich läuft `.github/workflows/promotion-watchdog.yml` als selbstheilender Reconciler. Er wird nach abgeschlossenen PR-Checks, nach Änderungen an `main`, manuell und spätestens alle fünf Minuten gestartet. Regeneriert GitHub den synthetischen Merge-Commit des Promotion-PRs, veröffentlicht der Watchdog die bereits erfolgreichen Required Checks erneut auf dem aktuellen Merge-SHA. Fehlen die Quellchecks auf dem Promotion-SHA, startet er `ci.yml` erneut. Echte Branch-Konflikte werden nicht im Promotion-Watchdog überschrieben, sondern durch den separaten `main -> staging`-Rücksync konvergiert.
+Zusätzlich läuft `.github/workflows/promotion-watchdog.yml` als selbstheilender Reconciler. Er wird nach abgeschlossenen PR-Checks, nach Änderungen an `main`, manuell und mit einem stündlichen Fallback gestartet. Regeneriert GitHub den synthetischen Merge-Commit des Promotion-PRs, veröffentlicht der Watchdog die bereits erfolgreichen Required Checks erneut auf dem aktuellen Merge-SHA. Fehlen die Quellchecks auf dem Promotion-SHA, startet er `ci.yml` erneut. Echte Branch-Konflikte werden nicht im Promotion-Watchdog überschrieben, sondern durch den separaten `main -> staging`-Rücksync konvergiert.
 
 
 ## Production
@@ -99,7 +99,7 @@ Ein Merge nach `main` bedient zwei getrennte Production-Pfade.
 
 ### Rücksync von main nach staging
 
-`.github/workflows/sync-main-to-staging.yml` reconciliert `main` kontinuierlich zurück nach `staging`. Er läuft bei Änderungen an `main` oder `staging`, manuell und zusätzlich alle fünf Minuten. Ist `main` bereits Teil der Staging-Historie, wird ein noch offener Sync-PR geschlossen.
+`.github/workflows/sync-main-to-staging.yml` reconciliert `main` kontinuierlich zurück nach `staging`. Er läuft bei Änderungen an `main` oder `staging`, manuell und zusätzlich mit einem stündlichen Fallback. Ist `main` bereits Teil der Staging-Historie, wird ein noch offener Sync-PR geschlossen.
 
 Andernfalls erzeugt der Workflow `sync/main-to-staging` **vom aktuellen Staging-Head aus** und merged den aktuellen `main`-Head als zweiten Parent. Dadurch wird nicht mehr ein alter `main`-Zeiger gegen ein schnell weiterlaufendes `staging` gehalten. Läuft `staging` weiter, wird derselbe Sync-PR automatisch auf die neuen beiden Heads reconciled.
 
@@ -116,13 +116,9 @@ Der Sync-PR wird weiterhin **nicht automatisch gemergt**. Der Workflow hält ihn
 - Kernel Grep
 - Kubernetes-Status
 
-Die Datei `VERSION` bleibt absichtlich reines SemVer, weil die Deployment-Workflows sie strikt validieren. Größere sichtbare Releases bekommen zusätzlich einen menschenlesbaren Namen in `RELEASE_NAME`; dieser wird über `/build-info.json` und im Footer angezeigt.
+Die Datei `VERSION` bleibt reines SemVer und ist zugleich die sichtbare Production-Version. Staging ergänzt lediglich eine technische Pre-Release-Kennung wie `2.2.1-staging.163`; Production zeigt nach dem Release-Merge ausschließlich `2.2.1`.
 
-Die Build-Version enthält zusätzlich den verkürzten Git-SHA:
-
-```text
-<VERSION>+<12-stelliger-main-SHA>
-```
+Git-SHAs bleiben für technische Rückverfolgbarkeit erhalten, aber nicht als Produktversion: die Production-Images werden weiterhin unveränderlich auf den exakten `main`-SHA getaggt und in GitOps gepinnt.
 
 Der Workflow kopiert `infra/kubernetes/base` und `infra/kubernetes/production` in den separaten Branch `production-gitops`, pinnt dort alle Production-Images auf den exakten `main`-SHA und überlässt Flux das Rolling Deployment.
 

@@ -167,7 +167,6 @@
 
           const info = await response.json();
           const version = info.version ? `v${info.version}` : 'Version unbekannt';
-          const releaseName = info.name ? ` · ${info.name}` : '';
           const releaseDate = new Date(info.release);
           const release = Number.isNaN(releaseDate.getTime())
             ? info.release || 'unbekannt'
@@ -175,7 +174,7 @@
                 dateStyle: 'medium'
               }).format(releaseDate);
 
-          target.textContent = `· ${version}${releaseName} · Letztes Release: ${release}`;
+          target.textContent = `· ${version} · Letztes Release: ${release}`;
         } catch (_error) {
           // Local development without build-info.json keeps the fallback text.
         }
