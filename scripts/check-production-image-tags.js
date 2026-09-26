@@ -57,8 +57,12 @@ for (const [key, imageName] of [
 }
 
 expect(
-  k3s.includes('BUILD_VERSION="${BLOG_VERSION}+${SHORT_SHA}"'),
-  'K3s production build version must remain commit-specific'
+  k3s.includes('BUILD_VERSION="${BLOG_VERSION}"'),
+  'K3s production must expose the clean SemVer release version'
+);
+expect(
+  !k3s.includes('BUILD_VERSION="${BLOG_VERSION}+${SHORT_SHA}"'),
+  'K3s production must not expose commit metadata as the product version'
 );
 
 console.log('Production image tags are isolated: K3s uses <sha>, Hetzner uses <sha>-hetzner.');
