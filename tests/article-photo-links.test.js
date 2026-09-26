@@ -70,6 +70,21 @@ describe('external article image materializer', () => {
     expect(result.markdown).not.toContain('upload.wikimedia.org');
   });
 
+
+  it('preserves image sizing attributes while replacing the remote URL', () => {
+    const markdown = '![Beispielbild](https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg){width=42%}\n';
+
+    const result = planRemoteImages(markdown, 'posts/2026-09-26-demo.md');
+    const photo = result.manifest.photos[0];
+
+    expect(result.markdown).toContain(
+      `![Beispielbild](/${photo.output}){width=42%}`
+    );
+    expect(result.markdown).toContain(
+      `[Wikimedia Commons](/sources.html#${photo.source_id})`
+    );
+  });
+
   it('is a no-op after the hotlink has already been replaced', () => {
     const markdown = '![Lokal](/assets/posts/demo/01-lokal.jpg)\n';
     const result = planRemoteImages(markdown, 'posts/2026-09-26-demo.md');
