@@ -14,5 +14,11 @@ describe('CI PDF smoke test selection', () => {
     expect(workflow).toContain("find posts -maxdepth 1 -type f -name '*.md' -print | sort");
     expect(workflow).toContain('Need at least two published posts for the LaTeX PDF smoke test');
     expect(workflow).toContain('for slug in "${smoke_slugs[@]:0:2}"');
+
+    expect((workflow.match(/- name: LaTeX PDF smoke test/g) || []).length).toBe(1);
+    expect((workflow.match(/- name: Browser click smoke test/g) || []).length).toBe(1);
+    expect((workflow.match(/^  local-assets:/gm) || []).length).toBe(1);
+    expect((workflow.match(/^  mirror-required-pr-checks:/gm) || []).length).toBe(1);
+    expect(workflow).not.toContain("grep -Eq '^status:[[:space:]]*publish[[:space:]]*\n");
   });
 });
