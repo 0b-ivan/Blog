@@ -16,10 +16,31 @@ const root = __dirname;
 const postsDir = process.env.POSTS_DIR || path.join(root, 'posts');
 const template = process.env.PDF_LATEX_TEMPLATE || path.join(root, 'templates', 'paper.tex');
 const compileTimeoutMs = Number(process.env.PDF_COMPILE_TIMEOUT_MS || 60000);
+const defaultPdfCacheMaxEntries = 4;
 
 let runtimeCheck;
+let pdfBuildTail = Promise.resolve();
 const pdfCache = new Map();
 const pdfPending = new Map();
+
+function pdfCacheMaxEntries() {
+  const configured = Number.parseInt(
+    String(process.env.PDF_CACHE_MAX_ENTRIES ?? defaultPdfCacheMaxEntries),
+    10
+  );
+  return Number.isFinite(configured) && configured >= 0
+    ? configured
+    : defaultPdfCacheMaxEntries;
+}
+
+function enqueuePdfBuild(task) {
+  const run = pdfBuildTail
+    .catch(() => undefined)
+    .then(task);
+
+  pdfBuildTail = run.catch(() => undefined);
+  return run;
+}
 
 function pdfCacheKey(post) {
   return [
@@ -48,33 +69,48 @@ function rememberPdf(post, pdf) {
     }
   }
 
+  const maxEntries = pdfCacheMaxEntries();
+  if (maxEntries <= 0) return pdf;
+
+  pdfCache.delete(key);
   pdfCache.set(key, pdf);
+
+  while (pdfCache.size > maxEntries) {
+    const oldestKey = pdfCache.keys().next().value;
+    pdfCache.delete(oldestKey);
+  }
+
   return pdf;
 }
 
 function prepareArticlePdf(post, options = {}) {
   const state = pdfRenderState(post);
   if (state.ready) {
-    return Promise.resolve(pdfCache.get(state.key));
+    const cached = pdfCache.get(state.key);
+    pdfCache.delete(state.key);
+    pdfCache.set(state.key, cached);
+    return Promise.resolve(cached);
   }
   if (state.preparing) {
     return pdfPending.get(state.key);
   }
 
   const compileImpl = options.compileImpl || compileArticlePdf;
-  const startedAt = Date.now();
-  const pending = compileImpl(post)
-    .then((pdf) => {
+  const queuedAt = Date.now();
+  const pending = enqueuePdfBuild(async () => {
+    const startedAt = Date.now();
+    console.log(`PDF render started for ${post.slug} after ${startedAt - queuedAt}ms queued`);
+    try {
+      const pdf = await compileImpl(post);
       console.log(`PDF render ready for ${post.slug} in ${Date.now() - startedAt}ms`);
       return rememberPdf(post, pdf);
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error(`PDF render failed for ${post.slug} after ${Date.now() - startedAt}ms`);
       throw error;
-    })
-    .finally(() => {
-      pdfPending.delete(state.key);
-    });
+    }
+  }).finally(() => {
+    pdfPending.delete(state.key);
+  });
 
   pdfPending.set(state.key, pending);
   return pending;
@@ -284,6 +320,7 @@ if (require.main === module) {
 module.exports = {
   compileArticlePdf,
   pdfCacheKey,
+  pdfCacheMaxEntries,
   pdfRenderState,
   prepareArticlePdf,
   prepareSvgImagesForPdf,
