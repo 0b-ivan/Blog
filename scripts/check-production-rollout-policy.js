@@ -47,6 +47,15 @@ expectIncludes(
   'stable_version_checks',
   'The canary must require a stable new blog version instead of one lucky request.'
 );
+
+const nonFatalCacheExports = (
+  workflow.match(/cache-to: type=gha,mode=max,scope=k3s-production-[^\n]+,ignore-error=true/g) || []
+).length;
+if (nonFatalCacheExports !== 4) {
+  throw new Error(
+    `All four K3s production image builds must tolerate GitHub Actions cache export failures; found ${nonFatalCacheExports}.`
+  );
+}
 expectIncludes(
   production,
   'maxUnavailable: 1',

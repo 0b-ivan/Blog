@@ -206,7 +206,7 @@ jobs:
             ${{ steps.meta.outputs.blog_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.BLOG_IMAGE_NAME }}:k3s-production
           cache-from: type=gha,scope=k3s-production-blog
-          cache-to: type=gha,mode=max,scope=k3s-production-blog
+          cache-to: type=gha,mode=max,scope=k3s-production-blog,ignore-error=true
 
       - name: Build and push K3s Kernel Grep image
         if: steps.changes.outputs.search == 'true'
@@ -219,7 +219,7 @@ jobs:
             ${{ steps.meta.outputs.search_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.SEARCH_IMAGE_NAME }}:k3s-production
           cache-from: type=gha,scope=k3s-production-search
-          cache-to: type=gha,mode=max,scope=k3s-production-search
+          cache-to: type=gha,mode=max,scope=k3s-production-search,ignore-error=true
 
       - name: Build and push K3s Kubernetes status image
         if: steps.changes.outputs.status == 'true'
@@ -232,7 +232,7 @@ jobs:
             ${{ steps.meta.outputs.status_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.STATUS_IMAGE_NAME }}:k3s-production
           cache-from: type=gha,scope=k3s-production-status
-          cache-to: type=gha,mode=max,scope=k3s-production-status
+          cache-to: type=gha,mode=max,scope=k3s-production-status,ignore-error=true
 
       - name: Build and push K3s LaTeX PDF image
         if: steps.changes.outputs.pdf == 'true'
@@ -245,7 +245,7 @@ jobs:
             ${{ steps.meta.outputs.pdf_image }}
             ${{ env.REGISTRY }}/${{ steps.meta.outputs.owner_lower }}/${{ env.PDF_IMAGE_NAME }}:k3s-production
           cache-from: type=gha,scope=k3s-production-pdf
-          cache-to: type=gha,mode=max,scope=k3s-production-pdf
+          cache-to: type=gha,mode=max,scope=k3s-production-pdf,ignore-error=true
 
       - name: Publish K3s production desired state
         if: steps.changes.outputs.deploy == 'true'
