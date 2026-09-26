@@ -15,14 +15,17 @@ describe('publication and release separation', () => {
     const production = read('.github/workflows/cd-k8s-production.yml');
     const kustomization = read('infra/kubernetes/production/kustomization.yaml');
     const contentDockerfile = read('Dockerfile.content');
+    const reconciler = read('.github/workflows/production-pr-reconciler.yml');
 
     expect(prepare).toContain('A Publication must contain exactly one article');
     expect(prepare).toContain('Article Publication must never modify VERSION');
+    expect(prepare).toContain('posts/_sources.json');
     expect(prepare).toContain('publication/${SLUG}');
     expect(prepare).toContain('--title "publish: ${TITLE}"');
 
     expect(publish).toContain('CONTENT_IMAGE_NAME: kernel-notes-content');
     expect(publish).toContain('Article Publication must not modify VERSION');
+    expect(publish).toContain('posts/_sources.json');
     expect(publish).toContain('Production Publication must contain exactly one article');
     expect(publish).toContain('Dockerfile.content');
     expect(publish).toContain('kernel-notes-content');
@@ -48,5 +51,10 @@ describe('publication and release separation', () => {
     expect(contentDockerfile).toContain('COPY posts ./posts');
     expect(contentDockerfile).toContain('COPY assets/posts ./assets/posts');
     expect(contentDockerfile).toContain('COPY assets/covers ./assets/covers');
+
+    expect(reconciler).toContain('publication/');
+    expect(reconciler).toContain('release/');
+    expect(reconciler).toContain('gh workflow run ci.yml');
+    expect(reconciler).not.toContain('promotion/staging-verified');
   });
 });
