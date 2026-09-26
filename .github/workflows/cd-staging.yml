@@ -39,6 +39,7 @@ permissions:
   contents: write
   pull-requests: write
   packages: write
+  statuses: write
 
 concurrency:
   group: staging-deploy
@@ -708,7 +709,7 @@ jobs:
             --title 'promote: verified staging to production' \
             --body "$body"
 
-      - name: Trigger required checks for production promotion
+      - name: Run and bridge required checks for production promotion
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -741,11 +742,96 @@ jobs:
             exit 0
           fi
 
+          # GitHub does not count check runs from workflow_dispatch toward
+          # required PR status checks. Publish commit statuses with the same
+          # required contexts after the dispatched CI run finishes.
+          for context in 'checks' 'Local assets'; do
+            gh api \
+              --method POST \
+              "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+              -f state='pending' \
+              -f context="$context" \
+              -f description='Promotion validation is running.' >/dev/null
+          done
+
+          previous_run_id="$(
+            gh run list \
+              --repo "$REPOSITORY" \
+              --workflow ci.yml \
+              --branch "$PROMOTION_BRANCH" \
+              --event workflow_dispatch \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId // empty'
+          )"
+
           gh workflow run ci.yml \
             --repo "$REPOSITORY" \
             --ref "$PROMOTION_BRANCH"
 
-          echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
+          run_id=''
+          for attempt in $(seq 1 30); do
+            candidate="$(
+              gh run list \
+                --repo "$REPOSITORY" \
+                --workflow ci.yml \
+                --branch "$PROMOTION_BRANCH" \
+                --event workflow_dispatch \
+                --limit 10 \
+                --json databaseId,headSha \
+                --jq ".[] | select(.headSha == \"${promotion_sha}\") | .databaseId" |
+                head -n 1
+            )"
+
+            if [ -n "$candidate" ] && [ "$candidate" != "$previous_run_id" ]; then
+              run_id="$candidate"
+              break
+            fi
+
+            echo "Waiting for dispatched PR Checks run (attempt ${attempt}/30)."
+            sleep 2
+          done
+
+          if [ -z "$run_id" ]; then
+            echo 'Could not identify the dispatched PR Checks run.' >&2
+            for context in 'checks' 'Local assets'; do
+              gh api \
+                --method POST \
+                "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+                -f state='failure' \
+                -f context="$context" \
+                -f description='Promotion validation run could not be identified.' >/dev/null
+            done
+            exit 1
+          fi
+
+          run_url="https://github.com/${REPOSITORY}/actions/runs/${run_id}"
+          echo "Watching PR Checks run ${run_id} for promotion PR #${promotion_pr}."
+
+          if ! gh run watch "$run_id" --repo "$REPOSITORY" --exit-status; then
+            for context in 'checks' 'Local assets'; do
+              gh api \
+                --method POST \
+                "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+                -f state='failure' \
+                -f context="$context" \
+                -f description='Promotion validation failed.' \
+                -f target_url="$run_url" >/dev/null
+            done
+            exit 1
+          fi
+
+          for context in 'checks' 'Local assets'; do
+            gh api \
+              --method POST \
+              "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
+              -f state='success' \
+              -f context="$context" \
+              -f description='Promotion validation passed.' \
+              -f target_url="$run_url" >/dev/null
+          done
+
+          echo "Promotion PR #${promotion_pr} is validated at ${promotion_sha}; required statuses were bridged from run ${run_id}."
 
       - name: Deployment handoff
         env:
