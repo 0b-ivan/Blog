@@ -110,7 +110,7 @@ Nach erfolgreicher Prüfung sind zwei getrennte Aktionen möglich:
 
 **Software Release:** `.github/workflows/release-production.yml` wird bewusst separat als Release-Cut gestartet. Er sammelt die Software-Differenz zwischen `main` und `staging`, schließt Content-Pfade sowie Staging-only-GitOps aus und erhöht SemVer wahlweise als `patch`, `minor` oder `major`. Der resultierende Branch heißt `release/vX.Y.Z`.
 
-Es gibt keinen beweglichen `promotion/staging-verified`-Branch mehr und keinen Promotion-Watchdog. Required Checks laufen jeweils auf dem konkreten Publication- oder Release-PR.
+Es gibt keinen beweglichen `promotion/staging-verified`-Branch mehr. Required Checks laufen jeweils auf dem konkreten Publication- oder Release-PR. Weil beide PR-Typen parallel zu `main` offen sein dürfen, repariert `.github/workflows/production-pr-reconciler.yml` ausschließlich deren Required-Check-Spiegelung, falls ein unabhängiger Merge nach `main` GitHubs synthetischen Merge-Commit neu erzeugt. Er verändert weder Publication-Inhalt noch Release-Inhalt.
 
 
 
