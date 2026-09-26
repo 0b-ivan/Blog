@@ -5,10 +5,11 @@
 \setsansfont{TeX Gyre Heros}
 \setmonofont{Latin Modern Mono}
 $if(cjk)$
-% Loading luatexja + Noto CJK is intentionally conditional. The font stack is
-% comparatively expensive in CPU/RAM and is unnecessary for most articles.
+% Loading luatexja + Noto CJK is intentionally conditional. Reuse one CJK
+% family for serif/sans contexts so Japanese articles do not load two large
+% font collections into the constrained PDF worker.
 \usepackage{luatexja-fontspec}
-\setmainjfont{Noto Serif CJK JP}
+\setmainjfont{Noto Sans CJK JP}
 \setsansjfont{Noto Sans CJK JP}
 $endif$
 
