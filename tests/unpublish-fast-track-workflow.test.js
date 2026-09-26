@@ -19,7 +19,8 @@ describe('unpublish fast-track workflow', () => {
     expect(workflow).toContain('^(posts|archive)/[^/]+\\\\.md$');
     expect(workflow).toContain('latest_check_conclusion "$head_sha" checks');
     expect(workflow).toContain("latest_check_conclusion \"$head_sha\" 'Local assets'");
-    expect(workflow).toContain('gh pr close "$stale_promotion"');
+    expect(workflow).not.toContain('stale_promotion');
+    expect(workflow).not.toContain('promotion/staging-verified');
     expect(workflow).toContain('gh pr merge "$pr_number"');
     expect(workflow).toContain('--merge');
     expect(workflow).not.toContain('--admin');
