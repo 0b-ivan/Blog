@@ -182,6 +182,35 @@ Aktuell werden als Rasterformate unterstützt:
 
 Externe SVG-Dateien werden von der Photo Connection bewusst nicht übernommen.
 
+## URL direkt im Artikel
+
+Für Wikimedia-Commons-Bilder kann im Artikel zunächst direkt die externe Bild-URL verwendet werden. Beispiel:
+
+```md
+![Tōru Iwatani bei der GDC](https://upload.wikimedia.org/wikipedia/commons/.../Toru_Iwatani.jpg)
+```
+
+Beim Push eines geänderten Artikels auf einen unterstützten Feature-Branch führt die Photo Connection automatisch folgende Schritte aus:
+
+1. externe Commons-URL erkennen,
+2. kanonische Commons-`File:`-Quelle ableiten,
+3. stabiles `source_id` und lokales Ziel unter `assets/posts/<asset-scope>/` erzeugen,
+4. Photo-Manifest unter `media/photos/` anlegen oder erweitern,
+5. den Hotlink im Markdown durch den lokalen Root-Pfad ersetzen,
+6. einen Quellen-/Lizenzlink zu `/sources.html#<source_id>` ergänzen,
+7. anschließend den normalen Commons-Ingest mit Lizenz-, MIME-, Größen- und Magic-Byte-Prüfung ausführen.
+
+Der Git-Stand enthält danach keinen externen Bild-Hotlink mehr.
+
+Unterstützt werden aktuell Commons-`File:`-Seiten, `Special:Redirect/file/` und direkte `upload.wikimedia.org`-URLs für JPEG, PNG und WebP. Andere externe Provider werden absichtlich abgelehnt, bis dafür ein Provider-Adapter mit belastbaren Lizenzmetadaten existiert.
+
+Lokal kann derselbe Schritt explizit ausgeführt werden:
+
+```bash
+npm run photos:materialize-links -- posts/2026-09-24-mein-artikel.md
+npm run photos:ingest -- media/photos/mein-artikel.json
+```
+
 ## Automatischer GitHub-Workflow
 
 Workflow:
@@ -190,7 +219,7 @@ Workflow:
 .github/workflows/article-photos.yml
 ```
 
-Er reagiert auf Änderungen an `media/photos/*.json` auf diesen Branch-Mustern:
+Er reagiert auf Änderungen an `media/photos/*.json` **und `posts/*.md`** auf diesen Branch-Mustern:
 
 ```text
 photo/**
@@ -204,14 +233,15 @@ Der normale Ablauf ist:
 
 1. Branch aus `staging` erstellen.
 2. Artikel bearbeiten.
-3. Manifest hinzufügen oder ändern.
+3. Entweder einen unterstützten Commons-Hotlink direkt als Markdown-Bild einfügen **oder** ein Manifest manuell pflegen.
 4. Push.
 5. `Materialize Article Photos` startet.
-6. Bilder werden heruntergeladen und geprüft.
-7. `posts/_sources.json` wird aktualisiert.
-8. Local-Asset- und Quellenchecks laufen.
-9. `github-actions[bot]` committed die materialisierten Dateien auf **denselben Branch**.
-10. Der normale PR enthält danach Artikel, Manifest, Quellen und echte Binärdateien.
+6. Externe Commons-Bildlinks werden automatisch in lokale Pfade + Manifest umgeschrieben.
+7. Bilder werden heruntergeladen und geprüft.
+8. `posts/_sources.json` wird aktualisiert.
+9. Local-Asset- und Quellenchecks laufen.
+10. `github-actions[bot]` committed Artikel, Manifest, Quellen und materialisierte Dateien auf **denselben Branch**.
+11. Der normale PR enthält danach ausschließlich lokale Bildreferenzen.
 
 Ein Branch-Update ohne geändertes Photo-Manifest ist ein **erfolgreicher No-op**. Das ist wichtig bei Rebase, Konfliktauflösung oder automatischen Folge-Commits.
 
@@ -302,14 +332,17 @@ Wenn das Repository direkt als Vault geöffnet ist, kann das Manifest normal unt
 
 ### Self-hosted LiveSync / automatischer Publisher
 
-Der aktuelle LiveSync-Publisher synchronisiert primär Markdown aus `posts/`. Er erzeugt noch **nicht automatisch** aus einer in Obsidian eingefügten externen Bildquelle ein Photo-Manifest.
+Der LiveSync-Publisher muss für unterstützte Commons-Bilder kein Photo-Manifest mehr selbst erzeugen. Es reicht, wenn der veröffentlichte Markdown-Artikel den externen Commons-Bildlink enthält.
 
-Bis diese Integration ergänzt ist, gibt es zwei saubere Varianten:
+Sobald der Artikel auf einem `obsidian/**`-Branch landet, übernimmt `Materialize Article Photos` automatisch:
 
-1. Manifest über den Repository-Workflow ergänzen.
-2. Eigene Fotos/Screenshots lokal unter `assets/posts/` pflegen und gemeinsam mit dem Artikel committen.
+1. Hotlink erkennen,
+2. Manifest erzeugen/erweitern,
+3. Markdown auf den lokalen Pfad umschreiben,
+4. Quellenlink ergänzen,
+5. Bild über die bestehende Photo Connection laden und prüfen.
 
-Die Photo Connection ist so gebaut, dass der Publisher später lediglich ein passendes Manifest erzeugen muss. Der eigentliche Download-, Lizenz- und Validierungsweg bleibt dann unverändert.
+Eigene Fotos und Screenshots können weiterhin direkt unter `assets/posts/` gepflegt werden. Andere externe Bildprovider als Wikimedia Commons bleiben blockiert, bis ein lizenzbewusster Adapter existiert.
 
 ## Beispiel: Pac-Man
 
