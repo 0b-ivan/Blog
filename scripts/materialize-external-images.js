@@ -19,7 +19,7 @@ function maskFencedCode(content) {
 
 function collectMarkdownImages(content) {
   const source = maskFencedCode(content);
-  const imagePattern = /!\\[([^\\]]*)\\]\\(\\s*(<?[^\\s)>]+>?)(?:\\s+["\'][^"\']*["\'])?\\s*\\)(?:\\{[^}\\n]+\\})?/g;
+  const imagePattern = /!\[([^\]]*)\]\(\s*(<?[^\s)>]+>?)(?:\s+["'][^"']*["'])?\s*\)(?:\{[^}\n]+\})?/g;
   const images = [];
   let match;
 
