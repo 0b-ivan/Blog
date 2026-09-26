@@ -69,7 +69,7 @@ Beim Schreiben dieses generierten GitOps-Commits kann `staging` zwischen Checkou
 
 Flux reconciliert diesen Git-Zustand in den Staging-Cluster. GitHub Actions benötigt dafür keinen direkten Zugriff auf die private K3s-API.
 
-Reine GitOps-Änderungen können die bereits gepinnten Images wiederverwenden.
+Reine GitOps-, Workflow-, Test- und Dokumentationsänderungen können die bereits gepinnten Images wiederverwenden. Der Staging-Workflow läuft trotzdem auf **jedem** Push nach `staging`, führt für solche Control-Plane-Änderungen den öffentlichen Availability-Gate aus und darf anschließend den verifizierten Promotion-Zeiger auf den aktuellen Staging-Commit weiterziehen. Damit bleibt `promotion/staging-verified` auch historisch mit `main`/dem Rücksync konvergent und kann nicht allein wegen ausgelassener No-Image-Deployments wieder in Merge-Konflikte laufen.
 
 ## Staging-Gate
 
