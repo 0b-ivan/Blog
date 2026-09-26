@@ -1,4 +1,6 @@
+const { setTimeout: delay } = require('node:timers/promises');
 const {
+  pdfCacheMaxEntries,
   pdfRenderState,
   prepareArticlePdf
 } = require('../pdf-export-server');
@@ -37,6 +39,69 @@ describe('PDF render cache', () => {
 
     await expect(prepareArticlePdf(post, { compileImpl })).resolves.toEqual(pdf);
     expect(compileImpl).toHaveBeenCalledOnce();
+  });
+
+  it('serializes different uncached PDF renders to cap worker memory pressure', async () => {
+    const firstPost = {
+      slug: 'serial-render-a',
+      version: 1,
+      updatedAt: '2026-09-26'
+    };
+    const secondPost = {
+      slug: 'serial-render-b',
+      version: 1,
+      updatedAt: '2026-09-26'
+    };
+
+    let active = 0;
+    let maximumActive = 0;
+    const compileImpl = globalThis.vi.fn(async (post) => {
+      active += 1;
+      maximumActive = Math.max(maximumActive, active);
+      await delay(20);
+      active -= 1;
+      return Buffer.from(`%PDF-${post.slug}`);
+    });
+
+    const [first, second] = await Promise.all([
+      prepareArticlePdf(firstPost, { compileImpl }),
+      prepareArticlePdf(secondPost, { compileImpl })
+    ]);
+
+    expect(first.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(second.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(compileImpl).toHaveBeenCalledTimes(2);
+    expect(maximumActive).toBe(1);
+  });
+
+  it('bounds the in-memory PDF cache and evicts old entries', async () => {
+    const previous = process.env.PDF_CACHE_MAX_ENTRIES;
+    process.env.PDF_CACHE_MAX_ENTRIES = '1';
+
+    try {
+      expect(pdfCacheMaxEntries()).toBe(1);
+
+      const firstPost = {
+        slug: 'cache-limit-a',
+        version: 1,
+        updatedAt: '2026-09-26'
+      };
+      const secondPost = {
+        slug: 'cache-limit-b',
+        version: 1,
+        updatedAt: '2026-09-26'
+      };
+      const compileImpl = globalThis.vi.fn(async (post) => Buffer.from(`%PDF-${post.slug}`));
+
+      await prepareArticlePdf(firstPost, { compileImpl });
+      await prepareArticlePdf(secondPost, { compileImpl });
+
+      expect(pdfRenderState(firstPost).ready).toBe(false);
+      expect(pdfRenderState(secondPost).ready).toBe(true);
+    } finally {
+      if (previous === undefined) delete process.env.PDF_CACHE_MAX_ENTRIES;
+      else process.env.PDF_CACHE_MAX_ENTRIES = previous;
+    }
   });
 
   it('clears the pending state after a failed render so it can be retried', async () => {
