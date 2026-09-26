@@ -20,6 +20,14 @@ const {
   wrapCoverTitle
 } = require('../lib/ebook-export');
 
+function textLinesByClass(svg, className) {
+  const pattern = new RegExp(
+    '<text\\b[^>]*class="' + className + '"[^>]*>([^<]*)<\\/text>',
+    'g'
+  );
+  return [...String(svg || '').matchAll(pattern)].map((match) => match[1]);
+}
+
 describe('article ebook export helpers', () => {
   it('normalizes YAML Date objects for EPUB metadata validation', () => {
     expect(normalizeEpubDate(new Date('2026-09-20T00:00:00.000Z'))).toBe('2026-09-20');
@@ -80,6 +88,34 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('font-size:136px');
   });
 
+  it('keeps the explicit Pokémon cover title inside the same safe width', () => {
+    const title = 'Pokémon als OOP-Modell';
+    const layout = fitCoverTitle(title, {
+      maxWidth: 1180,
+      maxLines: 4,
+      maxFontSize: 128,
+      minFontSize: 84,
+      step: 4
+    });
+
+    expect(layout.lines.join(' ')).toBe(title);
+    for (const line of layout.lines) {
+      expect(estimateCoverTextWidth(line, layout.fontSize)).toBeLessThanOrEqual(1180);
+    }
+
+    const svg = buildEditorialCoverSvg({
+      title: 'Pokémon ist perfekt für OOP – solange Pikachu keine Klasse ist',
+      coverTitle: title,
+      coverSubtitle: 'Warum Komposition besser skaliert als FirePokemon extends Pokemon',
+      author: 'obivan',
+      category: 'Engineering',
+      tags: ['Pokémon', 'Java', 'OOP'],
+      date: '2026-09-24'
+    }, 'data:image/jpeg;base64,ZmFrZQ==');
+
+    expect(textLinesByClass(svg, 'title').join(' ')).toBe(title);
+  });
+
   it('creates a generated Kernel Notes cover when no photo exists', () => {
     const svg = buildCoverSvg({
       title: 'Kubernetes ohne Magie',
@@ -114,9 +150,12 @@ describe('article ebook export helpers', () => {
       date: '2026-09-20'
     }, 'data:image/jpeg;base64,ZmFrZQ==');
 
-    expect(svg).toContain('Chaos Engineering');
-    expect(svg).toContain('systematisch testen');
-    expect(svg).toContain('Warum Chaos Monkey kein Zufall ist');
+    expect(textLinesByClass(svg, 'title').join(' ')).toBe(
+      'Chaos Engineering systematisch testen'
+    );
+    expect(textLinesByClass(svg, 'subtitle').join(' ')).toBe(
+      'Warum Chaos Monkey kein Zufall ist'
+    );
     expect(svg).toContain('data:image/jpeg;base64,ZmFrZQ==');
     expect(svg).not.toContain('Chaos Monkey ist kein Zufall: Chaos Engineering systematisch testen');
   });
@@ -254,8 +293,12 @@ describe('article ebook export helpers', () => {
 
       expect(cover.name).toBe('ordinary-cover.png');
       expect(cover.type).toBe('image/png');
-      expect(capturedSvg).toContain('Ordinary blog article');
-      expect(capturedSvg).toContain('This excerpt becomes the cover');
+      expect(textLinesByClass(capturedSvg, 'title').join(' ')).toBe(
+        'Ordinary blog article'
+      );
+      expect(textLinesByClass(capturedSvg, 'subtitle').join(' ')).toBe(
+        'This excerpt becomes the cover subtitle automatically.'
+      );
       expect(capturedSvg).toContain('LINUX');
       expect(capturedSvg).toContain('SELF HOSTING');
       expect(capturedSvg).toContain('Ivan Babayev');
