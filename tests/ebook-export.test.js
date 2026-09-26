@@ -12,9 +12,11 @@ const {
   ensureCoverImageProperty,
   ensureDeckblattFixedLayout,
   ensureDeckblattItemrefProperties,
+  estimateCoverTagWidth,
   estimateCoverTextWidth,
   fitCoverTitle,
   hasEditorialCoverMetadata,
+  selectCoverTags,
   normalizeEpubDate,
   prepareChapterHtml,
   wrapCoverTitle
@@ -114,6 +116,51 @@ describe('article ebook export helpers', () => {
     }, 'data:image/jpeg;base64,ZmFrZQ==');
 
     expect(textLinesByClass(svg, 'title').join(' ')).toBe(title);
+  });
+
+  it('omits tags that are too wide for the editorial cover column', () => {
+    const tags = selectCoverTags([
+      'Kubernetes',
+      'K3s',
+      'Proxmox',
+      'Chaos-Engineering',
+      'GitOps',
+      'Flux',
+      'Observability'
+    ], {
+      maxWidth: 315,
+      maxTags: 5
+    });
+
+    expect(tags).toEqual([
+      'KUBERNETES',
+      'K3S',
+      'PROXMOX',
+      'GITOPS',
+      'FLUX'
+    ]);
+    expect(estimateCoverTagWidth('CHAOS ENGINEERING')).toBeGreaterThan(315);
+
+    const svg = buildEditorialCoverSvg({
+      title: 'K3s auf Proxmox – Teil V: Chaos Monkey gegen meinen eigenen Blog',
+      excerpt: 'Kubernetes Pod Failover mit Chaos Engineering.',
+      author: 'obivan',
+      category: 'DevOps',
+      tags: [
+        'Kubernetes',
+        'K3s',
+        'Proxmox',
+        'Chaos-Engineering',
+        'GitOps',
+        'Flux'
+      ],
+      date: '2026-09-20'
+    }, 'data:image/jpeg;base64,ZmFrZQ==');
+
+    expect(svg).toContain('>KUBERNETES</text>');
+    expect(svg).toContain('>GITOPS</text>');
+    expect(svg).toContain('>FLUX</text>');
+    expect(svg).not.toContain('>CHAOS ENGINEERING</text>');
   });
 
   it('creates a generated Kernel Notes cover when no photo exists', () => {
