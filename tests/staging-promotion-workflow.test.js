@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 describe('staging promotion workflow', () => {
-  it('updates the verified promotion branch as a race-safe pointer', () => {
+  it('freezes one verified release candidate and bumps patch SemVer exactly once', () => {
     const workflow = fs.readFileSync(
       path.join(__dirname, '..', '.github', 'workflows', 'cd-staging.yml'),
       'utf8'
@@ -20,22 +20,30 @@ describe('staging promotion workflow', () => {
     expect(workflow).toContain('PIXABAY_API_KEY');
     expect(workflow).toContain('steps.source.outputs.sha');
     expect(workflow).toContain('actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9');
+
+    expect(workflow).toContain('Prepare frozen production release candidate');
+    expect(workflow).toContain('Open production release PR');
+    expect(workflow).toContain('Trigger required checks for frozen release');
+    expect(workflow).toContain('gh pr list');
+    expect(workflow).toContain('Open production release PR #$existing is frozen; leaving $PROMOTION_BRANCH unchanged.');
     expect(workflow).toContain('git merge-base --is-ancestor "$VERIFIED_SHA" origin/staging');
-    expect(workflow).toContain('git ls-remote --heads origin "refs/heads/${PROMOTION_BRANCH}"');
-    expect(workflow).toContain('--force-with-lease="refs/heads/${PROMOTION_BRANCH}:${current_promotion_sha}"');
-    expect(workflow).not.toContain('git rev-parse "refs/remotes/origin/${PROMOTION_BRANCH}"');
-    expect(workflow).not.toContain('git push origin "${VERIFIED_SHA}:refs/heads/${PROMOTION_BRANCH}"');
-    expect(workflow).toContain('actions: write');
-    expect(workflow).not.toContain("    paths:\n      - 'posts/**'");
-    expect(workflow).toContain('.github/workflows/*|.github/workflows/**/*|docs/*|docs/**/*|tests/*|tests/**/*');
-    expect(workflow).toContain("- name: Publish verified promotion candidate\n        if: github.event_name == 'push'");
-    expect(workflow).toContain("- name: Open or update production promotion PR\n        if: github.event_name == 'push'");
-    expect(workflow).toContain('Staging control-plane/GitOps state');
-    expect(workflow).toContain('the promotion pointer was advanced to the current staging history');
-    expect(workflow).toContain('Trigger required checks for production promotion');
+    expect(workflow).toContain('git diff --name-only origin/main..."$VERIFIED_SHA"');
+    expect(workflow).toContain('BASE_VERSION="$(git show origin/main:VERSION');
+    expect(workflow).toContain('RELEASE_VERSION="$major.$minor.$((patch + 1))"');
+    expect(workflow).toContain('git checkout --detach "$VERIFIED_SHA"');
+    expect(workflow).toContain('printf \'%s\\n\' "$RELEASE_VERSION" > VERSION');
+    expect(workflow).toContain('git commit -m "release: v$RELEASE_VERSION"');
+    expect(workflow).toContain('git ls-remote --heads origin "refs/heads/$PROMOTION_BRANCH"');
+    expect(workflow).toContain('--force-with-lease="refs/heads/$PROMOTION_BRANCH:$current_promotion_sha"');
+    expect(workflow).toContain('--title "release: v${RELEASE_VERSION}"');
+    expect(workflow).toContain('This release candidate is immutable while the PR is open.');
     expect(workflow).toContain('gh workflow run ci.yml');
     expect(workflow).toContain('--ref "$PROMOTION_BRANCH"');
     expect(workflow).toContain('-f pr_number="$promotion_pr"');
+
+    expect(workflow).not.toContain('Open or update production promotion PR');
+    expect(workflow).not.toContain('Updated production promotion PR');
+    expect(workflow).not.toContain("--title 'promote: verified staging to production'");
     expect(workflow).not.toContain('statuses: write');
   });
 });
