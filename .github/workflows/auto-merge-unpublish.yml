@@ -7,7 +7,7 @@ on:
     types:
       - completed
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '37 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -91,7 +91,7 @@ jobs:
             head_repo="$(printf '%s' "$pr_json" | jq -r '.head.repo.full_name')"
             head_sha="$(printf '%s' "$pr_json" | jq -r '.head.sha')"
 
-            if [ "$state" != open ] || [[ "$title" != Unpublish: * ]]; then
+            if [ "$state" != open ] || [[ "$title" != "Unpublish: "* ]]; then
               continue
             fi
 
