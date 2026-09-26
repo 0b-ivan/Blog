@@ -21,6 +21,7 @@ describe('PDF render cache', () => {
     const first = prepareArticlePdf(post, { compileImpl });
     const second = prepareArticlePdf(post, { compileImpl });
 
+    await delay(0);
     expect(compileImpl).toHaveBeenCalledOnce();
     expect(pdfRenderState(post)).toMatchObject({
       ready: false,
