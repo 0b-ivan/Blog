@@ -5,6 +5,7 @@ const { prepareSvgImagesForPdf } = require('../pdf-export-server');
 const {
   buildBibTeX,
   buildPdfDocumentPreview,
+  containsCjkText,
   normalizeFiguresForPdf,
   pdfMetadata,
   promoteArticleHeadings,
@@ -37,8 +38,30 @@ describe('LaTeX publication export', () => {
       keywords: 'Chaos-Engineering, SRE',
       readingTime: '4',
       sourceUrl: 'https://blog.obivan.org/posts/demo',
-      coverImage: '/tmp/blog/assets/covers/demo.jpg'
+      coverImage: '/tmp/blog/assets/covers/demo.jpg',
+      cjk: ''
     });
+  });
+
+  it('enables the CJK LaTeX stack only when Japanese text is present', () => {
+    expect(containsCjkText('Chaos Engineering ohne japanischen Text')).toBe(false);
+    expect(containsCjkText('Warum パクパク zu Pac-Man gehört')).toBe(true);
+
+    const plain = pdfMetadata({
+      slug: 'plain',
+      title: 'Chaos Engineering',
+      excerpt: 'Resilience testen.',
+      html: '<p>Nur deutscher Text.</p>'
+    });
+    expect(plain.cjk).toBe('');
+
+    const japanese = pdfMetadata({
+      slug: 'pac-man',
+      title: 'Warum Pac-Man zuerst Puck Man hieß',
+      excerpt: 'Namensgeschichte.',
+      html: '<p>Der Ausdruck パクパク beschreibt die Mundbewegung.</p>'
+    });
+    expect(japanese.cjk).toBe('true');
   });
 
   it('uses local glossary anchors in the LaTeX/Pandoc source document', () => {

@@ -1,12 +1,16 @@
 \documentclass[11pt,a4paper,parskip=half]{scrartcl}
 
 \usepackage{fontspec}
-\usepackage{luatexja-fontspec}
 \setmainfont{TeX Gyre Pagella}
 \setsansfont{TeX Gyre Heros}
 \setmonofont{Latin Modern Mono}
+$if(cjk)$
+% Loading luatexja + Noto CJK is intentionally conditional. The font stack is
+% comparatively expensive in CPU/RAM and is unnecessary for most articles.
+\usepackage{luatexja-fontspec}
 \setmainjfont{Noto Serif CJK JP}
 \setsansjfont{Noto Sans CJK JP}
+$endif$
 
 \usepackage[ngerman]{babel}
 \usepackage[a4paper,top=23mm,bottom=26mm,left=27mm,right=27mm]{geometry}
