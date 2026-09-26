@@ -12,6 +12,8 @@ const {
   ensureCoverImageProperty,
   ensureDeckblattFixedLayout,
   ensureDeckblattItemrefProperties,
+  estimateCoverTextWidth,
+  fitCoverTitle,
   hasEditorialCoverMetadata,
   normalizeEpubDate,
   prepareChapterHtml,
@@ -44,6 +46,38 @@ describe('article ebook export helpers', () => {
     );
     expect(lines.length).toBeGreaterThan(1);
     expect(lines.length).toBeLessThanOrEqual(6);
+  });
+
+  it('fits long editorial titles inside the safe cover width', () => {
+    const title = 'Gold glänzt nicht immer: Warum ich Golden Images trotzdem mag';
+    const layout = fitCoverTitle(title, {
+      maxWidth: 1180,
+      maxLines: 4,
+      maxFontSize: 128,
+      minFontSize: 84,
+      step: 4
+    });
+
+    expect(layout.lines.length).toBeGreaterThan(1);
+    expect(layout.lines.length).toBeLessThanOrEqual(4);
+    expect(layout.lines.join(' ')).toBe(title);
+    for (const line of layout.lines) {
+      expect(estimateCoverTextWidth(line, layout.fontSize)).toBeLessThanOrEqual(1180);
+    }
+
+    const svg = buildEditorialCoverSvg({
+      title,
+      excerpt: 'Golden Images sparen Zeit und sorgen für reproduzierbare Server-Setups.',
+      author: 'obivan',
+      category: 'AWS',
+      tags: ['AWS', 'EC2', 'AMI', 'Image-Builder', 'Golden-Image'],
+      date: '2026-09-04'
+    }, 'data:image/png;base64,ZmFrZQ==');
+
+    for (const line of layout.lines) {
+      expect(svg).toContain(line);
+    }
+    expect(svg).not.toContain('font-size:136px');
   });
 
   it('creates a generated Kernel Notes cover when no photo exists', () => {
