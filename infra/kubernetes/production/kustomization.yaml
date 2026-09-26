@@ -13,11 +13,16 @@ images:
     newTag: 227fbe6f417799ab1ff8928dc6820910861a3bfb
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: UNPINNED
+  - name: ghcr.io/0b-ivan/kernel-notes-content
+    newTag: UNPINNED
 replicas:
   - name: blog
     count: 3
 
 patches:
+  - path: content-blog-patch.yaml
+  - path: content-search-patch.yaml
+  - path: content-pdf-patch.yaml
   - target:
       group: apps
       version: v1

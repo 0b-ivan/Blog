@@ -6,7 +6,6 @@ const DEFAULT_VAULT_PATH = '/vault';
 const DEFAULT_REPOSITORY = '0b-ivan/Blog';
 const DEFAULT_BASE_BRANCH = 'staging';
 const DEFAULT_PRODUCTION_BRANCH = 'main';
-const DEFAULT_PROMOTION_BRANCH = 'promotion/staging-verified';
 const DEFAULT_DEBOUNCE_SECONDS = 300;
 const DEFAULT_POLL_SECONDS = 30;
 
@@ -135,12 +134,11 @@ class StableTracker {
 }
 
 class GitHubPublisher {
-  constructor({ token, repository, baseBranch, productionBranch = DEFAULT_PRODUCTION_BRANCH, promotionBranch = DEFAULT_PROMOTION_BRANCH }) {
+  constructor({ token, repository, baseBranch, productionBranch = DEFAULT_PRODUCTION_BRANCH }) {
     this.token = token;
     this.repository = repository;
     this.baseBranch = baseBranch;
     this.productionBranch = productionBranch;
-    this.promotionBranch = promotionBranch;
     this.owner = repository.split('/')[0];
   }
 
@@ -275,7 +273,7 @@ class GitHubPublisher {
         '- Die Datei bleibt im Obsidian-Vault erhalten und kann spaeter erneut auf `publish` oder `archived` gesetzt werden.',
         '',
         baseBranch === this.productionBranch
-          ? 'Production wird bewusst direkt entfernt; ein spaeteres Publish laeuft wieder ueber staging und den manuellen Promotion-Merge.'
+          ? 'Production wird bewusst direkt entfernt; ein spaeteres Publish laeuft als eigenstaendige Article Publication und nicht als Software Release.'
           : 'Staging wird parallel entfernt, damit der Artikel dort ebenfalls nicht mehr sichtbar ist.'
       ].join('\n');
     }
@@ -353,16 +351,6 @@ class GitHubPublisher {
     } else if (!branchSha) {
       await this.createBranch(branch, baseSha);
     }
-  }
-
-  async closeOpenPromotionPullRequest() {
-    const pullRequest = await this.openPullRequest(this.promotionBranch, this.productionBranch);
-    if (!pullRequest) {
-      return null;
-    }
-
-    await this.closePullRequest(pullRequest);
-    return pullRequest;
   }
 
   async ensureUnpublishPullRequest({ filePath, archivePath, title, baseBranch, branch }) {
@@ -445,10 +433,6 @@ class GitHubPublisher {
         return { action: 'closed-pending-publish', branch: stagingBranch, pullRequest: pendingPublish };
       }
       return { action: 'already-offline', branch: stagingBranch, pullRequest: null };
-    }
-
-    if (productionFile || productionArchiveFile) {
-      await this.closeOpenPromotionPullRequest();
     }
 
     const staging = await this.ensureUnpublishPullRequest({
@@ -621,7 +605,6 @@ async function main() {
   const repository = process.env.PUBLISHER_GITHUB_REPOSITORY || DEFAULT_REPOSITORY;
   const baseBranch = process.env.PUBLISHER_BASE_BRANCH || DEFAULT_BASE_BRANCH;
   const productionBranch = process.env.PUBLISHER_PRODUCTION_BRANCH || DEFAULT_PRODUCTION_BRANCH;
-  const promotionBranch = process.env.PUBLISHER_PROMOTION_BRANCH || DEFAULT_PROMOTION_BRANCH;
   const debounceSeconds = parsePositiveInteger(
     process.env.PUBLISHER_DEBOUNCE_SECONDS,
     DEFAULT_DEBOUNCE_SECONDS
@@ -629,7 +612,7 @@ async function main() {
   const pollSeconds = parsePositiveInteger(process.env.PUBLISHER_POLL_SECONDS, DEFAULT_POLL_SECONDS);
 
   const tracker = new StableTracker(debounceSeconds * 1000);
-  const publisher = new GitHubPublisher({ token, repository, baseBranch, productionBranch, promotionBranch });
+  const publisher = new GitHubPublisher({ token, repository, baseBranch, productionBranch });
 
   console.log(`[publisher] watching ${vaultPath}`);
   console.log(`[publisher] repository ${repository}, staging ${baseBranch}, production ${productionBranch}`);

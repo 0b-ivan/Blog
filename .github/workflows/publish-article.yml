@@ -1,0 +1,249 @@
+name: Prepare Article Publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Verified staging source commit
+        required: true
+        type: string
+      staging_pr_number:
+        description: Merged staging PR that introduced the article change
+        required: true
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: article-publication-${{ inputs.staging_pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-publication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout verified staging source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+
+      - name: Validate one-article publication
+        id: article
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          STAGING_PR: ${{ inputs.staging_pr_number }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh api "/repos/${REPOSITORY}/pulls/${STAGING_PR}/files"             --paginate             --jq '.[].filename' > /tmp/publication-pr-files.txt
+
+          echo 'Staging PR files:'
+          cat /tmp/publication-pr-files.txt
+
+          non_content=false
+          while IFS= read -r file; do
+            case "$file" in
+              posts/*.md|posts/_sources.json|archive/*.md|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*)
+                ;;
+              *)
+                non_content=true
+                echo "Not an article-publication file: $file"
+                ;;
+            esac
+          done < /tmp/publication-pr-files.txt
+
+          if [ "$non_content" = true ]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo 'This staging PR contains software/release changes; article publication is intentionally skipped.'
+            exit 0
+          fi
+
+          mapfile -t articles < <(
+            sed -n -E 's#^(posts|archive)/([^/]+\.md)$#\2#p' /tmp/publication-pr-files.txt |
+              sort -u
+          )
+
+          if [ "${#articles[@]}" -eq 0 ]; then
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            echo 'No article file changed; nothing to publish.'
+            exit 0
+          fi
+
+          if [ "${#articles[@]}" -ne 1 ]; then
+            echo "A Publication must contain exactly one article; found ${#articles[@]}:" >&2
+            printf ' - %s\n' "${articles[@]}" >&2
+            exit 1
+          fi
+
+          file_name="${articles[0]}"
+          slug="${file_name%.md}"
+          source_path="posts/${file_name}"
+          if ! git cat-file -e "${SOURCE_SHA}:${source_path}" 2>/dev/null; then
+            source_path="archive/${file_name}"
+          fi
+
+          raw="$(git show "${SOURCE_SHA}:${source_path}" 2>/dev/null || true)"
+          title="$(printf '%s\n' "$raw" | sed -n 's/^[[:space:]]*title:[[:space:]]*//p' | head -n 1 | sed -E 's/^["'\'' ]+|["'\'' ]+$//g')"
+          [ -n "$title" ] || title="$slug"
+
+          printf '%s\n' "$raw" > /tmp/publication-article.md
+          python3 - <<'PY' > /tmp/publication-assets.txt
+          import re
+          from pathlib import Path
+
+          text = Path('/tmp/publication-article.md').read_text(encoding='utf-8')
+          paths = set()
+          for match in re.findall(r'/assets/(?:posts|covers)/[^\s)"\']+', text):
+              paths.add(match.split('?', 1)[0].split('#', 1)[0].lstrip('/'))
+
+          cover = re.search(r'^\s*cover_image:\s*(.+?)\s*$', text, re.M)
+          if cover:
+              value = cover.group(1).strip().strip('"\'')
+              if value.startswith('/assets/'):
+                  paths.add(value.lstrip('/'))
+
+          for item in sorted(paths):
+              print(item)
+          PY
+
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+          echo "file_name=$file_name" >> "$GITHUB_OUTPUT"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+
+      - name: Build frozen article publication branch
+        if: steps.article.outputs.eligible == 'true'
+        id: candidate
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          FILE_NAME: ${{ steps.article.outputs.file_name }}
+          SLUG: ${{ steps.article.outputs.slug }}
+          TITLE: ${{ steps.article.outputs.title }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin main
+          branch="publication/${SLUG}"
+          git switch -C "$branch" origin/main
+
+          sync_path() {
+            local path="$1"
+            if git cat-file -e "${SOURCE_SHA}:${path}" 2>/dev/null; then
+              git checkout "${SOURCE_SHA}" -- "$path"
+            else
+              git rm -rf --ignore-unmatch -- "$path" >/dev/null 2>&1 || true
+            fi
+          }
+
+          sync_path "posts/${FILE_NAME}"
+          sync_path "archive/${FILE_NAME}"
+          sync_path "posts/_sources.json"
+          sync_path "assets/css/article-covers.css"
+          sync_path "media/photos/${SLUG}.json"
+
+          if git cat-file -e "${SOURCE_SHA}:snippets/${SLUG}" 2>/dev/null; then
+            git checkout "${SOURCE_SHA}" -- "snippets/${SLUG}"
+          fi
+
+          while IFS= read -r asset; do
+            [ -n "$asset" ] || continue
+            if git cat-file -e "${SOURCE_SHA}:${asset}" 2>/dev/null; then
+              git checkout "${SOURCE_SHA}" -- "$asset"
+            else
+              echo "Referenced publication asset is missing at ${SOURCE_SHA}: $asset" >&2
+              exit 1
+            fi
+          done < /tmp/publication-assets.txt
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "branch=$branch" >> "$GITHUB_OUTPUT"
+            echo 'Production already contains this article state.'
+            exit 0
+          fi
+
+          if ! git diff --cached --name-only | grep -Eq '^(posts|archive)/[^/]+\.md$'; then
+            echo 'Publication candidate unexpectedly contains no article file change.' >&2
+            exit 1
+          fi
+
+          if git diff --cached --name-only | grep -qx 'VERSION'; then
+            echo 'Article Publication must never modify VERSION.' >&2
+            exit 1
+          fi
+
+          git commit -m "publish(article): ${SLUG}"
+
+          remote_sha="$(git ls-remote --heads origin "refs/heads/${branch}" | awk 'NR == 1 { print $1 }')"
+          git push             --force-with-lease="refs/heads/${branch}:${remote_sha}"             origin "HEAD:refs/heads/${branch}"
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "candidate_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update Publication PR
+        if: steps.article.outputs.eligible == 'true' && steps.candidate.outputs.changed == 'true'
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ steps.candidate.outputs.branch }}
+          TITLE: ${{ steps.article.outputs.title }}
+          FILE_NAME: ${{ steps.article.outputs.file_name }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          STAGING_PR: ${{ inputs.staging_pr_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          body="$(cat <<EOF
+          This is an **Article Publication**, not a software Release.
+
+          - Article: \`${FILE_NAME}\`
+          - Verified staging commit: \`${SOURCE_SHA}\`
+          - Source staging PR: #${STAGING_PR}
+          - Scope: exactly one article plus its publication assets
+          - Software \`VERSION\`: unchanged
+
+          Merging this PR publishes only this article state. Application images and SemVer are handled independently by the Release pipeline.
+          EOF
+          )"
+
+          existing="$(gh pr list             --repo "$REPOSITORY"             --state open             --base main             --head "$BRANCH"             --json number             --jq '.[0].number // empty')"
+
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing"               --repo "$REPOSITORY"               --title "publish: ${TITLE}"               --body "$body"
+            pr_number="$existing"
+          else
+            pr_url="$(gh pr create               --repo "$REPOSITORY"               --base main               --head "$BRANCH"               --title "publish: ${TITLE}"               --body "$body")"
+            pr_number="${pr_url##*/}"
+          fi
+
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger required checks for Publication PR
+        if: steps.pr.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ steps.candidate.outputs.branch }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          gh workflow run ci.yml             --repo "$REPOSITORY"             --ref "$BRANCH"             -f pr_number="$PR_NUMBER"
+          echo "Triggered required checks for Article Publication PR #$PR_NUMBER."
