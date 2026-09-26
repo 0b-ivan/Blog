@@ -88,7 +88,11 @@ Erst nach erfolgreicher Prüfung wird `promotion/staging-verified` auf den verif
 
 Der Merge dieses Promotion-PRs bleibt manuell.
 
-Die für `main` verpflichtenden Statuskontexte `checks` und `Local assets` werden beim Promotion-Pfad besonders behandelt. GitHub wertet Check-Runs aus einem per `workflow_dispatch` gestarteten Workflow nicht als erforderliche PR-Statuschecks. Der Staging-Workflow startet deshalb weiterhin den vollständigen PR-Checks-Workflow auf dem verifizierten Promotion-SHA, wartet auf dessen Ergebnis und spiegelt das Resultat anschließend als Commit-Status auf genau diesem SHA. Nur ein vollständig erfolgreicher Lauf setzt beide erforderlichen Kontexte auf `success`; bei einem Fehler bleiben sie blockierend.
+Die für `main` verpflichtenden Statuskontexte `checks` und `Local assets` werden beim Promotion-Pfad besonders behandelt. Der Staging-Workflow stellt zunächst sicher, dass beide Prüfungen auf dem aktuellen verifizierten Promotion-SHA erfolgreich waren.
+
+Zusätzlich läuft `.github/workflows/promotion-watchdog.yml` als selbstheilender Reconciler. Er wird nach abgeschlossenen PR-Checks, nach Änderungen an `main`, manuell und spätestens alle fünf Minuten gestartet. Der Watchdog sucht ausschließlich den internen PR `promotion/staging-verified -> main`, liest GitHubs **aktuellen synthetischen Merge-Commit** und veröffentlicht dort die bereits erfolgreichen erforderlichen GitHub-Actions-Checks erneut. Regeneriert GitHub diesen Merge-Commit während der Reparatur, beginnt der Watchdog mit dem neuen SHA erneut. Fehlen die Quellchecks auf dem Promotion-SHA, startet er `ci.yml` erneut. Echte Merge-Konflikte werden dagegen nicht automatisch überschrieben; dafür bleibt der kontrollierte `main -> staging`-Rücksync zuständig.
+
+Dadurch ist das System eventual-consistent: Ein durch GitHub neu erzeugter Merge-SHA kann den Promotion-PR kurzzeitig blockieren, der Watchdog stellt die erforderlichen Checks anschließend ohne manuelles Eingreifen wieder her.
 
 
 ## Production
