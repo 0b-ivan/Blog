@@ -187,7 +187,7 @@ Externe SVG-Dateien werden von der Photo Connection bewusst nicht übernommen.
 Für Wikimedia-Commons-Bilder kann im Artikel zunächst direkt die externe Bild-URL verwendet werden. Beispiel:
 
 ```md
-![Tōru Iwatani bei der GDC](https://upload.wikimedia.org/wikipedia/commons/.../Toru_Iwatani.jpg)
+![Tōru Iwatani bei der GDC](https://upload.wikimedia.org/wikipedia/commons/.../Toru_Iwatani.jpg){size=medium}
 ```
 
 Beim Push eines geänderten Artikels auf einen unterstützten Feature-Branch führt die Photo Connection automatisch folgende Schritte aus:
@@ -198,7 +198,8 @@ Beim Push eines geänderten Artikels auf einen unterstützten Feature-Branch fü
 4. Photo-Manifest unter `media/photos/` anlegen oder erweitern,
 5. den Hotlink im Markdown durch den lokalen Root-Pfad ersetzen,
 6. einen Quellen-/Lizenzlink zu `/sources.html#<source_id>` ergänzen,
-7. anschließend den normalen Commons-Ingest mit Lizenz-, MIME-, Größen- und Magic-Byte-Prüfung ausführen.
+7. eine optionale `{size=...}`- oder `{width=NN%}`-Angabe unverändert am Bild erhalten,
+8. anschließend den normalen Commons-Ingest mit Lizenz-, MIME-, Größen- und Magic-Byte-Prüfung ausführen.
 
 Der Git-Stand enthält danach keinen externen Bild-Hotlink mehr.
 
