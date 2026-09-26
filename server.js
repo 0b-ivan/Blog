@@ -1,5 +1,6 @@
 const { resolveSnippets, installSnippetRenderer } = require('./lib/snippets');
 const express = require('express');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('path');
 const matter = require('gray-matter');
@@ -922,6 +923,82 @@ function createApp(options = {}) {
   const postsDir = options.postsDir;
   const siteUrl = options.siteUrl;
   const ebookExporterLoader = options.ebookExporterLoader || (() => require('./lib/ebook-export'));
+  const epubCache = new Map();
+  const epubPending = new Map();
+  const epubCacheMaxEntries = Math.max(
+    0,
+    Number.parseInt(
+      String(options.epubCacheMaxEntries ?? process.env.EPUB_CACHE_MAX_ENTRIES ?? '4'),
+      10
+    ) || 0
+  );
+  let epubBuildTail = Promise.resolve();
+
+  function epubCacheKey(post) {
+    const payload = JSON.stringify({
+      slug: post.slug,
+      version: post.version,
+      updatedAt: post.updatedAt,
+      title: post.title,
+      excerpt: post.excerpt,
+      coverTitle: post.coverTitle,
+      coverSubtitle: post.coverSubtitle,
+      coverImage: post.coverImage,
+      category: post.category,
+      tags: post.tags,
+      date: post.date,
+      html: post.html
+    });
+
+    return createHash('sha256').update(payload).digest('hex');
+  }
+
+  function rememberEpub(key, content) {
+    if (epubCacheMaxEntries <= 0) return;
+
+    epubCache.delete(key);
+    epubCache.set(key, content);
+
+    while (epubCache.size > epubCacheMaxEntries) {
+      const oldestKey = epubCache.keys().next().value;
+      epubCache.delete(oldestKey);
+    }
+  }
+
+  function enqueueEpubBuild(task) {
+    const run = epubBuildTail
+      .catch(() => undefined)
+      .then(task);
+
+    epubBuildTail = run.catch(() => undefined);
+    return run;
+  }
+
+  function buildArticleEpubCached(post, exporter, exportOptions) {
+    const key = epubCacheKey(post);
+    const cached = epubCache.get(key);
+
+    if (cached) {
+      epubCache.delete(key);
+      epubCache.set(key, cached);
+      return Promise.resolve(cached);
+    }
+
+    const pending = epubPending.get(key);
+    if (pending) return pending;
+
+    const build = enqueueEpubBuild(async () => {
+      const content = await exporter.buildArticleEpub(post, exportOptions);
+      const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+      rememberEpub(key, buffer);
+      return buffer;
+    }).finally(() => {
+      epubPending.delete(key);
+    });
+
+    epubPending.set(key, build);
+    return build;
+  }
   const pdfServiceUrl = String(
     options.pdfServiceUrl
       || process.env.PDF_SERVICE_URL
@@ -1082,7 +1159,7 @@ function createApp(options = {}) {
         assetRoot: root
       };
       const content = format === 'epub'
-        ? await exporter.buildArticleEpub(post, exportOptions)
+        ? await buildArticleEpubCached(post, exporter, exportOptions)
         : await exporter.buildArticlePdf(post, exportOptions);
 
       res.set('Content-Type', format === 'epub' ? 'application/epub+zip' : 'application/pdf');
