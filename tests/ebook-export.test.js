@@ -165,7 +165,7 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('>CHAOS ENGINEERING</text>');
   });
 
-  it('keeps editorial artwork visually subordinate to the cover typography', () => {
+  it('blends cover artwork behind tags and author metadata without hard white cards', () => {
     const svg = buildEditorialCoverSvg({
       title: 'DOOM veränderte mehr als Shooter',
       excerpt: 'Von Commander Keen über Shareware und Deathmatch bis DOOM auf Embedded-Hardware',
@@ -175,9 +175,10 @@ describe('article ebook export helpers', () => {
       date: '2026-09-24'
     }, 'data:image/png;base64,ZmFrZQ==');
 
-    expect(svg).toContain('opacity="0.82" preserveAspectRatio="xMidYMid slice"');
-    expect(svg).toContain('<stop offset="0.4" stop-color="#ffffff" stop-opacity="0.34"/>');
-    expect(svg).toContain('<stop offset="1" stop-color="#ffffff" stop-opacity="0.10"/>');
+    expect(svg).toContain('mask="url(#imageBlendMask)"');
+    expect(svg).toContain('id="imageBlend"');
+    expect(svg).not.toContain('opacity="0.82" preserveAspectRatio');
+    expect(svg).not.toContain('<rect x="0" y="2110" width="650" height="450"');
   });
 
   it('creates a generated Kernel Notes cover when no photo exists', () => {
