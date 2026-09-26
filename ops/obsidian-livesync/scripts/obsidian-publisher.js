@@ -365,7 +365,7 @@ class GitHubPublisher {
     return pullRequest;
   }
 
-  async ensureUnpublishPullRequest({ fileName, filePath, archivePath, title, baseBranch, branch }) {
+  async ensureUnpublishPullRequest({ filePath, archivePath, title, baseBranch, branch }) {
     const activeFile = await this.file(filePath, baseBranch);
     const archivedFile = await this.file(archivePath, baseBranch);
     let pullRequest = await this.openPullRequest(branch, baseBranch);

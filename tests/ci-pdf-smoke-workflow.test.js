@@ -17,8 +17,8 @@ describe('CI PDF smoke test selection', () => {
 
     expect((workflow.match(/- name: LaTeX PDF smoke test/g) || []).length).toBe(1);
     expect((workflow.match(/- name: Browser click smoke test/g) || []).length).toBe(1);
-    expect((workflow.match(/^  local-assets:/gm) || []).length).toBe(1);
-    expect((workflow.match(/^  mirror-required-pr-checks:/gm) || []).length).toBe(1);
+    expect((workflow.match(/^ {2}local-assets:/gm) || []).length).toBe(1);
+    expect((workflow.match(/^ {2}mirror-required-pr-checks:/gm) || []).length).toBe(1);
     expect(workflow).not.toContain("grep -Eq '^status:[[:space:]]*publish[[:space:]]*\n");
   });
 });
