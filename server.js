@@ -863,7 +863,7 @@ function renderPostPage(post, relatedPosts = []) {
                   <strong>EPUB</strong>
                   <span>E-Book mit Cover & Metadaten</span>
                 </a>
-                <a href="/download/${encodeURIComponent(post.slug)}.pdf" download>
+                <a href="/download/${encodeURIComponent(post.slug)}.pdf" download data-pdf-download data-pdf-slug="${md.utils.escapeHtml(String(post.slug || ''))}">
                   <strong>PDF</strong>
                   <span>als LaTeX-Publikation gesetzt</span>
                 </a>
@@ -901,6 +901,7 @@ function renderPostPage(post, relatedPosts = []) {
     <script src="/assets/nav-scroll-cue.js" defer></script>
     <script src="/assets/glossary.js" defer></script>
     <script src="/assets/article-analytics.js?v=20260922-1" defer></script>
+    <script src="/assets/pdf-download.js?v=20260926-1" defer></script>
     <script type="module">
       import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 

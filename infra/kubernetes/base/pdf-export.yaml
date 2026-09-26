@@ -26,6 +26,8 @@ spec:
               value: https://blog.obivan.org
             - name: PDF_COMPILE_TIMEOUT_MS
               value: "120000"
+            - name: PDF_CACHE_MAX_ENTRIES
+              value: "4"
           readinessProbe:
             httpGet:
               path: /healthz
@@ -45,9 +47,9 @@ spec:
           resources:
             requests:
               cpu: 100m
-              memory: 256Mi
+              memory: 384Mi
             limits:
-              memory: 1Gi
+              memory: 1536Mi
 ---
 apiVersion: v1
 kind: Service

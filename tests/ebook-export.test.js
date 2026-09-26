@@ -181,6 +181,24 @@ describe('article ebook export helpers', () => {
     expect(svg).not.toContain('<rect x="0" y="2110" width="650" height="450"');
   });
 
+  it('keeps the Pac-Man EPUB header clear and adds only the Kernel Notes icon at bottom right', () => {
+    const svg = buildEditorialCoverSvg({
+      title: 'Warum Pac-Man zuerst Puck Man hieß – und was パクパク damit zu tun hat',
+      coverTitle: 'Warum Puck Man zu Pac-Man wurde',
+      coverSubtitle: 'パクパク, die ersten Automaten und ein Name, der für den US-Markt geändert wurde',
+      author: 'obivan',
+      category: 'Gaming',
+      tags: ['Pac-Man', 'Puck-Man', 'Namco', 'Arcade', 'Videospielgeschichte', 'Japan'],
+      date: '2026-09-24'
+    }, 'data:image/png;base64,ZmFrZQ==');
+
+    expect(svg).toContain('<line x1="760" y1="158" x2="1260" y2="158"');
+    expect(svg).toContain('id="kernel-notes-mark"');
+    expect(svg).toContain('fill="#00473e"');
+    expect(svg).toContain('fill="#f2913d"');
+    expect(svg).not.toContain('>VIDEOSPIELGESCHICHTE</text>');
+  });
+
   it('creates a generated Kernel Notes cover when no photo exists', () => {
     const svg = buildCoverSvg({
       title: 'Kubernetes ohne Magie',
