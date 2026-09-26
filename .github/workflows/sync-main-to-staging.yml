@@ -89,10 +89,11 @@ jobs:
           )"
 
           if [ -n "$existing" ]; then
-            gh pr edit "$existing" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title 'sync: main back into staging' \
-              --body "$body"
+            gh api \
+              --method PATCH \
+              "/repos/${GITHUB_REPOSITORY}/pulls/${existing}" \
+              -f title='sync: main back into staging' \
+              -f body="$body" >/dev/null
             pr_number="$existing"
             echo "Updated main -> staging sync PR #${pr_number}."
           else
