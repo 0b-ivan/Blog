@@ -4,34 +4,6 @@ on:
   push:
     branches:
       - staging
-    paths:
-      - 'posts/**'
-      - 'archive/**'
-      - 'snippets/**'
-      - 'assets/**'
-      - 'config/**'
-      - 'lib/**'
-      - '*.html'
-      - '*.js'
-      - 'rag/**'
-      - 'Dockerfile'
-      - 'Dockerfile.search'
-      - 'Dockerfile.status'
-      - 'Dockerfile.chaos'
-      - 'Dockerfile.pdf'
-      - 'templates/**'
-      - 'status-monitor/**'
-      - 'chaos-monkey/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'VERSION'
-      - '.dockerignore'
-      - '.github/workflows/cd-staging.yml'
-      - 'infra/kubernetes/base/**'
-      - 'infra/kubernetes/staging/**'
-      - 'infra/kubernetes/production/**'
-      - 'scripts/verify-staging-scaling.sh'
-      - 'scripts/verify-production-k8s.sh'
   workflow_dispatch:
 
 permissions:
@@ -39,7 +11,6 @@ permissions:
   contents: write
   pull-requests: write
   packages: write
-  statuses: write
 
 concurrency:
   group: staging-deploy
@@ -303,7 +274,7 @@ jobs:
           build_images=false
           while IFS= read -r file; do
             case "$file" in
-              infra/kubernetes/base/*|infra/kubernetes/base/**/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|infra/kubernetes/production/*|infra/kubernetes/production/**/*|scripts/verify-staging-scaling.sh|scripts/verify-production-k8s.sh|.github/workflows/cd-staging.yml)
+              infra/kubernetes/base/*|infra/kubernetes/base/**/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*|infra/kubernetes/production/*|infra/kubernetes/production/**/*|scripts/verify-staging-scaling.sh|scripts/verify-production-k8s.sh|.github/workflows/*|.github/workflows/**/*|docs/*|docs/**/*|tests/*|tests/**/*|README.md|CONTRIBUTING.md)
                 ;;
               *)
                 build_images=true
@@ -636,7 +607,7 @@ jobs:
           exit 1
 
       - name: Publish verified promotion candidate
-        if: github.event_name == 'push' && steps.deploy_mode.outputs.build_images == 'true'
+        if: github.event_name == 'push'
         env:
           VERIFIED_SHA: ${{ steps.desired-state.outputs.gitops_sha }}
         run: |
@@ -661,7 +632,7 @@ jobs:
           echo "Verified promotion candidate ${PROMOTION_BRANCH} -> ${VERIFIED_SHA}"
 
       - name: Open or update production promotion PR
-        if: github.event_name == 'push' && steps.deploy_mode.outputs.build_images == 'true'
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -670,11 +641,17 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [ -n "${BUILD_VERSION:-}" ]; then
+            validation_summary="Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org."
+          else
+            validation_summary="Staging control-plane/GitOps state \`${VERIFIED_SHA}\` passed the public availability gate at https://staging-blog.obivan.org without rebuilding application images."
+          fi
+
           body="$(printf '%s\n\n%s\n%s\n\n%s\n' \
-            "Staging deployment \`${BUILD_VERSION}\` is online and passed the public smoke check at https://staging-blog.obivan.org." \
+            "$validation_summary" \
             "Verified GitOps commit: \`${VERIFIED_SHA}\`" \
             "Promotion branch: \`${PROMOTION_BRANCH}\`" \
-            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
+            'This PR promotes only the latest successfully verified staging candidate to `main`. The promotion branch is advanced only after the applicable public staging gate succeeds. Merge remains manual so production is never promoted automatically.')"
 
           if [ -d /tmp/cover-reports ] && find /tmp/cover-reports -maxdepth 1 -name '*.json' -print -quit | grep -q .; then
             cover_review_file="$(mktemp)"
@@ -709,7 +686,7 @@ jobs:
             --title 'promote: verified staging to production' \
             --body "$body"
 
-      - name: Run and bridge required checks for production promotion
+      - name: Trigger required checks for production promotion
         if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -742,96 +719,12 @@ jobs:
             exit 0
           fi
 
-          # GitHub does not count check runs from workflow_dispatch toward
-          # required PR status checks. Publish commit statuses with the same
-          # required contexts after the dispatched CI run finishes.
-          for context in 'checks' 'Local assets'; do
-            gh api \
-              --method POST \
-              "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
-              -f state='pending' \
-              -f context="$context" \
-              -f description='Promotion validation is running.' >/dev/null
-          done
-
-          previous_run_id="$(
-            gh run list \
-              --repo "$REPOSITORY" \
-              --workflow ci.yml \
-              --branch "$PROMOTION_BRANCH" \
-              --event workflow_dispatch \
-              --limit 1 \
-              --json databaseId \
-              --jq '.[0].databaseId // empty'
-          )"
-
           gh workflow run ci.yml \
             --repo "$REPOSITORY" \
-            --ref "$PROMOTION_BRANCH"
+            --ref "$PROMOTION_BRANCH" \
+            -f pr_number="$promotion_pr"
 
-          run_id=''
-          for attempt in $(seq 1 30); do
-            candidate="$(
-              gh run list \
-                --repo "$REPOSITORY" \
-                --workflow ci.yml \
-                --branch "$PROMOTION_BRANCH" \
-                --event workflow_dispatch \
-                --limit 10 \
-                --json databaseId,headSha \
-                --jq ".[] | select(.headSha == \"${promotion_sha}\") | .databaseId" |
-                head -n 1
-            )"
-
-            if [ -n "$candidate" ] && [ "$candidate" != "$previous_run_id" ]; then
-              run_id="$candidate"
-              break
-            fi
-
-            echo "Waiting for dispatched PR Checks run (attempt ${attempt}/30)."
-            sleep 2
-          done
-
-          if [ -z "$run_id" ]; then
-            echo 'Could not identify the dispatched PR Checks run.' >&2
-            for context in 'checks' 'Local assets'; do
-              gh api \
-                --method POST \
-                "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
-                -f state='failure' \
-                -f context="$context" \
-                -f description='Promotion validation run could not be identified.' >/dev/null
-            done
-            exit 1
-          fi
-
-          run_url="https://github.com/${REPOSITORY}/actions/runs/${run_id}"
-          echo "Watching PR Checks run ${run_id} for promotion PR #${promotion_pr}."
-
-          if ! gh run watch "$run_id" --repo "$REPOSITORY" --exit-status; then
-            for context in 'checks' 'Local assets'; do
-              gh api \
-                --method POST \
-                "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
-                -f state='failure' \
-                -f context="$context" \
-                -f description='Promotion validation failed.' \
-                -f target_url="$run_url" >/dev/null
-            done
-            exit 1
-          fi
-
-          for context in 'checks' 'Local assets'; do
-            gh api \
-              --method POST \
-              "/repos/${REPOSITORY}/statuses/${promotion_sha}" \
-              -f state='success' \
-              -f context="$context" \
-              -f description='Promotion validation passed.' \
-              -f target_url="$run_url" >/dev/null
-          done
-
-          echo "Promotion PR #${promotion_pr} is validated at ${promotion_sha}; required statuses were bridged from run ${run_id}."
+          echo "Triggered PR Checks for promotion PR #${promotion_pr} at ${promotion_sha}."
 
       - name: Deployment handoff
         env:
@@ -842,7 +735,7 @@ jobs:
             echo 'The public staging build was verified before promotion/staging-verified was advanced.'
             echo 'The production promotion PR targets the verified candidate branch and still requires a manual merge.'
           else
-            echo 'GitOps-only change: existing images were reused and no promotion candidate was advanced.'
+            echo 'Control-plane/GitOps-only change: existing images were reused.'
+            echo 'Public staging availability was verified and the promotion pointer was advanced to the current staging history.'
             echo 'Flux reconciles infra/kubernetes/staging from the staging branch.'
-            echo 'Run scripts/verify-staging-scaling.sh from a host with cluster access for in-cluster replica verification.'
           fi

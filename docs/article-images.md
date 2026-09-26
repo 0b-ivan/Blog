@@ -106,7 +106,40 @@ Im Markdown werden ausschließlich root-relative lokale Pfade verwendet:
 ![Puck-Man-Arcade-Automat aus der frühen Veröffentlichung](/assets/posts/pac-man-puck-man/01-puck-man-cabinet.jpg)
 ```
 
-Externe Hotlinks und Data-URIs sind in Artikeln nicht zulässig.
+Externe Hotlinks und Data-URIs sind im **materialisierten Git-Stand** nicht zulässig. Beim Authoring darf für unterstützte Wikimedia-Commons-Bilder vorübergehend eine externe URL verwendet werden; die Photo Connection ersetzt sie beim Push automatisch durch den lokalen Pfad.
+
+### Darstellungsgröße
+
+Direkt hinter einem Markdown-Bild kann optional eine Darstellungsgröße gesetzt werden:
+
+```md
+![Kleines Bild](/assets/posts/demo/01-small.jpg){size=small}
+![Mittleres Bild](/assets/posts/demo/02-medium.jpg){size=medium}
+![Großes Bild](/assets/posts/demo/03-large.jpg){size=large}
+![Volle Breite](/assets/posts/demo/04-full.jpg){size=full}
+![Individuell](/assets/posts/demo/05-custom.jpg){width=42%}
+```
+
+Presets:
+
+- `small` = 35 %
+- `medium` = 55 %
+- `large` = 75 %
+- `full` = 100 %
+
+Bei `width=NN%` sind Werte von 10 bis 100 % erlaubt. `max-width: 100%` und automatische Höhe bleiben immer aktiv, damit Bilder responsiv und ohne Verzerrung dargestellt werden.
+
+Die Größenangabe gilt für Website, RSS/HTML, EPUB und PDF. Bei einer automatisch materialisierten Commons-URL bleibt sie erhalten:
+
+```md
+![Pac-Man-Automat](https://upload.wikimedia.org/.../Pac-Man.jpg){width=55%}
+```
+
+wird zu:
+
+```md
+![Pac-Man-Automat](/assets/posts/mein-artikel/01-pac-man-automat.jpg){width=55%}
+```
 
 ## Dateiformate
 

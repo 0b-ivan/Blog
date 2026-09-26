@@ -94,6 +94,8 @@ jobs:
             printf 'OBSIDIAN_PUBLISHER_GITHUB_TOKEN=%s\n' "$OBSIDIAN_PUBLISHER_GITHUB_TOKEN"
             printf 'PUBLISHER_GITHUB_REPOSITORY=0b-ivan/Blog\n'
             printf 'PUBLISHER_BASE_BRANCH=staging\n'
+            printf 'PUBLISHER_PRODUCTION_BRANCH=main\n'
+            printf 'PUBLISHER_PROMOTION_BRANCH=promotion/staging-verified\n'
             printf 'PUBLISHER_DEBOUNCE_SECONDS=300\n'
             printf 'PUBLISHER_POLL_SECONDS=30\n'
           } | ssh -i ~/.ssh/hetzner_deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
