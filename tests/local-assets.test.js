@@ -13,13 +13,20 @@ describe('article image policy', () => {
     })).toEqual([]);
   });
 
-  it('rejects external image hotlinks', () => {
+  it('rejects unmanaged external image hotlinks', () => {
     expect(articleImagePolicyViolations({
       alt: 'Arcade cabinet',
       target: 'https://example.test/cabinet.jpg'
     })).toContain(
-      'article images must be stored locally under /assets/posts/; external/data targets are not allowed'
+      'external article images must be managed by the Photo Connection and materialized locally'
     );
+  });
+
+  it('accepts an external authoring URL when the Photo Connection manages it', () => {
+    expect(articleImagePolicyViolations({
+      alt: 'Commons image',
+      target: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.jpg'
+    }, { managedExternal: true })).toEqual([]);
   });
 
   it('requires root-relative article asset paths and alt text', () => {
