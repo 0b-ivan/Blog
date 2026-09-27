@@ -6,7 +6,7 @@ resources:
   - ../base
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: ef9aa69709ffffe4c0b30be5c92b0c54743802a6
+    newTag: 5813d0bd1021fa03ef5988ab1975af41d523d635
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
   - name: ghcr.io/0b-ivan/kernel-notes-pdf
