@@ -2,6 +2,11 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  assetScopeFromPost,
+  commonsSourceFromRemoteImage,
+  isHttpUrl
+} = require('../lib/article-photo-source');
 
 const root = process.cwd();
 const scanRoots = ['posts', 'archive'];
@@ -129,7 +134,7 @@ function imageContentViolation(target, buffer) {
   return null;
 }
 
-function articleImagePolicyViolations(image) {
+function articleImagePolicyViolations(image, options = {}) {
   const violations = [];
   const alt = String(image?.alt || '').trim();
   const rawTarget = String(image?.target || '').trim();
@@ -139,7 +144,19 @@ function articleImagePolicyViolations(image) {
     violations.push('missing alt text');
   }
 
-  if (!rawTarget || isExternal(rawTarget)) {
+  if (!rawTarget) {
+    violations.push('article image target is missing');
+    return violations;
+  }
+
+  if (isHttpUrl(rawTarget)) {
+    if (!options.managedExternal) {
+      violations.push('external article images must be managed by the Photo Connection and materialized locally');
+    }
+    return violations;
+  }
+
+  if (isExternal(rawTarget)) {
     violations.push('article images must be stored locally under /assets/posts/; external/data targets are not allowed');
     return violations;
   }
@@ -149,6 +166,41 @@ function articleImagePolicyViolations(image) {
   }
 
   return violations;
+}
+
+function managedArticlePhoto(sourceFile, rawTarget) {
+  if (!isHttpUrl(rawTarget)) return null;
+
+  let source;
+  try {
+    source = commonsSourceFromRemoteImage(rawTarget).source;
+  } catch {
+    return null;
+  }
+
+  const scope = assetScopeFromPost(path.basename(sourceFile));
+  const manifestPath = path.join(root, 'media', 'photos', `${scope}.json`);
+  if (!fs.existsSync(manifestPath)) return null;
+
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return null;
+  }
+
+  const photo = Array.isArray(manifest?.photos)
+    ? manifest.photos.find((entry) => String(entry?.source || '') === source)
+    : null;
+  if (!photo) return null;
+
+  const output = String(photo.output || '').replace(/\\/g, '/');
+  if (!output.startsWith('assets/posts/') || output.includes('..')) return null;
+
+  return {
+    photo,
+    resolved: path.join(root, output)
+  };
 }
 
 function main() {
@@ -169,12 +221,40 @@ function main() {
 
       for (const image of images) {
         const filePath = path.relative(root, file);
-        for (const reason of articleImagePolicyViolations(image)) {
+        const managedExternal = managedArticlePhoto(file, image.target);
+
+        for (const reason of articleImagePolicyViolations(image, {
+          managedExternal: Boolean(managedExternal)
+        })) {
           policyViolations.push({
             file: filePath,
             target: image.target,
             reason
           });
+        }
+
+        if (managedExternal) {
+          checked += 1;
+          if (!fs.existsSync(managedExternal.resolved)) {
+            missing.push({
+              file: filePath,
+              target: image.target,
+              resolved: path.relative(root, managedExternal.resolved),
+            });
+          } else {
+            const imageViolation = imageContentViolation(
+              managedExternal.photo.output,
+              fs.readFileSync(managedExternal.resolved)
+            );
+            if (imageViolation) {
+              policyViolations.push({
+                file: filePath,
+                target: image.target,
+                reason: imageViolation
+              });
+            }
+          }
+          continue;
         }
 
         if (!image.target || isExternal(image.target) || image.target.includes('${')) continue;
@@ -260,6 +340,7 @@ module.exports = {
   collectMarkdownImages,
   imageContentViolation,
   isExternal,
+  managedArticlePhoto,
   resolveTarget,
   stripFencedCode
 };
