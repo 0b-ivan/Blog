@@ -42,7 +42,7 @@ describe('external article image materializer', () => {
     expect(collectMarkdownImages(markdown)).toHaveLength(1);
   });
 
-  it('rewrites a Commons hotlink to a local asset and creates a manifest entry', () => {
+  it('keeps a Commons image online for authoring while creating a local materialization manifest', () => {
     const markdown = [
       '# Demo',
       '',
@@ -62,30 +62,57 @@ describe('external article image materializer', () => {
     expect(photo.source_id).toMatch(/^demo-commons-[a-f0-9]{10}$/);
 
     expect(result.markdown).toContain(
-      `![Beispielbild](/${photo.output})`
+      '![Beispielbild](https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.jpg)'
     );
     expect(result.markdown).toContain(
       `[Wikimedia Commons](/sources.html#${photo.source_id})`
     );
-    expect(result.markdown).not.toContain('upload.wikimedia.org');
+    expect(result.markdown).not.toContain(`](/${photo.output})`);
   });
 
 
-  it('preserves image sizing attributes while replacing the remote URL', () => {
+  it('preserves image sizing attributes while normalizing the authoring URL', () => {
     const markdown = '![Beispielbild](https://upload.wikimedia.org/wikipedia/commons/a/a9/Example.jpg){width=42%}\n';
 
     const result = planRemoteImages(markdown, 'posts/2026-09-26-demo.md');
     const photo = result.manifest.photos[0];
 
     expect(result.markdown).toContain(
-      `![Beispielbild](/${photo.output}){width=42%}`
+      '![Beispielbild](https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.jpg){width=42%}'
     );
     expect(result.markdown).toContain(
       `[Wikimedia Commons](/sources.html#${photo.source_id})`
     );
   });
 
-  it('is a no-op after the hotlink has already been replaced', () => {
+
+  it('restores an existing manifest-managed local path to a remote authoring URL', () => {
+    const manifest = {
+      version: 1,
+      post: 'posts/2026-09-26-demo.md',
+      photos: [{
+        source_id: 'demo-commons-example',
+        provider: 'wikimedia-commons',
+        source: 'https://commons.wikimedia.org/wiki/File:Example.jpg',
+        output: 'assets/posts/demo/01-example.jpg',
+        alt: 'Beispielbild',
+        width: 1400
+      }]
+    };
+    const markdown = '![Beispielbild](/assets/posts/demo/01-example.jpg){size=medium}\n';
+
+    const result = planRemoteImages(markdown, 'posts/2026-09-26-demo.md', manifest);
+
+    expect(result.changed).toBe(true);
+    expect(result.markdown).toContain(
+      '![Beispielbild](https://commons.wikimedia.org/wiki/Special:Redirect/file/Example.jpg){size=medium}'
+    );
+    expect(result.markdown).toContain(
+      '[Wikimedia Commons](/sources.html#demo-commons-example)'
+    );
+  });
+
+  it('leaves unmanaged local images alone', () => {
     const markdown = '![Lokal](/assets/posts/demo/01-lokal.jpg)\n';
     const result = planRemoteImages(markdown, 'posts/2026-09-26-demo.md');
 
