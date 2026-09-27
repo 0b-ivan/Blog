@@ -154,25 +154,6 @@ jobs:
               continue
             fi
 
-            if [ "$base" = main ]; then
-              stale_promotion="$(
-                gh pr list \
-                  --repo "$REPOSITORY" \
-                  --state open \
-                  --base main \
-                  --head promotion/staging-verified \
-                  --json number \
-                  --jq '.[0].number // empty'
-              )"
-
-              if [ -n "$stale_promotion" ] && [ "$stale_promotion" != "$pr_number" ]; then
-                gh pr close "$stale_promotion" \
-                  --repo "$REPOSITORY" \
-                  --comment "Closed automatically before production unpublish PR #${pr_number} so an older promotion cannot republish the removed article."
-                echo "Closed stale promotion PR #${stale_promotion} before production takedown."
-              fi
-            fi
-
             echo "PR #${pr_number}: checks are green and diff is deletion-only; merging ${head} -> ${base}."
             if gh pr merge "$pr_number" \
               --repo "$REPOSITORY" \

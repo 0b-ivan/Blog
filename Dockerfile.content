@@ -1,0 +1,15 @@
+FROM alpine:3.22.1
+
+WORKDIR /content
+
+COPY posts ./posts
+COPY archive ./archive
+COPY snippets ./snippets
+COPY assets/posts ./assets/posts
+COPY assets/covers ./assets/covers
+COPY assets/css/article-covers.css ./assets/css/article-covers.css
+COPY post-history ./post-history
+
+# The image is a publication artifact. It is copied into an emptyDir by
+# production init containers; it is never the blog application runtime.
+CMD ["/bin/sh", "-c", "find /content -maxdepth 2 -type d -print"]
