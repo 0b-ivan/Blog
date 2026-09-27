@@ -193,6 +193,18 @@ jobs:
           headless_exists="$(docker inspect -f '{{.Name}}' kernel-notes-livesync-cli 2>/dev/null || true)"
           if [ -n "$headless_exists" ]; then
             docker compose --env-file .env --profile headless config >/dev/null
+
+            # A failed upstream rebuild can leave the running container alive while
+            # removing the Compose image tag. Recover the tag from the image that
+            # already backs the running container instead of rebuilding upstream.
+            headless_image_id="$(docker inspect -f '{{.Image}}' kernel-notes-livesync-cli)"
+            if docker image inspect "$headless_image_id" >/dev/null 2>&1; then
+              docker tag "$headless_image_id" kernel-notes-obsidian-sync-livesync-cli:latest
+            else
+              echo "Existing LiveSync image object is unavailable; refusing to rebuild upstream." >&2
+              exit 1
+            fi
+
             docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli
 
             if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)" != "true" ]; then
@@ -202,6 +214,14 @@ jobs:
               exit 1
             fi
 
+            asset_mount="$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/vault/assets/posts"}}{{.Source}}{{end}}{{end}}' kernel-notes-livesync-cli)"
+            if [ -z "$asset_mount" ]; then
+              echo "Headless LiveSync client is running without /vault/assets/posts mount" >&2
+              docker inspect kernel-notes-livesync-cli >&2
+              exit 1
+            fi
+
+            echo "Article assets mounted into LiveSync vault from: $asset_mount"
             docker compose --env-file .env --profile headless ps livesync-cli
           fi
 
