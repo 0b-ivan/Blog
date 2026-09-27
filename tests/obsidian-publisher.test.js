@@ -111,13 +111,12 @@ describe('obsidian publisher', () => {
     }
   });
 
-  it('creates separate unpublish PRs for staging and production and closes a stale promotion PR', async () => {
+  it('creates separate unpublish PRs for staging and production without coupling to a software release', async () => {
     const publisher = new GitHubPublisher({
       token: 'x',
       repository: '0b-ivan/Blog',
       baseBranch: 'staging',
-      productionBranch: 'main',
-      promotionBranch: 'promotion/staging-verified'
+      productionBranch: 'main'
     });
 
     publisher.file = vi.fn(async (filePath, ref) => {
@@ -127,13 +126,7 @@ describe('obsidian publisher', () => {
       return null;
     });
 
-    const promotionPr = { number: 99, html_url: 'https://example.invalid/pr/99' };
-    publisher.openPullRequest = vi.fn(async (branch, base) => {
-      if (branch === 'promotion/staging-verified' && base === 'main') {
-        return promotionPr;
-      }
-      return null;
-    });
+    publisher.openPullRequest = vi.fn().mockResolvedValue(null);
     publisher.closePullRequest = vi.fn();
     publisher.ensureBranch = vi.fn();
     publisher.deleteFile = vi.fn().mockResolvedValue(true);
@@ -149,7 +142,6 @@ describe('obsidian publisher', () => {
 
     const result = await publisher.unpublish({ fileName: '2026-08-23-test.md', title: 'Test' });
 
-    expect(publisher.closePullRequest).toHaveBeenCalledWith(promotionPr);
     expect(publisher.createPullRequest).toHaveBeenCalledWith(
       'obsidian/2026-08-23-test',
       'Test',
@@ -163,18 +155,6 @@ describe('obsidian publisher', () => {
       'posts/2026-08-23-test.md',
       'unpublish',
       'main'
-    );
-    expect(publisher.deleteFile).toHaveBeenCalledWith(
-      'posts/2026-08-23-test.md',
-      'obsidian/2026-08-23-test',
-      'Test',
-      'unpublish'
-    );
-    expect(publisher.deleteFile).toHaveBeenCalledWith(
-      'posts/2026-08-23-test.md',
-      'obsidian-unpublish/main/2026-08-23-test',
-      'Test',
-      'unpublish'
     );
     expect(result.action).toBe('fast-track-unpublish');
     expect(result.staging.action).toBe('created-unpublish-pr');
