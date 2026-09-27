@@ -18,6 +18,7 @@ const {
 const { countWords, calculateReadingTime } = require('./lib/reading-time');
 const { articleCoverStyle } = require('./lib/post-cover');
 const { installArticleImageSizing } = require('./lib/article-image-sizing');
+const { resolveArticlePhotoHtml } = require('./lib/article-photo-resolver');
 
 const port = process.env.PORT || 8080;
 const root = __dirname;
@@ -422,8 +423,10 @@ async function loadPosts(postsDir) {
       const markdownContent = withGlossaryDefinitions(transformWikiLinks(recovered.content, activeSlugs));
 
       const snippets = resolveSnippets({ slug, title, data: recovered.data, markdown: recovered.content, legacy });
+      const markdownHtml = md.render(markdownContent, { snippets });
+      const resolvedPhotoHtml = await resolveArticlePhotoHtml(markdownHtml, slug);
       const renderedHtml = appendCoverSourceReference(
-        md.render(markdownContent, { snippets }),
+        resolvedPhotoHtml,
         {
           slug,
           title,
