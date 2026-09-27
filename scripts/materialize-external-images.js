@@ -6,6 +6,7 @@ const path = require('node:path');
 const {
   assetScopeFromPost,
   cleanRemoteTarget,
+  commonsAuthoringUrl,
   commonsSourceFromRemoteImage,
   isHttpUrl
 } = require('../lib/article-photo-source');
@@ -100,12 +101,11 @@ function planRemoteImages(markdown, postPath, existingManifest = null) {
 
   const manifest = normalizeExistingManifest(existingManifest, normalizedPost);
   const scope = assetScopeFromPost(normalizedPost);
-  const images = collectMarkdownImages(markdown).filter((image) => isHttpUrl(image.rawTarget));
-  if (images.length === 0) {
-    return { changed: false, markdown: String(markdown || ''), manifest, manifestPath: `media/photos/${scope}.json` };
-  }
-
+  const images = collectMarkdownImages(markdown);
   const bySource = new Map(manifest.photos.map((photo) => [photo.source, photo]));
+  const byOutput = new Map(
+    manifest.photos.map((photo) => [String(photo.output || '').replace(/\\/g, '/'), photo])
+  );
   let nextIndex = nextOutputIndex(manifest.photos);
   const edits = [];
   const credited = new Set(
@@ -115,13 +115,31 @@ function planRemoteImages(markdown, postPath, existingManifest = null) {
   );
 
   for (const image of images) {
-    const alt = String(image.alt || '').trim();
-    if (!alt) {
-      throw new Error(`${normalizedPost}: external image '${cleanRemoteTarget(image.rawTarget)}' needs alt text`);
+    const rawTarget = cleanRemoteTarget(image.rawTarget);
+    let resolved = null;
+    let photo = null;
+
+    if (isHttpUrl(rawTarget)) {
+      resolved = commonsSourceFromRemoteImage(rawTarget);
+      photo = bySource.get(resolved.source) || null;
+    } else {
+      const localOutput = rawTarget
+        .split('#', 1)[0]
+        .split('?', 1)[0]
+        .replace(/^\/+/, '')
+        .replace(/\\/g, '/');
+      photo = byOutput.get(localOutput) || null;
+      if (photo) {
+        resolved = commonsSourceFromRemoteImage(photo.source);
+      }
     }
 
-    const resolved = commonsSourceFromRemoteImage(image.rawTarget);
-    let photo = bySource.get(resolved.source);
+    if (!resolved) continue;
+
+    const alt = String(image.alt || '').trim();
+    if (!alt) {
+      throw new Error(`${normalizedPost}: managed image '${rawTarget}' needs alt text`);
+    }
 
     if (!photo) {
       photo = {
@@ -135,11 +153,13 @@ function planRemoteImages(markdown, postPath, existingManifest = null) {
       nextIndex += 1;
       manifest.photos.push(photo);
       bySource.set(resolved.source, photo);
+      byOutput.set(photo.output, photo);
     } else {
       photo.alt = alt;
     }
 
-    let replacement = image.original;
+    const authoringTarget = commonsAuthoringUrl(resolved.fileTitle);
+    let replacement = image.original.replace(image.rawTarget, authoringTarget);
     if (!credited.has(photo.source_id)) {
       replacement += `\n\n*Quelle/Lizenz: [Wikimedia Commons](/sources.html#${photo.source_id}).*`;
       credited.add(photo.source_id);
