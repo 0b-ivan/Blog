@@ -1,0 +1,174 @@
+name: Prepare Software Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: SemVer increment for this software release
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: software-release-cut
+  cancel-in-progress: false
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Verify public staging
+        run: |
+          set -euo pipefail
+          test "$(curl -fsS --max-time 10 https://staging-blog.obivan.org/healthz)" = ok
+          echo 'Public staging is healthy.'
+
+      - name: Select software-only release delta
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BUMP: ${{ inputs.bump }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main staging
+
+          existing="$(gh pr list \
+            --repo "$REPOSITORY" \
+            --state open \
+            --base main \
+            --json number,headRefName \
+            --jq '[.[] | select(.headRefName | startswith("release/"))][0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "A software Release PR is already open: #$existing" >&2
+            exit 1
+          fi
+
+          : > /tmp/release-files.txt
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            case "$file" in
+              VERSION|posts/*|archive/*|post-history/*|snippets/*|assets/posts/*|assets/covers/*|assets/css/article-covers.css|media/photos/*|infra/kubernetes/staging/*|infra/kubernetes/staging/**/*)
+                ;;
+              *)
+                echo "$file" >> /tmp/release-files.txt
+                ;;
+            esac
+          done < <(git diff --name-only origin/main...origin/staging)
+
+          sort -u -o /tmp/release-files.txt /tmp/release-files.txt
+          if [ ! -s /tmp/release-files.txt ]; then
+            echo 'No software delta exists between main and staging.' >&2
+            exit 1
+          fi
+
+          base_version="$(git show origin/main:VERSION | tr -d '[:space:]')"
+          if ! printf '%s' "$base_version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid main VERSION: $base_version" >&2
+            exit 1
+          fi
+
+          IFS='.' read -r major minor patch <<< "$base_version"
+          case "$BUMP" in
+            patch) release_version="$major.$minor.$((patch + 1))" ;;
+            minor) release_version="$major.$((minor + 1)).0" ;;
+            major) release_version="$((major + 1)).0.0" ;;
+            *) echo "Unsupported bump: $BUMP" >&2; exit 1 ;;
+          esac
+
+          branch="release/v${release_version}"
+          git switch -C "$branch" origin/main
+
+          while IFS= read -r file; do
+            if git cat-file -e "origin/staging:${file}" 2>/dev/null; then
+              git checkout origin/staging -- "$file"
+            else
+              git rm -rf --ignore-unmatch -- "$file" >/dev/null 2>&1 || true
+            fi
+          done < /tmp/release-files.txt
+
+          printf '%s\n' "$release_version" > VERSION
+          git add -A
+
+          forbidden="$(git diff --cached --name-only | grep -E '^(posts/|archive/|post-history/|snippets/|assets/posts/|assets/covers/|media/photos/|infra/kubernetes/staging/)' || true)"
+          if [ -n "$forbidden" ]; then
+            echo 'Software Release unexpectedly contains Publication/Staging-only files:' >&2
+            printf '%s\n' "$forbidden" >&2
+            exit 1
+          fi
+
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "release: v${release_version}"
+
+          remote_sha="$(git ls-remote --heads origin "refs/heads/${branch}" | awk 'NR == 1 { print $1 }')"
+          git push \
+            --force-with-lease="refs/heads/${branch}:${remote_sha}" \
+            origin "HEAD:refs/heads/${branch}"
+
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "version=$release_version" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Open Software Release PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ steps.release.outputs.branch }}
+          VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          file_count="$(wc -l < /tmp/release-files.txt | tr -d ' ')"
+          files="$(sed 's/^/- /' /tmp/release-files.txt)"
+
+          body="$(printf '%s\n\n%s\n%s\n%s\n\n%s\n\n%s\n' \
+            'This is a Software Release, not an Article Publication.' \
+            "Version: v${VERSION}" \
+            "Software files: ${file_count}" \
+            'Article/content files are deliberately excluded.' \
+            'Included software delta:' \
+            "$files")"
+
+          pr_url="$(gh pr create \
+            --repo "$REPOSITORY" \
+            --base main \
+            --head "$BRANCH" \
+            --title "release: v${VERSION}" \
+            --body "$body")"
+          pr_number="${pr_url##*/}"
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger required checks for Software Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          BRANCH: ${{ steps.release.outputs.branch }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+        run: |
+          set -euo pipefail
+          gh workflow run ci.yml \
+            --repo "$REPOSITORY" \
+            --ref "$BRANCH" \
+            -f pr_number="$PR_NUMBER"
+          echo "Triggered required checks for Software Release PR #$PR_NUMBER."

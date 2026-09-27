@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: published-content
+          image: ghcr.io/0b-ivan/kernel-notes-content:UNPINNED
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              rm -rf /published/*
+              cp -a /content/. /published/
+          volumeMounts:
+            - name: published-content
+              mountPath: /published
+      containers:
+        - name: search
+          volumeMounts:
+            - name: published-content
+              mountPath: /app/posts
+              subPath: posts
+              readOnly: true
+      volumes:
+        - name: published-content
+          emptyDir: {}

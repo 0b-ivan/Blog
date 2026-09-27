@@ -65,6 +65,7 @@ services:
     volumes:
       - livesync-cli-data:/data
       - ${OBSIDIAN_VAULT_PATH:-../../posts}:/vault
+      - ${OBSIDIAN_ASSETS_PATH:-../../assets/posts}:/vault/assets/posts
     networks:
       - livesync
 

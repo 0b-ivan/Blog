@@ -1,0 +1,190 @@
+name: Production PR Reconciler
+
+on:
+  schedule:
+    - cron: '47 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  workflow_run:
+    workflows:
+      - PR Checks
+    types:
+      - completed
+
+permissions:
+  actions: write
+  checks: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: production-pr-reconciler
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Reconcile Publication and Release required checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          candidates="$(mktemp)"
+          gh pr list \
+            --repo "$REPOSITORY" \
+            --state open \
+            --base main \
+            --limit 100 \
+            --json number,headRefName \
+            --jq '.[] | select((.headRefName | startswith("publication/")) or (.headRefName | startswith("release/"))) | .number' \
+            > "$candidates"
+
+          if [ ! -s "$candidates" ]; then
+            echo 'No open Article Publication or Software Release PR needs reconciliation.'
+            exit 0
+          fi
+
+          latest_required_check() {
+            local sha="$1"
+            local context="$2"
+
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/commits/${sha}/check-runs?per_page=100" \
+              --jq "[.check_runs[] | select(.name == \"${context}\" and .app.slug == \"github-actions\")] | sort_by(.id) | reverse | .[0] // {}"
+          }
+
+          publish_check() {
+            local merge_sha="$1"
+            local context="$2"
+            local conclusion="$3"
+            local details_url="$4"
+
+            case "$conclusion" in
+              success) ;;
+              *) conclusion=failure ;;
+            esac
+
+            args=(
+              --method POST
+              -H 'Accept: application/vnd.github+json'
+              "/repos/${REPOSITORY}/check-runs"
+              -f "name=${context}"
+              -f "head_sha=${merge_sha}"
+              -f 'status=completed'
+              -f "conclusion=${conclusion}"
+            )
+
+            if [ -n "$details_url" ]; then
+              args+=( -f "details_url=${details_url}" )
+            fi
+
+            gh api "${args[@]}" >/dev/null
+            echo "Mirrored ${context}=${conclusion} to ${merge_sha}."
+          }
+
+          while IFS= read -r pr_number; do
+            [ -n "$pr_number" ] || continue
+
+            for repair_round in $(seq 1 6); do
+              pr_json="$(gh api "/repos/${REPOSITORY}/pulls/${pr_number}")"
+              state="$(printf '%s' "$pr_json" | jq -r '.state')"
+              head_ref="$(printf '%s' "$pr_json" | jq -r '.head.ref')"
+              head_repo="$(printf '%s' "$pr_json" | jq -r '.head.repo.full_name')"
+              head_sha="$(printf '%s' "$pr_json" | jq -r '.head.sha')"
+              base_sha="$(printf '%s' "$pr_json" | jq -r '.base.sha')"
+              merge_sha="$(printf '%s' "$pr_json" | jq -r '.merge_commit_sha // empty')"
+              mergeable="$(printf '%s' "$pr_json" | jq -r '.mergeable // "unknown"')"
+
+              if [ "$state" != open ]; then
+                break
+              fi
+
+              if [ "$head_repo" != "$REPOSITORY" ]; then
+                echo "PR #${pr_number}: refusing external head repository ${head_repo}."
+                break
+              fi
+
+              case "$head_ref" in
+                publication/*|release/*) ;;
+                *)
+                  echo "PR #${pr_number}: unexpected Production head ${head_ref}; skipping."
+                  break
+                  ;;
+              esac
+
+              if [ "$mergeable" = false ] || [ -z "$merge_sha" ]; then
+                echo "PR #${pr_number}: no usable synthetic merge commit yet; retry on the next event."
+                break
+              fi
+
+              checks_json="$(latest_required_check "$head_sha" checks)"
+              assets_json="$(latest_required_check "$head_sha" 'Local assets')"
+
+              checks_status="$(printf '%s' "$checks_json" | jq -r '.status // "missing"')"
+              checks_conclusion="$(printf '%s' "$checks_json" | jq -r '.conclusion // "missing"')"
+              checks_url="$(printf '%s' "$checks_json" | jq -r '.details_url // empty')"
+              assets_status="$(printf '%s' "$assets_json" | jq -r '.status // "missing"')"
+              assets_conclusion="$(printf '%s' "$assets_json" | jq -r '.conclusion // "missing"')"
+              assets_url="$(printf '%s' "$assets_json" | jq -r '.details_url // empty')"
+
+              echo "PR #${pr_number} round ${repair_round}/6: head=${head_sha} base=${base_sha} merge=${merge_sha}"
+              echo "checks=${checks_status}/${checks_conclusion}; Local assets=${assets_status}/${assets_conclusion}"
+
+              if [ "$checks_status" != completed ] || [ "$assets_status" != completed ]; then
+                active_run="$(
+                  gh run list \
+                    --repo "$REPOSITORY" \
+                    --workflow ci.yml \
+                    --branch "$head_ref" \
+                    --limit 20 \
+                    --json status,headSha,databaseId \
+                    --jq ".[] | select(.headSha == \"${head_sha}\" and (.status == \"queued\" or .status == \"in_progress\" or .status == \"waiting\" or .status == \"requested\" or .status == \"pending\")) | .databaseId" |
+                    head -n 1
+                )"
+
+                if [ -n "$active_run" ]; then
+                  echo "PR #${pr_number}: PR Checks run ${active_run} is already active."
+                  break
+                fi
+
+                echo "PR #${pr_number}: source checks are missing/incomplete; dispatching PR Checks for ${head_ref}."
+                gh workflow run ci.yml \
+                  --repo "$REPOSITORY" \
+                  --ref "$head_ref" \
+                  -f pr_number="$pr_number"
+                break
+              fi
+
+              publish_check "$merge_sha" checks "$checks_conclusion" "$checks_url"
+              publish_check "$merge_sha" 'Local assets' "$assets_conclusion" "$assets_url"
+
+              if [ "$checks_conclusion" != success ] || [ "$assets_conclusion" != success ]; then
+                echo "PR #${pr_number}: source checks failed; mirrored failure and left the PR blocked."
+                break
+              fi
+
+              sleep 2
+              refreshed_json="$(gh api "/repos/${REPOSITORY}/pulls/${pr_number}")"
+              refreshed_head="$(printf '%s' "$refreshed_json" | jq -r '.head.sha')"
+              refreshed_base="$(printf '%s' "$refreshed_json" | jq -r '.base.sha')"
+              refreshed_merge="$(printf '%s' "$refreshed_json" | jq -r '.merge_commit_sha // empty')"
+
+              if [ "$refreshed_head" != "$head_sha" ] || [ "$refreshed_base" != "$base_sha" ] \
+                || [ -z "$refreshed_merge" ] || [ "$refreshed_merge" != "$merge_sha" ]; then
+                echo "PR #${pr_number}: merge inputs changed while reconciling; repairing the regenerated merge commit."
+                continue
+              fi
+
+              echo "PR #${pr_number}: required checks are reconciled on stable merge commit ${merge_sha}."
+              break
+            done
+          done < "$candidates"
