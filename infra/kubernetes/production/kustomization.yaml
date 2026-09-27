@@ -6,18 +6,23 @@ resources:
   - ../base
 images:
   - name: ghcr.io/0b-ivan/kernel-notes-blog
-    newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
+    newTag: ef9aa69709ffffe4c0b30be5c92b0c54743802a6
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
   - name: ghcr.io/0b-ivan/kernel-notes-pdf
     newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
+  - name: ghcr.io/0b-ivan/kernel-notes-content
+    newTag: ef9aa69709ffffe4c0b30be5c92b0c54743802a6
 replicas:
   - name: blog
     count: 3
 
 patches:
+  - path: content-blog-patch.yaml
+  - path: content-search-patch.yaml
+  - path: content-pdf-patch.yaml
   - target:
       group: apps
       version: v1
