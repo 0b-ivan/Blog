@@ -33,7 +33,13 @@ describe('Obsidian LiveSync article assets', () => {
 
     expect(workflow).toContain("kernel-notes-livesync-cli");
     expect(workflow).toContain(
+      'docker tag "$headless_image_id" kernel-notes-obsidian-sync-livesync-cli:latest'
+    );
+    expect(workflow).toContain(
       'docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli'
+    );
+    expect(workflow).toContain(
+      'eq .Destination "/vault/assets/posts"'
     );
   });
 });
