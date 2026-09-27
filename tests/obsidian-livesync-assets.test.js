@@ -25,7 +25,7 @@ describe('Obsidian LiveSync article assets', () => {
     expect(workflow).toContain("printf 'OBSIDIAN_ASSETS_PATH=../../assets/posts\\n'");
   });
 
-  it('recreates an already-running headless client after stack changes', () => {
+  it('recreates an already-running headless client without rebuilding the pinned upstream image', () => {
     const workflow = fs.readFileSync(
       path.join(root, '.github', 'workflows', 'deploy-obsidian-livesync.yml'),
       'utf8'
@@ -33,7 +33,7 @@ describe('Obsidian LiveSync article assets', () => {
 
     expect(workflow).toContain("kernel-notes-livesync-cli");
     expect(workflow).toContain(
-      'docker compose --env-file .env --profile headless up -d --force-recreate livesync-cli'
+      'docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli'
     );
   });
 });

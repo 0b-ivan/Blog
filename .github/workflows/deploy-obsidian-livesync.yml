@@ -193,7 +193,7 @@ jobs:
           headless_exists="$(docker inspect -f '{{.Name}}' kernel-notes-livesync-cli 2>/dev/null || true)"
           if [ -n "$headless_exists" ]; then
             docker compose --env-file .env --profile headless config >/dev/null
-            docker compose --env-file .env --profile headless up -d --force-recreate livesync-cli
+            docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli
 
             if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)" != "true" ]; then
               echo "Headless LiveSync client is not running after recreation"
