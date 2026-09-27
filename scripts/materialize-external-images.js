@@ -3,8 +3,12 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const { URL } = require('node:url');
-const { commonsFileTitle } = require('./ingest-article-photos');
+const {
+  assetScopeFromPost,
+  cleanRemoteTarget,
+  commonsSourceFromRemoteImage,
+  isHttpUrl
+} = require('../lib/article-photo-source');
 
 const root = path.resolve(__dirname, '..');
 const DEFAULT_WIDTH = 1400;
@@ -34,73 +38,6 @@ function collectMarkdownImages(content) {
   }
 
   return images;
-}
-
-function cleanRemoteTarget(value) {
-  const target = String(value || '').trim();
-  if (target.startsWith('<') && target.endsWith('>')) {
-    return target.slice(1, -1);
-  }
-  return target;
-}
-
-function isHttpUrl(value) {
-  return /^https?:\/\//i.test(cleanRemoteTarget(value));
-}
-
-function canonicalCommonsSource(fileTitle) {
-  const wikiTitle = String(fileTitle || '').replace(/ /g, '_');
-  return `https://commons.wikimedia.org/wiki/${encodeURI(wikiTitle)}`;
-}
-
-function commonsSourceFromRemoteImage(target) {
-  const raw = cleanRemoteTarget(target);
-  const url = new URL(raw);
-  if (url.protocol !== 'https:') {
-    throw new Error(`external article images must use HTTPS: ${raw}`);
-  }
-
-  if (url.hostname === 'commons.wikimedia.org' && url.pathname.startsWith('/wiki/File:')) {
-    const fileTitle = commonsFileTitle(raw);
-    return {
-      fileTitle,
-      source: canonicalCommonsSource(fileTitle)
-    };
-  }
-
-  if (url.hostname === 'commons.wikimedia.org' && url.pathname.startsWith('/wiki/Special:Redirect/file/')) {
-    const fileName = decodeURIComponent(url.pathname.slice('/wiki/Special:Redirect/file/'.length));
-    const fileTitle = `File:${fileName.replace(/_/g, ' ')}`;
-    return {
-      fileTitle,
-      source: canonicalCommonsSource(fileTitle)
-    };
-  }
-
-  if (url.hostname === 'upload.wikimedia.org') {
-    const match = url.pathname.match(
-      /^\/wikipedia\/commons\/(?:thumb\/)?[0-9a-f]\/[^/]+\/([^/]+)/i
-    );
-    if (!match) {
-      throw new Error(`unsupported Wikimedia Commons upload URL: ${raw}`);
-    }
-
-    const fileName = decodeURIComponent(match[1]);
-    const fileTitle = `File:${fileName.replace(/_/g, ' ')}`;
-    return {
-      fileTitle,
-      source: canonicalCommonsSource(fileTitle)
-    };
-  }
-
-  throw new Error(
-    `unsupported external image provider for '${raw}'. Currently only Wikimedia Commons URLs are auto-materialized.`
-  );
-}
-
-function assetScopeFromPost(postPath) {
-  const file = path.posix.basename(String(postPath || '').replace(/\\/g, '/'), '.md');
-  return file.replace(/^\d{4}-\d{2}-\d{2}-/, '') || file;
 }
 
 function slugify(value) {
@@ -202,8 +139,7 @@ function planRemoteImages(markdown, postPath, existingManifest = null) {
       photo.alt = alt;
     }
 
-    const localTarget = `/${photo.output}`;
-    let replacement = image.original.replace(image.rawTarget, localTarget);
+    let replacement = image.original;
     if (!credited.has(photo.source_id)) {
       replacement += `\n\n*Quelle/Lizenz: [Wikimedia Commons](/sources.html#${photo.source_id}).*`;
       credited.add(photo.source_id);
@@ -242,7 +178,7 @@ async function materializePostLinks(postFile) {
 
   const planned = planRemoteImages(markdown, normalizedPost, existingManifest);
   if (!planned.changed) {
-    console.log(`[photo-link] ${normalizedPost}: no external image URLs to materialize`);
+    console.log(`[photo-link] ${normalizedPost}: no article-photo authoring changes needed`);
     return planned;
   }
 
