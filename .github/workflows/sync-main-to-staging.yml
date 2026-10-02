@@ -137,6 +137,25 @@ jobs:
               exit 1
             fi
 
+            # Hunk-level conflict resolution can create a workflow blob that
+            # exists on neither branch. GITHUB_TOKEN cannot author that version.
+            if node scripts/check-sync-workflows.js "$STAGING_SHA" "$MAIN_SHA" HEAD; then
+              echo 'Workflow versions are already present on main or staging.'
+            else
+              status=$?
+              if [ "$status" -ne 1 ]; then
+                exit "$status"
+              fi
+              echo '::warning title=Back-sync needs conflict review::A workflow conflict produced a new file version. Resolve main into staging through a reviewed PR; no additional sync token is required.'
+              printf '%s\n' \
+                '### Main → Staging requires a reviewed conflict resolution' \
+                '' \
+                'The merge created a new workflow version that GITHUB_TOKEN cannot push.' \
+                'Create a repair branch from staging, merge main, review both sides of the workflow conflict, then merge the repair PR into staging with a merge commit (not squash/rebase).' \
+                "Blocked heads: main=$MAIN_SHA staging=$STAGING_SHA" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
             SYNC_SHA="$(git rev-parse HEAD)"
 
             if [ -n "$current_sync_sha" ]; then
