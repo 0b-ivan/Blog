@@ -25,7 +25,7 @@ describe('Obsidian LiveSync article assets', () => {
     expect(workflow).toContain("printf 'OBSIDIAN_ASSETS_PATH=../../assets/posts\\n'");
   });
 
-  it('recreates an already-running headless client without rebuilding the pinned upstream image', () => {
+  it('always reconciles the headless client and rebuilds the pinned image when necessary', () => {
     const workflow = fs.readFileSync(
       path.join(root, '.github', 'workflows', 'deploy-obsidian-livesync.yml'),
       'utf8'
@@ -34,6 +34,15 @@ describe('Obsidian LiveSync article assets', () => {
     expect(workflow).toContain("kernel-notes-livesync-cli");
     expect(workflow).toContain(
       'docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli'
+    );
+    expect(workflow).toContain(
+      'docker compose --env-file .env --profile headless build livesync-cli'
+    );
+    expect(workflow).not.toContain(
+      'if [ -n "$headless_exists" ]; then'
+    );
+    expect(workflow).toContain(
+      'Headless LiveSync client is not running after reconciliation'
     );
   });
 });

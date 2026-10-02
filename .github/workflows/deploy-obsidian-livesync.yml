@@ -190,20 +190,25 @@ jobs:
             exit 1
           fi
 
-          headless_exists="$(docker inspect -f '{{.Name}}' kernel-notes-livesync-cli 2>/dev/null || true)"
-          if [ -n "$headless_exists" ]; then
-            docker compose --env-file .env --profile headless config >/dev/null
-            docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli
+          # The article publisher watches the host vault, so a missing/stopped
+          # headless LiveSync client silently breaks Obsidian -> GitHub publishing.
+          # Always reconcile the client instead of treating an absent container as optional.
+          docker compose --env-file .env --profile headless config >/dev/null
 
-            if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)" != "true" ]; then
-              echo "Headless LiveSync client is not running after recreation"
-              docker compose --env-file .env --profile headless ps
-              docker compose --env-file .env --profile headless logs --tail=100 livesync-cli || true
-              exit 1
-            fi
-
-            docker compose --env-file .env --profile headless ps livesync-cli
+          if ! docker compose --env-file .env --profile headless up -d --force-recreate --no-build livesync-cli; then
+            echo "Headless LiveSync client could not be recreated from the existing image; rebuilding the pinned CLI image"
+            docker compose --env-file .env --profile headless build livesync-cli
+            docker compose --env-file .env --profile headless up -d --force-recreate livesync-cli
           fi
+
+          if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cli 2>/dev/null || true)" != "true" ]; then
+            echo "Headless LiveSync client is not running after reconciliation"
+            docker compose --env-file .env --profile headless ps
+            docker compose --env-file .env --profile headless logs --tail=100 livesync-cli || true
+            exit 1
+          fi
+
+          docker compose --env-file .env --profile headless ps livesync-cli
 
           if [ "$DEPLOY_CLOUDFLARED" = "true" ]; then
             if [ "$(docker inspect -f '{{.State.Running}}' kernel-notes-livesync-cloudflared 2>/dev/null || true)" != "true" ]; then
