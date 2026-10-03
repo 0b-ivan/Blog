@@ -34,22 +34,23 @@ function git(...args) {
 
 if (require.main === module) {
   try {
-    const [base, head, headRepository, repository, baseSha] = process.argv.slice(2);
+    const [base, head, headRepository, repository, baseSha, candidateSha = 'HEAD'] = process.argv.slice(2);
     if (!base) throw new Error('Missing PR metadata.');
     if (base === 'main') {
+      if (headRepository !== repository) throw new Error('Production PRs must come from this repository.');
       // Disable rename detection so archive moves count as delete + add.
-      const fields = git('diff', '--no-renames', '--name-status', '-z', `${baseSha}...HEAD`).split('\0');
+      const fields = git('diff', '--no-renames', '--name-status', '-z', `${baseSha}...${candidateSha}`).split('\0');
       const files = [];
       for (let i = 0; i + 1 < fields.length; i += 2) files.push({ status: fields[i], path: fields[i + 1] });
       validateProductionPR({ base, head, headRepository, repository, files });
       if (head.startsWith('release/')) {
-        if (git('show', 'HEAD:VERSION') !== head.slice('release/v'.length)) throw new Error('Release branch and VERSION do not match.');
+        if (git('show', `${candidateSha}:VERSION`) !== head.slice('release/v'.length)) throw new Error('Release branch and VERSION do not match.');
         // Frozen releases may use an older staging version. Require every new
         // workflow blob to exist in staging history rather than just its latest head.
         for (const { path, status } of files) {
           if (!path.startsWith('.github/workflows/') || status === 'D') continue;
-          const blob = git('rev-parse', `HEAD:${path}`);
-          const commits = git('rev-list', 'origin/staging', '--', path).split('\n').filter(Boolean);
+          const blob = git('rev-parse', `${candidateSha}:${path}`);
+          const commits = git('rev-list', '--full-history', 'origin/staging', '--', path).split('\n').filter(Boolean);
           const known = commits.some(sha => git('ls-tree', sha, '--', path).split(/\s+/)[2] === blob);
           if (!known) throw new Error(`Workflow ${path} has not passed through staging.`);
         }
