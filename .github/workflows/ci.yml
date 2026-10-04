@@ -27,12 +27,33 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - name: Checkout full history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+
+      - name: Enforce staging to production branch flow
+        if: ${{ github.event_name == 'pull_request' || inputs.pr_number != '' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: |
+          set -euo pipefail
+          pr_json="$(gh api "/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          base="$(printf '%s' "$pr_json" | jq -r '.base.ref')"
+          head="$(printf '%s' "$pr_json" | jq -r '.head.ref')"
+          head_repo="$(printf '%s' "$pr_json" | jq -r '.head.repo.full_name')"
+          base_sha="$(printf '%s' "$pr_json" | jq -r '.base.sha')"
+          if [ "$base" = main ]; then
+            git fetch origin staging
+          fi
+          node scripts/check-production-pr.js "$base" "$head" "$head_repo" "$GITHUB_REPOSITORY" "$base_sha"
 
       - name: Classify changed files
         id: changes

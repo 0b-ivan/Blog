@@ -1,0 +1,38 @@
+name: Production Branch Flow
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  production-branch-flow:
+    name: Production branch flow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted base revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0
+
+      - name: Validate production branch flow
+        shell: bash
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$HEAD_REPOSITORY" == "$GITHUB_REPOSITORY" && "$BASE" == main ]]; then
+            git fetch origin +refs/heads/staging:refs/remotes/origin/staging
+            git fetch origin "$HEAD_SHA"
+          fi
+          node scripts/check-production-pr.js \
+            "$BASE" "$HEAD_BRANCH" "$HEAD_REPOSITORY" "$GITHUB_REPOSITORY" "$BASE_SHA" "$HEAD_SHA"

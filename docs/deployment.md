@@ -129,6 +129,14 @@ Bei echten Textkonflikten gilt für diesen reinen Rücksync bewusst **staging wi
 Der Sync-PR wird weiterhin **nicht automatisch gemergt**. Der Workflow hält ihn lediglich selbstständig konfliktfrei und aktuell und startet die vorhandenen PR-Checks nur dann neu, wenn sich der reconciled Sync-Commit tatsächlich geändert hat.
 
 
+### Branch-Flow und Workflow-Konflikte
+
+Feature-, Fix- und Dependency-PRs gehen nach `staging`. Der bestehende Required Check `checks` akzeptiert nach `main` ausschließlich `publication/<slug>`, `release/vX.Y.Z` und den bestehenden `obsidian-unpublish/main/<slug>`-Pfad. Er prüft zusätzlich deren Dateiumfang: genau ein Artikel für Publication, ausschließlich Artikel-Löschungen für Unpublish, `VERSION` ohne Content oder Staging-GitOps für Releases. Neu eingeführte Workflow-Versionen in einem Release müssen bereits in der Staging-Historie vorkommen; eingefrorene ältere Staging-Versionen bleiben zulässig. Die Prüfung läuft auch bei den manuell gestarteten Production-PR-Checks vor deren Spiegelung.
+
+Ein Rücksync mit `-X ours` löst nur kollidierende Hunks zugunsten von Staging auf. Nicht kollidierende Hunks aus `main` können deshalb eine dritte Workflow-Fassung erzeugen, die auf keinem der beiden Branches vorhanden ist. Der Reconciler prüft diese Fassung vor dem Push. Bei einer neuen Workflow-Fassung beendet er den Lauf mit einer sichtbaren Warnung und einer Reparaturanleitung im Job Summary, statt stündlich denselben absehbar abgelehnten Push auszuführen. Andere Merge-/Git-Fehler bleiben Fehler. Workflow-Dateien werden weder ignoriert noch automatisch überschrieben.
+
+Die Reparatur erfolgt als PR nach `staging`, dessen Branch den aktuellen `main` als Merge-Parent enthält. Dieser PR muss per **Merge-Commit** gemergt werden, damit `main` anschließend tatsächlich Teil der Staging-Historie ist. Squash oder Rebase würden nur die Dateien, nicht diese notwendige Abstammung übernehmen. Die Absicherung des Standardbranch-Workflows wird mit dem nächsten Software Release nach `main` übernommen.
+
 ### K3s Production
 
 `.github/workflows/cd-k8s-production.yml` baut für den freigegebenen `main`-Commit immutable Images für:
