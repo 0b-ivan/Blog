@@ -14,7 +14,7 @@ images:
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
   - name: ghcr.io/0b-ivan/kernel-notes-content
-    newTag: ef9aa69709ffffe4c0b30be5c92b0c54743802a6
+    newTag: a5b833a764d8b81d95b4c1d2d59b422f4d99ae3e
 replicas:
   - name: blog
     count: 3
