@@ -517,6 +517,20 @@ jobs:
             exit 1
           fi
 
+          # Every full deploy pulls three new SHA-tagged images. Keep the current and the
+          # previous release (for a manual rollback) and drop the rest so they don't pile up.
+          prune_old_images() {
+            repo="$1"
+            shift
+            docker image ls "$repo" --format '{{.Repository}}:{{.Tag}}' | while read -r image; do
+              [ "${image##*:}" = '<none>' ] && continue
+              case " $* " in *" ${image} "*) continue ;; esac
+              docker rmi "$image" >/dev/null 2>&1 || true
+            done
+          }
+          prune_old_images "${BLOG_IMAGE%:*}" "$BLOG_IMAGE" "$PREVIOUS_BLOG_IMAGE"
+          prune_old_images "${SEARCH_IMAGE%:*}" "$SEARCH_IMAGE" "$PREVIOUS_SEARCH_IMAGE"
+          prune_old_images "${PDF_IMAGE%:*}" "$PDF_IMAGE" "$PREVIOUS_PDF_IMAGE"
           docker image prune -f >/dev/null
           echo "Full deployment ${COMMIT_SHA} completed on port ${HEALTH_PORT}."
           REMOTE
