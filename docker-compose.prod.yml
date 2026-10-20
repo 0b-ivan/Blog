@@ -51,7 +51,7 @@ services:
     image: ${BLOG_IMAGE:?BLOG_IMAGE must be set}
     container_name: kernel-notes-blog
     ports:
-      - "1888:8080"
+      - "127.0.0.1:1888:8080"
     volumes:
       - blog-posts:/app/posts:ro
       - blog-snippets:/app/snippets:ro
