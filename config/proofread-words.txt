@@ -54,3 +54,7 @@ journalctl
 reduzierteren
 versioniert
 Zusatzinfos
+Memcached
+Partitionsschlüssel
+objektrelationales
+ElastiCache-Engines

@@ -70,6 +70,13 @@ function maskMarkdown(source) {
     }
   };
 
+  // Generated glossary definitions are metadata, not continuous prose.
+  // Keep offsets and line breaks intact for diagnostics in the article body.
+  maskRegex(/<!-- glossary:start -->[\s\S]*?<!-- glossary:end -->/g, (match) => ({
+    start: match.index,
+    end: match.index + match[0].length
+  }));
+
   // Block quotes are intentionally excluded: LanguageTool otherwise interprets
   // quoted sentence fragments as one continuous sentence and reports false positives.
   maskRegex(/^\s*>.*$/gm, (match) => ({

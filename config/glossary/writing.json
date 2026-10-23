@@ -97,5 +97,11 @@
     "aliases": [
       "YAML-Datei"
     ]
+  },
+  "CC0": {
+    "full": "Creative Commons Zero",
+    "short": "Werkzeug zur möglichst weitgehenden Freigabe eigener Urheber- und verwandter Rechte.",
+    "description": "Mit CC0 widmen Rechteinhaber ein Werk soweit rechtlich möglich der Gemeinfreiheit. Für Rechtsordnungen, in denen ein vollständiger Verzicht nicht möglich ist, enthält CC0 ergänzende Regelungen. CC0 ist keine CC-BY-Lizenz.",
+    "aliases": []
   }
 }
