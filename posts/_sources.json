@@ -470,5 +470,59 @@
     "author": "Kigsz",
     "license": "CC BY-SA 3.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  "aws-aurora-overview": {
+    "title": "AWS: Amazon Aurora",
+    "publisher": "AWS",
+    "url": "https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_AuroraOverview.html",
+    "accessed_at": "2026-10-23"
+  },
+  "aws-elasticache-engines": {
+    "title": "AWS: ElastiCache-Engines vergleichen",
+    "publisher": "AWS",
+    "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/SelectEngine.html",
+    "accessed_at": "2026-10-23"
+  },
+  "redis-key-eviction": {
+    "title": "Redis: Verdrängung von Cache-Einträgen",
+    "publisher": "Redis",
+    "url": "https://redis.io/docs/latest/develop/reference/eviction/",
+    "accessed_at": "2026-10-23"
+  },
+  "aws-elasticache-memory": {
+    "title": "AWS: Speicherverwaltung für Valkey und Redis OSS",
+    "publisher": "AWS",
+    "url": "https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/redis-memory-management.html",
+    "accessed_at": "2026-10-23"
+  },
+  "aws-documentdb-differences": {
+    "title": "AWS: Funktionale Unterschiede zwischen DocumentDB und MongoDB",
+    "publisher": "AWS",
+    "url": "https://docs.aws.amazon.com/documentdb/latest/devguide/functional-differences.html",
+    "accessed_at": "2026-10-23"
+  },
+  "aws-dynamodb-components": {
+    "title": "AWS: DynamoDB – Tabellen und Primärschlüssel",
+    "publisher": "AWS",
+    "url": "https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html",
+    "accessed_at": "2026-10-23"
+  },
+  "aws-opensearch-overview": {
+    "title": "AWS: Amazon OpenSearch Service",
+    "publisher": "AWS",
+    "url": "https://docs.aws.amazon.com/opensearch-service/latest/developerguide/what-is.html",
+    "accessed_at": "2026-10-23"
+  },
+  "opensearch-index-refresh": {
+    "title": "OpenSearch: Sichtbarkeit von Änderungen nach einem Refresh",
+    "publisher": "OpenSearch",
+    "url": "https://docs.opensearch.org/latest/api-reference/index-apis/refresh/",
+    "accessed_at": "2026-10-23"
+  },
+  "mysql-fulltext-search": {
+    "title": "MySQL: Volltextsuche",
+    "publisher": "MySQL",
+    "url": "https://dev.mysql.com/doc/refman/8.4/en/fulltext-search.html",
+    "accessed_at": "2026-10-23"
   }
 }
