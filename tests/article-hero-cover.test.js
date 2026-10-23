@@ -68,11 +68,21 @@ describe('article hero cover readability', () => {
     expect(shellCss).toContain('var(--terminal-surface) 100%');
     expect(articleCss).not.toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover\s*\{[\s\S]*?var\(--article-cover-image\)/);
     expect(articleCss).toMatch(/\.article-hero__credit\s*\{[\s\S]*?position:\s*static;[\s\S]*?text-align:\s*right;/);
-    expect(articleCss).toContain('font-size: clamp(1.55rem, 7vw, 2.05rem);');
+    expect(articleCss).toContain('font-size: clamp(1.4rem, 6.3vw, 1.95rem);');
+    expect(articleCss).toContain('overflow-wrap: break-word;');
+    expect(articleCss).toContain('hyphens: auto;');
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?opacity:\s*1;/);
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?-webkit-line-clamp:\s*unset;/);
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero__excerpt\s*\{[\s\S]*?mask-image:\s*none;/);
     expect(articleCss).toMatch(/@media \(max-width: 620px\)[\s\S]*?\.article-hero--has-cover::after\s*\{[\s\S]*?backdrop-filter:\s*blur\(3\.2px\)/);
     expect(articleCss).toContain('rgba(236, 248, 245, 0.96)');
   });
+  it('keeps the database-cover artwork free of rendered text behind the hero', () => {
+    const coverSvg = fs.readFileSync(
+      path.join(__dirname, '..', 'assets', 'covers', '2026-10-23-nicht-alles-muss-in-mysql.svg'),
+      'utf8'
+    );
+    expect(coverSvg).not.toMatch(/<text\b/i);
+  });
+
 });
