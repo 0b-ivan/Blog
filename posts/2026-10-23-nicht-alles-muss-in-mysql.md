@@ -235,13 +235,13 @@ Volltextsuche, Bewertung der Relevanz und die Analyse von Logs sind gute Gründe
 
 ## Welche Datenbank für welchen Anwendungsfall?
 
-| Anwendungsfall                                            | AWS-Dienst          | Besondere Stärke                     |
+| Anwendungsfall | AWS-Dienst | Besondere Stärke |
 | --------------------------------------------------------- | ------------------- | ------------------------------------ |
-| Onlineshop, Bestellungen, Transaktionen                   | RDS / Aurora        | Beziehungen und SQL                  |
-| Login-Sessions, Caching, Rate Limiting                    | ElastiCache / Redis | Schnelle In-Memory-Zugriffe          |
-| Produktkataloge, flexible JSON-Daten                      | DocumentDB          | Dokumentenmodell                     |
-| Spielstände, Benutzerpräferenzen, viele Schlüsselzugriffe | DynamoDB            | Skalierbarkeit und niedrige Latenzen |
-| Volltextsuche, technische Logs                            | OpenSearch          | Suche und Aggregation              |
+| Onlineshop, Bestellungen, Transaktionen | RDS / Aurora | Beziehungen und SQL |
+| Login-Sessions, Caching, Rate Limiting | ElastiCache / Redis | Schnelle In-Memory-Zugriffe |
+| Produktkataloge, flexible JSON-Daten | DocumentDB | Dokumentenmodell |
+| Spielstände, Benutzerpräferenzen, viele Schlüsselzugriffe | DynamoDB | Skalierbarkeit und niedrige Latenzen |
+| Volltextsuche, technische Logs | OpenSearch | Suche und Aggregation |
 
 Die Technologien schließen sich nicht gegenseitig aus.
 
@@ -249,7 +249,7 @@ Ein Onlineshop könnte seine Bestellungen in PostgreSQL speichern, Login-Session
 
 Allerdings bedeutet jeder zusätzliche Dienst auch mehr Infrastruktur, Berechtigungen, Monitoring und Kosten.
 
-## Und sonst?!
+## Und sonst?
 
 Bevor wir die nächste MySQL-Tabelle mit zwanzig optionalen Spalten anlegen, identische Abfragen tausendfach ausführen oder eine eigene Suchmaschine mit SQL nachbauen, lohnt sich vielleicht ein Blick auf die Alternativen.
 

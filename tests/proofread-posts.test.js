@@ -41,6 +41,22 @@ describe('proofread-posts helpers', () => {
     expect(masked).toHaveLength(source.length);
   });
 
+  it('masks generated glossary blocks while preserving prose and diagnostic positions', () => {
+    const source = [
+      'Ein Feler davor.',
+      '<!-- glossary:start -->',
+      '*[OSS]: Open Source Software — Freie Software.',
+      '<!-- glossary:end -->',
+      'Ein Feler danach.'
+    ].join('\n');
+    const masked = maskMarkdown(source);
+    expect(masked).toHaveLength(source.length);
+    expect(masked.split('\n')).toHaveLength(source.split('\n').length);
+    expect(masked).not.toContain('Open Source Software');
+    expect(masked).toContain('Ein Feler davor.');
+    expect(masked.indexOf('Ein Feler danach.')).toBe(source.indexOf('Ein Feler danach.'));
+  });
+
   it('recognizes glossary terms and phrases at LanguageTool offsets', () => {
     const source = 'Ein Private Subnet nutzt ein NAT Gateway. VPCX bleibt unbekannt.';
     const ranges = glossaryRanges(source);
