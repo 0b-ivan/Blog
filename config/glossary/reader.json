@@ -112,5 +112,11 @@
     "short": "Gesamterlebnis eines Nutzers bei der Verwendung eines Produkts oder einer Oberfläche.",
     "description": "UX umfasst Verständlichkeit, Bedienbarkeit, Geschwindigkeit, visuelle Rückmeldung und weitere Faktoren, die beeinflussen, wie gut sich ein System benutzen lässt.",
     "aliases": ["User Experience"]
+  },
+  "OSS": {
+    "full": "Open Source Software",
+    "short": "Software mit einer Lizenz, die Nutzung, Änderung und Weitergabe erlaubt.",
+    "description": "Open Source umfasst mehr als einsehbaren Quellcode. Die Lizenz muss auch die Bearbeitung und Weiterverteilung der Software erlauben.",
+    "aliases": []
   }
 }

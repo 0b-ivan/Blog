@@ -77,7 +77,9 @@ Genau hier spielen relationale Datenbanken ihre Stärken aus: **Joins, Fremdschl
 
 Amazon RDS ermöglicht den verwalteten Betrieb von MySQL, PostgreSQL und weiteren relationalen Datenbanken. Aurora gehört zur RDS-Familie und bietet eine AWS-optimierte Architektur mit MySQL- oder PostgreSQL-Kompatibilität. Eine Datenbanktransaktion umfasst dabei nur die Änderungen in der Datenbank; ein externer Zahlungsanbieter wird dadurch nicht automatisch Teil derselben Transaktion.
 
-**Merke:** Für strukturierte Geschäftsdaten mit Beziehungen und Transaktionen bleibt SQL eine hervorragende Wahl.
+**Merke**
+
+Für strukturierte Geschäftsdaten mit Beziehungen und Transaktionen bleibt SQL eine hervorragende Wahl.
 
 ## 2. Redis / ElastiCache – schnelle Zugriffe auf kurzlebige Daten
 
@@ -114,7 +116,9 @@ Die TTL ist keine Haltbarkeitsgarantie: Je nach Konfiguration können Einträge 
 
 Redis eignet sich außerdem für Caching, Rate Limiting und andere kurzlebige Zustände.
 
-**Merke:** Nicht alles muss dauerhaft gespeichert werden. Gerade für Sessions und Caches sind In-Memory-Technologien oft die passende Wahl.
+**Merke**
+
+Nicht alles muss dauerhaft gespeichert werden. Gerade für Sessions und Caches sind In-Memory-Technologien oft die passende Wahl.
 
 ## 3. DocumentDB – wenn nicht jeder Datensatz gleich aussieht
 
@@ -150,7 +154,9 @@ Amazon DocumentDB ist eine eigenständige Engine mit MongoDB-Kompatibilität, ke
 
 *Abb. 3: DocumentDB: Gemeinsamer Katalog, andere Attribute. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
 
-**Merke:** Wenn Datensätze unterschiedlich aufgebaut sind und flexibel abgefragt werden sollen, kann eine Dokumentendatenbank sinnvoll sein.
+**Merke**
+
+Wenn Datensätze unterschiedlich aufgebaut sind und flexibel abgefragt werden sollen, kann eine Dokumentendatenbank sinnvoll sein.
 
 ## 4. DynamoDB – wenn Zugriffsmuster und Geschwindigkeit entscheidend sind
 
@@ -169,7 +175,7 @@ Beim Laden müssen wir normalerweise keine komplizierten Beziehungen auflösen. 
 
 DynamoDB ist für genau solche gezielten Zugriffe mit niedrigen Latenzen ausgelegt.
 
-DynamoDB unterstützt einen einfachen Primärschlüssel aus einem Partition Key oder einen zusammengesetzten Primärschlüssel aus Partition Key und Sort Key. Im Beispiel bilden `PK` und `SK` gemeinsam den eindeutigen Schlüssel. `PK` und `SK` sind hier frei gewählte Namen für die Schlüsselattribute. Der Partition Key beeinflusst die Datenverteilung; der Sort Key ordnet Einträge mit demselben Partition Key.
+DynamoDB unterstützt einen einfachen Primärschlüssel aus einem Partitionsschlüssel oder einen zusammengesetzten Primärschlüssel aus Partitions- und Sortierschlüssel. Im Beispiel bilden `PK` und `SK` gemeinsam den eindeutigen Schlüssel. `PK` und `SK` sind hier frei gewählte Namen für die Schlüsselattribute. Der Partitionsschlüssel (Partition Key) beeinflusst die Datenverteilung; der Sortierschlüssel (Sort Key) ordnet Einträge mit gleichem Partitionsschlüssel.
 ```mermaid
 flowchart LR
     A["Spieler 42"] --> B["Spielstand laden"]
@@ -185,7 +191,9 @@ Der Dienst skaliert ohne klassische Datenbankserververwaltung. Allerdings sollte
 
 Komplexe Joins oder beliebige relationale Abfragen sind nicht die Stärke von DynamoDB.
 
-**Merke:** Besonders interessant für hohe Last und klar definierte Zugriffsmuster – nicht automatisch für jede kleine Datenbanktabelle.
+**Merke**
+
+Besonders interessant für hohe Last und klar definierte Zugriffsmuster – nicht automatisch für jede kleine Datenbanktabelle.
 
 ## 5. OpenSearch – wenn aus einer Suche mehr als ein LIKE wird
 
@@ -219,9 +227,11 @@ OpenSearch ersetzt dabei nicht zwangsläufig die eigentliche Datenbank. Geschäf
 
 ![Logs werden indexiert und anhand von Request-ID und Status durchsucht.](/assets/posts/datenbank-tellerrand/05-opensearch-logs.svg)
 
-*Abb. 5: OpenSearch: Vom Logstrom zur Fehleranalyse. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
+*Abb. 5: OpenSearch: Von Logs zur Fehleranalyse. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
 
-**Merke:** Volltextsuche, Bewertung der Relevanz und die Analyse von Logs sind gute Gründe für eine spezialisierte Suchmaschine.
+**Merke**
+
+Volltextsuche, Bewertung der Relevanz und die Analyse von Logs sind gute Gründe für eine spezialisierte Suchmaschine.
 
 ## Welche Datenbank für welchen Anwendungsfall?
 
@@ -263,3 +273,35 @@ Und manchmal lohnt es sich, über den Datenbank-Tellerrand zu schauen.
 - [OpenSearch: Sichtbarkeit von Änderungen nach einem Refresh](/sources.html#opensearch-index-refresh)
 - [MySQL: Volltextsuche](/sources.html#mysql-fulltext-search)
 
+<!-- glossary:start -->
+*[Amazon DocumentDB]: Amazon DocumentDB — Verwaltete AWS-Dokumentendatenbank mit MongoDB-Kompatibilität.
+*[Amazon RDS]: Amazon Relational Database Service — Managed-Dienst für relationale Datenbanken in AWS.
+*[AWS]: Amazon Web Services — Cloud-Plattform von Amazon.
+*[Cache]: Zwischenspeicher für häufig oder teuer erzeugte Daten.
+*[CC0]: Creative Commons Zero — Werkzeug zur möglichst weitgehenden Freigabe eigener Urheber- und verwandter Rechte.
+*[Datenbank]: Strukturierter, dauerhaft gespeicherter Datenbestand mit einer Schnittstelle zum Lesen und Schreiben.
+*[DocumentDB]: Amazon DocumentDB — Verwaltete AWS-Dokumentendatenbank mit MongoDB-Kompatibilität.
+*[DynamoDB]: Amazon DynamoDB — Verwaltete AWS-Datenbank für Schlüssel-Wert- und Dokumentdaten.
+*[ElastiCache]: Amazon ElastiCache — Verwalteter AWS-Dienst für In-Memory-Datenspeicher und Caches.
+*[HTTP]: Hypertext Transfer Protocol — Protokoll zur Übertragung von Web-Inhalten.
+*[indexiert]: Komponente, die Inhalte aufbereitet und in einen Suchindex überführt.
+*[Joins]: Verknüpfung von Datensätzen aus mehreren Tabellen.
+*[JSON-Spalten]: Tabellenspalten für Daten im JSON-Format.
+*[LIKE]: SQL-Operator zum Vergleichen von Zeichenketten mit einem Muster.
+*[Logs]: Strukturierte oder textuelle Aufzeichnung von Laufzeitereignissen.
+*[MongoDB]: Dokumentendatenbank mit flexiblen, JSON-ähnlichen Datensätzen.
+*[Monitoring]: Kontinuierliche Beobachtung von Zustand und Verhalten technischer Systeme.
+*[MySQL]: Relationales Datenbanksystem mit SQL.
+*[OpenSearch]: Such- und Analyse-Engine für indexierte Daten.
+*[OSS]: Open Source Software — Software mit einer Lizenz, die Nutzung, Änderung und Weitergabe erlaubt.
+*[Persistenz]: Speicherung von Daten über die Laufzeit eines Prozesses hinaus.
+*[PostgreSQL]: Erweiterbares objektrelationales Datenbanksystem.
+*[Rate Limiting]: Begrenzt die Anzahl von Anfragen innerhalb eines Zeitraums.
+*[RDS]: Amazon Relational Database Service — Managed-Dienst für relationale Datenbanken in AWS.
+*[Redis]: Schneller In-Memory-Datenspeicher, häufig als Cache oder für kurzlebige Zustände verwendet.
+*[SQL]: Structured Query Language — Sprache zum Abfragen und Verändern relationaler Datenbanken.
+*[Suchdienst]: Search Service — Eigenständiger Dienst, der Suchanfragen verarbeitet und Treffer zurückliefert.
+*[Time to Live]: Time to Live — Gültigkeits- oder Lebensdauer eines Eintrags.
+*[TTL]: Time to Live — Gültigkeits- oder Lebensdauer eines Eintrags.
+*[Valkey]: Offener In-Memory-Datenspeicher für Schlüssel-Wert-Daten.
+<!-- glossary:end -->

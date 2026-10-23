@@ -499,5 +499,95 @@
       "Zero-Downtime Deployments",
       "Null-Downtime"
     ]
+  },
+  "DocumentDB": {
+    "full": "Amazon DocumentDB",
+    "short": "Verwaltete AWS-Dokumentendatenbank mit MongoDB-Kompatibilität.",
+    "description": "Amazon DocumentDB verarbeitet dokumentenorientierte Daten und unterstützt ausgewählte MongoDB-APIs. Es ist kein verwalteter MongoDB-Server; funktionale Unterschiede hängen von der Engine-Version ab.",
+    "aliases": [
+      "Amazon DocumentDB"
+    ]
+  },
+  "DynamoDB": {
+    "full": "Amazon DynamoDB",
+    "short": "Verwaltete AWS-Datenbank für Schlüssel-Wert- und Dokumentdaten.",
+    "description": "DynamoDB identifiziert Einträge über einen Partition Key oder die Kombination aus Partition Key und Sort Key. Datenmodell und Indizes richten sich nach den benötigten Zugriffsmustern.",
+    "aliases": [
+      "Amazon DynamoDB"
+    ]
+  },
+  "ElastiCache": {
+    "full": "Amazon ElastiCache",
+    "short": "Verwalteter AWS-Dienst für In-Memory-Datenspeicher und Caches.",
+    "description": "ElastiCache übernimmt Betriebsaufgaben für Valkey, Redis OSS oder Memcached. Der Dienst und die jeweilige Datenbank-Engine sind unterschiedliche Ebenen.",
+    "aliases": [
+      "Amazon ElastiCache"
+    ]
+  },
+  "JSON-Spalten": {
+    "full": "JSON-Spalten",
+    "short": "Tabellenspalten für Daten im JSON-Format.",
+    "description": "Eine relationale Datenbank kann JSON-Dokumente in dafür vorgesehenen Spalten speichern und deren Inhalte abfragen. Flexible Attribute erfordern deshalb nicht automatisch eine separate Dokumentendatenbank.",
+    "aliases": [
+      "JSON-Spalte"
+    ]
+  },
+  "Join": {
+    "full": "Join",
+    "short": "Verknüpfung von Datensätzen aus mehreren Tabellen.",
+    "description": "Ein SQL-Join kombiniert Zeilen anhand einer Verknüpfungsbedingung. Damit lassen sich etwa Bestellungen und ihre Positionen gemeinsam abfragen.",
+    "aliases": [
+      "Joins"
+    ]
+  },
+  "LIKE": {
+    "full": "LIKE",
+    "short": "SQL-Operator zum Vergleichen von Zeichenketten mit einem Muster.",
+    "description": "LIKE verwendet unter anderem Prozentzeichen für beliebig viele Zeichen und Unterstriche für einzelne Zeichen. Eine solche Mustersuche ist von einer Volltextsuche mit Relevanzbewertung zu unterscheiden.",
+    "aliases": []
+  },
+  "MongoDB": {
+    "full": "MongoDB",
+    "short": "Dokumentendatenbank mit flexiblen, JSON-ähnlichen Datensätzen.",
+    "description": "MongoDB speichert Dokumente im BSON-Format. Dokumente einer Sammlung können unterschiedliche Felder besitzen. Amazon DocumentDB ist eine eigenständige Engine mit MongoDB-Kompatibilität.",
+    "aliases": []
+  },
+  "MySQL": {
+    "full": "MySQL",
+    "short": "Relationales Datenbanksystem mit SQL.",
+    "description": "MySQL speichert Daten in Tabellen und unterstützt Beziehungen, Indizes und Transaktionen. Amazon RDS kann den Betrieb einer MySQL-Datenbank verwalten.",
+    "aliases": []
+  },
+  "OpenSearch": {
+    "full": "OpenSearch",
+    "short": "Such- und Analyse-Engine für indexierte Daten.",
+    "description": "OpenSearch unterstützt Volltextsuche, Filter und Aggregationen, beispielsweise für Produktsuchen oder technische Logs. Amazon OpenSearch Service ist ein verwalteter AWS-Dienst für diese Technologie.",
+    "aliases": []
+  },
+  "Persistenz": {
+    "full": "Persistenz",
+    "short": "Speicherung von Daten über die Laufzeit eines Prozesses hinaus.",
+    "description": "Persistenz schreibt Daten auf dauerhaften Speicher. Redis kann dafür etwa Snapshots oder ein Protokoll der Schreiboperationen nutzen. Wie viele Änderungen nach einem Ausfall erhalten bleiben, hängt von der Konfiguration ab.",
+    "aliases": []
+  },
+  "PostgreSQL": {
+    "full": "PostgreSQL",
+    "short": "Erweiterbares objektrelationales Datenbanksystem.",
+    "description": "PostgreSQL verwendet SQL und unterstützt unter anderem Transaktionen, relationale Tabellen sowie JSON-Daten. Es kann selbst betrieben oder als verwalteter Datenbankdienst genutzt werden.",
+    "aliases": []
+  },
+  "TTL": {
+    "full": "Time to Live",
+    "short": "Gültigkeits- oder Lebensdauer eines Eintrags.",
+    "description": "Bei Redis legt eine TTL fest, wann ein Schlüssel abläuft. Verdrängung bei Speicherdruck oder ein Ausfall können dazu führen, dass Daten bereits früher fehlen. Eine TTL garantiert keine Mindesthaltbarkeit.",
+    "aliases": [
+      "Time to Live"
+    ]
+  },
+  "Valkey": {
+    "full": "Valkey",
+    "short": "Offener In-Memory-Datenspeicher für Schlüssel-Wert-Daten.",
+    "description": "Valkey unterstützt unter anderem Caching und Nachrichtenwarteschlangen. Es ist eine eigenständige Engine und kann beispielsweise über Amazon ElastiCache betrieben werden.",
+    "aliases": []
   }
 }
