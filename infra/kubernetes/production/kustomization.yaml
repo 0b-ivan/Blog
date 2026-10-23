@@ -10,7 +10,7 @@ images:
   - name: ghcr.io/0b-ivan/kernel-notes-search
     newTag: 50a1ffe310870db53bcc6497641e20d71c695475
   - name: ghcr.io/0b-ivan/kernel-notes-pdf
-    newTag: 7c16be0aebcf65c86c5ee180e77d53f44d3ce6da
+    newTag: 9e6f2995c02f0e8b0c46fbafa801a59c232ac5d6
   - name: ghcr.io/0b-ivan/kernel-notes-status
     newTag: 7806d419b019ec0ff1721eea9a7fd3dede094fee
   - name: ghcr.io/0b-ivan/kernel-notes-content
