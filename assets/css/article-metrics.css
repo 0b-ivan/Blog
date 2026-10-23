@@ -333,10 +333,13 @@
   }
 
   .article-hero .article-title {
+    min-width: 0;
     max-width: none;
-    font-size: clamp(1.55rem, 7vw, 2.05rem);
-    line-height: 1.04;
+    font-size: clamp(1.4rem, 6.3vw, 1.95rem);
+    line-height: 1.14;
     letter-spacing: -0.025em;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   .article-hero__prompt {
