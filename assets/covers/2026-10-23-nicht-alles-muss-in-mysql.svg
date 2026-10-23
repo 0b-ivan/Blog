@@ -1,1 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc"><title id="title">Fünf Datenbanken für fünf Zugriffsmuster</title><desc id="desc">Eigene Übersicht zu Beziehungen, TTL, Dokumenten, Schlüsseln und Suche.</desc><rect width="1920" height="1080" rx="24" fill="#0c1722"/><g font-family="DejaVu Sans,Arial,sans-serif"><text x="100" y="110" fill="#e6eef5" font-size="52">Fünf Aufgaben. Fünf Datenmodelle.</text><text x="100" y="165" fill="#a9bfce" font-size="29">Die passende Datenbank beginnt beim Zugriffsmuster.</text><rect x="100" y="290" width="316" height="330" rx="16" fill="#162634" stroke="#72d6cd" stroke-width="2"/><text x="124" y="333" fill="#72d6cd" font-size="29">MySQL / RDS</text><text x="124" y="381" fill="#e6eef5" font-size="24">Beziehungen</text><text x="124" y="421" fill="#e6eef5" font-size="24"></text><text x="124" y="461" fill="#e6eef5" font-size="24">Kunde → Bestellung</text><rect x="444" y="290" width="316" height="330" rx="16" fill="#162634" stroke="#ffc878" stroke-width="2"/><text x="468" y="333" fill="#ffc878" font-size="29">Redis</text><text x="468" y="381" fill="#e6eef5" font-size="24">Ablaufzeit</text><text x="468" y="421" fill="#e6eef5" font-size="24"></text><text x="468" y="461" fill="#e6eef5" font-size="24">Session → TTL</text><rect x="788" y="290" width="316" height="330" rx="16" fill="#162634" stroke="#b6a0f7" stroke-width="2"/><text x="812" y="333" fill="#b6a0f7" font-size="29">DocumentDB</text><text x="812" y="381" fill="#e6eef5" font-size="24">Dokumente</text><text x="812" y="421" fill="#e6eef5" font-size="24"></text><text x="812" y="461" fill="#e6eef5" font-size="24">Laptop ≠ T-Shirt</text><rect x="1132" y="290" width="316" height="330" rx="16" fill="#162634" stroke="#89baff" stroke-width="2"/><text x="1156" y="333" fill="#89baff" font-size="29">DynamoDB</text><text x="1156" y="381" fill="#e6eef5" font-size="24">Schlüssel</text><text x="1156" y="421" fill="#e6eef5" font-size="24"></text><text x="1156" y="461" fill="#e6eef5" font-size="24">PK + SK → Spielstand</text><rect x="1476" y="290" width="316" height="330" rx="16" fill="#162634" stroke="#f29dac" stroke-width="2"/><text x="1500" y="333" fill="#f29dac" font-size="29">OpenSearch</text><text x="1500" y="381" fill="#e6eef5" font-size="24">Suchindex</text><text x="1500" y="421" fill="#e6eef5" font-size="24"></text><text x="1500" y="461" fill="#e6eef5" font-size="24">Logs → Filter</text><text x="100" y="790" fill="#b6c6d5" font-size="28">Bestellung     /     Anmeldung     /     Katalog     /     Spielstand     /     Fehlersuche</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Datenbankarchitekturen als abstraktes Netzwerk</title>
+  <desc id="desc">Fünf unterschiedlich gestaltete Datenknoten sind über feine Leiterbahnen mit einem zentralen Datenkern verbunden. Rein dekorative Titelgrafik ohne eingebettete Beschriftungen.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0d2832"/><stop offset=".48" stop-color="#0a1726"/><stop offset="1" stop-color="#081b24"/>
+    </linearGradient>
+    <radialGradient id="halo">
+      <stop stop-color="#2aab9b" stop-opacity=".27"/><stop offset=".65" stop-color="#174e78" stop-opacity=".1"/><stop offset="1" stop-color="#0a1928" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#184a60"/><stop offset="1" stop-color="#10232e"/>
+    </linearGradient>
+    <pattern id="grid" width="68" height="68" patternUnits="userSpaceOnUse">
+      <path d="M68 0H0V68" fill="none" stroke="#82dac8" stroke-opacity=".065" stroke-width="1"/>
+      <circle cx="0" cy="0" r="2" fill="#82dac8" fill-opacity=".12"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <ellipse cx="960" cy="545" rx="800" ry="530" fill="url(#halo)"/>
+  <g fill="none" stroke="#7ccbc6" stroke-width="2" stroke-opacity=".19">
+    <path d="M330 340H490L750 515H830"/>
+    <path d="M550 775H680L790 615H830"/>
+    <path d="M960 215V400"/>
+    <path d="M1390 775H1240L1130 615H1090"/>
+    <path d="M1590 345H1430L1170 515H1090"/>
+    <path d="M0 912H260L364 826H550"/>
+    <path d="M1920 155H1680L1590 245"/>
+    <path d="M170 100H460L600 230"/>
+    <path d="M1750 975H1500L1385 847"/>
+  </g>
+  <g fill="#78d9ca">
+    <circle cx="490" cy="340" r="5" opacity=".45"/><circle cx="680" cy="775" r="5" opacity=".5"/>
+    <circle cx="960" cy="400" r="5" opacity=".65"/><circle cx="1240" cy="775" r="5" opacity=".5"/>
+    <circle cx="1430" cy="345" r="5" opacity=".45"/>
+  </g>
+  <g transform="translate(960 550)">
+    <circle r="252" fill="none" stroke="#85e3d4" stroke-opacity=".12" stroke-width="3" stroke-dasharray="4 17"/>
+    <circle r="200" fill="none" stroke="#85e3d4" stroke-opacity=".2" stroke-width="2"/>
+    <circle r="153" fill="url(#core)" stroke="#77d5c7" stroke-opacity=".5" stroke-width="3"/>
+    <circle r="127" fill="none" stroke="#77d5c7" stroke-opacity=".16" stroke-width="16"/>
+    <g fill="#173d50" stroke="#99e5d9" stroke-width="6" stroke-linejoin="round">
+      <path d="M0-86 85-40 85 55 0 100-85 55-85-40Z"/>
+      <path d="M0-86V9L85 55M0 9-85 55" fill="none"/>
+    </g>
+    <circle cx="0" cy="9" r="12" fill="#e6f8f6"/>
+    <g stroke="#9de7d9" stroke-opacity=".65" stroke-width="3"><path d="M-118 0H-164M118 0H164M0-118V-164M0 118V164"/></g>
+  </g>
+  <g transform="translate(326 345)">
+    <circle r="114" fill="#76dac8" opacity=".18" filter="url(#glow)"/>
+    <circle r="100" fill="#122b38" stroke="#70d5c5" stroke-width="3"/>
+    <g fill="#70d5c5" stroke="#c8f1e9" stroke-width="3">
+      <circle cx="-42" cy="-34" r="19"/><circle cx="45" cy="-34" r="19"/><circle cx="2" cy="43" r="19"/>
+    </g>
+    <path d="M-24-34H26M-34-19-7 27M34-19 11 27" stroke="#b1e8dd" stroke-width="5" fill="none"/>
+  </g>
+  <g transform="translate(552 775)">
+    <circle r="108" fill="#ffc779" opacity=".15" filter="url(#glow)"/>
+    <circle r="96" fill="#252937" stroke="#ffc779" stroke-width="3"/>
+    <g stroke="#ffd8a4" stroke-width="7" fill="none" stroke-linecap="round">
+      <path d="M-40-50H40M-40 50H40M-31-48Q-31-10 0 0Q31 10 31 48"/>
+      <path d="M31-48Q31-10 0 0Q-31 10-31 48"/>
+    </g>
+    <circle cy="15" r="9" fill="#ffd8a4"/>
+  </g>
+  <g transform="translate(960 210)">
+    <circle r="104" fill="#b9a8f8" opacity=".16" filter="url(#glow)"/>
+    <circle r="95" fill="#22263b" stroke="#b9a8f8" stroke-width="3"/>
+    <g stroke="#ded5ff" stroke-width="5" stroke-linejoin="round" fill="none">
+      <path d="M-38-52H24L43-33V57H-38Z"/><path d="M24-52V-33H43"/>
+      <path d="M-22-9H23M-22 9H23M-22 27H9"/>
+    </g>
+  </g>
+  <g transform="translate(1388 775)">
+    <circle r="108" fill="#8dbbff" opacity=".16" filter="url(#glow)"/>
+    <circle r="96" fill="#172b43" stroke="#8dbbff" stroke-width="3"/>
+    <g fill="none" stroke="#c4dbff" stroke-width="8" stroke-linecap="round">
+      <circle cx="-14" cy="-17" r="31"/><path d="M9 5 50 46M37 32 21 48M48 43 34 57"/>
+    </g>
+  </g>
+  <g transform="translate(1590 345)">
+    <circle r="108" fill="#ef9aaa" opacity=".16" filter="url(#glow)"/>
+    <circle r="96" fill="#322631" stroke="#ef9aaa" stroke-width="3"/>
+    <g stroke="#ffc9d2" stroke-width="7" fill="none" stroke-linecap="round">
+      <circle cx="-11" cy="-12" r="35"/><path d="M16 15 51 50"/>
+      <path d="M-26-12H4M-11-27V3" stroke-width="4" stroke-opacity=".7"/>
+    </g>
+  </g>
+  <g stroke="#7ecdbf" stroke-width="2" stroke-opacity=".22" fill="none">
+    <path d="M45 52H320L388 118H565"/><path d="M1355 985H1620L1700 905H1880"/>
+    <path d="M95 1030H600"/><path d="M1410 65H1860"/>
+  </g>
+</svg>

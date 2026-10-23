@@ -717,6 +717,19 @@ function getLegalInfo() {
   };
 }
 
+// Article frontmatter supplies the visible H1. Keep the Markdown H1 in the
+// source/RSS exports, but avoid rendering the same heading twice on the page.
+function removeDuplicateArticleHeading(html, title) {
+  const rendered = String(html || '');
+  const opening = rendered.match(/^\s*<h1(?:\s[^>]*)?>([\s\S]*?)<\/h1>\s*/i);
+  if (!opening) return rendered;
+
+  const compact = (value) => String(value).replace(/\s+/g, ' ').trim();
+  const headingText = compact(opening[1].replace(/<[^>]*>/g, ''));
+  const escapedTitle = compact(md.utils.escapeHtml(String(title || '')));
+  return headingText === escapedTitle ? rendered.slice(opening[0].length) : rendered;
+}
+
 function renderPostPage(post, relatedPosts = []) {
   const category = String(post.category || 'IT');
   const formattedDate = formatPostDate(post.date);
@@ -736,6 +749,7 @@ function renderPostPage(post, relatedPosts = []) {
       : '');
   const relatedPostsHtml = renderRelatedPosts(relatedPosts);
   const coverStyle = articleCoverStyle(post);
+  const articleBodyHtml = removeDuplicateArticleHeading(post.html, post.title);
 
   return `<!doctype html>
 <html lang="de">
@@ -831,7 +845,7 @@ function renderPostPage(post, relatedPosts = []) {
 
             ${heroExcerpt ? `<p class="article-hero__excerpt">${md.utils.escapeHtml(heroExcerpt)}</p>` : ''}
           </header>
-          <div class="post-content terminal-content">${post.html}</div>
+          <div class="post-content terminal-content">${articleBodyHtml}</div>
         </section>
 
         <aside class="article-post-meta" aria-label="Artikelinformationen und Tags">

@@ -513,6 +513,30 @@ Body
     expect(html).toContain('<p>Rendered</p>');
   });
 
+  it('shows an opening Markdown title only once when it matches the article hero', () => {
+    const title = 'Nicht alles muss in MySQL – ein Blick über den Datenbank-Tellerrand';
+    const html = renderPostPage({
+      slug: 'database-example',
+      title,
+      category: 'Datenbanken',
+      html: '<h1>' + title + '</h1>\n<p>Einleitung</p>'
+    });
+
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(html).toContain('<h1 class="article-title">' + title + '</h1>');
+    expect(html).toContain('<p>Einleitung</p>');
+    expect(html).not.toContain('<div class="post-content terminal-content"><h1>');
+  });
+
+  it('preserves a distinct first heading in article content', () => {
+    const html = renderPostPage({
+      slug: 'different-heading',
+      title: 'Article title',
+      html: '<h1>Independent section title</h1>\n<p>Details</p>'
+    });
+    expect(html).toContain('<div class="post-content terminal-content"><h1>Independent section title</h1>');
+  });
+
   it('renders a local article cover on the shared terminal surface', () => {
     const html = renderPostPage({
       slug: 'covered-post',
