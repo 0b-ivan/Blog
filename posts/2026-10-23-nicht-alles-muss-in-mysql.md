@@ -23,10 +23,17 @@ search_queries:
     maxRank: 1
   - query: Wann sind Redis, DocumentDB oder DynamoDB sinnvoller als MySQL?
     maxRank: 1
-cover_query: database server storage
-cover_subject: Server und Datenspeicher als Motiv für unterschiedliche Datenbankaufgaben
-cover_avoid: logo text office keyboard
+cover_query: data models relationships documents key value search
+cover_subject: Fünf Datenmodelle für Beziehungen, Sessions, Dokumente, Schlüsselzugriffe und Suche
+cover_avoid: logo server rack datacenter office keyboard
 cover_focus: center
+cover_image: /assets/covers/2026-10-23-nicht-alles-muss-in-mysql.svg
+cover_alt: Fünf Datenmodelle für Beziehungen, TTL, Dokumente, Schlüssel und Suche
+cover_credit: Eigene schematische Darstellung, CC0
+cover_credit_url: /sources.html#datenbank-tellerrand-illustrations
+cover_source_url: /sources.html#datenbank-tellerrand-illustrations
+cover_license: CC0
+cover_license_url: https://creativecommons.org/publicdomain/zero/1.0/
 ---
 
 # Nicht alles muss in MySQL – ein Blick über den Datenbank-Tellerrand
@@ -61,6 +68,10 @@ classDiagram
 ```
 
 Wenn ein Kunde bestellt, müssen wir mehrere Änderungen konsistent verarbeiten: Bestellung anlegen, Artikelbestand reduzieren und gegebenenfalls einen Zahlungsstatus aktualisieren.
+
+![Bestellung, Position und Bestand werden zusammen bestätigt oder zurückgerollt.](/assets/posts/datenbank-tellerrand/01-mysql-transaktion.svg)
+
+*Abb. 1: MySQL / RDS: Eine Bestellung, eine Transaktion. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
 
 Genau hier spielen relationale Datenbanken ihre Stärken aus: **Joins, Fremdschlüssel und Transaktionen.**
 
@@ -97,6 +108,10 @@ AWS bietet mit ElastiCache einen verwalteten Dienst für In-Memory-Caching mit V
 
 Die TTL ist keine Haltbarkeitsgarantie: Je nach Konfiguration können Einträge bei Speicherdruck verdrängt werden; auch bei Ausfällen können Session-Daten verloren gehen. Die Anwendung muss fehlende Sessions sicher behandeln und gegebenenfalls eine erneute Anmeldung verlangen. Redis lässt sich auch mit Persistenz betreiben – „In-Memory“ bedeutet nicht grundsätzlich „ohne dauerhafte Speicherung“.
 
+![Eine Session mit 1800 Sekunden TTL wird über ihren Schlüssel gelesen.](/assets/posts/datenbank-tellerrand/02-redis-session.svg)
+
+*Abb. 2: Redis: Die Session hat ein Ablaufdatum. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
+
 Redis eignet sich außerdem für Caching, Rate Limiting und andere kurzlebige Zustände.
 
 **Merke:** Nicht alles muss dauerhaft gespeichert werden. Gerade für Sessions und Caches sind In-Memory-Technologien oft die passende Wahl.
@@ -131,6 +146,10 @@ Das ist interessant, wenn Datenstrukturen variieren oder häufig neue Produktatt
 
 Amazon DocumentDB ist eine eigenständige Engine mit MongoDB-Kompatibilität, kein verwalteter MongoDB-Server. Unterstützte APIs und funktionale Unterschiede sollten wir für die gewählte Engine-Version prüfen.
 
+![Laptop und T-Shirt besitzen gemeinsame und unterschiedliche Dokumentfelder.](/assets/posts/datenbank-tellerrand/03-documentdb-katalog.svg)
+
+*Abb. 3: DocumentDB: Gemeinsamer Katalog, andere Attribute. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
+
 **Merke:** Wenn Datensätze unterschiedlich aufgebaut sind und flexibel abgefragt werden sollen, kann eine Dokumentendatenbank sinnvoll sein.
 
 ## 4. DynamoDB – wenn Zugriffsmuster und Geschwindigkeit entscheidend sind
@@ -159,6 +178,10 @@ flowchart LR
 ```
 
 Der Dienst skaliert ohne klassische Datenbankserververwaltung. Allerdings sollten wir frühzeitig wissen, welche Abfragen unsere Anwendung benötigt. Gut verteilte Partition Keys helfen, Lastspitzen auf einzelnen Schlüsseln zu vermeiden. Weitere Zugriffsmuster können zusätzliche Indizes erfordern; ein vollständiger Scan ist kein gleichwertiger Ersatz für gezielte Schlüsselzugriffe.
+
+![Partition Key und Sort Key identifizieren den Spielstand ohne vollständigen Scan.](/assets/posts/datenbank-tellerrand/04-dynamodb-schluessel.svg)
+
+*Abb. 4: DynamoDB: Der Zugriff beginnt beim Schlüssel. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
 
 Komplexe Joins oder beliebige relationale Abfragen sind nicht die Stärke von DynamoDB.
 
@@ -193,6 +216,10 @@ flowchart LR
 ```
 
 OpenSearch ersetzt dabei nicht zwangsläufig die eigentliche Datenbank. Geschäftsdaten können weiterhin in MySQL liegen, während OpenSearch für Such- und Analyseaufgaben zuständig ist. Dafür müssen Änderungen zuverlässig in den Suchindex übertragen werden. Zwischen einer Änderung in MySQL und ihrer Sichtbarkeit in der Suche kann eine Verzögerung liegen; Relevanz und Tippfehlertoleranz hängen von der gewählten Abfrage und Indexkonfiguration ab.
+
+![Logs werden indexiert und anhand von Request-ID und Status durchsucht.](/assets/posts/datenbank-tellerrand/05-opensearch-logs.svg)
+
+*Abb. 5: OpenSearch: Vom Logstrom zur Fehleranalyse. Eigene schematische Darstellung mit Beispieldaten, [CC0](/sources.html#datenbank-tellerrand-illustrations).*
 
 **Merke:** Volltextsuche, Bewertung der Relevanz und die Analyse von Logs sind gute Gründe für eine spezialisierte Suchmaschine.
 

@@ -160,3 +160,10 @@
   --article-cover-focus: center;
 }
 /* cover:2026-08-19-markdown-features-im-blog:end */
+
+/* cover:2026-10-23-nicht-alles-muss-in-mysql:start */
+.post-page[data-post-slug="2026-10-23-nicht-alles-muss-in-mysql"] .article-hero {
+  --article-cover-image: url("/assets/covers/2026-10-23-nicht-alles-muss-in-mysql.svg");
+  --article-cover-focus: center;
+}
+/* cover:2026-10-23-nicht-alles-muss-in-mysql:end */
